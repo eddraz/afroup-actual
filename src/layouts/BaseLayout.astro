@@ -19,6 +19,7 @@ const paths = {
   antirracismo: localizedPath(locale, routeIds.antirracismo),
   historia: localizedPath(locale, routeIds.historia),
   estetica: localizedPath(locale, routeIds.estetica),
+  actualidad: localizedPath(locale, routeIds.actualidad),
   category: routeIds.category,
   store: routeIds.store,
   resources: routeIds.resources,
@@ -154,7 +155,7 @@ function tabClass(key: NavKey) {
                 <a href={paths.antirracismo}>{copy.navAntiracism}</a>
                 <a href={paths.historia}>{copy.navHistory}</a>
                 <a href={paths.estetica}>{copy.navAesthetics}</a>
-                <a href={paths.category}>{copy.navCurrent}</a>
+                <a href={paths.actualidad}>{copy.navCurrent}</a>
               </nav>
               <nav>
                 <h6 class="footer-title">{copy.footerAfroup}</h6>
@@ -265,7 +266,7 @@ function tabClass(key: NavKey) {
               </a>
             </li>
             <li>
-              <a class={navClass("actualidad")} href={paths.category}>
+              <a class={navClass("actualidad")} href={paths.actualidad}>
                 <span class="size-2 rounded-full bg-primary"></span>
                 {copy.navCurrent}
               </a>
