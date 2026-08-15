@@ -33,3 +33,7 @@
 ## Account migrations
 
 - `0009_afroup_users.sql` adds the public-site accounts schema (`afroup_users` + `afroup_email_verifications`). Keep it after `0008` so the legacy guide/admin migrations remain unaffected.
+
+## Admin RBAC migrations
+
+- `0010_admin_rbac.sql` introduces the modules / permissions / roles / users schema (`admin_modules`, `admin_permissions`, `admin_roles`, `admin_role_permissions`, `admin_users`, `admin_user_permissions`) and seeds seven modules, the four base permissions per module, and three default roles (Administrador, Editor, Moderador). Keep it after `0009` so the public accounts schema stays unaffected.
