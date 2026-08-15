@@ -1,0 +1,59 @@
+---
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import { getLocaleFromUrl, t } from "../../../lib/i18n";
+
+export const prerender = true;
+
+const locale = getLocaleFromUrl(Astro.url);
+const copy = t(locale);
+
+const items = [
+  { title: "Quilombos y palenques: territorios de libertad", status: "Publicado", author: "Jenniffer M.", date: "12 jun" },
+  { title: "Las raíces del bullerengue en el Pacífico", status: "Publicado", author: "Equipo AfroUp", date: "08 jun" },
+  { title: "Afrofuturismo: imaginar el mañana", status: "Borrador", author: "Jenniffer M.", date: "05 jun" },
+  { title: "Trenzas como mapas de resistencia", status: "Publicado", author: "Equipo AfroUp", date: "01 jun" },
+  { title: "Voces de la diáspora", status: "En revisión", author: "AfroUp TV", date: "28 may" },
+];
+---
+
+<AdminLayout title={`${copy.titleAdmin} · ${copy.adminArticles}`} active="articles">
+  <header class="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-end">
+    <div>
+      <p class="text-primary text-xs font-extrabold tracking-[0.18em] uppercase">{copy.navAdmin}</p>
+      <h1 class="font-display text-[28px] leading-[1.06] font-bold tracking-[-0.005em] lg:text-[34px]">{copy.adminArticles}</h1>
+    </div>
+    <button class="btn btn-primary btn-sm" type="button">
+      <svg class="size-4"><use href="#ic-book2"></use></svg>
+      {copy.adminNewArticle}
+    </button>
+  </header>
+
+  <div class="card bg-base-100 border border-base-300 shadow-sm mt-6">
+    <div class="card-body p-0">
+      <div class="overflow-x-auto">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Título</th>
+              <th>Estado</th>
+              <th>Autoría</th>
+              <th>Fecha</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item) => (
+              <tr>
+                <td class="font-semibold">{item.title}</td>
+                <td>
+                  <span class:list={["badge badge-sm", item.status === "Publicado" && "badge-success", item.status === "Borrador" && "badge-ghost", item.status === "En revisión" && "badge-warning"]}>{item.status}</span>
+                </td>
+                <td>{item.author}</td>
+                <td class="text-sm opacity-70">{item.date}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</AdminLayout>

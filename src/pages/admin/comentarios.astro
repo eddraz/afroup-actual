@@ -1,0 +1,51 @@
+---
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { getLocaleFromUrl, t } from "../../lib/i18n";
+
+export const prerender = true;
+
+const locale = getLocaleFromUrl(Astro.url);
+const copy = t(locale);
+
+const queueItems = [
+  { user: "Anónimo", article: "Voces de la diáspora", comment: "Excelente entrevista, me hizo reflexionar sobre mi propia historia.", reason: "Reportado", time: "hace 4 min" },
+  { user: "Laura G.", article: "Afrofuturismo: imaginar el mañana", comment: "¿Dónde consigo el libro que mencionan en el segundo párrafo?", reason: "Pregunta", time: "hace 22 min" },
+  { user: "Andrés M.", article: "Trenzas como mapas de resistencia", comment: "Comparte información valiosa. Lo voy a usar en mi clase.", reason: "Aprobado", time: "hace 1 h" },
+  { user: "Sofía R.", article: "Quilombos y palenques: territorios de libertad", comment: "Falta contexto histórico sobre la Nueva Granada.", reason: "Pendiente", time: "hace 2 h" },
+];
+---
+
+<AdminLayout title={`${copy.titleAdmin} · ${copy.adminComments}`} active="comments">
+  <header class="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-end">
+    <div>
+      <p class="text-primary text-xs font-extrabold tracking-[0.18em] uppercase">{copy.navAdmin}</p>
+      <h1 class="font-display text-[28px] leading-[1.06] font-bold tracking-[-0.005em] lg:text-[34px]">{copy.adminComments}</h1>
+    </div>
+  </header>
+
+  <div class="mt-6 flex flex-col gap-4">
+    {queueItems.map((item) => (
+      <article class="card bg-base-100 border border-base-300 shadow-sm">
+        <div class="card-body gap-3">
+          <div class="flex flex-wrap items-center gap-2 text-sm">
+            <span class="font-bold">{item.user}</span>
+            <span class="opacity-50">·</span>
+            <span class="opacity-70">{item.article}</span>
+            <span class="opacity-50">·</span>
+            <span class="opacity-50 text-xs">{item.time}</span>
+            <span class:list={["badge badge-sm ml-auto", item.reason === "Reportado" && "badge-error", item.reason === "Pregunta" && "badge-info", item.reason === "Aprobado" && "badge-success", item.reason === "Pendiente" && "badge-warning"]}>{item.reason}</span>
+          </div>
+          <p class="text-[15px] leading-[1.55]">{item.comment}</p>
+          <div class="flex flex-wrap gap-2">
+            <button class="btn btn-sm btn-success" type="button">{copy.adminModerateComments} ✓</button>
+            <button class="btn btn-sm btn-dash" type="button">Responder</button>
+            <button class="btn btn-sm btn-ghost text-error" type="button">
+              <svg class="size-4"><use href="#ic-trash"></use></svg>
+              Descartar
+            </button>
+          </div>
+        </div>
+      </article>
+    ))}
+  </div>
+</AdminLayout>
