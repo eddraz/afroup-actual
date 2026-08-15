@@ -1,5 +1,6 @@
 ---
 import { ClientRouter } from "astro:transitions";
+import SessionAvatar from "../components/SessionAvatar.astro";
 import "../styles/global.css";
 import { localizedPath, switchLocalePath, t, getLocaleFromUrl } from "../lib/i18n";
 import { routeIds, socials, type NavKey } from "../lib/paths";
@@ -157,18 +158,15 @@ function tabClass(key: NavKey) {
                   <svg class="swap-off size-5"><use href="#ic-sun"></use></svg>
                   <svg class="swap-on size-5"><use href="#ic-moon"></use></svg>
                 </label>
-                <div class="tooltip tooltip-bottom" data-account-tooltip data-tip={copy.navLogin}>
+                <div class="tooltip tooltip-bottom" data-session-tooltip data-tip={copy.navLogin}>
                   <a
                     class="btn btn-square btn-ghost overflow-hidden border border-base-300 bg-base-100 p-0"
                     href={paths.login}
                     aria-label={copy.navLogin}
-                    data-account-link
-                    data-account-href={paths.account}
+                    data-session-link
+                    data-session-href={paths.account}
                   >
-                    <span class="flex size-full items-center justify-center" data-account-fallback>
-                      <svg class="size-5"><use href="#ic-user"></use></svg>
-                    </span>
-                    <img class="hidden size-full object-cover" alt="" data-account-photo />
+                    <SessionAvatar guest />
                   </a>
                 </div>
           </div>
@@ -378,34 +376,9 @@ function tabClass(key: NavKey) {
               });
             };
             bindThemeController();
-            var bindAccountAvatar = function () {
-              var link = document.querySelector("[data-account-link]");
-              var tooltip = document.querySelector("[data-account-tooltip]");
-              var photo = document.querySelector("[data-account-photo]");
-              var fallback = document.querySelector("[data-account-fallback]");
-              if (!link || link.dataset.bound === "true") return;
-              link.dataset.bound = "true";
-              fetch("/api/me", { credentials: "same-origin" })
-                .then(function (res) { return res.json(); })
-                .then(function (result) {
-                  if (!result || !result.ok || !result.user) return;
-                  var accountHref = link.getAttribute("data-account-href") || "/cuenta";
-                  link.setAttribute("href", accountHref);
-                  link.setAttribute("aria-label", result.user.name || accountHref);
-                  if (tooltip) tooltip.setAttribute("data-tip", result.user.name || "");
-                  if (result.user.avatar_url && photo && fallback) {
-                    photo.src = result.user.avatar_url;
-                    photo.alt = result.user.name || "";
-                    photo.classList.remove("hidden");
-                    fallback.classList.add("hidden");
-                  }
-                })
-                .catch(function () {});
-            };
-            bindAccountAvatar();
             document.addEventListener("astro:page-load", bindThemeController);
-            document.addEventListener("astro:page-load", bindAccountAvatar);
           })();
         </script>
+        <script is:inline src="/session-user.js"></script>
   </body>
 </html>

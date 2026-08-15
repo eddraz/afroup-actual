@@ -12,6 +12,7 @@
 ## Local Contracts
 
 - Keep shared navigation, responsive dock/sidebar, top bar, and page chrome in `layouts/BaseLayout.astro` rather than copying them into pages.
+- Keep signed-in photo and name in `components/SessionAvatar.astro` and `components/SessionUser.astro`; hydrate them from `/api/me` via `public/session-user.js`.
 - Keep site icons as official Tabler outline symbols in `layouts/BaseLayout.astro`.
 - Keep the sidebar logo and bottom language/donation controls outside the scroll region; only the menu item list may own vertical overflow.
 - Keep the sidebar menu scrollbar thin and black-toned via the `sidebar-scroll` utility.

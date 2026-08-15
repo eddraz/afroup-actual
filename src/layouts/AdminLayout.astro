@@ -1,5 +1,6 @@
 ---
 import { ClientRouter } from "astro:transitions";
+import SessionUser from "../components/SessionUser.astro";
 import "../styles/global.css";
 import { getLocaleFromUrl, localizedPath, t } from "../lib/i18n";
 import { routeIds } from "../lib/paths";
@@ -76,21 +77,15 @@ const enAdminHref = locale === "en" ? paths.admin : "/en/admin";
               <a class:list={["btn btn-sm join-item", locale === "es" && "btn-active"]} href={esAdminHref}>ES</a>
               <a class:list={["btn btn-sm join-item", locale === "en" && "btn-active"]} href={enAdminHref}>EN</a>
             </div>
-            <div class="hidden items-center gap-2 sm:flex">
-              <div class="avatar avatar-placeholder">
-                <div class="bg-neutral text-neutral-content w-8 rounded-full">
-                  <span class="text-xs font-bold" data-admin-user-initials>AD</span>
-                </div>
-              </div>
-              <div class="leading-tight">
-                <p class="text-sm font-bold" data-admin-user-name>{copy.adminRoleAdmin}</p>
-                <p class="text-xs opacity-60" data-admin-user-email></p>
-              </div>
+            <div class="hidden sm:block">
+              <SessionUser showEmail />
             </div>
-            <button type="button" class="btn btn-sm btn-ghost" data-admin-signout>
-              <svg class="size-4"><use href="#ic-logout"></use></svg>
-              <span class="hidden sm:inline">{copy.adminSignOut}</span>
-            </button>
+            <form method="post" action={`/api/logout?next=${encodeURIComponent("/login")}`}>
+              <button type="submit" class="btn btn-sm btn-ghost" data-admin-signout>
+                <svg class="size-4"><use href="#ic-logout"></use></svg>
+                <span class="hidden sm:inline">{copy.adminSignOut}</span>
+              </button>
+            </form>
           </div>
         </div>
 
@@ -174,80 +169,33 @@ const enAdminHref = locale === "en" ? paths.admin : "/en/admin";
         var ADMIN_USER_KEY = "afroup-admin-user";
         var PUBLIC_PATHS = ["/admin/login", "/admin/usuarios/aceptar"];
 
-        var readAdminUser = function () {
-          try {
-            var raw = localStorage.getItem(ADMIN_USER_KEY);
-            return raw ? JSON.parse(raw) : null;
-          } catch (error) {
-            return null;
-          }
-        };
-
-        var initialsFrom = function (value) {
-          var parts = String(value || "").trim().split(/\s+/).filter(Boolean);
-          if (!parts.length) return "AD";
-          if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-          return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-        };
-
-        var paintUser = function () {
-          var user = readAdminUser();
-          if (!user) return;
-          var name = document.querySelector("[data-admin-user-name]");
-          var email = document.querySelector("[data-admin-user-email]");
-          var initials = document.querySelector("[data-admin-user-initials]");
-          if (name) name.textContent = user.name || user.email;
-          if (email) email.textContent = user.email || "";
-          if (initials) initials.textContent = initialsFrom(user.name || user.email);
-        };
-
-        var gate = function () {
-          var path = window.location.pathname;
+        var isPublicPath = function (path) {
           for (var i = 0; i < PUBLIC_PATHS.length; i += 1) {
-            if (path.indexOf(PUBLIC_PATHS[i]) !== -1) return;
+            if (path.indexOf(PUBLIC_PATHS[i]) !== -1) return true;
           }
-          var cached = readAdminUser();
-          if (cached) {
-            paintUser();
-            return;
-          }
-          fetch("/api/admin/session", { credentials: "same-origin" })
-            .then(function (res) { return res.json(); })
-            .then(function (result) {
-              if (result && result.ok && result.user) {
-                localStorage.setItem(ADMIN_USER_KEY, JSON.stringify(result.user));
-                localStorage.setItem(ROLE_KEY, "admin");
-                paintUser();
-                return;
-              }
-              window.location.replace("/login?next=" + encodeURIComponent(path));
-            })
-            .catch(function () {
-              window.location.replace("/login?next=" + encodeURIComponent(path));
-            });
+          return false;
         };
 
-        var bindSignOut = function () {
-          document.querySelectorAll("[data-admin-signout]").forEach(function (button) {
-            if (button.dataset.bound === "true") return;
-            button.dataset.bound = "true";
-            button.addEventListener("click", function () {
+        document.addEventListener("afroup:session", function (event) {
+          var path = window.location.pathname;
+          if (isPublicPath(path)) return;
+          var result = event.detail || {};
+          if (result.ok && result.admin) return;
+          window.location.replace("/login?next=" + encodeURIComponent(path));
+        });
+
+        document.querySelectorAll("[data-admin-signout]").forEach(function (button) {
+          if (button.dataset.bound === "true") return;
+          button.dataset.bound = "true";
+          button.addEventListener("click", function () {
+            try {
               localStorage.removeItem(ROLE_KEY);
               localStorage.removeItem(ADMIN_USER_KEY);
-              window.location.href = "/login";
-            });
+            } catch (error) {}
           });
-        };
-
-        paintUser();
-        gate();
-        bindSignOut();
-        document.addEventListener("astro:after-swap", function () {
-          paintUser();
-          gate();
-          bindSignOut();
         });
       })();
     </script>
+    <script is:inline src="/session-user.js"></script>
   </body>
 </html>

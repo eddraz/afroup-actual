@@ -1,0 +1,27 @@
+---
+import SessionAvatar from "./SessionAvatar.astro";
+
+interface Props {
+  name?: string;
+  email?: string;
+  avatarUrl?: string | null;
+  size?: "sm" | "md" | "lg";
+  showEmail?: boolean;
+}
+
+const {
+  name = "",
+  email = "",
+  avatarUrl = null,
+  size = "sm",
+  showEmail = false,
+} = Astro.props;
+---
+
+<div class="flex min-w-0 items-center gap-2" data-session-user>
+  <SessionAvatar name={name} avatarUrl={avatarUrl} size={size} />
+  <div class="min-w-0 leading-tight">
+    <p class="truncate text-sm font-bold" data-session-name>{name}</p>
+    {showEmail ? <p class="truncate text-xs opacity-60" data-session-email>{email}</p> : null}
+  </div>
+</div>

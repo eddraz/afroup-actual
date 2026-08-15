@@ -1,0 +1,34 @@
+---
+import { userInitials } from "../lib/public-session";
+
+interface Props {
+  name?: string;
+  avatarUrl?: string | null;
+  size?: "sm" | "md" | "lg";
+  guest?: boolean;
+}
+
+const { name = "", avatarUrl = null, size = "sm", guest = false } = Astro.props;
+const initials = userInitials(name || "?");
+const sizeClass = size === "lg" ? "w-20" : size === "md" ? "w-12" : "w-8";
+const textClass = size === "lg" ? "text-2xl font-bold" : size === "md" ? "text-sm font-bold" : "text-xs font-bold";
+const showPhoto = Boolean(avatarUrl) && !guest;
+const showInitials = !guest && !showPhoto;
+---
+
+<div class:list={["avatar", !showPhoto && "avatar-placeholder"]} data-session-avatar>
+  <div class:list={[sizeClass, "rounded-full", !showPhoto && "bg-neutral text-neutral-content"]}>
+    <img
+      class:list={[!showPhoto && "hidden", "size-full object-cover"]}
+      src={showPhoto ? avatarUrl! : undefined}
+      alt={name}
+      data-session-photo
+    />
+    <span class:list={[!showInitials && "hidden", textClass]} data-session-initials>{initials}</span>
+    {guest ? (
+      <span class="flex size-full items-center justify-center" data-session-guest>
+        <svg class="size-5"><use href="#ic-user"></use></svg>
+      </span>
+    ) : null}
+  </div>
+</div>

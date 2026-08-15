@@ -1,9 +1,11 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import SessionAvatar from "../components/SessionAvatar.astro";
+import SessionUser from "../components/SessionUser.astro";
 import { env } from "cloudflare:workers";
 import { getLocaleFromUrl, localizedPath, t } from "../lib/i18n";
 import { routeIds } from "../lib/paths";
-import { getPublicUser, obfuscateEmail, PUBLIC_SESSION_COOKIE, userInitials } from "../lib/public-session";
+import { getPublicUser, obfuscateEmail, PUBLIC_SESSION_COOKIE } from "../lib/public-session";
 
 export const prerender = false;
 
@@ -18,7 +20,6 @@ if (!user) {
   return Astro.redirect(`${loginHref}?next=${encodeURIComponent(Astro.url.pathname)}`, 303);
 }
 
-const initials = userInitials(user.name);
 const maskedEmail = obfuscateEmail(user.email);
 const bio = user.bio ?? "";
 ---
@@ -51,17 +52,7 @@ const bio = user.bio ?? "";
             </div>
 
             <div class="flex flex-col items-start gap-5 sm:flex-row sm:items-center">
-              <div class="avatar avatar-placeholder">
-                {user.avatar_url ? (
-                  <div class="w-20 rounded-full">
-                    <img src={user.avatar_url} alt={user.name} />
-                  </div>
-                ) : (
-                  <div class="bg-neutral text-neutral-content w-20 rounded-full">
-                    <span class="text-2xl font-bold">{initials}</span>
-                  </div>
-                )}
-              </div>
+              <SessionAvatar name={user.name} avatarUrl={user.avatar_url} size="lg" />
               <div class="flex flex-1 flex-col gap-2">
                 <p class="text-sm font-semibold">{copy.accountPhotoLabel}</p>
                 <div class="flex flex-wrap gap-2">
@@ -168,23 +159,7 @@ const bio = user.bio ?? "";
     <aside class="flex flex-col gap-5">
       <div class="card bg-base-200 shadow">
         <div class="card-body gap-4">
-          <div class="flex items-center gap-3">
-            <div class="avatar avatar-placeholder">
-              {user.avatar_url ? (
-                <div class="w-12 rounded-full">
-                  <img src={user.avatar_url} alt={user.name} />
-                </div>
-              ) : (
-                <div class="bg-neutral text-neutral-content w-12 rounded-full">
-                  <span class="font-bold">{initials}</span>
-                </div>
-              )}
-            </div>
-            <div>
-              <p class="font-bold">{user.name}</p>
-              <p class="text-sm opacity-70">{maskedEmail}</p>
-            </div>
-          </div>
+          <SessionUser name={user.name} email={maskedEmail} avatarUrl={user.avatar_url} size="md" showEmail />
           <form method="post" action={logoutHref}>
             <button class="btn btn-dash btn-sm self-start" type="submit">
               <svg class="size-4"><use href="#ic-logout"></use></svg>
