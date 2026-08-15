@@ -39,128 +39,124 @@ const bio = user.bio ?? "";
   </section>
 
   <div class="mt-9 grid grid-cols-1 gap-7 lg:grid-cols-[1.15fr_0.85fr]">
-    <div class="flex flex-col gap-7">
-      <form class="card bg-base-200 shadow" data-profile-form>
-        <div class="card-body gap-5">
-          <div class="flex items-start gap-4">
-            <div class="bg-primary/10 text-primary flex size-11 shrink-0 items-center justify-center rounded-full">
-              <svg class="size-5"><use href="#ic-user"></use></svg>
-            </div>
+    <div class="tabs tabs-lift w-full">
+      <input type="radio" name="account-tabs" class="tab" aria-label={copy.accountProfileTitle} checked="checked" />
+      <div class="tab-content bg-base-200 border-base-300 p-0">
+        <form class="card shadow-none" data-profile-form>
+          <div class="card-body gap-5">
             <div>
               <h2 class="card-title font-display text-[20px] tracking-[-0.005em]">{copy.accountProfileTitle}</h2>
               <p class="text-sm opacity-70">{copy.accountProfileLead}</p>
             </div>
-          </div>
 
-          <div class="flex flex-col items-start gap-5 sm:flex-row sm:items-center">
-            <div class="avatar avatar-placeholder">
-              {user.avatar_url ? (
-                <div class="w-20 rounded-full">
-                  <img src={user.avatar_url} alt={user.name} />
-                </div>
-              ) : (
-                <div class="bg-neutral text-neutral-content w-20 rounded-full">
-                  <span class="text-2xl font-bold">{initials}</span>
-                </div>
-              )}
-            </div>
-            <div class="flex flex-1 flex-col gap-2">
-              <p class="text-sm font-semibold">{copy.accountPhotoLabel}</p>
-              <div class="flex flex-wrap gap-2">
-                <label class="btn btn-dash btn-sm cursor-pointer">
-                  <svg class="size-4"><use href="#ic-camera"></use></svg>
-                  {copy.accountPhotoUpload}
-                  <input
-                    class="hidden"
-                    type="file"
-                    name="avatar"
-                    accept="image/png,image/jpeg,image/webp"
-                    data-avatar-file
-                    data-error-type={copy.accountPhotoTypeError}
-                    data-error-size={copy.accountPhotoSizeError}
-                    data-error-upload={copy.accountPhotoUploadError}
-                  />
-                </label>
+            <div class="flex flex-col items-start gap-5 sm:flex-row sm:items-center">
+              <div class="avatar avatar-placeholder">
                 {user.avatar_url ? (
-                  <button type="button" class="btn btn-ghost btn-sm" data-avatar-remove>{copy.accountPhotoRemove}</button>
-                ) : null}
+                  <div class="w-20 rounded-full">
+                    <img src={user.avatar_url} alt={user.name} />
+                  </div>
+                ) : (
+                  <div class="bg-neutral text-neutral-content w-20 rounded-full">
+                    <span class="text-2xl font-bold">{initials}</span>
+                  </div>
+                )}
               </div>
-              <p class="text-xs opacity-60">{copy.accountPhotoHelp}</p>
-              <div class="alert alert-error hidden" data-avatar-error><span data-avatar-error-text></span></div>
+              <div class="flex flex-1 flex-col gap-2">
+                <p class="text-sm font-semibold">{copy.accountPhotoLabel}</p>
+                <div class="flex flex-wrap gap-2">
+                  <label class="btn btn-dash btn-sm cursor-pointer">
+                    <svg class="size-4"><use href="#ic-camera"></use></svg>
+                    {copy.accountPhotoUpload}
+                    <input
+                      class="hidden"
+                      type="file"
+                      name="avatar"
+                      accept="image/png,image/jpeg,image/webp"
+                      data-avatar-file
+                      data-error-type={copy.accountPhotoTypeError}
+                      data-error-size={copy.accountPhotoSizeError}
+                      data-error-upload={copy.accountPhotoUploadError}
+                    />
+                  </label>
+                  {user.avatar_url ? (
+                    <button type="button" class="btn btn-ghost btn-sm" data-avatar-remove>{copy.accountPhotoRemove}</button>
+                  ) : null}
+                </div>
+                <p class="text-xs opacity-60">{copy.accountPhotoHelp}</p>
+                <div class="alert alert-error hidden" data-avatar-error><span data-avatar-error-text></span></div>
+              </div>
             </div>
-          </div>
 
-          <div>
-            <p class="text-sm font-semibold">{copy.accountName}</p>
-            <p class="mt-1 text-[17px] font-bold">{user.name}</p>
-          </div>
-
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend">{copy.accountBioLabel}</legend>
-            <textarea id="bio" name="bio" rows="4" maxlength="280" placeholder={copy.accountBioLabel}>{bio}</textarea>
-            <p class="text-xs opacity-60">{copy.accountBioHelp}</p>
-          </fieldset>
-
-          <div class="alert alert-success hidden" data-profile-success><span>{copy.accountProfileSaved}</span></div>
-          <div class="alert alert-error hidden" data-profile-error><span>{copy.accountProfileSaveError}</span></div>
-          <button class="btn btn-primary mt-2 h-[46px] min-h-[46px]" type="submit">
-            {copy.accountProfileSave}
-            <svg class="size-4"><use href="#ic-arrow"></use></svg>
-          </button>
-        </div>
-      </form>
-
-      <form class="card bg-base-200 shadow" onsubmit="event.preventDefault();">
-        <div class="card-body gap-5">
-          <div class="flex items-start gap-4">
-            <div class="bg-accent/15 text-accent flex size-11 shrink-0 items-center justify-center rounded-full">
-              <svg class="size-5"><use href="#ic-lock"></use></svg>
-            </div>
             <div>
-              <h2 class="card-title font-display text-[20px] tracking-[-0.005em]">{copy.accountSecurityTitle}</h2>
+              <p class="text-sm font-semibold">{copy.accountName}</p>
+              <p class="mt-1 text-[17px] font-bold">{user.name}</p>
+            </div>
+
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend">{copy.accountBioLabel}</legend>
+              <textarea id="bio" name="bio" rows="4" maxlength="280" placeholder={copy.accountBioLabel}>{bio}</textarea>
+              <p class="text-xs opacity-60">{copy.accountBioHelp}</p>
+            </fieldset>
+
+            <div class="alert alert-success hidden" data-profile-success><span>{copy.accountProfileSaved}</span></div>
+            <div class="alert alert-error hidden" data-profile-error><span>{copy.accountProfileSaveError}</span></div>
+            <button class="btn btn-primary mt-2 h-[46px] min-h-[46px]" type="submit">
+              {copy.accountProfileSave}
+              <svg class="size-4"><use href="#ic-arrow"></use></svg>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <input type="radio" name="account-tabs" class="tab" aria-label={copy.accountPasswordTab} />
+      <div class="tab-content bg-base-200 border-base-300 p-0">
+        <form class="card shadow-none" data-password-form>
+          <div class="card-body gap-5">
+            <div>
+              <h2 class="card-title font-display text-[20px] tracking-[-0.005em]">{copy.accountPasswordTab}</h2>
               <p class="text-sm opacity-70">{copy.accountSecurityLead}</p>
             </div>
+
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend">{copy.accountCurrentPassword}</legend>
+              <input class="input w-full" type="password" name="current" autocomplete="current-password" placeholder={copy.accountCurrentPasswordPlaceholder} required />
+            </fieldset>
+
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend">{copy.accountNewPassword}</legend>
+              <input class="input w-full" type="password" name="new" autocomplete="new-password" placeholder={copy.accountNewPasswordPlaceholder} minlength="8" required />
+            </fieldset>
+
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend">{copy.accountConfirmPassword}</legend>
+              <input class="input w-full" type="password" name="confirm" autocomplete="new-password" placeholder={copy.accountConfirmPasswordPlaceholder} minlength="8" required />
+            </fieldset>
+
+            <div class="alert alert-success hidden" data-password-success><span>{copy.accountPasswordSaved}</span></div>
+            <div class="alert alert-error hidden" data-password-error><span data-password-error-text>{copy.accountPasswordSaveError}</span></div>
+            <button class="btn btn-primary mt-2 h-[46px] min-h-[46px]" type="submit">
+              {copy.accountPasswordSubmit}
+              <svg class="size-4"><use href="#ic-arrow"></use></svg>
+            </button>
           </div>
+        </form>
+      </div>
 
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend">{copy.accountCurrentPassword}</legend>
-            <input class="input w-full" type="password" name="current" autocomplete="current-password" placeholder={copy.accountCurrentPasswordPlaceholder} required />
-          </fieldset>
-
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend">{copy.accountNewPassword}</legend>
-            <input class="input w-full" type="password" name="new" autocomplete="new-password" placeholder={copy.accountNewPasswordPlaceholder} minlength="8" required />
-          </fieldset>
-
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend">{copy.accountConfirmPassword}</legend>
-            <input class="input w-full" type="password" name="confirm" autocomplete="new-password" placeholder={copy.accountConfirmPasswordPlaceholder} minlength="8" required />
-          </fieldset>
-
-          <button class="btn btn-primary mt-2 h-[46px] min-h-[46px]" type="submit">
-            {copy.accountPasswordSubmit}
-            <svg class="size-4"><use href="#ic-arrow"></use></svg>
-          </button>
-        </div>
-      </form>
-
-      <section class="card border border-error/40 bg-error/5 shadow">
-        <div class="card-body gap-4">
-          <div class="flex items-start gap-4">
-            <div class="bg-error/15 text-error flex size-11 shrink-0 items-center justify-center rounded-full">
-              <svg class="size-5"><use href="#ic-trash"></use></svg>
-            </div>
+      <input type="radio" name="account-tabs" class="tab" aria-label={copy.accountDangerTitle} />
+      <div class="tab-content border-error/40 bg-error/5 p-0">
+        <section class="card shadow-none">
+          <div class="card-body gap-4">
             <div>
               <h2 class="card-title font-display text-[20px] tracking-[-0.005em]">{copy.accountDangerTitle}</h2>
               <p class="text-sm opacity-80">{copy.accountDangerLead}</p>
             </div>
+            <button class="btn btn-error btn-outline self-start" type="button" onclick="document.getElementById('delete-account-dialog').showModal()">
+              <svg class="size-4"><use href="#ic-trash"></use></svg>
+              {copy.accountDeleteButton}
+            </button>
           </div>
-          <button class="btn btn-error btn-outline self-start" type="button" onclick="document.getElementById('delete-account-dialog').showModal()">
-            <svg class="size-4"><use href="#ic-trash"></use></svg>
-            {copy.accountDeleteButton}
-          </button>
-        </div>
-      </section>
+        </section>
+      </div>
     </div>
 
     <aside class="flex flex-col gap-5">
@@ -272,6 +268,41 @@ const bio = user.bio ?? "";
               .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
               .then(function (result) {
                 if (!result.ok) throw new Error("save");
+                if (success) success.classList.remove("hidden");
+                if (submit) submit.disabled = false;
+              })
+              .catch(function () {
+                if (errorBox) errorBox.classList.remove("hidden");
+                if (submit) submit.disabled = false;
+              });
+          });
+        }
+        var passwordForm = document.querySelector("[data-password-form]");
+        if (passwordForm && passwordForm.dataset.bound !== "true") {
+          passwordForm.dataset.bound = "true";
+          passwordForm.addEventListener("submit", function (event) {
+            event.preventDefault();
+            var submit = passwordForm.querySelector("button[type=submit]");
+            var success = passwordForm.querySelector("[data-password-success]");
+            var errorBox = passwordForm.querySelector("[data-password-error]");
+            var errorText = passwordForm.querySelector("[data-password-error-text]");
+            if (success) success.classList.add("hidden");
+            if (errorBox) errorBox.classList.add("hidden");
+            if (submit) submit.disabled = true;
+            var lang = document.documentElement.lang === "en" ? "en" : "es";
+            var messages = {
+              password_mismatch: lang === "en" ? "The new passwords don't match." : "Las contraseñas nuevas no coinciden.",
+              invalid_current: lang === "en" ? "The current password is incorrect." : "La contraseña actual no es correcta.",
+              password_short: lang === "en" ? "Use at least 8 characters." : "Usá al menos 8 caracteres.",
+            };
+            fetch("/api/password", { method: "POST", body: new FormData(passwordForm) })
+              .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
+              .then(function (result) {
+                if (!result.ok) {
+                  if (errorText) errorText.textContent = messages[result.body && result.body.error] || errorText.textContent;
+                  throw new Error("save");
+                }
+                passwordForm.reset();
                 if (success) success.classList.remove("hidden");
                 if (submit) submit.disabled = false;
               })
