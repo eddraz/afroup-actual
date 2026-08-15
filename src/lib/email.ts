@@ -161,3 +161,136 @@ export async function sendVerificationEmail(
     text: message.text,
   });
 }
+
+const INVITE_COPY: Record<
+  EmailLocale,
+  {
+    subject: string;
+    eyebrow: string;
+    title: string;
+    lead: string;
+    cta: string;
+    fallback: string;
+    ignore: string;
+    footer: string;
+    rights: string;
+    expires: string;
+  }
+> = {
+  es: {
+    subject: "Activá tu cuenta en AfroUp Admin",
+    eyebrow: "Invitación",
+    title: "Te invitaron al equipo administrador de AfroUp",
+    lead: "Alguien del equipo te creó una cuenta. Activá tu acceso definiendo una contraseña antes de que expire el enlace.",
+    cta: "Activar mi cuenta",
+    fallback: "Si el botón no funciona, copiá y pegá este enlace en tu navegador:",
+    ignore: "Si no esperabas este correo, podés ignorarlo.",
+    footer: "AfroUp · Panel de administración",
+    rights: "© 2026 AfroUp. Todos los derechos reservados.",
+    expires: "Por seguridad, este enlace expira en 24 horas.",
+  },
+  en: {
+    subject: "Activate your AfroUp Admin account",
+    eyebrow: "Invitation",
+    title: "You've been invited to the AfroUp admin team",
+    lead: "Someone on the team just created an account for you. Activate your access by setting a password before the link expires.",
+    cta: "Activate my account",
+    fallback: "If the button doesn't work, copy and paste this link into your browser:",
+    ignore: "If you weren't expecting this email, you can safely ignore it.",
+    footer: "AfroUp · Admin panel",
+    rights: "© 2026 AfroUp. All rights reserved.",
+    expires: "For security, this link expires in 24 hours.",
+  },
+};
+
+export interface InviteEmail {
+  to: string;
+  acceptUrl: string;
+  locale: EmailLocale;
+  name?: string;
+  expiresInHours?: number;
+}
+
+export function buildInviteEmail({ to, acceptUrl, locale, name, expiresInHours }: InviteEmail) {
+  const copy = INVITE_COPY[locale];
+  const safeUrl = escape(acceptUrl);
+  const safeName = name ? escape(name) : "";
+  const expiry = expiresInHours ?? 24;
+
+  const html = `<!doctype html>
+<html lang="${locale}">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escape(copy.subject)}</title></head>
+<body style="margin:0;padding:0;background:${BRAND.cream};font-family:'Mulish',Helvetica,Arial,sans-serif;color:${BRAND.ink};">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${BRAND.cream};padding:32px 16px;">
+  <tr><td align="center">
+    <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;width:100%;">
+      <tr><td style="background:${BRAND.neutral};padding:18px 24px;border-radius:14px 14px 0 0;">
+        <span style="font-family:'Baloo 2','Baloo',Helvetica,Arial,sans-serif;font-size:20px;font-weight:800;color:${BRAND.tealInk};letter-spacing:-0.01em;">AfroUp</span>
+        <span style="display:inline-block;margin-left:10px;padding:3px 10px;border-radius:999px;background:${BRAND.accent};color:${BRAND.accentContent};font-size:10px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;">Admin</span>
+      </td></tr>
+      <tr><td style="background:${BRAND.paper};padding:32px 24px 8px 24px;">
+        <p style="margin:0 0 12px 0;font-size:11.5px;font-weight:800;letter-spacing:0.18em;color:${BRAND.teal};text-transform:uppercase;">${escape(copy.eyebrow)}</p>
+        <h1 style="margin:0 0 14px 0;font-family:'Baloo 2','Baloo',Helvetica,Arial,sans-serif;font-size:28px;line-height:1.1;font-weight:800;color:${BRAND.ink};letter-spacing:-0.005em;">${escape(copy.title)}</h1>
+        <p style="margin:0 0 22px 0;font-size:16px;line-height:1.55;color:${BRAND.ink};">${safeName ? `<strong>${safeName}</strong>, ` : ""}${escape(copy.lead)}</p>
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px 0;">
+          <tr><td style="background:${BRAND.teal};border-radius:999px;">
+            <a href="${safeUrl}" style="display:inline-block;padding:14px 28px;font-family:'Baloo 2','Baloo',Helvetica,Arial,sans-serif;font-size:16px;font-weight:800;color:${BRAND.tealInk};text-decoration:none;letter-spacing:-0.005em;">${escape(copy.cta)}</a>
+          </td></tr>
+        </table>
+        <p style="margin:0 0 6px 0;font-size:13.5px;line-height:1.5;color:${BRAND.muted};">${escape(copy.fallback)}</p>
+        <p style="word-break:break-all;margin:0 0 16px 0;font-size:13px;color:${BRAND.teal};"><a href="${safeUrl}" style="color:${BRAND.teal};">${safeUrl}</a></p>
+        <p style="margin:0 0 24px 0;font-size:13px;color:${BRAND.warning};font-weight:700;">⏱ ${escape(copy.expires.replace("{0}", String(expiry)))}</p>
+        <hr style="border:0;border-top:1px solid ${BRAND.border};margin:24px 0;">
+        <p style="margin:0;font-size:13px;line-height:1.5;color:${BRAND.muted};">${escape(copy.ignore)}</p>
+      </td></tr>
+      <tr><td style="background:${BRAND.neutral};padding:18px 24px;border-radius:0 0 14px 14px;text-align:center;">
+        <p style="margin:0 0 4px 0;font-family:'Baloo 2','Baloo',Helvetica,Arial,sans-serif;font-size:14px;font-weight:800;color:${BRAND.tealInk};">${escape(copy.footer)}</p>
+        <p style="margin:0;font-size:12px;color:${BRAND.tealInk};opacity:0.7;">${escape(copy.rights)}</p>
+      </td></tr>
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>`;
+
+  const text = [
+    copy.subject,
+    "",
+    copy.title,
+    "",
+    name ? `${name}, ` : "",
+    copy.lead,
+    "",
+    copy.cta,
+    acceptUrl,
+    "",
+    copy.fallback,
+    acceptUrl,
+    "",
+    copy.expires.replace("{0}", String(expiry)),
+    "",
+    copy.ignore,
+    "",
+    copy.rights,
+  ]
+    .filter(Boolean)
+        .join("\n");
+  return { subject: copy.subject, html, text, to };
+}
+
+export async function sendInviteEmail(env: SendEmailEnv, payload: InviteEmail): Promise<void> {
+  const message = buildInviteEmail(payload);
+  if (!env.EMAIL) {
+    throw new Error("EMAIL binding not configured");
+  }
+  await env.EMAIL.send({
+    to: message.to,
+    from: {
+      email: env.EMAIL_FROM_ADDRESS ?? "verificacion@afroup.com",
+      name: env.EMAIL_FROM_NAME ?? "AfroUp",
+    },
+    subject: message.subject,
+    html: message.html,
+    text: message.text,
+  });
+}
