@@ -19,6 +19,14 @@ export function userInitials(name: string): string {
   return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
 }
 
+export function obfuscateEmail(email: string): string {
+  const value = email.trim();
+  if (value.length <= 5) return "*****";
+  const start = value.slice(0, 2);
+  const end = value.slice(-7);
+  return `${start}${"*".repeat(9)}${end}`;
+}
+
 export async function createPublicSession(db: D1Database, userId: number) {
   const token = crypto.randomUUID();
   const expiresAt = new Date(Date.now() + PUBLIC_SESSION_TTL_MS).toISOString();

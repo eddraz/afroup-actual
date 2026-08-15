@@ -3,7 +3,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import { env } from "cloudflare:workers";
 import { getLocaleFromUrl, localizedPath, t } from "../lib/i18n";
 import { routeIds } from "../lib/paths";
-import { getPublicUser, PUBLIC_SESSION_COOKIE, userInitials } from "../lib/public-session";
+import { getPublicUser, obfuscateEmail, PUBLIC_SESSION_COOKIE, userInitials } from "../lib/public-session";
 
 export const prerender = false;
 
@@ -19,6 +19,7 @@ if (!user) {
 }
 
 const initials = userInitials(user.name);
+const maskedEmail = obfuscateEmail(user.email);
 const bio = user.bio ?? "";
 ---
 
@@ -90,6 +91,11 @@ const bio = user.bio ?? "";
             <div>
               <p class="text-sm font-semibold">{copy.accountName}</p>
               <p class="mt-1 text-[17px] font-bold">{user.name}</p>
+            </div>
+
+            <div>
+              <p class="text-sm font-semibold">{copy.loginEmail}</p>
+              <p class="mt-1 text-[17px] font-bold">{maskedEmail}</p>
             </div>
 
             <fieldset class="fieldset">
@@ -176,6 +182,7 @@ const bio = user.bio ?? "";
             </div>
             <div>
               <p class="font-bold">{user.name}</p>
+              <p class="text-sm opacity-70">{maskedEmail}</p>
             </div>
           </div>
           <form method="post" action={logoutHref}>
