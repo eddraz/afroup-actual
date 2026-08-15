@@ -19,6 +19,7 @@
 - Keep shared route targets in `lib/paths.ts` and the daisyUI theme and Tailwind entry in `styles/global.css`.
 - Keep the search mockup at `/buscar`, wired through `paths.search`.
 - Keep the Africa category mockup at `/africa` and `/en/africa`, wired through `paths.africa`.
+- Keep the Diaspora category mockup at `/diaspora` and `/en/diaspora`, wired through `paths.diaspora`.
 - Use official Astro i18n only: Spanish default at unprefixed routes, English under `/en`, dictionaries in `lib/i18n.ts`.
 - Build UI with daisyUI first. If daisyUI cannot do it well, use daisyUI plus Tailwind. Use custom CSS only if that combination still cannot do it well.
 - Preserve Spanish UI and visual parity with the corresponding source screen under `design/`.
