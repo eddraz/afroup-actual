@@ -1,0 +1,46 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getLocaleFromUrl, localizedPath, t } from "../../lib/i18n";
+import { routeIds } from "../../lib/paths";
+
+export const prerender = true;
+
+const locale = getLocaleFromUrl(Astro.url);
+const copy = t(locale);
+const homeHref = localizedPath(locale, routeIds.home);
+---
+
+<BaseLayout title={copy.titleLogin} active="login">
+  <div class="breadcrumbs text-sm">
+    <ul>
+      <li><a href={homeHref}>{copy.navHome}</a></li>
+      <li>{copy.navLogin}</li>
+    </ul>
+  </div>
+
+  <section class="hero relative mt-6 overflow-hidden rounded-[24px] border border-base-300 bg-base-200 shadow-lg">
+    <div class="hero-content relative w-full flex-col items-start gap-3 px-6 py-8 lg:px-11 lg:py-11">
+      <p class="text-primary text-xs font-extrabold tracking-[0.18em] uppercase">{copy.loginEyebrow}</p>
+      <h1 class="font-display max-w-[18ch] text-[31px] font-bold lg:text-[44px]">{copy.loginTitle}</h1>
+      <p class="max-w-[56ch] text-[17px] leading-[1.55] opacity-70">{copy.loginLead}</p>
+    </div>
+  </section>
+
+  <form class="card bg-base-200 mx-auto mt-8 max-w-[440px] shadow" onsubmit="return false">
+    <div class="card-body">
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">{copy.loginEmail}</legend>
+        <input class="input w-full" type="email" name="email" autocomplete="email" placeholder={copy.loginEmailPlaceholder} />
+      </fieldset>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">{copy.loginPassword}</legend>
+        <input class="input w-full" type="password" name="password" autocomplete="current-password" placeholder={copy.loginPasswordPlaceholder} />
+      </fieldset>
+      <div class="card-actions flex-col">
+        <button class="btn btn-primary btn-block" type="submit">{copy.loginSubmit}</button>
+        <a class="btn btn-ghost btn-sm" href="#">{copy.loginForgot}</a>
+      </div>
+      <p class="text-[12.5px] opacity-60">{copy.loginNote}</p>
+    </div>
+  </form>
+</BaseLayout>
