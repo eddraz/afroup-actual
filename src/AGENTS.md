@@ -13,6 +13,7 @@
 
 - Keep shared navigation, responsive dock/sidebar, top bar, and page chrome in `layouts/BaseLayout.astro` rather than copying them into pages.
 - Keep the sidebar logo and bottom language/donation controls outside the scroll region; only the menu item list may own vertical overflow.
+- Keep the sidebar menu scrollbar thin and black-toned via the `sidebar-scroll` utility.
 - Keep shared route targets in `lib/paths.ts` and the daisyUI theme and Tailwind entry in `styles/global.css`.
 - Build UI with daisyUI components first, Tailwind utilities second, and custom CSS only when neither covers the requirement.
 - Preserve Spanish UI and visual parity with the corresponding source screen under `design/`.
