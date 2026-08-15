@@ -12,6 +12,7 @@
 ## Local Contracts
 
 - Keep shared navigation, responsive dock/sidebar, top bar, and page chrome in `layouts/BaseLayout.astro` rather than copying them into pages.
+- Keep site icons as official Tabler outline symbols in `layouts/BaseLayout.astro`.
 - Keep the sidebar logo and bottom language/donation controls outside the scroll region; only the menu item list may own vertical overflow.
 - Keep the sidebar menu scrollbar thin and black-toned via the `sidebar-scroll` utility.
 - Keep branded light and dark themes in `styles/global.css` as `afroup` and `afroup-dark`; switch them with a daisyUI `theme-controller` in `layouts/BaseLayout.astro`.
@@ -25,6 +26,8 @@
 - Keep the Aesthetics category mockup at `/estetica` and `/en/estetica`, wired through `paths.estetica`.
 - Keep the News category mockup at `/actualidad` and `/en/actualidad`, wired through `paths.actualidad`.
 - Keep the article mockup at `/articulo` and `/en/articulo`, wired through `paths.article`.
+- Keep the donation mockup at `/donacion` and `/en/donacion`, wired through `paths.donate`.
+- Keep the support mockup at `/apoyanos` and `/en/apoyanos`, wired through `paths.support`.
 - Use official Astro i18n only: Spanish default at unprefixed routes, English under `/en`, dictionaries in `lib/i18n.ts`.
 - Build UI with daisyUI first. If daisyUI cannot do it well, use daisyUI plus Tailwind. Use custom CSS only if that combination still cannot do it well.
 - Preserve Spanish UI and visual parity with the corresponding source screen under `design/`.
