@@ -10,7 +10,7 @@ const copy = t(locale);
 const homeHref = localizedPath(locale, routeIds.home);
 const articleHref = localizedPath(locale, routeIds.article);
 const resourceHref = localizedPath(locale, routeIds.resource);
-const productHref = routeIds.product;
+const productHref = localizedPath(locale, routeIds.product);
 const items = [
   {
     kind: "article",

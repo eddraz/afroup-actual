@@ -41,6 +41,7 @@
 - Keep the entrepreneur detail mockup at `/emprendimiento` and `/en/emprendimiento`, wired through `paths.entrepreneur`.
 - Keep the Saved mockup at `/guardados` and `/en/guardados`, wired through `paths.saved`, listing saved articles, resources, and products.
 - Keep the Store mockup at `/tienda` and `/en/tienda`, wired through `paths.store`.
+- Keep the product detail mockup at `/producto` and `/en/producto`, wired through `paths.product`.
 - Use official Astro i18n only: Spanish default at unprefixed routes, English under `/en`, dictionaries in `lib/i18n.ts`.
 - Build UI with daisyUI first. If daisyUI cannot do it well, use daisyUI plus Tailwind. Use custom CSS only if that combination still cannot do it well.
 - Preserve Spanish UI and visual parity with the corresponding source screen under `design/`.

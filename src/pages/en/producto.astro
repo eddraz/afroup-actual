@@ -1,0 +1,161 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getLocaleFromUrl, localizedPath, t } from "../../lib/i18n";
+import { routeIds } from "../../lib/paths";
+
+export const prerender = true;
+
+const locale = getLocaleFromUrl(Astro.url);
+const copy = t(locale);
+const homeHref = localizedPath(locale, routeIds.home);
+const storeHref = localizedPath(locale, routeIds.store);
+const productHref = localizedPath(locale, routeIds.product);
+const cartHref = routeIds.cart;
+const thumbs = ["bg-[url('/assets/pattern.png')] bg-cover bg-center", "bg-accent/30", "bg-secondary/30", "bg-primary/20"] as const;
+const benefits = [copy.productBenefitDownload, copy.productBenefitAccess, copy.productBenefitFunds] as const;
+const related = [
+  { figure: "bg-primary/20", label: "portada", tag: "eBook", tagClass: "text-primary", swatch: "bg-primary", title: "Afrofuturismo latinoamericano", price: "US$ 9" },
+  { figure: "bg-secondary/30", label: "lámina", tag: "Lámina", tagClass: "text-secondary", swatch: "bg-secondary", title: "Lámina · Reina Nzinga", price: "US$ 18" },
+  { figure: "bg-accent/30", label: "camiseta", tag: "Merch", tagClass: "text-accent", swatch: "bg-accent", title: "Camiseta “Conocimiento = poder”", price: "US$ 22" },
+] as const;
+---
+
+<BaseLayout title={copy.titleProduct} active="tienda">
+  <div class="breadcrumbs text-sm">
+    <ul>
+      <li><a href={homeHref}>{copy.navHome}</a></li>
+      <li><a href={storeHref}>{copy.navStore}</a></li>
+      <li>Raíces</li>
+    </ul>
+  </div>
+
+  <div class="mt-6 grid grid-cols-1 items-start gap-9 lg:grid-cols-2">
+    <div>
+      <figure class="relative overflow-hidden rounded-[20px] shadow">
+        <div class="aspect-[4/3] bg-[url('/assets/pattern.png')] bg-cover bg-center"></div>
+        <span class="badge badge-sm absolute bottom-3 left-3">portada del eBook</span>
+      </figure>
+      <div class="mt-3 grid grid-cols-4 gap-2.5">
+        {thumbs.map((thumb) => <div class:list={["aspect-square overflow-hidden rounded-box", thumb]}></div>)}
+      </div>
+    </div>
+
+    <div>
+      <span class="inline-flex items-center gap-2 text-[11.5px] font-extrabold tracking-[0.1em] text-secondary uppercase">
+        <span class="size-2.5 rounded-[3px] bg-secondary"></span>
+        eBook · PDF + EPUB
+      </span>
+      <h1 class="font-display mt-2.5 mb-3 text-[32px] font-bold lg:text-[34px]">Raíces: historia afro de Abya Yala</h1>
+      <div class="mb-3 flex flex-wrap items-center gap-2.5">
+        <div class="rating rating-sm">
+          <div class="mask mask-star-2 bg-secondary" aria-label="1 star"></div>
+          <div class="mask mask-star-2 bg-secondary" aria-label="2 star"></div>
+          <div class="mask mask-star-2 bg-secondary" aria-label="3 star"></div>
+          <div class="mask mask-star-2 bg-secondary" aria-label="4 star"></div>
+          <div class="mask mask-star-2 bg-secondary" aria-label="5 star" aria-current="true"></div>
+        </div>
+        <span class="text-sm font-bold opacity-60">{copy.productReviews}</span>
+      </div>
+      <p class="font-display text-[30px] font-extrabold">US$ 12 <span class="text-base font-semibold opacity-50 line-through">US$ 18</span></p>
+      <p class="mt-3.5 mb-[18px] text-[15.5px] leading-[1.65] opacity-80">
+        Quinientos años de historia contados desde la diáspora: de los reinos africanos al cimarronaje y al presente afrolatino. 214 páginas, con mapas, líneas de tiempo y guía de lectura.
+      </p>
+      <div class="card bg-base-200 mb-[18px] shadow">
+        <div class="card-body py-4">
+          <ul class="list">
+            {
+              benefits.map((item) => (
+                <li class="list-row">
+                  <span class="badge badge-soft badge-accent">✓</span>
+                  <span>{item}</span>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+      </div>
+      <div class="flex flex-wrap items-center gap-3">
+        <div class="join">
+          <button class="btn join-item" type="button" data-qty="-">−</button>
+          <span class="btn join-item no-animation pointer-events-none" data-qty-value>1</span>
+          <button class="btn join-item" type="button" data-qty="+">+</button>
+        </div>
+        <a class="btn btn-primary" href={cartHref}>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <use href="#ic-bag"></use>
+          </svg>
+          {copy.productAddCart}
+        </a>
+        <a class="btn btn-secondary" href={cartHref}>{copy.productBuyNow}</a>
+      </div>
+      <p class="mt-3.5 text-[12.5px] opacity-60">🔒 {copy.productSecure}</p>
+    </div>
+  </div>
+
+  <div role="tablist" class="tabs tabs-border mt-11">
+    <button class="tab tab-active" role="tab" type="button">{copy.productTabDesc}</button>
+    <button class="tab" role="tab" type="button">{copy.productTabDetails}</button>
+    <button class="tab" role="tab" type="button">{copy.productTabReviews}</button>
+  </div>
+  <div class="max-w-[720px] py-[22px] text-[15.5px] leading-[1.7] opacity-80">
+    <p>“Raíces” recorre la historia que los manuales dejaron fuera: los imperios de Mali y el Gran Zimbabue, la travesía forzada, los palenques y quilombos como proyectos de libertad, y las luchas y aportes afro que construyeron América Latina.</p>
+    <p class="mt-4">Escrito en lenguaje claro y acompañado de fuentes, es ideal para autodidactas, docentes y círculos de lectura.</p>
+  </div>
+
+  <div class="mt-6 mb-5 flex items-end justify-between gap-4">
+    <h2 class="font-display text-[26px] font-bold">{copy.productRelated}</h2>
+    <a class="btn btn-ghost btn-sm" href={storeHref}>
+      {copy.productSeeStore}
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <use href="#ic-arrow"></use>
+      </svg>
+    </a>
+  </div>
+  <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    {
+      related.map((item) => (
+        <article class="card bg-base-200 shadow">
+          <a href={productHref}>
+            <figure class:list={["relative aspect-[4/3]", item.figure]}>
+              {item.label ? <span class="badge badge-sm absolute bottom-3 left-3">{item.label}</span> : null}
+            </figure>
+          </a>
+          <div class="card-body">
+            <span class:list={["inline-flex items-center gap-2 text-[11.5px] font-extrabold tracking-[0.1em] uppercase", item.tagClass]}>
+              <span class:list={["size-2.5 rounded-[3px]", item.swatch]}></span>
+              {item.tag}
+            </span>
+            <h3 class="card-title font-display">
+              <a href={productHref}>{item.title}</a>
+            </h3>
+            <div class="card-actions mt-auto items-center justify-between">
+              <span class="font-display text-xl font-extrabold">{item.price}</span>
+              <a class="btn btn-primary btn-sm" href={cartHref}>{copy.storeAdd}</a>
+            </div>
+          </div>
+        </article>
+      ))
+    }
+  </div>
+
+  <div class="indicator fixed right-5 bottom-24 z-40 lg:bottom-6">
+    <span class="indicator-item badge badge-accent badge-sm">2</span>
+    <a class="btn btn-neutral" href={cartHref}>
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <use href="#ic-bag"></use>
+      </svg>
+      {copy.storeCart}
+    </a>
+  </div>
+</BaseLayout>
+
+<script>
+  const value = document.querySelector("[data-qty-value]");
+  document.querySelectorAll("[data-qty]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const current = Number(value?.textContent || "1");
+      const next = button.getAttribute("data-qty") === "+" ? current + 1 : Math.max(1, current - 1);
+      if (value) value.textContent = String(next);
+    });
+  });
+</script>
