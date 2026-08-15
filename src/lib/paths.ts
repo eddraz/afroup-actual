@@ -25,6 +25,7 @@ export const routeIds = {
   people: "referentes",
   person: "#",
   collaborate: "colabora",
+  saved: "guardados",
   sitemap: "#",
 } as const;
 
@@ -55,6 +56,7 @@ export const paths = {
   people: "/referentes",
   person: "#",
   collaborate: "/colabora",
+  saved: "/guardados",
   sitemap: "#",
 } as const;
 

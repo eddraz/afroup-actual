@@ -32,6 +32,7 @@ const paths = {
   entrepreneurs: routeIds.entrepreneurs,
   people: localizedPath(locale, routeIds.people),
   collaborate: localizedPath(locale, routeIds.collaborate),
+  saved: localizedPath(locale, routeIds.saved),
 };
 const { title = copy.titleHome, active = "inicio" } = Astro.props;
 const esHref = switchLocalePath(Astro.url, "es");
@@ -210,7 +211,7 @@ function tabClass(key: NavKey) {
             <svg class="size-5"><use href="#ic-bag"></use></svg>
             <span class="dock-label">{copy.navStore}</span>
           </a>
-          <a class={tabClass("guardados")} href="#">
+          <a class={tabClass("guardados")} href={paths.saved}>
             <svg class="size-5"><use href="#ic-bookmark"></use></svg>
             <span class="dock-label">{copy.navSaved}</span>
           </a>
@@ -300,7 +301,7 @@ function tabClass(key: NavKey) {
               </a>
             </li>
             <li>
-              <a class={navClass("guardados")} href="#">
+              <a class={navClass("guardados")} href={paths.saved}>
                 <svg class="size-5"><use href="#ic-bookmark"></use></svg>
                 {copy.navSaved}
               </a>

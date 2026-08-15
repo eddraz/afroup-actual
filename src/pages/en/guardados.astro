@@ -1,0 +1,170 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getLocaleFromUrl, localizedPath, t } from "../../lib/i18n";
+import { routeIds } from "../../lib/paths";
+
+export const prerender = true;
+
+const locale = getLocaleFromUrl(Astro.url);
+const copy = t(locale);
+const homeHref = localizedPath(locale, routeIds.home);
+const articleHref = localizedPath(locale, routeIds.article);
+const resourcesHref = localizedPath(locale, routeIds.resources);
+const productHref = routeIds.product;
+const items = [
+  {
+    kind: "article",
+    href: articleHref,
+    figure: "bg-secondary/30",
+    label: "grabado",
+    tag: "Artículo · Historia",
+    tagClass: "text-secondary",
+    swatch: "bg-secondary",
+    title: "Quilombos y palenques: territorios de libertad",
+    dek: "Cómo las comunidades cimarronas construyeron autonomía, lengua y memoria en toda Abya Yala.",
+    meta: "Jenniffer M. · 8 min",
+    action: "open",
+  },
+  {
+    kind: "resource",
+    href: resourcesHref,
+    figure: "bg-primary/20",
+    label: "PDF",
+    tag: "Recurso · Guía",
+    tagClass: "text-primary",
+    swatch: "bg-primary",
+    title: "Guía docente: cimarronaje en el aula",
+    dek: "Actividades, fuentes primarias y rúbricas para secundaria.",
+    meta: "PDF · 24 págs · ES/EN",
+    action: "download",
+  },
+  {
+    kind: "product",
+    href: productHref,
+    figure: "bg-[url('/assets/pattern.png')] bg-cover bg-center",
+    label: "ebook",
+    tag: "Producto · Tienda",
+    tagClass: "text-accent",
+    swatch: "bg-accent",
+    title: "Raíces: historia afro de Abya Yala",
+    dek: "Capítulo 4 dedicado a los palenques del Gran Caribe. PDF + EPUB.",
+    meta: "US$ 12",
+    action: "open",
+  },
+  {
+    kind: "article",
+    href: articleHref,
+    figure: "bg-accent/30",
+    label: "retrato",
+    tag: "Artículo · Diáspora",
+    tagClass: "text-accent",
+    swatch: "bg-accent",
+    title: "Trenzas como mapas de resistencia",
+    dek: "La historia oculta tejida en los peinados ancestrales.",
+    meta: "Equipo AfroUp · 7 min",
+    action: "open",
+  },
+  {
+    kind: "resource",
+    href: resourcesHref,
+    figure: "bg-accent/30",
+    label: "web",
+    tag: "Recurso · Glosario",
+    tagClass: "text-secondary",
+    swatch: "bg-secondary",
+    title: "Glosario antirracista",
+    dek: "Términos clave para hablar de raza, racismo e identidad con precisión.",
+    meta: "Web · actualizado 2026",
+    action: "open",
+  },
+] as const;
+---
+
+<BaseLayout title={copy.titleSaved} active="guardados">
+  <div class="breadcrumbs text-sm">
+    <ul>
+      <li><a href={homeHref}>{copy.navHome}</a></li>
+      <li>{copy.navSaved}</li>
+    </ul>
+  </div>
+
+  <section class="hero relative mt-6 overflow-hidden rounded-[24px] border border-base-300 bg-base-200 shadow-lg">
+    <div class="hero-content relative w-full flex-col items-start gap-3 px-6 py-8 lg:px-11 lg:py-11">
+      <p class="text-primary text-xs font-extrabold tracking-[0.18em] uppercase">{copy.savedEyebrow}</p>
+      <h1 class="font-display max-w-[18ch] text-[31px] font-bold lg:text-[44px]">{copy.savedTitle}</h1>
+      <p class="max-w-[56ch] text-[17px] leading-[1.55] opacity-70">{copy.savedLead}</p>
+    </div>
+  </section>
+
+  <div role="tablist" class="tabs tabs-box mt-6 w-fit">
+    <button class="tab tab-active" role="tab" type="button" data-saved-tab="all">{copy.savedTabAll}</button>
+    <button class="tab" role="tab" type="button" data-saved-tab="article">{copy.savedTabArticles}</button>
+    <button class="tab" role="tab" type="button" data-saved-tab="resource">{copy.savedTabResources}</button>
+    <button class="tab" role="tab" type="button" data-saved-tab="product">{copy.savedTabProducts}</button>
+  </div>
+
+  <ul class="list mt-4" data-saved-list>
+    {
+      items.map((item) => (
+        <li class="list-row" data-saved-kind={item.kind}>
+          <div class:list={["relative size-20 overflow-hidden rounded-box", item.figure]}>
+            {item.label ? <span class="badge badge-sm absolute bottom-1.5 left-1.5">{item.label}</span> : null}
+          </div>
+          <a class="list-col-grow" href={item.href}>
+            <span class:list={["inline-flex items-center gap-2 text-[11.5px] font-extrabold tracking-[0.1em] uppercase", item.tagClass]}>
+              <span class:list={["size-2.5 rounded-[3px]", item.swatch]}></span>
+              {item.tag}
+            </span>
+            <h3 class="font-display text-xl font-bold">{item.title}</h3>
+            <p class="opacity-70">{item.dek}</p>
+            <p class="text-sm opacity-50">{item.meta}</p>
+          </a>
+          <a class:list={["btn btn-sm", item.action === "download" ? "btn-accent" : "btn-ghost"]} href={item.href}>
+            {
+              item.action === "download" ? (
+                <>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <use href="#ic-download"></use>
+                  </svg>
+                  {copy.savedDownload}
+                </>
+              ) : (
+                <>
+                  {copy.savedOpen}
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <use href="#ic-arrow"></use>
+                  </svg>
+                </>
+              )
+            }
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+  <p class="mt-8 hidden text-center opacity-60" data-saved-empty>{copy.savedEmpty}</p>
+</BaseLayout>
+
+<script>
+  const tabs = document.querySelectorAll("[data-saved-tab]");
+  const rows = document.querySelectorAll("[data-saved-kind]");
+  const empty = document.querySelector("[data-saved-empty]");
+
+  function show(kind: string) {
+    let visible = 0;
+    rows.forEach((row) => {
+      const match = kind === "all" || row.getAttribute("data-saved-kind") === kind;
+      row.classList.toggle("hidden", !match);
+      if (match) visible += 1;
+    });
+    empty?.classList.toggle("hidden", visible > 0);
+  }
+
+  tabs.forEach((tab) => {
+    tab.addEventListener("click", () => {
+      tabs.forEach((item) => item.classList.remove("tab-active"));
+      tab.classList.add("tab-active");
+      show(tab.getAttribute("data-saved-tab") || "all");
+    });
+  });
+</script>
