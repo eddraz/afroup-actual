@@ -76,3 +76,12 @@ export type NavKey =
   | "comunidad"
   | "guardados"
   | "donar";
+
+export const socials = [
+  { href: "https://www.instagram.com/afroup/", label: "Instagram", icon: "ic-ig" },
+  { href: "https://www.tiktok.com/@afroup", label: "TikTok", icon: "ic-tiktok" },
+  { href: "https://www.youtube.com/afroup", label: "YouTube", icon: "ic-youtube" },
+  { href: "https://www.facebook.com/AfroUp/", label: "Facebook", icon: "ic-facebook" },
+  { href: "https://x.com/afroup_", label: "X", icon: "ic-x" },
+  { href: "https://www.threads.com/@afroup", label: "Threads", icon: "ic-threads" },
+] as const;

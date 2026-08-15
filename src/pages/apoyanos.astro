@@ -1,7 +1,7 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { getLocaleFromUrl, localizedPath, t } from "../lib/i18n";
-import { routeIds } from "../lib/paths";
+import { routeIds, socials } from "../lib/paths";
 
 export const prerender = true;
 
@@ -11,12 +11,6 @@ const homeHref = localizedPath(locale, routeIds.home);
 const donateHref = localizedPath(locale, routeIds.donate);
 const storeHref = localizedPath(locale, routeIds.store);
 const collaborateHref = localizedPath(locale, routeIds.collaborate);
-const socials = [
-  { href: "#", label: "Instagram", icon: "ic-ig" },
-  { href: "#", label: "TikTok", icon: "ic-tiktok" },
-  { href: "#", label: "YouTube", icon: "ic-youtube" },
-  { href: "#", label: "Facebook", icon: "ic-facebook" },
-] as const;
 const ways = [
   {
     icon: "ic-heart",
@@ -94,7 +88,7 @@ const ways = [
               {
                 way.icon === "ic-share" ? (
                   socials.map((social) => (
-                    <a class="btn btn-ghost btn-sm" href={social.href} aria-label={social.label}>
+                    <a class="btn btn-ghost btn-sm" href={social.href} target="_blank" rel="noreferrer" aria-label={social.label}>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                         <use href={`#${social.icon}`}></use>
                       </svg>
