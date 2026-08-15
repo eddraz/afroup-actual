@@ -5,184 +5,220 @@ export const prerender = true;
 ---
 
 <BaseLayout title="AfroUp — Inicio" active="inicio">
-  <Fragment slot="head">
-    <style is:global>
-      .feed-layout{ display:grid; grid-template-columns:1fr 326px; gap:32px; align-items:start; }
-      .feed{ display:grid; grid-template-columns:1fr 1fr; gap:24px; }
-      .feed .span2{ grid-column:1 / -1; }
-      .feat{ display:grid; grid-template-columns:1.08fr 1fr; }
-      .feat .ph{ aspect-ratio:auto; height:100%; min-height:260px; }
-      .feat .body{ padding:28px 30px; gap:12px; justify-content:center; }
-      .feat h3{ font-size:30px; }
-      .hero{ position:relative; border-radius:24px; overflow:hidden; background:var(--azul); color:#fff; display:grid; grid-template-columns:1.15fr .85fr; min-height:300px; box-shadow:var(--shadow-lg); }
-      .hero .copy{ padding:46px 44px; display:flex; flex-direction:column; gap:16px; justify-content:center; z-index:1; }
-      .hero .ey{ font-weight:800; font-size:12.5px; letter-spacing:.18em; text-transform:uppercase; color:var(--cian); }
-      .hero h1{ font-size:50px; color:#fff; max-width:14ch; }
-      .hero p{ margin:0; color:#d7ecf4; font-size:17px; max-width:42ch; }
-      .hero .art{ position:relative; }
-      .hero .art .ph{ position:absolute; inset:0; }
-      .quote{ grid-column:1 / -1; background:var(--ink); color:var(--cream); border-radius:var(--r); padding:42px 46px; position:relative; overflow:hidden; }
-      .quote .pat{ position:absolute; right:0; top:0; bottom:0; width:160px; background:url('/assets/pattern.png') center/cover; opacity:.9; }
-      .quote q{ font-family:var(--disp); font-weight:700; font-size:34px; line-height:1.12; display:block; max-width:20ch; }
-      .quote q::before, .quote q::after{ content:''; }
-      .rail{ display:flex; flex-direction:column; gap:22px; position:sticky; top:90px; }
-      .panel{ background:var(--paper); border-radius:var(--r); box-shadow:var(--shadow); padding:22px 22px; }
-      .panel h4{ font-size:19px; margin-bottom:14px; }
-      .read{ display:flex; gap:13px; padding:11px 0; border-top:1px solid var(--line); }
-      .read:first-of-type{ border-top:0; }
-      .read .n{ font-family:var(--disp); font-weight:800; font-size:24px; color:var(--cian); line-height:1; width:26px; flex:none; }
-      .read .t{ font-weight:700; font-size:15px; line-height:1.25; }
-      .read .t small{ display:block; color:var(--muted); font-weight:600; font-size:12.5px; margin-top:4px; }
-      .news{ background:var(--cian); color:#063b42; }
-      .news h4{ color:#063b42; }
-      .news input{ width:100%; border:0; border-radius:999px; padding:11px 16px; font-family:var(--text); font-size:14px; margin:12px 0; background:rgba(255,255,255,.7); }
-      .igrid{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:12px; }
-      .igrid .ph{ aspect-ratio:1; border-radius:9px; }
-      .sec-head{ display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin:34px 0 18px; }
-      .play{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
-      .play span{ width:58px; height:58px; border-radius:50%; background:rgba(251,245,233,.92); display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow); }
-      .play svg{ width:24px; height:24px; margin-left:3px; color:var(--ink); }
-      @media (min-width:981px) and (max-width:1240px){
-        .wrap{ padding:0 30px; }
-        .feed-layout{ grid-template-columns:1fr; }
-        .feed{ grid-template-columns:1fr 1fr; gap:24px; }
-        .rail{ position:static; top:auto; display:grid; grid-template-columns:repeat(3,1fr); gap:22px; margin-top:30px; align-items:start; }
-      }
-      @media (max-width:980px){
-        .feed-layout{ grid-template-columns:1fr; } .feed{ grid-template-columns:repeat(2,1fr); gap:18px; }
-        .feat{ grid-template-columns:1fr; } .feat .ph{ min-height:200px; aspect-ratio:16/10; }
-        .hero{ grid-template-columns:1fr; } .hero h1{ font-size:34px; } .hero .copy{ padding:30px 24px; }
-        .hero .art{ min-height:180px; } .quote q{ font-size:25px; }
-        .rail{ position:static; top:auto; display:grid; grid-template-columns:repeat(2,1fr); gap:18px; margin-top:26px; align-items:start; }
-      }
-      @media (max-width:560px){
-        .feed{ gap:13px; }
-        .feed .card h3{ font-size:15.5px; }
-        .feed .card .dek{ display:none; }
-        .feed .card .body{ padding:11px 12px 14px; gap:6px; }
-        .feed .card .meta{ font-size:11.5px; padding-top:2px; }
-        .feed .tag{ font-size:10px; }
-        .feat .body{ padding:18px 18px; } .feat h3{ font-size:21px; } .feat .body .dek{ display:block; }
-        .rail{ grid-template-columns:1fr; }
-      }
-    </style>
-  </Fragment>
-
-  <div class="wrap" style="padding-top:30px;">
-    <section class="hero">
-      <div class="copy">
-        <span class="ey">Tema del mes · Junio</span>
-        <h1>El legado de Martin Luther King</h1>
-        <p>Un especial sobre la lucha por los derechos civiles y su eco en la diáspora afrolatina, hoy.</p>
+  <section class="hero min-h-[300px] overflow-hidden rounded-[24px] bg-primary text-primary-content shadow-lg">
+    <div class="grid w-full grid-cols-1 lg:grid-cols-[1.15fr_0.85fr]">
+      <div class="flex flex-col justify-center gap-4 p-8 lg:px-11 lg:py-[46px]">
+        <p class="text-[12.5px] font-extrabold tracking-[0.18em] text-accent uppercase">Tema del mes · Junio</p>
+        <h1 class="font-display max-w-[14ch] text-[34px] leading-[1.04] font-bold text-white lg:text-[50px]">El legado de Martin Luther King</h1>
+        <p class="max-w-[42ch] text-[17px] leading-[1.55] text-[#d7ecf4]">
+          Un especial sobre la lucha por los derechos civiles y su eco en la diáspora afrolatina, hoy.
+        </p>
         <div>
-          <a class="btn btn-cian" href="#">Leer el especial <svg class="ic" style="width:18px;height:18px"><use href="#ic-arrow"></use></svg></a>
+          <a class="btn btn-accent h-[42px] min-h-[42px]" href="#">
+            Leer el especial
+            <svg class="size-4"><use href="#ic-arrow"></use></svg>
+          </a>
         </div>
       </div>
-      <div class="art"><div class="ph pat"><span class="lbl" style="background:rgba(10,121,166,.45);color:#fff">foto · especial MLK</span></div></div>
-    </section>
-
-    <div class="sec-head">
-      <h2 style="font-size:26px;">Lo último</h2>
+      <div class="relative min-h-[180px] bg-[url('/assets/pattern.png')] bg-cover bg-center lg:min-h-full">
+        <span class="badge badge-sm absolute bottom-3 left-3 border-0 bg-primary/45 text-white">foto · especial MLK</span>
+      </div>
     </div>
-    <div class="chips" style="margin-bottom:24px;">
-      <button class="chip on" type="button">Todos</button>
-      <button class="chip" type="button">África</button>
-      <button class="chip" type="button">Diáspora</button>
-      <button class="chip" type="button">Antirracismo</button>
-      <button class="chip" type="button">Historia</button>
-      <button class="chip" type="button">Estética</button>
-      <button class="chip" type="button">Actualidad</button>
+  </section>
+
+  <div class="mt-[34px] mb-[18px] flex items-end justify-between gap-4">
+    <h2 class="font-display text-[26px] leading-[1.04] font-bold tracking-[-0.005em]">Lo último</h2>
+  </div>
+  <div class="mb-6 flex flex-wrap gap-2" data-chips>
+    <button class="btn btn-neutral btn-sm h-8 min-h-8 px-[17px] text-[14px]" data-chip type="button">Todos</button>
+    <button class="btn btn-outline btn-neutral btn-sm h-8 min-h-8 px-[17px] text-[14px]" data-chip type="button">África</button>
+    <button class="btn btn-outline btn-neutral btn-sm h-8 min-h-8 px-[17px] text-[14px]" data-chip type="button">Diáspora</button>
+    <button class="btn btn-outline btn-neutral btn-sm h-8 min-h-8 px-[17px] text-[14px]" data-chip type="button">Antirracismo</button>
+    <button class="btn btn-outline btn-neutral btn-sm h-8 min-h-8 px-[17px] text-[14px]" data-chip type="button">Historia</button>
+    <button class="btn btn-outline btn-neutral btn-sm h-8 min-h-8 px-[17px] text-[14px]" data-chip type="button">Estética</button>
+    <button class="btn btn-outline btn-neutral btn-sm h-8 min-h-8 px-[17px] text-[14px]" data-chip type="button">Actualidad</button>
+  </div>
+
+  <div class="grid grid-cols-1 gap-8 xl:grid-cols-[1fr_326px]">
+    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+      <article class="card lg:card-side col-span-full bg-base-200 shadow lg:min-h-[379px]">
+        <figure class="relative min-h-[260px] bg-[#FCEBBE] lg:min-h-[379px] lg:w-[52%] lg:shrink-0">
+          <span class="badge badge-sm absolute bottom-3 left-3">foto · mapa histórico</span>
+        </figure>
+        <div class="card-body justify-center lg:px-[30px] lg:py-7">
+          <span class="inline-flex items-center gap-2 text-[11.5px] font-extrabold tracking-[0.1em] text-[#b97e00] uppercase">
+            <span class="size-2.5 rounded-[3px] bg-secondary"></span>
+            Historia
+          </span>
+          <h3 class="card-title font-display block text-[21px] leading-[1.04] font-bold tracking-[-0.005em] lg:text-[30px]">
+            <a href="#">Quilombos y palenques: territorios de libertad</a>
+          </h3>
+          <p>Cómo las comunidades cimarronas construyeron autonomía y memoria en toda Abya Yala — y por qué siguen siendo un mapa para el presente.</p>
+          <div class="mt-2 flex items-center gap-2 text-sm opacity-70">
+            <span class="size-[22px] rounded-full border border-secondary bg-[#FCEBBE]"></span>
+            Jenniffer M. · 8 min de lectura
+          </div>
+        </div>
+      </article>
+
+      <article class="card bg-base-200 shadow">
+        <figure class="relative aspect-[16/10] bg-[#D6F4F8]">
+          <span class="badge badge-sm absolute bottom-3 left-3">foto · tambores</span>
+        </figure>
+        <div class="card-body">
+          <span class="inline-flex items-center gap-2 text-[11.5px] font-extrabold tracking-[0.1em] text-[#0d97a6] uppercase">
+            <span class="size-2.5 rounded-[3px] bg-accent"></span>
+            Estética
+          </span>
+          <h3 class="card-title font-display block text-xl leading-[1.04] tracking-[-0.005em]">Las raíces del bullerengue en el Pacífico</h3>
+          <p>El tambor como archivo vivo de la resistencia femenina afrocolombiana.</p>
+          <div class="mt-auto flex items-center gap-2 text-sm opacity-70">
+            <span class="size-[22px] rounded-full border border-secondary bg-[#FCEBBE]"></span>
+            Equipo AfroUp · 6 min
+          </div>
+        </div>
+      </article>
+
+      <article class="card bg-base-200 shadow">
+        <figure class="relative aspect-[16/10] bg-[#CFE6EF]">
+          <span class="badge badge-sm absolute bottom-3 left-3">ilustración</span>
+        </figure>
+        <div class="card-body">
+          <span class="inline-flex items-center gap-2 text-[11.5px] font-extrabold tracking-[0.1em] text-primary uppercase">
+            <span class="size-2.5 rounded-[3px] bg-primary"></span>
+            Actualidad
+          </span>
+          <h3 class="card-title font-display block text-xl leading-[1.04] tracking-[-0.005em]">Afrofuturismo: imaginar el mañana</h3>
+          <p>Arte, ciencia ficción y diáspora: futuros donde lo negro es protagonista.</p>
+          <div class="mt-auto flex items-center gap-2 text-sm opacity-70">
+            <span class="size-[22px] rounded-full border border-secondary bg-[#FCEBBE]"></span>
+            Jenniffer M. · 5 min
+          </div>
+        </div>
+      </article>
+
+      <article class="card bg-base-200 shadow">
+        <figure class="relative aspect-[16/10] bg-[#CFE6EF]">
+          <span class="badge badge-sm absolute bottom-3 left-3">video · 6:20</span>
+          <span class="absolute inset-0 flex items-center justify-center">
+            <span class="btn btn-circle bg-base-100/90">
+              <svg class="size-5"><use href="#ic-play"></use></svg>
+            </span>
+          </span>
+        </figure>
+        <div class="card-body">
+          <span class="inline-flex items-center gap-2 text-[11.5px] font-extrabold tracking-[0.1em] text-primary uppercase">
+            <span class="size-2.5 rounded-[3px] bg-primary"></span>
+            Video · Actualidad
+          </span>
+          <h3 class="card-title font-display block text-xl leading-[1.04] tracking-[-0.005em]">Voces de la diáspora</h3>
+          <p>Cinco generaciones cuentan qué significa ser afrolatino hoy.</p>
+          <div class="mt-auto flex items-center gap-2 text-sm opacity-70">
+            <span class="size-[22px] rounded-full border border-secondary bg-[#FCEBBE]"></span>
+            AfroUp TV · 6 min
+          </div>
+        </div>
+      </article>
+
+      <article class="card bg-base-200 shadow">
+        <figure class="relative aspect-[16/10] bg-[#D6F4F8]">
+          <span class="badge badge-sm absolute bottom-3 left-3">retrato</span>
+        </figure>
+        <div class="card-body">
+          <span class="inline-flex items-center gap-2 text-[11.5px] font-extrabold tracking-[0.1em] text-[#0d97a6] uppercase">
+            <span class="size-2.5 rounded-[3px] bg-accent"></span>
+            Diáspora
+          </span>
+          <h3 class="card-title font-display block text-xl leading-[1.04] tracking-[-0.005em]">Trenzas como mapas de resistencia</h3>
+          <p>La historia oculta tejida en los peinados ancestrales.</p>
+          <div class="mt-auto flex items-center gap-2 text-sm opacity-70">
+            <span class="size-[22px] rounded-full border border-secondary bg-[#FCEBBE]"></span>
+            Equipo AfroUp · 7 min
+          </div>
+        </div>
+      </article>
+
+      <article class="card relative col-span-full overflow-hidden bg-neutral text-neutral-content">
+        <div class="absolute inset-y-0 right-0 w-40 bg-[url('/assets/pattern.png')] bg-cover"></div>
+        <div class="card-body relative px-8 py-8 lg:px-[46px] lg:py-[42px]">
+          <p class="font-display max-w-[20ch] text-[25px] leading-[1.12] font-bold lg:text-[34px]">La memoria también es un acto de resistencia.</p>
+          <p class="mt-3.5 font-bold text-[#b9b3a4]">— Editorial AfroUp</p>
+        </div>
+      </article>
     </div>
 
-    <div class="feed-layout">
-      <div class="feed">
-        <article class="card feat span2">
-          <div class="ph t-oro"><span class="lbl">foto · mapa histórico</span></div>
-          <div class="body">
-            <span class="tag c-historia"><span class="sq"></span> Historia</span>
-            <h3><a href="#">Quilombos y palenques: territorios de libertad</a></h3>
-            <p class="dek">Cómo las comunidades cimarronas construyeron autonomía y memoria en toda Abya Yala — y por qué siguen siendo un mapa para el presente.</p>
-            <div class="meta"><span class="av"></span> Jenniffer M. · 8 min de lectura</div>
-          </div>
-        </article>
-
-        <article class="card">
-          <div class="ph t-cian"><span class="lbl">foto · tambores</span></div>
-          <div class="body">
-            <span class="tag c-estetica"><span class="sq"></span> Estética</span>
-            <h3>Las raíces del bullerengue en el Pacífico</h3>
-            <p class="dek">El tambor como archivo vivo de la resistencia femenina afrocolombiana.</p>
-            <div class="meta"><span class="av"></span> Equipo AfroUp · 6 min</div>
-          </div>
-        </article>
-
-        <article class="card">
-          <div class="ph t-azul"><span class="lbl">ilustración</span></div>
-          <div class="body">
-            <span class="tag c-actualidad"><span class="sq"></span> Actualidad</span>
-            <h3>Afrofuturismo: imaginar el mañana</h3>
-            <p class="dek">Arte, ciencia ficción y diáspora: futuros donde lo negro es protagonista.</p>
-            <div class="meta"><span class="av"></span> Jenniffer M. · 5 min</div>
-          </div>
-        </article>
-
-        <article class="card">
-          <div class="ph t-azul" style="aspect-ratio:16/10;">
-            <span class="lbl">video · 6:20</span>
-            <div class="play"><span><svg><use href="#ic-play"></use></svg></span></div>
-          </div>
-          <div class="body">
-            <span class="tag c-actualidad"><span class="sq"></span> Video · Actualidad</span>
-            <h3>Voces de la diáspora</h3>
-            <p class="dek">Cinco generaciones cuentan qué significa ser afrolatino hoy.</p>
-            <div class="meta"><span class="av"></span> AfroUp TV · 6 min</div>
-          </div>
-        </article>
-
-        <article class="card">
-          <div class="ph t-cian"><span class="lbl">retrato</span></div>
-          <div class="body">
-            <span class="tag c-diaspora"><span class="sq"></span> Diáspora</span>
-            <h3>Trenzas como mapas de resistencia</h3>
-            <p class="dek">La historia oculta tejida en los peinados ancestrales.</p>
-            <div class="meta"><span class="av"></span> Equipo AfroUp · 7 min</div>
-          </div>
-        </article>
-
-        <div class="quote span2">
-          <div class="pat"></div>
-          <q>La memoria también es un acto de resistencia.</q>
-          <div style="margin-top:14px;color:#b9b3a4;font-weight:700;">— Editorial AfroUp</div>
+    <aside class="grid grid-cols-1 gap-[22px] sm:grid-cols-2 lg:grid-cols-3 xl:sticky xl:top-[90px] xl:flex xl:flex-col">
+      <div class="card bg-base-200 shadow">
+        <div class="card-body">
+          <h4 class="card-title font-display leading-[1.04] tracking-[-0.005em]">Lo más leído</h4>
+          <ul class="list">
+            <li class="list-row">
+              <span class="font-display text-2xl font-extrabold text-accent">1</span>
+              <div>
+                <div class="font-bold">Quilombos y palenques: territorios de libertad</div>
+                <div class="text-xs opacity-60">Historia</div>
+              </div>
+            </li>
+            <li class="list-row">
+              <span class="font-display text-2xl font-extrabold text-accent">2</span>
+              <div>
+                <div class="font-bold">Las raíces del bullerengue en el Pacífico</div>
+                <div class="text-xs opacity-60">Estética</div>
+              </div>
+            </li>
+            <li class="list-row">
+              <span class="font-display text-2xl font-extrabold text-accent">3</span>
+              <div>
+                <div class="font-bold">Afrofuturismo: imaginar el mañana</div>
+                <div class="text-xs opacity-60">Actualidad</div>
+              </div>
+            </li>
+            <li class="list-row">
+              <span class="font-display text-2xl font-extrabold text-accent">4</span>
+              <div>
+                <div class="font-bold">Lenguas criollas de la diáspora</div>
+                <div class="text-xs opacity-60">África</div>
+              </div>
+            </li>
+          </ul>
         </div>
       </div>
 
-      <aside class="rail">
-        <div class="panel">
-          <h4>Lo más leído</h4>
-          <div class="read"><span class="n">1</span><div class="t">Quilombos y palenques: territorios de libertad<small>Historia</small></div></div>
-          <div class="read"><span class="n">2</span><div class="t">Las raíces del bullerengue en el Pacífico<small>Estética</small></div></div>
-          <div class="read"><span class="n">3</span><div class="t">Afrofuturismo: imaginar el mañana<small>Actualidad</small></div></div>
-          <div class="read"><span class="n">4</span><div class="t">Lenguas criollas de la diáspora<small>África</small></div></div>
+      <div class="card bg-accent text-accent-content shadow">
+        <div class="card-body">
+          <h4 class="card-title font-display leading-[1.04] tracking-[-0.005em]">Sé parte de la comunidad</h4>
+          <p>Recibe lo mejor de AfroUp cada semana.</p>
+          <input id="newsletter-email" class="input bg-white/70" type="email" name="email" autocomplete="email" placeholder="tu@correo.com" />
+          <button class="btn btn-neutral btn-block btn-sm" type="button">Suscribirme</button>
         </div>
+      </div>
 
-        <div class="panel news">
-          <h4>Sé parte de la comunidad</h4>
-          <p style="margin:0;font-size:14.5px;">Recibe lo mejor de AfroUp cada semana.</p>
-          <input type="email" placeholder="tu@correo.com" />
-          <button class="btn btn-primary btn-block btn-sm" type="button">Suscribirme</button>
-        </div>
-
-        <div class="panel">
-          <div style="display:flex;align-items:center;gap:9px;margin-bottom:6px;">
-            <svg class="ic" style="width:20px;height:20px;color:var(--ink)"><use href="#ic-ig"></use></svg>
-            <h4 style="margin:0">@afroup</h4>
+      <div class="card bg-base-200 shadow">
+        <div class="card-body">
+          <div class="flex items-center gap-2">
+            <svg class="size-5"><use href="#ic-ig"></use></svg>
+            <h4 class="card-title m-0 leading-[1.04] tracking-[-0.005em]">@afroup</h4>
           </div>
-          <div class="igrid">
-            <div class="ph pat"></div><div class="ph t-cian"></div><div class="ph t-oro"></div>
-            <div class="ph t-azul"></div><div class="ph pat"></div><div class="ph t-cian"></div>
+          <div class="grid grid-cols-3 gap-1.5">
+            <div class="aspect-square rounded-lg bg-[url('/assets/pattern.png')] bg-cover bg-center"></div>
+            <div class="aspect-square rounded-lg bg-accent"></div>
+            <div class="aspect-square rounded-lg bg-secondary"></div>
+            <div class="aspect-square rounded-lg bg-primary"></div>
+            <div class="aspect-square rounded-lg bg-[url('/assets/pattern.png')] bg-cover bg-center"></div>
+            <div class="aspect-square rounded-lg bg-accent"></div>
           </div>
         </div>
-      </aside>
-    </div>
+      </div>
+    </aside>
   </div>
 </BaseLayout>
+
+<script>
+  const chips = document.querySelectorAll("[data-chip]");
+  chips.forEach((chip) => {
+    chip.addEventListener("click", () => {
+      chips.forEach((item) => item.classList.add("btn-outline"));
+      chip.classList.remove("btn-outline");
+    });
+  });
+</script>

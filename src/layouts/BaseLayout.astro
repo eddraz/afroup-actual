@@ -1,4 +1,5 @@
 ---
+import "../styles/global.css";
 import { paths, type NavKey } from "../lib/paths";
 
 interface Props {
@@ -9,19 +10,20 @@ interface Props {
 const { title = "AfroUp — Inicio", active = "inicio" } = Astro.props;
 
 function navClass(key: NavKey) {
-  return key === active ? "nav-i on" : "nav-i";
+  const base = "min-h-[42px] rounded-xl px-3 py-[9px] text-[15.5px] font-semibold";
+  return key === active ? `${base} menu-active` : base;
 }
 
 function tabClass(key: NavKey) {
-  return key === active ? "on" : undefined;
+  return key === active ? "dock-active" : undefined;
 }
 ---
 
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="afroup">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>{title}</title>
     <link rel="icon" href="/assets/mark-black.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -30,12 +32,10 @@ function tabClass(key: NavKey) {
       href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Mulish:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/brand-site.css" />
-    <link rel="stylesheet" href="/site-pages.css" />
     <slot name="head" />
   </head>
   <body>
-    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <svg class="absolute" width="0" height="0" aria-hidden="true">
       <defs>
         <symbol id="ic-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></symbol>
         <symbol id="ic-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 11 12 4l8 7"></path><path d="M6 10v9h12v-9"></path></symbol>
@@ -51,128 +51,202 @@ function tabClass(key: NavKey) {
       </defs>
     </svg>
 
-    <div class="app">
-      <aside class="side">
-        <a class="brand" href={paths.home}><img src="/assets/logo-black.png" alt="AfroUp" /></a>
-        <a class={navClass("inicio")} href={paths.home}><svg class="ic"><use href="#ic-home"></use></svg> Inicio</a>
-        <a class={navClass("buscar")} href={paths.search}><svg class="ic"><use href="#ic-search"></use></svg> Buscar</a>
-        <div class="nav-h">Aprende</div>
-        <a class={navClass("africa")} href={paths.category}><span class="dot" style="background:var(--azul)"></span> África</a>
-        <a class={navClass("diaspora")} href={paths.category}><span class="dot" style="background:var(--cian)"></span> Diáspora</a>
-        <a class={navClass("antirracismo")} href={paths.category}><span class="dot" style="background:var(--oro)"></span> Antirracismo</a>
-        <a class={navClass("historia")} href={paths.category}><span class="dot" style="background:var(--oro)"></span> Historia</a>
-        <a class={navClass("estetica")} href={paths.category}><span class="dot" style="background:var(--cian)"></span> Estética</a>
-        <a class={navClass("actualidad")} href={paths.category}><span class="dot" style="background:var(--azul)"></span> Actualidad</a>
-        <div class="nav-h">Comunidad</div>
-        <a class={navClass("tienda")} href={paths.store}><svg class="ic"><use href="#ic-bag"></use></svg> Tienda</a>
-        <a class={navClass("recursos")} href={paths.resources}><svg class="ic"><use href="#ic-book2"></use></svg> Recursos</a>
-        <a class={navClass("comunidad")} href={paths.projects}><svg class="ic"><use href="#ic-users"></use></svg> Comunidad</a>
-        <a class={navClass("guardados")} href="#"><svg class="ic"><use href="#ic-bookmark"></use></svg> Guardados</a>
-        <div class="spacer"></div>
-        <div class="lang"><button class="on" type="button">ES</button><button type="button">EN</button></div>
-        <a class="btn btn-oro btn-block" href={paths.donate}><svg class="ic" style="width:18px;height:18px"><use href="#ic-heart"></use></svg> Haz tu Donación</a>
-      </aside>
+    <div class="drawer lg:drawer-open">
+      <input id="site-drawer" type="checkbox" class="drawer-toggle" />
 
-      <div class="main">
-        <div class="topbar">
-          <div class="wrap">
-            <div class="inner">
-              <button class="btn btn-ghost btn-sm burger" aria-label="Menú" type="button">
-                <svg class="ic" style="width:20px;height:20px"><use href="#ic-menu"></use></svg>
-              </button>
-              <form class="search" action={paths.search}>
-                <svg class="ic"><use href="#ic-search"></use></svg>
+      <div class="drawer-content flex min-h-screen flex-col">
+        <div class="navbar sticky top-0 z-20 min-h-[74px] border-b border-base-300 bg-base-100/85 px-4 backdrop-blur lg:px-[38px]">
+          <div class="navbar-start flex-1 gap-2">
+            <label for="site-drawer" class="btn btn-square btn-ghost drawer-button lg:hidden" aria-label="Menú">
+              <svg class="size-5"><use href="#ic-menu"></use></svg>
+            </label>
+            <form class="w-full max-w-[440px]" action={paths.search}>
+              <label class="input h-11 min-h-11 w-full bg-base-200">
+                <svg class="h-[1em] opacity-50"><use href="#ic-search"></use></svg>
                 <input type="search" name="q" placeholder="Busca temas, artículos, autores…" />
-              </form>
-              <span class="mantra">Conocimiento = poder</span>
-            </div>
+              </label>
+            </form>
+          </div>
+          <div class="navbar-end">
+            <span class="font-display hidden text-[15px] font-semibold text-primary sm:inline">Conocimiento = poder</span>
           </div>
         </div>
 
-        <slot />
+        <main class="mx-auto w-full max-w-[1180px] flex-1 px-4 pb-24 pt-[30px] sm:px-[18px] lg:px-[38px] lg:pb-10">
+          <slot />
+        </main>
 
-        <footer class="foot">
-          <div class="pat"></div>
-          <div class="wrap">
-            <div class="inner">
-              <div class="top">
-                <img src="/assets/logo-white.png" alt="AfroUp" />
-                <a class="btn btn-oro" href={paths.donate}><svg class="ic" style="width:18px;height:18px"><use href="#ic-heart"></use></svg> Haz tu Donación</a>
-              </div>
-              <div class="cols">
-                <div>
-                  <h5>Aprende</h5>
-                  <ul>
-                    <li><a href={paths.category}>África</a></li>
-                    <li><a href={paths.category}>Diáspora</a></li>
-                    <li><a href={paths.category}>Antirracismo</a></li>
-                    <li><a href={paths.category}>Historia</a></li>
-                    <li><a href={paths.category}>Estética</a></li>
-                    <li><a href={paths.category}>Actualidad</a></li>
-                  </ul>
-                </div>
-                <div>
-                  <h5>AfroUp</h5>
-                  <ul>
-                    <li><a href={paths.store}>Tienda</a></li>
-                    <li><a href={paths.resources}>Recursos</a></li>
-                    <li><a href={paths.about}>Nosotros</a></li>
-                    <li><a href={paths.contact}>Contacto</a></li>
-                    <li><a href={paths.support}>Apóyanos</a></li>
-                  </ul>
-                </div>
-                <div>
-                  <h5>Comunidad</h5>
-                  <ul>
-                    <li><a href={paths.projects}>Proyectos</a></li>
-                    <li><a href={paths.entrepreneurs}>Emprendedores</a></li>
-                    <li><a href={paths.people}>Referentes</a></li>
-                    <li><a href={paths.collaborate}>Colabora</a></li>
-                  </ul>
-                </div>
-                <div>
-                  <h5>Contáctanos</h5>
-                  <ul>
-                    <li><a href={paths.contact}>hello@afroup.org</a></li>
-                    <li><a href={paths.contact}>+57 320 7146</a></li>
-                  </ul>
-                </div>
-                <div>
-                  <h5>Síguenos</h5>
-                  <ul>
-                    <li><a href="#">Instagram</a></li>
-                    <li><a href="#">TikTok</a></li>
-                    <li><a href="#">YouTube</a></li>
-                    <li><a href="#">Facebook</a></li>
-                  </ul>
-                </div>
-              </div>
+        <div class="bg-neutral text-neutral-content">
+          <div class="h-3 w-full bg-[url('/assets/pattern.png')] bg-left bg-[length:300px]"></div>
+          <div class="mx-auto w-full max-w-[1180px] px-4 py-10 sm:px-[18px] lg:px-[38px]">
+            <div class="mb-7 flex flex-col items-start justify-between gap-4 border-b border-white/10 pb-6 sm:flex-row sm:items-center">
+              <img src="/assets/logo-white.png" alt="AfroUp" class="h-[30px] w-auto" />
+              <a class="btn btn-secondary max-sm:btn-block" href={paths.donate}>
+                <svg class="size-4"><use href="#ic-heart"></use></svg>
+                Haz tu Donación
+              </a>
             </div>
+            <footer class="footer sm:footer-horizontal">
+              <nav>
+                <h6 class="footer-title">Aprende</h6>
+                <a href={paths.category}>África</a>
+                <a href={paths.category}>Diáspora</a>
+                <a href={paths.category}>Antirracismo</a>
+                <a href={paths.category}>Historia</a>
+                <a href={paths.category}>Estética</a>
+                <a href={paths.category}>Actualidad</a>
+              </nav>
+              <nav>
+                <h6 class="footer-title">AfroUp</h6>
+                <a href={paths.store}>Tienda</a>
+                <a href={paths.resources}>Recursos</a>
+                <a href={paths.about}>Nosotros</a>
+                <a href={paths.contact}>Contacto</a>
+                <a href={paths.support}>Apóyanos</a>
+              </nav>
+              <nav>
+                <h6 class="footer-title">Comunidad</h6>
+                <a href={paths.projects}>Proyectos</a>
+                <a href={paths.entrepreneurs}>Emprendedores</a>
+                <a href={paths.people}>Referentes</a>
+                <a href={paths.collaborate}>Colabora</a>
+              </nav>
+              <nav>
+                <h6 class="footer-title">Contáctanos</h6>
+                <a href={paths.contact}>hello@afroup.org</a>
+                <a href={paths.contact}>+57 320 7146</a>
+              </nav>
+              <nav>
+                <h6 class="footer-title">Síguenos</h6>
+                <a href="#">Instagram</a>
+                <a href="#">TikTok</a>
+                <a href="#">YouTube</a>
+                <a href="#">Facebook</a>
+              </nav>
+            </footer>
           </div>
-        </footer>
+        </div>
+
+        <nav class="dock lg:hidden">
+          <a class={tabClass("inicio")} href={paths.home}>
+            <svg class="size-5"><use href="#ic-home"></use></svg>
+            <span class="dock-label">Inicio</span>
+          </a>
+          <a class={tabClass("buscar")} href={paths.search}>
+            <svg class="size-5"><use href="#ic-search"></use></svg>
+            <span class="dock-label">Buscar</span>
+          </a>
+          <a class={tabClass("tienda")} href={paths.store}>
+            <svg class="size-5"><use href="#ic-bag"></use></svg>
+            <span class="dock-label">Tienda</span>
+          </a>
+          <a class={tabClass("guardados")} href="#">
+            <svg class="size-5"><use href="#ic-bookmark"></use></svg>
+            <span class="dock-label">Guardados</span>
+          </a>
+          <a class={tabClass("donar")} href={paths.donate}>
+            <svg class="size-5"><use href="#ic-heart"></use></svg>
+            <span class="dock-label">Donar</span>
+          </a>
+        </nav>
+      </div>
+
+      <div class="drawer-side z-30">
+        <label for="site-drawer" aria-label="Cerrar menú" class="drawer-overlay"></label>
+        <div class="flex min-h-full w-[264px] flex-col border-r border-base-300 bg-base-200">
+          <div class="px-[30px] pt-[30px] pb-[21px]">
+            <a href={paths.home}>
+              <img src="/assets/logo-black.png" alt="AfroUp" class="h-[30px] w-auto" />
+            </a>
+          </div>
+          <ul class="menu w-full grow overflow-y-auto px-5 py-0">
+            <li>
+              <a class={navClass("inicio")} href={paths.home}>
+                <svg class="size-5"><use href="#ic-home"></use></svg>
+                Inicio
+              </a>
+            </li>
+            <li>
+              <a class={navClass("buscar")} href={paths.search}>
+                <svg class="size-5"><use href="#ic-search"></use></svg>
+                Buscar
+              </a>
+            </li>
+            <li class="menu-title text-[11.5px] font-extrabold tracking-[0.16em] text-[#a9a496] uppercase">Aprende</li>
+            <li>
+              <a class={navClass("africa")} href={paths.category}>
+                <span class="size-2 rounded-full bg-primary"></span>
+                África
+              </a>
+            </li>
+            <li>
+              <a class={navClass("diaspora")} href={paths.category}>
+                <span class="size-2 rounded-full bg-accent"></span>
+                Diáspora
+              </a>
+            </li>
+            <li>
+              <a class={navClass("antirracismo")} href={paths.category}>
+                <span class="size-2 rounded-full bg-secondary"></span>
+                Antirracismo
+              </a>
+            </li>
+            <li>
+              <a class={navClass("historia")} href={paths.category}>
+                <span class="size-2 rounded-full bg-secondary"></span>
+                Historia
+              </a>
+            </li>
+            <li>
+              <a class={navClass("estetica")} href={paths.category}>
+                <span class="size-2 rounded-full bg-accent"></span>
+                Estética
+              </a>
+            </li>
+            <li>
+              <a class={navClass("actualidad")} href={paths.category}>
+                <span class="size-2 rounded-full bg-primary"></span>
+                Actualidad
+              </a>
+            </li>
+            <li class="menu-title text-[11.5px] font-extrabold tracking-[0.16em] text-[#a9a496] uppercase">Comunidad</li>
+            <li>
+              <a class={navClass("tienda")} href={paths.store}>
+                <svg class="size-5"><use href="#ic-bag"></use></svg>
+                Tienda
+              </a>
+            </li>
+            <li>
+              <a class={navClass("recursos")} href={paths.resources}>
+                <svg class="size-5"><use href="#ic-book2"></use></svg>
+                Recursos
+              </a>
+            </li>
+            <li>
+              <a class={navClass("comunidad")} href={paths.projects}>
+                <svg class="size-5"><use href="#ic-users"></use></svg>
+                Comunidad
+              </a>
+            </li>
+            <li>
+              <a class={navClass("guardados")} href="#">
+                <svg class="size-5"><use href="#ic-bookmark"></use></svg>
+                Guardados
+              </a>
+            </li>
+          </ul>
+          <div class="mt-auto flex flex-col gap-3 p-4 pt-0">
+            <div class="join w-full">
+              <button class="btn btn-sm btn-active join-item flex-1" type="button">ES</button>
+              <button class="btn btn-sm join-item flex-1" type="button">EN</button>
+            </div>
+            <a class="btn btn-secondary btn-block" href={paths.donate}>
+              <svg class="size-4"><use href="#ic-heart"></use></svg>
+              Haz tu Donación
+            </a>
+          </div>
+        </div>
       </div>
     </div>
-
-    <nav class="mtab">
-      <a class={tabClass("inicio")} href={paths.home}><svg class="ic"><use href="#ic-home"></use></svg> Inicio</a>
-      <a class={tabClass("buscar")} href={paths.search}><svg class="ic"><use href="#ic-search"></use></svg> Buscar</a>
-      <a class={tabClass("tienda")} href={paths.store}><svg class="ic"><use href="#ic-bag"></use></svg> Tienda</a>
-      <a class={tabClass("guardados")} href="#"><svg class="ic"><use href="#ic-bookmark"></use></svg> Guardados</a>
-      <a class={tabClass("donar")} href={paths.donate}><svg class="ic"><use href="#ic-heart"></use></svg> Donar</a>
-    </nav>
-
-    <script is:inline src="/drawer.js"></script>
-    <script is:inline>
-      document.querySelectorAll(".chips").forEach(function (group) {
-        group.addEventListener("click", function (event) {
-          var chip = event.target.closest(".chip");
-          if (!chip || !group.contains(chip)) return;
-          group.querySelectorAll(".chip").forEach(function (item) {
-            item.classList.remove("on");
-          });
-          chip.classList.add("on");
-        });
-      });
-    </script>
   </body>
 </html>

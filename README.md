@@ -1,6 +1,6 @@
 # AfroUp
 
-Astro + Cloudflare Workers + D1. Local mockup of the editorial site.
+Astro + daisyUI + Tailwind CSS + Cloudflare Workers + D1. Local implementation of the editorial site.
 
 The emergency aid Worker lives in `legacy/`. `design/` stays the visual source of truth.
 
