@@ -31,6 +31,12 @@
     "EMAIL_FROM_ADDRESS": "verificacion@afroup.com",
     "EMAIL_FROM_NAME": "AfroUp"
   },
+  "r2_buckets": [
+    {
+      "binding": "AVATARS",
+      "bucket_name": "afroup-avatars-beta"
+    }
+  ],
   "kv_namespaces": [
     {
       "binding": "SESSION",
