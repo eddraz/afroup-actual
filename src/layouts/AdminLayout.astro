@@ -6,7 +6,7 @@ import { routeIds } from "../lib/paths";
 
 interface Props {
   title?: string;
-  active?: "dashboard" | "articles" | "users" | "comments" | "projects";
+  active?: "dashboard" | "articles" | "users" | "comments" | "projects" | "modules" | "permissions" | "roles";
 }
 
 const locale = getLocaleFromUrl(Astro.url);
@@ -20,6 +20,9 @@ const paths = {
   users: `${localizedPath(locale, routeIds.admin)}/usuarios`,
   comments: `${localizedPath(locale, routeIds.admin)}/comentarios`,
   projects: `${localizedPath(locale, routeIds.admin)}/proyectos`,
+  modules: `${localizedPath(locale, routeIds.admin)}/modulos`,
+  permissions: `${localizedPath(locale, routeIds.admin)}/permisos`,
+  roles: `${localizedPath(locale, routeIds.admin)}/roles`,
 };
 
 const esAdminHref = locale === "es" ? paths.articles : "/admin/articulos";
@@ -68,6 +71,18 @@ function navClass(key: string) {
           <a class={navClass("projects")} href={paths.projects}>
             <svg class="size-5"><use href="#ic-share"></use></svg>
             {copy.adminProjects}
+          </a>
+          <a class={navClass("modules")} href={paths.modules}>
+            <svg class="size-5"><use href="#ic-stack"></use></svg>
+            {copy.adminModules}
+          </a>
+          <a class={navClass("permissions")} href={paths.permissions}>
+            <svg class="size-5"><use href="#ic-key"></use></svg>
+            {copy.adminPermissions}
+          </a>
+          <a class={navClass("roles")} href={paths.roles}>
+            <svg class="size-5"><use href="#ic-shield"></use></svg>
+            {copy.adminRoles}
           </a>
           <a class={navClass("users")} href={paths.users}>
             <svg class="size-5"><use href="#ic-users"></use></svg>
