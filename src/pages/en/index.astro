@@ -34,13 +34,13 @@ const articleHref = localizedPath("en", routeIds.article);
     <h2 class="font-display text-[26px] leading-[1.04] font-bold tracking-[-0.005em]">Lo último</h2>
   </div>
   <div class="mb-6 flex flex-wrap gap-2" data-chips>
-    <button class="btn btn-neutral btn-sm h-8 min-h-8 px-[17px] text-[14px]" data-chip type="button">Todos</button>
-    <button class="btn btn-outline btn-neutral btn-sm h-8 min-h-8 px-[17px] text-[14px]" data-chip type="button">África</button>
-    <button class="btn btn-outline btn-neutral btn-sm h-8 min-h-8 px-[17px] text-[14px]" data-chip type="button">Diáspora</button>
-    <button class="btn btn-outline btn-neutral btn-sm h-8 min-h-8 px-[17px] text-[14px]" data-chip type="button">Antirracismo</button>
-    <button class="btn btn-outline btn-neutral btn-sm h-8 min-h-8 px-[17px] text-[14px]" data-chip type="button">Historia</button>
-    <button class="btn btn-outline btn-neutral btn-sm h-8 min-h-8 px-[17px] text-[14px]" data-chip type="button">Estética</button>
-    <button class="btn btn-outline btn-neutral btn-sm h-8 min-h-8 px-[17px] text-[14px]" data-chip type="button">Actualidad</button>
+    <button class="btn btn-sm" data-chip type="button">Todos</button>
+    <button class="btn btn-dash btn-sm" data-chip type="button">África</button>
+    <button class="btn btn-dash btn-sm" data-chip type="button">Diáspora</button>
+    <button class="btn btn-dash btn-sm" data-chip type="button">Antirracismo</button>
+    <button class="btn btn-dash btn-sm" data-chip type="button">Historia</button>
+    <button class="btn btn-dash btn-sm" data-chip type="button">Estética</button>
+    <button class="btn btn-dash btn-sm" data-chip type="button">Actualidad</button>
   </div>
 
   <div class="grid grid-cols-1 gap-8 xl:grid-cols-[1fr_326px]">
@@ -221,8 +221,8 @@ const articleHref = localizedPath("en", routeIds.article);
   const chips = document.querySelectorAll("[data-chip]");
   chips.forEach((chip) => {
     chip.addEventListener("click", () => {
-      chips.forEach((item) => item.classList.add("btn-outline"));
-      chip.classList.remove("btn-outline");
+      chips.forEach((item) => item.classList.add("btn-dash"));
+      chip.classList.remove("btn-dash");
     });
   });
 </script>
