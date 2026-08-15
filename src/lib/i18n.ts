@@ -371,7 +371,6 @@ const dictionaries = {
     loginPasswordPlaceholder: "Tu contraseña",
     loginSubmit: "Entrar",
     loginForgot: "¿Olvidaste tu contraseña?",
-    loginNote: "Este es un mockup: el formulario no inicia sesión todavía.",
     loginRemember: "Recordarme",
     loginDivider: "o continuá con",
     loginCreateLead: "¿Aún no tenés cuenta con AfroUp?",
@@ -397,7 +396,6 @@ const dictionaries = {
     signupSubmit: "Crear cuenta",
     signupHave: "¿Ya tenés cuenta con AfroUp?",
     signupSignin: "Iniciar sesión",
-    signupNote: "Este es un mockup: el formulario no crea una cuenta todavía.",
   },
   en: {
     titleHome: "AfroUp — Home",
@@ -765,7 +763,6 @@ const dictionaries = {
     loginPasswordPlaceholder: "Your password",
     loginSubmit: "Sign in",
     loginForgot: "Forgot your password?",
-    loginNote: "This is a mockup: the form does not sign you in yet.",
     loginRemember: "Remember me",
     loginDivider: "or continue with",
     loginCreateLead: "Don't have an AfroUp account yet?",
@@ -791,7 +788,6 @@ const dictionaries = {
     signupSubmit: "Create account",
     signupHave: "Already have an AfroUp account?",
     signupSignin: "Sign in",
-    signupNote: "This is a mockup: the form does not create an account yet.",
   },
 } as const;
 
