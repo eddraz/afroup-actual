@@ -1,14 +1,35 @@
 ---
 import { ClientRouter } from "astro:transitions";
 import "../styles/global.css";
-import { paths, type NavKey } from "../lib/paths";
+import { localizedPath, switchLocalePath, t, getLocaleFromUrl } from "../lib/i18n";
+import { routeIds, type NavKey } from "../lib/paths";
 
 interface Props {
   title?: string;
   active?: NavKey;
 }
 
-const { title = "AfroUp — Inicio", active = "inicio" } = Astro.props;
+const locale = getLocaleFromUrl(Astro.url);
+const copy = t(locale);
+const paths = {
+  home: localizedPath(locale, routeIds.home),
+  search: localizedPath(locale, routeIds.search),
+  category: routeIds.category,
+  store: routeIds.store,
+  resources: routeIds.resources,
+  donate: routeIds.donate,
+  about: routeIds.about,
+  contact: routeIds.contact,
+  support: routeIds.support,
+  projects: routeIds.projects,
+  entrepreneurs: routeIds.entrepreneurs,
+  people: routeIds.people,
+  collaborate: routeIds.collaborate,
+};
+const { title = copy.titleHome, active = "inicio" } = Astro.props;
+const esHref = switchLocalePath(Astro.url, "es");
+const enHref = switchLocalePath(Astro.url, "en");
+const currentQuery = Astro.url.searchParams.get("q") ?? "";
 
 function navClass(key: NavKey) {
   const base = "min-h-[42px] rounded-xl px-3 py-[9px] text-[15.5px] font-semibold";
@@ -21,7 +42,7 @@ function tabClass(key: NavKey) {
 ---
 
 <!DOCTYPE html>
-<html lang="es" data-theme="afroup">
+<html lang={locale} data-theme="afroup">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -83,21 +104,22 @@ function tabClass(key: NavKey) {
       <div class="drawer-content flex min-h-screen flex-col">
         <div class="navbar sticky top-0 z-20 min-h-[74px] border-b border-base-300 bg-base-100/85 px-4 backdrop-blur lg:px-[38px]">
           <div class="navbar-start flex-1 gap-2">
-            <label for="site-drawer" class="btn btn-square btn-ghost drawer-button lg:hidden" aria-label="Menú">
+            <label for="site-drawer" class="btn btn-square btn-ghost drawer-button lg:hidden" aria-label={copy.menuAria}>
               <svg class="size-5"><use href="#ic-menu"></use></svg>
             </label>
-            <form class="w-full max-w-[440px]" action={paths.search}>
+            <form class="w-full max-w-[440px]" action={paths.search} method="get">
               <label class="input h-11 min-h-11 w-full bg-base-200">
                 <svg class="h-[1em] shrink-0 opacity-50" viewBox="0 0 24 24" aria-hidden="true">
                   <use href="#ic-search"></use>
                 </svg>
-                <input class="grow" type="search" name="q" placeholder="Busca temas, artículos, autores…" aria-label="Buscar" />
+                <input class="grow" type="search" name="q" value={currentQuery} placeholder={copy.searchPlaceholder} aria-label={copy.searchAria} />
+                    <button class="btn btn-neutral btn-xs" type="submit">Buscar</button>
               </label>
             </form>
           </div>
           <div class="navbar-end gap-3">
-            <span class="font-display hidden text-[15px] font-semibold text-primary sm:inline">Conocimiento = poder</span>
-                <label class="swap swap-rotate" aria-label="Cambiar tema">
+            <span class="font-display hidden text-[15px] font-semibold text-primary sm:inline">{copy.mantra}</span>
+                <label class="swap swap-rotate" aria-label={copy.themeAria}>
                   <input type="checkbox" class="theme-controller" value="afroup-dark" />
                   <svg class="swap-off size-5"><use href="#ic-sun"></use></svg>
                   <svg class="swap-on size-5"><use href="#ic-moon"></use></svg>
@@ -116,41 +138,41 @@ function tabClass(key: NavKey) {
               <img src="/assets/logo-white.png" alt="AfroUp" class="h-[30px] w-auto" />
               <a class="btn btn-secondary max-sm:btn-block" href={paths.donate}>
                 <svg class="size-4"><use href="#ic-heart"></use></svg>
-                Haz tu Donación
+                {copy.donateCta}
               </a>
             </div>
             <footer class="footer sm:footer-horizontal">
               <nav>
-                <h6 class="footer-title">Aprende</h6>
-                <a href={paths.category}>África</a>
-                <a href={paths.category}>Diáspora</a>
-                <a href={paths.category}>Antirracismo</a>
-                <a href={paths.category}>Historia</a>
-                <a href={paths.category}>Estética</a>
-                <a href={paths.category}>Actualidad</a>
+                <h6 class="footer-title">{copy.navLearn}</h6>
+                <a href={paths.category}>{copy.navAfrica}</a>
+                <a href={paths.category}>{copy.navDiaspora}</a>
+                <a href={paths.category}>{copy.navAntiracism}</a>
+                <a href={paths.category}>{copy.navHistory}</a>
+                <a href={paths.category}>{copy.navAesthetics}</a>
+                <a href={paths.category}>{copy.navCurrent}</a>
               </nav>
               <nav>
-                <h6 class="footer-title">AfroUp</h6>
-                <a href={paths.store}>Tienda</a>
-                <a href={paths.resources}>Recursos</a>
-                <a href={paths.about}>Nosotros</a>
-                <a href={paths.contact}>Contacto</a>
-                <a href={paths.support}>Apóyanos</a>
+                <h6 class="footer-title">{copy.footerAfroup}</h6>
+                <a href={paths.store}>{copy.navStore}</a>
+                <a href={paths.resources}>{copy.navResources}</a>
+                <a href={paths.about}>{copy.footerAbout}</a>
+                <a href={paths.contact}>{copy.footerContact}</a>
+                <a href={paths.support}>{copy.footerSupport}</a>
               </nav>
               <nav>
-                <h6 class="footer-title">Comunidad</h6>
-                <a href={paths.projects}>Proyectos</a>
-                <a href={paths.entrepreneurs}>Emprendedores</a>
-                <a href={paths.people}>Referentes</a>
-                <a href={paths.collaborate}>Colabora</a>
+                <h6 class="footer-title">{copy.navCommunity}</h6>
+                <a href={paths.projects}>{copy.footerProjects}</a>
+                <a href={paths.entrepreneurs}>{copy.footerEntrepreneurs}</a>
+                <a href={paths.people}>{copy.footerPeople}</a>
+                <a href={paths.collaborate}>{copy.footerCollaborate}</a>
               </nav>
               <nav>
-                <h6 class="footer-title">Contáctanos</h6>
+                <h6 class="footer-title">{copy.footerContactUs}</h6>
                 <a href={paths.contact}>hello@afroup.org</a>
                 <a href={paths.contact}>+57 320 7146</a>
               </nav>
               <nav>
-                <h6 class="footer-title">Síguenos</h6>
+                <h6 class="footer-title">{copy.footerFollow}</h6>
                 <a href="#">Instagram</a>
                 <a href="#">TikTok</a>
                 <a href="#">YouTube</a>
@@ -163,29 +185,29 @@ function tabClass(key: NavKey) {
         <nav class="dock lg:hidden">
           <a class={tabClass("inicio")} href={paths.home}>
             <svg class="size-5"><use href="#ic-home"></use></svg>
-            <span class="dock-label">Inicio</span>
+            <span class="dock-label">{copy.navHome}</span>
           </a>
           <a class={tabClass("buscar")} href={paths.search}>
             <svg class="size-5"><use href="#ic-search"></use></svg>
-            <span class="dock-label">Buscar</span>
+            <span class="dock-label">{copy.navSearch}</span>
           </a>
           <a class={tabClass("tienda")} href={paths.store}>
             <svg class="size-5"><use href="#ic-bag"></use></svg>
-            <span class="dock-label">Tienda</span>
+            <span class="dock-label">{copy.navStore}</span>
           </a>
           <a class={tabClass("guardados")} href="#">
             <svg class="size-5"><use href="#ic-bookmark"></use></svg>
-            <span class="dock-label">Guardados</span>
+            <span class="dock-label">{copy.navSaved}</span>
           </a>
           <a class={tabClass("donar")} href={paths.donate}>
             <svg class="size-5"><use href="#ic-heart"></use></svg>
-            <span class="dock-label">Donar</span>
+            <span class="dock-label">{copy.navDonate}</span>
           </a>
         </nav>
       </div>
 
       <div class="drawer-side z-30 overflow-hidden">
-        <label for="site-drawer" aria-label="Cerrar menú" class="drawer-overlay"></label>
+        <label for="site-drawer" aria-label={copy.closeMenuAria} class="drawer-overlay"></label>
         <div class="flex h-dvh max-h-dvh w-[264px] flex-col border-r border-base-300 bg-base-200">
           <div class="shrink-0 px-[30px] pt-[30px] pb-[21px]">
             <a href={paths.home}>
@@ -197,86 +219,86 @@ function tabClass(key: NavKey) {
             <li>
               <a class={navClass("inicio")} href={paths.home}>
                 <svg class="size-5"><use href="#ic-home"></use></svg>
-                Inicio
+                {copy.navHome}
               </a>
             </li>
             <li>
               <a class={navClass("buscar")} href={paths.search}>
                 <svg class="size-5"><use href="#ic-search"></use></svg>
-                Buscar
+                {copy.navSearch}
               </a>
             </li>
-            <li class="menu-title text-[11.5px] font-extrabold tracking-[0.16em] text-[#a9a496] uppercase">Aprende</li>
+            <li class="menu-title text-[11.5px] font-extrabold tracking-[0.16em] text-[#a9a496] uppercase">{copy.navLearn}</li>
             <li>
               <a class={navClass("africa")} href={paths.category}>
                 <span class="size-2 rounded-full bg-primary"></span>
-                África
+                {copy.navAfrica}
               </a>
             </li>
             <li>
               <a class={navClass("diaspora")} href={paths.category}>
                 <span class="size-2 rounded-full bg-accent"></span>
-                Diáspora
+                {copy.navDiaspora}
               </a>
             </li>
             <li>
               <a class={navClass("antirracismo")} href={paths.category}>
                 <span class="size-2 rounded-full bg-secondary"></span>
-                Antirracismo
+                {copy.navAntiracism}
               </a>
             </li>
             <li>
               <a class={navClass("historia")} href={paths.category}>
                 <span class="size-2 rounded-full bg-secondary"></span>
-                Historia
+                {copy.navHistory}
               </a>
             </li>
             <li>
               <a class={navClass("estetica")} href={paths.category}>
                 <span class="size-2 rounded-full bg-accent"></span>
-                Estética
+                {copy.navAesthetics}
               </a>
             </li>
             <li>
               <a class={navClass("actualidad")} href={paths.category}>
                 <span class="size-2 rounded-full bg-primary"></span>
-                Actualidad
+                {copy.navCurrent}
               </a>
             </li>
-            <li class="menu-title text-[11.5px] font-extrabold tracking-[0.16em] text-[#a9a496] uppercase">Comunidad</li>
+            <li class="menu-title text-[11.5px] font-extrabold tracking-[0.16em] text-[#a9a496] uppercase">{copy.navCommunity}</li>
             <li>
               <a class={navClass("tienda")} href={paths.store}>
                 <svg class="size-5"><use href="#ic-bag"></use></svg>
-                Tienda
+                {copy.navStore}
               </a>
             </li>
             <li>
               <a class={navClass("recursos")} href={paths.resources}>
                 <svg class="size-5"><use href="#ic-book2"></use></svg>
-                Recursos
+                {copy.navResources}
               </a>
             </li>
             <li>
               <a class={navClass("comunidad")} href={paths.projects}>
                 <svg class="size-5"><use href="#ic-users"></use></svg>
-                Comunidad
+                {copy.navCommunity}
               </a>
             </li>
             <li>
               <a class={navClass("guardados")} href="#">
                 <svg class="size-5"><use href="#ic-bookmark"></use></svg>
-                Guardados
+                {copy.navSaved}
               </a>
             </li>
           </ul>
           <div class="mt-auto flex shrink-0 flex-col gap-3 p-4 pt-0">
             <div class="join w-full overflow-hidden rounded-field border border-base-300">
-              <button class="btn btn-sm btn-active join-item flex-1 bg-neutral/80 font-bold text-neutral-content" type="button">ES</button>
-              <button class="btn btn-sm join-item flex-1 font-bold" type="button">EN</button>
+              <a class:list={["btn btn-sm join-item flex-1 font-bold", locale === "es" && "btn-active bg-neutral/80 text-neutral-content"]} href={esHref}>ES</a>
+              <a class:list={["btn btn-sm join-item flex-1 font-bold", locale === "en" && "btn-active bg-neutral/80 text-neutral-content"]} href={enHref}>EN</a>
             </div>
             <a class="btn btn-secondary btn-block" href={paths.donate}>
               <svg class="size-4"><use href="#ic-heart"></use></svg>
-              Haz tu Donación
+              {copy.donateCta}
             </a>
           </div>
         </div>

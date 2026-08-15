@@ -1,3 +1,26 @@
+export const routeIds = {
+  home: "/",
+  search: "buscar",
+  category: "#",
+  article: "#",
+  store: "#",
+  product: "#",
+  cart: "#",
+  resources: "#",
+  donate: "#",
+  about: "#",
+  contact: "#",
+  support: "#",
+  projects: "#",
+  project: "#",
+  entrepreneurs: "#",
+  entrepreneur: "#",
+  people: "#",
+  person: "#",
+  collaborate: "#",
+  sitemap: "#",
+} as const;
+
 export const paths = {
   home: "/",
   search: "/buscar",
