@@ -1,0 +1,117 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getLocaleFromUrl, localizedPath, t } from "../lib/i18n";
+import { routeIds } from "../lib/paths";
+
+export const prerender = true;
+
+const locale = getLocaleFromUrl(Astro.url);
+const copy = t(locale);
+const homeHref = localizedPath(locale, routeIds.home);
+const loginHref = localizedPath(locale, routeIds.login);
+---
+
+<BaseLayout title={copy.titleSignup} active="signup">
+  <div class="breadcrumbs text-sm">
+    <ul>
+      <li><a href={homeHref}>{copy.navHome}</a></li>
+      <li><a href={loginHref}>{copy.navLogin}</a></li>
+      <li>{copy.navSignup}</li>
+    </ul>
+  </div>
+
+  <section class="hero relative mt-6 overflow-hidden rounded-[24px] border border-base-300 bg-base-200 shadow-lg">
+    <div class="hero-content relative w-full flex-col items-start gap-3 px-6 py-8 lg:px-11 lg:py-11">
+      <p class="text-primary text-xs font-extrabold tracking-[0.18em] uppercase">{copy.signupEyebrow}</p>
+      <h1 class="font-display max-w-[20ch] text-[31px] leading-[1.06] font-bold lg:text-[46px]">{copy.signupTitle}</h1>
+      <p class="max-w-[58ch] text-[17px] leading-[1.55] opacity-70">{copy.signupLead}</p>
+    </div>
+  </section>
+
+  <div class="mt-9 grid grid-cols-1 gap-7 lg:grid-cols-[1.15fr_0.85fr]">
+    <form class="card bg-base-200 shadow" onsubmit="return false">
+      <div class="card-body gap-4">
+        <h2 class="card-title font-display text-[22px] tracking-[-0.005em]">{copy.signupTitle}</h2>
+
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">{copy.signupName}</legend>
+          <input class="input w-full" type="text" name="name" autocomplete="name" placeholder={copy.signupNamePlaceholder} required />
+        </fieldset>
+
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">{copy.loginEmail}</legend>
+          <input class="input w-full" type="email" name="email" autocomplete="email" placeholder={copy.loginEmailPlaceholder} required />
+        </fieldset>
+
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">{copy.loginPassword}</legend>
+          <input class="input w-full" type="password" name="password" autocomplete="new-password" placeholder={copy.loginPasswordPlaceholder} minlength="8" required />
+        </fieldset>
+
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">{copy.signupConfirm}</legend>
+          <input class="input w-full" type="password" name="confirm" autocomplete="new-password" placeholder={copy.signupConfirmPlaceholder} minlength="8" required />
+        </fieldset>
+
+        <label class="label mt-1 cursor-pointer items-start gap-2 p-0">
+          <input type="checkbox" name="terms" class="checkbox checkbox-sm mt-0.5" required />
+          <span class="label-text text-sm leading-snug">{copy.signupTerms}</span>
+        </label>
+
+        <button class="btn btn-primary mt-2 h-[46px] min-h-[46px]" type="submit">
+          {copy.signupSubmit}
+          <svg class="size-4"><use href="#ic-arrow"></use></svg>
+        </button>
+
+        <div class="mt-1 flex flex-col items-center gap-1 text-center">
+          <p class="text-sm opacity-70">{copy.signupHave}</p>
+          <a class="btn btn-dash btn-sm" href={loginHref}>{copy.signupSignin}</a>
+        </div>
+
+        <p class="mt-2 text-[12.5px] opacity-60">{copy.signupNote}</p>
+      </div>
+    </form>
+
+    <aside class="flex flex-col gap-5">
+      <div class="card bg-base-200 shadow">
+        <div class="card-body gap-5">
+          <h3 class="font-display text-[20px] tracking-[-0.005em]">{copy.loginAsideTitle}</h3>
+
+          <div class="flex items-start gap-3">
+            <div class="bg-primary/10 text-primary flex size-11 shrink-0 items-center justify-center rounded-full">
+              <svg class="size-5"><use href="#ic-bookmark"></use></svg>
+            </div>
+            <div>
+              <p class="font-bold">{copy.loginBenefit1Title}</p>
+              <p class="text-sm opacity-70">{copy.loginBenefit1Lead}</p>
+            </div>
+          </div>
+
+          <div class="flex items-start gap-3">
+            <div class="bg-accent/15 text-accent flex size-11 shrink-0 items-center justify-center rounded-full">
+              <svg class="size-5"><use href="#ic-bag"></use></svg>
+            </div>
+            <div>
+              <p class="font-bold">{copy.loginBenefit2Title}</p>
+              <p class="text-sm opacity-70">{copy.loginBenefit2Lead}</p>
+            </div>
+          </div>
+
+          <div class="flex items-start gap-3">
+            <div class="bg-secondary/15 text-secondary flex size-11 shrink-0 items-center justify-center rounded-full">
+              <svg class="size-5"><use href="#ic-book2"></use></svg>
+            </div>
+            <div>
+              <p class="font-bold">{copy.loginBenefit3Title}</p>
+              <p class="text-sm opacity-70">{copy.loginBenefit3Lead}</p>
+            </div>
+          </div>
+
+          <div class="mt-1 h-[88px] rounded-[14px] bg-[url('/assets/pattern.png')] bg-cover bg-center"></div>
+        </div>
+      </div>
+
+      <p class="text-[12.5px] opacity-60">{copy.loginAsideNote}</p>
+    </aside>
+  </div>
+</BaseLayout>
