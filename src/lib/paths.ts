@@ -23,7 +23,7 @@ export const routeIds = {
   entrepreneur: "#",
   people: "#",
   person: "#",
-  collaborate: "#",
+  collaborate: "colabora",
   sitemap: "#",
 } as const;
 
@@ -52,7 +52,7 @@ export const paths = {
   entrepreneur: "#",
   people: "#",
   person: "#",
-  collaborate: "#",
+  collaborate: "/colabora",
   sitemap: "#",
 } as const;
 

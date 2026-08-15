@@ -9,7 +9,7 @@ const locale = getLocaleFromUrl(Astro.url);
 const copy = t(locale);
 const homeHref = localizedPath(locale, routeIds.home);
 const donateHref = localizedPath(locale, routeIds.donate);
-const collaborateHref = routeIds.collaborate;
+const collaborateHref = localizedPath(locale, routeIds.collaborate);
 const chips = [copy.aboutChipProud, copy.aboutChipEducational, copy.aboutChipVibrant, copy.aboutChipCommunity] as const;
 const team = [
   { name: "Jenniffer M.", role: "Fundadora · Editora", figure: "bg-secondary/30" },

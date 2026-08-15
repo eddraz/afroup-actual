@@ -30,7 +30,7 @@ const paths = {
   projects: routeIds.projects,
   entrepreneurs: routeIds.entrepreneurs,
   people: routeIds.people,
-  collaborate: routeIds.collaborate,
+  collaborate: localizedPath(locale, routeIds.collaborate),
 };
 const { title = copy.titleHome, active = "inicio" } = Astro.props;
 const esHref = switchLocalePath(Astro.url, "es");
