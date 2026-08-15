@@ -27,6 +27,7 @@ export const routeIds = {
   person: "#",
   collaborate: "colabora",
   saved: "guardados",
+  login: "login",
   sitemap: "#",
 } as const;
 
@@ -59,6 +60,7 @@ export const paths = {
   person: "#",
   collaborate: "/colabora",
   saved: "/guardados",
+  login: "/login",
   sitemap: "#",
 } as const;
 
@@ -75,6 +77,7 @@ export type NavKey =
   | "recursos"
   | "comunidad"
   | "guardados"
+  | "login"
   | "donar";
 
 export const socials = [
