@@ -29,6 +29,7 @@ export const routeIds = {
   saved: "guardados",
   login: "login",
   signup: "registro",
+  recover: "recuperar",
   sitemap: "#",
 } as const;
 
@@ -63,6 +64,7 @@ export const paths = {
   saved: "/guardados",
   login: "/login",
   signup: "/registro",
+  recover: "/recuperar",
   sitemap: "#",
 } as const;
 
@@ -81,6 +83,7 @@ export type NavKey =
   | "guardados"
   | "login"
   | "signup"
+  | "recover"
   | "donar";
 
 export const socials = [

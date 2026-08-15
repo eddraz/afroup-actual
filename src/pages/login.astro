@@ -10,6 +10,7 @@ const copy = t(locale);
 const homeHref = localizedPath(locale, routeIds.home);
 const supportHref = localizedPath(locale, routeIds.support);
 const signupHref = localizedPath(locale, routeIds.signup);
+const recoverHref = localizedPath(locale, routeIds.recover);
 ---
 
 <BaseLayout title={copy.titleLogin} active="login">
@@ -48,7 +49,7 @@ const signupHref = localizedPath(locale, routeIds.signup);
             <input type="checkbox" name="remember" class="checkbox checkbox-sm" />
             <span class="label-text">{copy.loginRemember}</span>
           </label>
-          <a class="link link-hover text-primary" href="#">{copy.loginForgot}</a>
+          <a class="link link-hover text-primary" href={recoverHref}>{copy.loginForgot}</a>
         </div>
 
         <button class="btn btn-primary mt-2 h-[46px] min-h-[46px]" type="submit">
