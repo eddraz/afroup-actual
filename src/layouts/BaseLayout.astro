@@ -145,6 +145,9 @@ function tabClass(key: NavKey) {
                   <svg class="swap-off size-5"><use href="#ic-sun"></use></svg>
                   <svg class="swap-on size-5"><use href="#ic-moon"></use></svg>
                 </label>
+                <a class="btn btn-square btn-ghost border border-base-300 bg-base-100" href={paths.login} aria-label={copy.navLogin} title={copy.navLogin}>
+                  <svg class="size-5"><use href="#ic-user"></use></svg>
+                </a>
           </div>
         </div>
 
@@ -320,15 +323,10 @@ function tabClass(key: NavKey) {
               <a class:list={["btn btn-sm join-item flex-1 font-bold", locale === "es" && "btn-active bg-neutral/80 text-neutral-content"]} href={esHref}>ES</a>
               <a class:list={["btn btn-sm join-item flex-1 font-bold", locale === "en" && "btn-active bg-neutral/80 text-neutral-content"]} href={enHref}>EN</a>
             </div>
-            <div class="flex items-stretch gap-2">
-              <a class="btn btn-secondary flex-1" href={paths.donate}>
-                <svg class="size-4"><use href="#ic-heart"></use></svg>
-                {copy.donateCta}
-              </a>
-              <a class="btn btn-square btn-ghost border border-base-300 bg-base-100" href={paths.login} aria-label={copy.navLogin} title={copy.navLogin}>
-                <svg class="size-5"><use href="#ic-user"></use></svg>
-              </a>
-            </div>
+            <a class="btn btn-secondary btn-block" href={paths.donate}>
+              <svg class="size-4"><use href="#ic-heart"></use></svg>
+              {copy.donateCta}
+            </a>
           </div>
         </div>
       </div>
