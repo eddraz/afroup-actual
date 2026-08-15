@@ -40,7 +40,7 @@ const bio = user.bio ?? "";
 
   <div class="mt-9 grid grid-cols-1 gap-7 lg:grid-cols-[1.15fr_0.85fr]">
     <div class="flex flex-col gap-7">
-      <form class="card bg-base-200 shadow" onsubmit="event.preventDefault();">
+      <form class="card bg-base-200 shadow" data-profile-form>
         <div class="card-body gap-5">
           <div class="flex items-start gap-4">
             <div class="bg-primary/10 text-primary flex size-11 shrink-0 items-center justify-center rounded-full">
@@ -90,16 +90,10 @@ const bio = user.bio ?? "";
             </div>
           </div>
 
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend">{copy.accountName}</legend>
-            <input class="input w-full" type="text" name="name" autocomplete="name" value={user.name} placeholder={copy.accountNamePlaceholder} />
-          </fieldset>
-
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend">{copy.loginEmail}</legend>
-            <input class="input w-full" type="email" name="email" value={user.email} readonly aria-describedby="email-help" />
-            <p id="email-help" class="text-xs opacity-60">{copy.accountEmailReadonly}</p>
-          </fieldset>
+          <div>
+            <p class="text-sm font-semibold">{copy.accountName}</p>
+            <p class="mt-1 text-[17px] font-bold">{user.name}</p>
+          </div>
 
           <fieldset class="fieldset">
             <legend class="fieldset-legend">{copy.accountBioLabel}</legend>
@@ -107,6 +101,8 @@ const bio = user.bio ?? "";
             <p class="text-xs opacity-60">{copy.accountBioHelp}</p>
           </fieldset>
 
+          <div class="alert alert-success hidden" data-profile-success><span>{copy.accountProfileSaved}</span></div>
+          <div class="alert alert-error hidden" data-profile-error><span>{copy.accountProfileSaveError}</span></div>
           <button class="btn btn-primary mt-2 h-[46px] min-h-[46px]" type="submit">
             {copy.accountProfileSave}
             <svg class="size-4"><use href="#ic-arrow"></use></svg>
@@ -184,7 +180,6 @@ const bio = user.bio ?? "";
             </div>
             <div>
               <p class="font-bold">{user.name}</p>
-              <p class="text-sm opacity-70">{user.email}</p>
             </div>
           </div>
           <form method="post" action={logoutHref}>
@@ -262,6 +257,30 @@ const bio = user.bio ?? "";
     (function () {
       var bind = function () {
         if (window.AfroUpRichEditor) window.AfroUpRichEditor.attach("#bio");
+        var profileForm = document.querySelector("[data-profile-form]");
+        if (profileForm && profileForm.dataset.bound !== "true") {
+          profileForm.dataset.bound = "true";
+          profileForm.addEventListener("submit", function (event) {
+            event.preventDefault();
+            var submit = profileForm.querySelector("button[type=submit]");
+            var success = profileForm.querySelector("[data-profile-success]");
+            var errorBox = profileForm.querySelector("[data-profile-error]");
+            if (success) success.classList.add("hidden");
+            if (errorBox) errorBox.classList.add("hidden");
+            if (submit) submit.disabled = true;
+            fetch("/api/profile", { method: "POST", body: new FormData(profileForm) })
+              .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
+              .then(function (result) {
+                if (!result.ok) throw new Error("save");
+                if (success) success.classList.remove("hidden");
+                if (submit) submit.disabled = false;
+              })
+              .catch(function () {
+                if (errorBox) errorBox.classList.remove("hidden");
+                if (submit) submit.disabled = false;
+              });
+          });
+        }
         var input = document.querySelector("[data-confirm-delete]");
         var submit = document.querySelector("[data-confirm-delete-submit]");
         if (!input || !submit || submit.dataset.bound === "true") return;
