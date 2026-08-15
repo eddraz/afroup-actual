@@ -1,15 +1,18 @@
 {
   "name": "afroup",
-  "main": "@astrojs/cloudflare/entrypoints/server",
+  "main": "src/index.js",
   "compatibility_date": "2026-03-14",
-  "compatibility_flags": ["nodejs_compat"],
   "assets": {
-    "directory": "./dist",
-    "binding": "ASSETS"
+    "directory": "public",
+    "binding": "ASSETS",
+    "run_worker_first": true
   },
-  "observability": {
-    "enabled": true
-  },
+  "routes": [
+    {
+      "pattern": "afroup.com",
+      "custom_domain": true
+    }
+  ],
   "d1_databases": [
     {
       "binding": "DB",

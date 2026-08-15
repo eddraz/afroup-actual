@@ -1,13 +1,22 @@
 {
   "name": "afroup",
   "private": true,
+  "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "deploy": "astro build && wrangler deploy",
     "db:migrate:local": "wrangler d1 migrations apply afroup-db --local",
-    "test": "bun test"
+    "test": "bun test legacy/test"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "^14.2.1",
+    "astro": "^7.2.2"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260815.1",
+    "@types/node": "^26.2.0",
     "wrangler": "^4.123.0"
   }
 }
