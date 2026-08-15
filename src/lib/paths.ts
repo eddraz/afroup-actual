@@ -28,6 +28,7 @@ export const routeIds = {
   collaborate: "colabora",
   saved: "guardados",
   login: "login",
+  signup: "registro",
   sitemap: "#",
 } as const;
 
@@ -61,6 +62,7 @@ export const paths = {
   collaborate: "/colabora",
   saved: "/guardados",
   login: "/login",
+  signup: "/registro",
   sitemap: "#",
 } as const;
 
@@ -78,6 +80,7 @@ export type NavKey =
   | "comunidad"
   | "guardados"
   | "login"
+  | "signup"
   | "donar";
 
 export const socials = [
