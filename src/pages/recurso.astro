@@ -1,0 +1,138 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getLocaleFromUrl, localizedPath, t } from "../lib/i18n";
+import { routeIds } from "../lib/paths";
+
+export const prerender = true;
+
+const locale = getLocaleFromUrl(Astro.url);
+const copy = t(locale);
+const homeHref = localizedPath(locale, routeIds.home);
+const resourcesHref = localizedPath(locale, routeIds.resources);
+const resourceHref = localizedPath(locale, routeIds.resource);
+const facts = [
+  { label: copy.resourceFormat, value: "PDF" },
+  { label: copy.resourcePages, value: "24" },
+  { label: copy.resourceLang, value: "ES / EN" },
+  { label: copy.resourceUpdated, value: "2026" },
+] as const;
+const contents = [
+  "Actividades listas para 45 y 90 minutos",
+  "Fuentes primarias comentadas",
+  "Rúbricas de evaluación",
+  "Glosario breve para el aula",
+] as const;
+const related = [
+  { title: "Guía: cine afrolatino esencial", dek: "PDF · 18 págs", figure: "bg-secondary/30" },
+  { title: "50 lecturas fundamentales", dek: "PDF · 12 págs", figure: "bg-primary/20" },
+  { title: "Glosario antirracista", dek: "Web · 2026", figure: "bg-accent/30" },
+] as const;
+---
+
+<BaseLayout title={copy.titleResource} active="recursos">
+  <div class="breadcrumbs text-sm">
+    <ul>
+      <li><a href={homeHref}>{copy.navHome}</a></li>
+      <li><a href={resourcesHref}>{copy.navResources}</a></li>
+      <li>Guía docente: cimarronaje en el aula</li>
+    </ul>
+  </div>
+
+  <div class="mt-6 grid grid-cols-1 items-start gap-8 lg:grid-cols-[1.2fr_0.8fr]">
+    <section>
+      <span class="inline-flex items-center gap-2 text-[11.5px] font-extrabold tracking-[0.1em] text-secondary uppercase">
+        <span class="size-2.5 rounded-[3px] bg-secondary"></span>
+        Guía PDF · Para docentes
+      </span>
+      <h1 class="font-display mt-3 text-[32px] leading-[1.04] font-bold lg:text-[44px]">
+        Guía docente: cimarronaje en el aula
+      </h1>
+      <p class="mt-4 max-w-[64ch] text-[17px] leading-[1.55] opacity-70">
+        Actividades, fuentes primarias y rúbricas para secundaria. Un material libre para enseñar la historia cimarrona sin el recorte del libro de texto.
+      </p>
+      <div class="mt-6 flex flex-wrap gap-2">
+        <button class="btn btn-accent" type="button">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <use href="#ic-download"></use>
+          </svg>
+          {copy.resourcesDownload}
+        </button>
+        <button class="btn btn-ghost" type="button">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <use href="#ic-bookmark"></use>
+          </svg>
+          {copy.resourceSave}
+        </button>
+        <button class="btn btn-ghost" type="button">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <use href="#ic-share"></use>
+          </svg>
+          {copy.resourceShare}
+        </button>
+      </div>
+      <div class="card bg-base-200 mt-8 overflow-hidden shadow">
+        <figure class="relative aspect-[16/9] bg-primary/20">
+          <span class="badge badge-sm absolute bottom-3 left-3">PDF</span>
+        </figure>
+      </div>
+      <article class="mt-8 max-w-[720px] text-[17px] leading-[1.7] opacity-80">
+        <h2 class="font-display mb-3 text-[24px] font-bold">{copy.resourceContents}</h2>
+        <ul class="list">
+          {
+            contents.map((item) => (
+              <li class="list-row">
+                <span class="size-2.5 rounded-full bg-accent"></span>
+                <span>{item}</span>
+              </li>
+            ))
+          }
+        </ul>
+        <h2 class="font-display mt-8 mb-3 text-[24px] font-bold">{copy.resourceAudience}</h2>
+        <p>
+          Docentes de secundaria, talleres comunitarios y círculos de lectura. El material se puede imprimir o proyectar y no requiere suscripción.
+        </p>
+      </article>
+    </section>
+
+    <aside class="card bg-base-200 lg:sticky lg:top-[90px] shadow">
+      <div class="card-body">
+        <h2 class="card-title">{copy.resourceEyebrow}</h2>
+        <ul class="list">
+          {
+            facts.map((fact) => (
+              <li class="list-row">
+                <div>
+                  <div class="text-xs font-extrabold tracking-[0.08em] uppercase opacity-60">{fact.label}</div>
+                  <div class="font-bold">{fact.value}</div>
+                </div>
+              </li>
+            ))
+          }
+        </ul>
+        <div class="card-actions">
+          <button class="btn btn-accent btn-block" type="button">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <use href="#ic-download"></use>
+            </svg>
+            {copy.resourcesDownload}
+          </button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <h2 class="font-display mt-10 mb-5 text-[26px] font-bold">{copy.resourceRelated}</h2>
+  <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    {
+      related.map((item) => (
+        <a class="card bg-base-200 shadow" href={resourceHref}>
+          <figure class:list={["aspect-[16/10]", item.figure]}></figure>
+          <div class="card-body">
+            <h3 class="card-title font-display">{item.title}</h3>
+            <p class="text-sm opacity-60">{item.dek}</p>
+          </div>
+        </a>
+      ))
+    }
+  </div>
+</BaseLayout>

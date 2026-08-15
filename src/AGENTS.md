@@ -32,6 +32,7 @@
 - Keep the Collaborate mockup at `/colabora` and `/en/colabora`, wired through `paths.collaborate`.
 - Keep the Contact mockup at `/contacto` and `/en/contacto`, wired through `paths.contact`.
 - Keep the Resources mockup at `/recursos` and `/en/recursos`, wired through `paths.resources`.
+- Keep the resource detail mockup at `/recurso` and `/en/recurso`, wired through `paths.resource`.
 - Keep the Projects mockup at `/proyectos` and `/en/proyectos`, wired through `paths.projects`.
 - Keep the People mockup at `/referentes` and `/en/referentes`, wired through `paths.people`.
 - Keep the Community hub at `/comunidad` and `/en/comunidad`, wired through `paths.community`, with links to Referentes, Proyectos, and Colabora.

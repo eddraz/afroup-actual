@@ -9,6 +9,7 @@ const locale = getLocaleFromUrl(Astro.url);
 const copy = t(locale);
 const homeHref = localizedPath(locale, routeIds.home);
 const collaborateHref = localizedPath(locale, routeIds.collaborate);
+const resourceHref = localizedPath(locale, routeIds.resource);
 const chips = [
   copy.resourcesChipAll,
   copy.resourcesChipGuides,
@@ -109,7 +110,7 @@ const items = [
           <div class:list={["relative size-20 overflow-hidden rounded-box", item.figure]}>
             {item.label ? <span class="badge badge-sm absolute bottom-1.5 left-1.5">{item.label}</span> : null}
           </div>
-          <div class="list-col-grow">
+          <a class="list-col-grow" href={resourceHref}>
             <span class:list={["inline-flex items-center gap-2 text-[11.5px] font-extrabold tracking-[0.1em] uppercase", item.tagClass]}>
               <span class:list={["size-2.5 rounded-[3px]", item.swatch]}></span>
               {item.tag}
@@ -117,22 +118,22 @@ const items = [
             <h3 class="font-display text-xl font-bold">{item.title}</h3>
             <p class="opacity-70">{item.dek}</p>
             <p class="text-sm opacity-50">{item.meta}</p>
-          </div>
+          </a>
           {
             item.action === "download" ? (
-              <button class="btn btn-accent btn-sm" type="button">
+              <a class="btn btn-accent btn-sm" href={resourceHref}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                   <use href="#ic-download"></use>
                 </svg>
                 {copy.resourcesDownload}
-              </button>
+              </a>
             ) : (
-              <button class="btn btn-ghost btn-sm" type="button">
+              <a class="btn btn-ghost btn-sm" href={resourceHref}>
                 {item.action === "consult" ? copy.resourcesConsult : copy.resourcesExplore}
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                   <use href="#ic-arrow"></use>
                 </svg>
-              </button>
+              </a>
             )
           }
         </li>

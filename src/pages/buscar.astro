@@ -11,6 +11,7 @@ const paths = {
   ...staticPaths,
   search: localizedPath(locale, routeIds.search),
   article: localizedPath(locale, routeIds.article),
+    resource: localizedPath(locale, routeIds.resource),
 };
 const query = Astro.url.searchParams.get("q")?.trim() || "palenques";
 const results = [
@@ -49,7 +50,7 @@ const results = [
     price: "US$ 12",
   },
   {
-    href: paths.resources,
+    href: paths.resource,
     kind: "Recurso · Guía PDF",
     badge: "badge-primary",
     figure: "bg-primary/20",

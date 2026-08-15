@@ -9,7 +9,7 @@ const locale = getLocaleFromUrl(Astro.url);
 const copy = t(locale);
 const homeHref = localizedPath(locale, routeIds.home);
 const articleHref = localizedPath(locale, routeIds.article);
-const resourcesHref = localizedPath(locale, routeIds.resources);
+const resourceHref = localizedPath(locale, routeIds.resource);
 const productHref = routeIds.product;
 const items = [
   {
@@ -27,7 +27,7 @@ const items = [
   },
   {
     kind: "resource",
-    href: resourcesHref,
+    href: resourceHref,
     figure: "bg-primary/20",
     label: "PDF",
     tag: "Recurso · Guía",
@@ -66,7 +66,7 @@ const items = [
   },
   {
     kind: "resource",
-    href: resourcesHref,
+    href: resourceHref,
     figure: "bg-accent/30",
     label: "web",
     tag: "Recurso · Glosario",
