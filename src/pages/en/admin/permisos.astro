@@ -1,0 +1,98 @@
+---
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import { getLocaleFromUrl, localizedPath, t } from "../../../lib/i18n";
+import { routeIds } from "../../../lib/paths";
+import { env } from "cloudflare:workers";
+
+export const prerender = false;
+
+const locale = getLocaleFromUrl(Astro.url);
+const copy = t(locale);
+const adminHref = localizedPath(locale, routeIds.admin);
+
+interface ModuleRow {
+  id: number;
+  name: string;
+  slug: string;
+}
+
+interface PermissionRow {
+  id: number;
+  module_id: number;
+  action: "create" | "read" | "update" | "delete";
+}
+
+const modules = (await env.DB.prepare(
+  "SELECT id, name, slug FROM admin_modules ORDER BY name",
+).all<ModuleRow>()).results ?? [];
+
+const permissions = (await env.DB.prepare(
+  "SELECT id, module_id, action FROM admin_permissions ORDER BY module_id, action",
+).all<PermissionRow>()).results ?? [];
+
+const actions: PermissionRow["action"][] = ["create", "read", "update", "delete"];
+
+const actionLabels: Record<PermissionRow["action"], string> = {
+  create: copy.adminActionCreate,
+  read: copy.adminActionRead,
+  update: copy.adminActionUpdate,
+  delete: copy.adminActionDelete,
+};
+
+const matrix = new Map<number, Map<PermissionRow["action"], number>>();
+for (const perm of permissions) {
+  if (!matrix.has(perm.module_id)) matrix.set(perm.module_id, new Map());
+  matrix.get(perm.module_id)!.set(perm.action, perm.id);
+}
+---
+
+<AdminLayout title={`${copy.titleAdmin} · ${copy.adminPermissions}`} active="permissions">
+  <header class="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-end">
+    <div>
+      <p class="text-primary text-xs font-extrabold tracking-[0.18em] uppercase">{copy.navAdmin}</p>
+      <h1 class="font-display text-[28px] leading-[1.06] font-bold tracking-[-0.005em] lg:text-[34px]">{copy.adminPermissions}</h1>
+    </div>
+    <a class="btn btn-sm btn-ghost" href={adminHref}>{copy.adminBackSite.replace("sitio", "Panel") || "Panel"}</a>
+  </header>
+
+  <p class="mt-3 max-w-[58ch] text-sm opacity-70">{copy.adminLead}</p>
+
+  <div class="card bg-base-100 border border-base-300 shadow-sm mt-6 overflow-x-auto">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>{copy.adminModuleName}</th>
+          {actions.map((action) => <th class="text-center">{actionLabels[action]}</th>)}
+        </tr>
+      </thead>
+      <tbody>
+        {modules.map((m) => {
+          const perms = matrix.get(m.id) ?? new Map();
+          return (
+            <tr>
+              <td>
+                <p class="font-semibold">{m.name}</p>
+                <p class="text-xs opacity-60"><code>{m.slug}</code></p>
+              </td>
+              {actions.map((action) => {
+                const pid = perms.get(action);
+                return (
+                  <td class="text-center">
+                    {pid ? (
+                      <span class="badge badge-sm badge-success gap-1">
+                        <svg class="size-3"><use href="#ic-key"></use></svg>
+                        {m.slug}:{action}
+                      </span>
+                    ) : (
+                      <span class="text-xs opacity-40">—</span>
+                    )}
+                  </td>
+                );
+              })}
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  </div>
+</AdminLayout>
