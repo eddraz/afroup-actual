@@ -168,8 +168,8 @@ async function createPendingEntry(request, env) {
 
   const departmentSlug = text(body.department || body.department_slug, 80);
   const category = text(body.category, 80);
-  const information = text(body.information || body.body, MAX_BODY);
-  const firstLine = information.split(/\r?\n/).map((line) => line.trim()).find(Boolean) || "";
+  const information = sanitizeHtml(body.information || body.body, MAX_BODY);
+  const firstLine = htmlToPlain(information).split(/\r?\n/).map((line) => line.trim()).find(Boolean) || "";
   const title = firstLine.slice(0, 180) || "Información de ayuda";
 
   if (!departmentSlug) return json({ error: "El departamento es obligatorio." }, 400);
@@ -459,10 +459,10 @@ async function updateAdminEntry(request, env, id) {
   }
 
   const information = hasOwn(body, "information")
-    ? text(body.information, MAX_BODY)
+    ? sanitizeHtml(body.information, MAX_BODY)
     : (existing.information || existing.body || existing.summary || "");
   const category = hasOwn(body, "category") ? text(body.category, 80) : existing.category;
-  const firstLine = information.split(/\r?\n/).map((line) => line.trim()).find(Boolean) || "";
+  const firstLine = htmlToPlain(information).split(/\r?\n/).map((line) => line.trim()).find(Boolean) || "";
   const title = firstLine.slice(0, 180) || existing.title || "Información de ayuda";
 
   if (!information) return json({ error: "La información es obligatoria." }, 400);
@@ -548,6 +548,60 @@ async function readJson(request) {
   } catch {
     return null;
   }
+}
+
+
+function htmlToPlain(value) {
+  return String(value || "")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>/gi, "\n")
+    .replace(/<\/li>/gi, "\n")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/\s+\n/g, "\n")
+    .trim();
+}
+
+function sanitizeHtml(value, max = MAX_BODY) {
+  const raw = String(value == null ? "" : value).slice(0, max);
+  if (!/<[a-z][\s\S]*>/i.test(raw)) {
+    return raw
+      .split(/\n{2,}/)
+      .map((block) => `<p>${escapeHtmlText(block).replace(/\n/g, "<br>")}</p>`)
+      .join("");
+  }
+  const allowed = new Set(["P", "BR", "B", "STRONG", "I", "EM", "UL", "OL", "LI", "A", "DIV"]);
+  let out = raw
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/on[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
+    .replace(/javascript:/gi, "");
+  out = out.replace(/<\/?([a-z0-9]+)([^>]*)>/gi, (match, tag, attrs) => {
+    const name = String(tag).toUpperCase();
+    if (!allowed.has(name)) return "";
+    if (name === "BR") return "<br>";
+    if (match.startsWith("</")) return `</${name.toLowerCase()}>`;
+    if (name === "A") {
+      const href = (attrs.match(/href\s*=\s*("([^"]*)"|'([^']*)'|([^\s>]+))/i) || [])[2]
+        || (attrs.match(/href\s*=\s*("([^"]*)"|'([^']*)'|([^\s>]+))/i) || [])[3]
+        || (attrs.match(/href\s*=\s*("([^"]*)"|'([^']*)'|([^\s>]+))/i) || [])[4]
+        || "";
+      if (!/^https?:\/\//i.test(href) && !/^mailto:/i.test(href)) return "<a>";
+      return `<a href="${escapeHtmlText(href)}" rel="noopener noreferrer" target="_blank">`;
+    }
+    return `<${name.toLowerCase()}>`;
+  });
+  return out.trim();
+}
+
+function escapeHtmlText(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 function text(value, max = MAX_FIELD) {

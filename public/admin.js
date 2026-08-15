@@ -21,6 +21,7 @@
   var departmentSelect = document.getElementById("edit-department");
   var searchForm = document.getElementById("admin-search");
   var searchInput = document.getElementById("admin-q");
+  var infoEditor = window.AfroUpRichEditor ? window.AfroUpRichEditor.attach("#edit-information") : null;
 
   function escapeHtml(value) {
     return String(value == null ? "" : value)
@@ -140,7 +141,9 @@
     departmentSelect.value = entry.department_slug;
     document.getElementById("edit-status").value = entry.status;
     document.getElementById("edit-category").value = entry.category || "";
-    document.getElementById("edit-information").value = entry.information || entry.body || entry.summary || "";
+    var info = entry.information || entry.body || entry.summary || "";
+    if (infoEditor) infoEditor.setHtml(info);
+    else document.getElementById("edit-information").value = info;
     setMsg(editMsg, "", true);
     editor.scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -150,7 +153,7 @@
       department: departmentSelect.value,
       status: status || document.getElementById("edit-status").value,
       category: document.getElementById("edit-category").value,
-      information: document.getElementById("edit-information").value,
+      information: infoEditor ? infoEditor.getHtml() : document.getElementById("edit-information").value,
     };
   }
 

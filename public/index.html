@@ -51,6 +51,16 @@
   .card{ cursor:default; }
   .card .body{ gap:8px; }
   .card .dek{ margin:0; font-size:15.5px; line-height:1.45; color:var(--ink); }
+  .card .dek p{ margin:0 0 .55em; }
+  .card .dek p:last-child{ margin-bottom:0; }
+  .card .dek ul, .card .dek ol{ margin:.2em 0 .55em 1.2em; padding:0; }
+  .rich-editor{ border:1.5px solid var(--line); border-radius:14px; overflow:hidden; background:var(--paper); }
+  .rich-toolbar{ display:flex; gap:8px; padding:8px 10px; border-bottom:1px solid var(--line); background:var(--cream); }
+  .rich-toolbar button{ border:0; background:var(--paper); border-radius:8px; min-width:34px; height:32px; font-weight:800; cursor:pointer; }
+  .rich-surface{ min-height:160px; padding:13px 16px; outline:none; font:inherit; line-height:1.55; }
+  .rich-surface p{ margin:0 0 .6em; }
+  .rich-surface ul, .rich-surface ol{ margin:.2em 0 .6em 1.2em; }
+  .rich-source{ position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden; }
   .pager{ display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap; margin-top:16px; }
   .pager button{ min-width:38px; height:38px; border:1.5px solid var(--ink); background:transparent; border-radius:999px; font-weight:700; font-size:14px; color:var(--ink); cursor:pointer; }
   .pager button.on{ background:var(--ink); color:var(--cream); }
@@ -150,6 +160,7 @@
 </main>
 <script src="site.js"></script>
 <script src="drawer.js"></script>
+<script src="rich-editor.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

@@ -73,20 +73,25 @@
       .join("");
   }
 
-  function compactText() {
-    var parts = [];
-    for (var i = 0; i < arguments.length; i += 1) {
-      var value = String(arguments[i] || "").replace(/\s+/g, " ").trim();
-      if (value && parts.indexOf(value) === -1) parts.push(value);
-    }
-    return parts.join(" ");
+  function looksLikeHtml(value) {
+    return /<[a-z][\s\S]*>/i.test(String(value || ""));
+  }
+
+  function formatPlain(value) {
+    return escapeHtml(value).replace(/\n/g, "<br>");
+  }
+
+  function entryHtml(entry) {
+    var raw = entry.information || entry.body || entry.summary || "";
+    if (looksLikeHtml(raw)) return raw;
+    var extras = [entry.location, [entry.contact_name, entry.contact_phone, entry.contact_email].filter(Boolean).join(" · ")]
+      .filter(Boolean)
+      .join("\n");
+    var text = [raw, extras].filter(Boolean).join("\n");
+    return text ? formatPlain(text) : "Sin descripción adicional.";
   }
 
   function entryCard(entry) {
-    var contact = [entry.contact_name, entry.contact_phone, entry.contact_email]
-      .filter(Boolean)
-      .join(" · ");
-    var text = compactText(entry.information, entry.location, entry.summary, entry.body, contact);
     return (
       '<article class="card">' +
       '<div class="body">' +
@@ -96,9 +101,9 @@
       "<h3>" +
       escapeHtml(entry.title) +
       "</h3>" +
-      '<p class="dek">' +
-      escapeHtml(text || "Sin descripción adicional.") +
-      "</p>" +
+      '<div class="dek">' +
+      entryHtml(entry) +
+      "</div>" +
       "</div></article>"
     );
   }
@@ -239,13 +244,20 @@
     });
   }
 
+  var infoEditor = window.AfroUpRichEditor ? window.AfroUpRichEditor.attach("#information") : null;
+
   if (form) {
     form.addEventListener("submit", function (event) {
       event.preventDefault();
+      var information = infoEditor ? infoEditor.getHtml() : document.getElementById("information").value;
+      if (infoEditor && infoEditor.isEmpty()) {
+        setMsg(formMsg, "La información es obligatoria.", false);
+        return;
+      }
       var payload = {
         department: departmentSelect.value,
         category: document.getElementById("category").value,
-        information: document.getElementById("information").value,
+        information: information,
       };
       fetchJson("/api/entries", {
         method: "POST",
@@ -254,6 +266,7 @@
       })
         .then(function (data) {
           form.reset();
+          if (infoEditor) infoEditor.setHtml("");
           fillDepartmentSelect();
           setMsg(formMsg, data.message || "Información enviada para revisión.", true);
         })
