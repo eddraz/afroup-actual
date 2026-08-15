@@ -1,8 +1,10 @@
 (function () {
   var state = {
     departments: [],
+    categories: [],
     entries: [],
     status: "pending",
+    query: "",
     current: null,
   };
 
@@ -17,6 +19,8 @@
   var editMsg = document.getElementById("edit-msg");
   var logoutBtn = document.getElementById("logout-btn");
   var departmentSelect = document.getElementById("edit-department");
+  var searchForm = document.getElementById("admin-search");
+  var searchInput = document.getElementById("admin-q");
 
   function escapeHtml(value) {
     return String(value == null ? "" : value)
@@ -77,6 +81,16 @@
       .join("");
   }
 
+  function fillCategories() {
+    var list = document.getElementById("category-options");
+    if (!list) return;
+    list.innerHTML = state.categories
+      .map(function (category) {
+        return '<option value="' + escapeHtml(category) + '"></option>';
+      })
+      .join("");
+  }
+
   function renderTable() {
     entriesBody.innerHTML = state.entries
       .map(function (entry) {
@@ -114,6 +128,9 @@
       })
       .join("");
     emptyMsg.hidden = state.entries.length > 0;
+    emptyMsg.textContent = state.query
+      ? "No hay registros que coincidan con “" + state.query + "”."
+      : "No hay registros en este filtro.";
   }
 
   function openEditor(entry) {
@@ -152,7 +169,10 @@
   }
 
   function loadEntries() {
-    return fetchJson("/api/admin/entries?status=" + encodeURIComponent(state.status)).then(function (data) {
+    var params = new URLSearchParams();
+    params.set("status", state.status);
+    if (state.query) params.set("q", state.query);
+    return fetchJson("/api/admin/entries?" + params.toString()).then(function (data) {
       state.entries = data.entries || [];
       renderTable();
       showDashboard(true);
@@ -163,6 +183,13 @@
     return fetchJson("/api/departments").then(function (data) {
       state.departments = data.departments || [];
       fillDepartments();
+    });
+  }
+
+  function loadCategories() {
+    return fetchJson("/api/admin/categories").then(function (data) {
+      state.categories = data.categories || [];
+      fillCategories();
     });
   }
 
@@ -177,7 +204,7 @@
       .then(function (data) {
         setMsg(editMsg, "Cambios guardados.", true);
         if (data.entry) openEditor(data.entry);
-        return loadEntries();
+        return Promise.all([loadEntries(), loadCategories()]);
       })
       .catch(function (err) {
         if (err.status === 401) {
@@ -201,7 +228,7 @@
     })
       .then(function () {
         setMsg(loginMsg, "", true);
-        return Promise.all([loadDepartments(), loadEntries()]);
+        return Promise.all([loadDepartments(), loadCategories(), loadEntries()]);
       })
       .catch(function (err) {
         setMsg(loginMsg, err.message, false);
@@ -216,6 +243,16 @@
         showDashboard(false);
       });
   });
+
+  if (searchForm) {
+    searchForm.addEventListener("submit", function (event) {
+      event.preventDefault();
+      state.query = searchInput ? searchInput.value.trim() : "";
+      loadEntries().catch(function (err) {
+        if (err.status === 401) showDashboard(false);
+      });
+    });
+  }
 
   statusChips.addEventListener("click", function (event) {
     var chip = event.target.closest(".chip");
@@ -275,7 +312,7 @@
     saveEntry("rejected");
   });
 
-  Promise.all([loadDepartments(), loadEntries()]).catch(function (err) {
+  Promise.all([loadDepartments(), loadCategories(), loadEntries()]).catch(function (err) {
     if (err.status === 401) {
       showDashboard(false);
       return;

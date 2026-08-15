@@ -92,6 +92,10 @@ async function handleApi(request, env, url) {
     return listAdminEntries(request, env, url);
   }
 
+  if (path === "/api/admin/categories" && method === "GET") {
+    return listAdminCategories(request, env);
+  }
+
   const entryMatch = path.match(/^\/api\/admin\/entries\/(\d+)$/);
   if (entryMatch && method === "PATCH") {
     return updateAdminEntry(request, env, Number(entryMatch[1]));
@@ -357,24 +361,59 @@ async function adminLogout(request, env) {
   return new Response(JSON.stringify({ ok: true }), { status: 200, headers });
 }
 
+async function listAdminCategories(request, env) {
+  const session = await requireAdmin(request, env);
+  if (session instanceof Response) return session;
+
+  const { results } = await env.DB.prepare(
+    `SELECT DISTINCT TRIM(category) AS category
+       FROM aid_entries
+      WHERE category IS NOT NULL AND TRIM(category) != ''
+      ORDER BY category COLLATE NOCASE`
+  ).all();
+
+  const csrf = csrfCookies(request);
+  return jsonResponse(
+    { categories: (results || []).map((row) => row.category).filter(Boolean), csrf: csrf.token },
+    200,
+    request,
+    csrf.cookies
+  );
+}
+
 async function listAdminEntries(request, env, url) {
   const session = await requireAdmin(request, env);
   if (session instanceof Response) return session;
 
   const status = (url.searchParams.get("status") || "pending").trim();
+  const q = (url.searchParams.get("q") || "").trim();
   const allowed = ["pending", "published", "rejected", "all"];
   if (!allowed.includes(status)) {
     return json({ error: "Estado no válido." }, 400);
   }
 
-  const where = status === "all" ? "" : "WHERE e.status = ?";
-  const binds = status === "all" ? [] : [status];
+  const where = [];
+  const binds = [];
+  if (status !== "all") {
+    where.push("e.status = ?");
+    binds.push(status);
+  }
+  if (q) {
+    const like = `%${q}%`;
+    where.push(
+      `(e.title LIKE ? OR IFNULL(e.summary, '') LIKE ? OR IFNULL(e.body, '') LIKE ?
+        OR IFNULL(e.location, '') LIKE ? OR IFNULL(e.category, '') LIKE ?
+        OR IFNULL(e.contact_name, '') LIKE ? OR IFNULL(e.contact_phone, '') LIKE ?
+        OR IFNULL(e.contact_email, '') LIKE ? OR d.name LIKE ? OR d.slug LIKE ?)`
+    );
+    binds.push(like, like, like, like, like, like, like, like, like, like);
+  }
 
   const { results } = await env.DB.prepare(
     `SELECT e.*, d.slug AS department_slug, d.name AS department_name
        FROM aid_entries e
        JOIN departments d ON d.id = e.department_id
-       ${where}
+       ${where.length ? "WHERE " + where.join(" AND ") : ""}
       ORDER BY e.updated_at DESC, e.id DESC`
   )
     .bind(...binds)

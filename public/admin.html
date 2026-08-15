@@ -64,7 +64,11 @@
         <button class="btn btn-ghost btn-sm" id="logout-btn" type="button">Cerrar sesión</button>
             </div>
       </div>
-      <div class="chips" id="status-chips">
+      <form class="admin-search" id="admin-search" style="margin:16px 0 0;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+        <input id="admin-q" type="search" placeholder="Buscar título, lugar, contacto o departamento…" style="flex:1;min-width:220px;border:1.5px solid var(--line);border-radius:999px;padding:11px 16px;font:inherit;" />
+        <button class="btn btn-primary btn-sm" type="submit">Buscar</button>
+      </form>
+      <div class="chips" id="status-chips" style="margin-top:14px;">
         <button class="chip on" type="button" data-status="pending">Pendientes</button>
         <button class="chip" type="button" data-status="published">Publicados</button>
         <button class="chip" type="button" data-status="rejected">Rechazados</button>
@@ -122,7 +126,8 @@
           </div>
           <div class="field">
             <label for="edit-category">Categoría</label>
-            <input id="edit-category" type="text" />
+            <input id="edit-category" type="text" list="category-options" autocomplete="off" placeholder="Elegí una existente o escribí una nueva" />
+            <datalist id="category-options"></datalist>
           </div>
         </div>
         <div class="fgrid" style="margin-top:18px;">
