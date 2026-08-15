@@ -37,3 +37,7 @@
 ## Admin RBAC migrations
 
 - `0010_admin_rbac.sql` introduces the modules / permissions / roles / users schema (`admin_modules`, `admin_permissions`, `admin_roles`, `admin_role_permissions`, `admin_users`, `admin_user_permissions`) and seeds seven modules, the four base permissions per module, and three default roles (Administrador, Editor, Moderador). Keep it after `0009` so the public accounts schema stays unaffected.
+
+## Admin invitations
+
+- `0011_admin_invitations.sql` recreates `admin_users` with `password_hash` nullable and an `invite_pending` flag, then adds the `admin_user_invitations` token table for the email-link activation flow (24h TTL).
