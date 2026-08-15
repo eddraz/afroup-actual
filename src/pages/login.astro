@@ -8,6 +8,7 @@ export const prerender = true;
 const locale = getLocaleFromUrl(Astro.url);
 const copy = t(locale);
 const homeHref = localizedPath(locale, routeIds.home);
+const supportHref = localizedPath(locale, routeIds.support);
 ---
 
 <BaseLayout title={copy.titleLogin} active="login">
@@ -21,26 +22,101 @@ const homeHref = localizedPath(locale, routeIds.home);
   <section class="hero relative mt-6 overflow-hidden rounded-[24px] border border-base-300 bg-base-200 shadow-lg">
     <div class="hero-content relative w-full flex-col items-start gap-3 px-6 py-8 lg:px-11 lg:py-11">
       <p class="text-primary text-xs font-extrabold tracking-[0.18em] uppercase">{copy.loginEyebrow}</p>
-      <h1 class="font-display max-w-[18ch] text-[31px] font-bold lg:text-[44px]">{copy.loginTitle}</h1>
-      <p class="max-w-[56ch] text-[17px] leading-[1.55] opacity-70">{copy.loginLead}</p>
+      <h1 class="font-display max-w-[20ch] text-[31px] leading-[1.06] font-bold lg:text-[46px]">{copy.loginTitle}</h1>
+      <p class="max-w-[58ch] text-[17px] leading-[1.55] opacity-70">{copy.loginLead}</p>
     </div>
   </section>
 
-  <form class="card bg-base-200 mx-auto mt-8 max-w-[440px] shadow" onsubmit="return false">
-    <div class="card-body">
-      <fieldset class="fieldset">
-        <legend class="fieldset-legend">{copy.loginEmail}</legend>
-        <input class="input w-full" type="email" name="email" autocomplete="email" placeholder={copy.loginEmailPlaceholder} />
-      </fieldset>
-      <fieldset class="fieldset">
-        <legend class="fieldset-legend">{copy.loginPassword}</legend>
-        <input class="input w-full" type="password" name="password" autocomplete="current-password" placeholder={copy.loginPasswordPlaceholder} />
-      </fieldset>
-      <div class="card-actions flex-col">
-        <button class="btn btn-primary btn-block" type="submit">{copy.loginSubmit}</button>
-        <a class="btn btn-ghost btn-sm" href="#">{copy.loginForgot}</a>
+  <div class="mt-9 grid grid-cols-1 gap-7 lg:grid-cols-[1.15fr_0.85fr]">
+    <form class="card bg-base-200 shadow" onsubmit="return false">
+      <div class="card-body gap-4">
+        <h2 class="card-title font-display text-[22px] tracking-[-0.005em]">{copy.loginTitle}</h2>
+
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">{copy.loginEmail}</legend>
+          <input class="input w-full" type="email" name="email" autocomplete="email" placeholder={copy.loginEmailPlaceholder} required />
+        </fieldset>
+
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">{copy.loginPassword}</legend>
+          <input class="input w-full" type="password" name="password" autocomplete="current-password" placeholder={copy.loginPasswordPlaceholder} required />
+        </fieldset>
+
+        <div class="mt-1 flex items-center justify-between gap-3 text-sm">
+          <label class="label cursor-pointer gap-2 p-0">
+            <input type="checkbox" name="remember" class="checkbox checkbox-sm" />
+            <span class="label-text">{copy.loginRemember}</span>
+          </label>
+          <a class="link link-hover text-primary" href="#">{copy.loginForgot}</a>
+        </div>
+
+        <button class="btn btn-primary mt-2 h-[46px] min-h-[46px]" type="submit">
+          {copy.loginSubmit}
+          <svg class="size-4"><use href="#ic-arrow"></use></svg>
+        </button>
+
+        <div class="divider text-xs opacity-60">{copy.loginDivider}</div>
+
+        <div class="flex flex-col items-center gap-1 text-center">
+          <p class="text-sm opacity-70">{copy.loginCreateLead}</p>
+          <a class="btn btn-dash btn-sm" href="#">{copy.loginCreate}</a>
+        </div>
+
+        <p class="mt-2 text-[12.5px] opacity-60">{copy.loginNote}</p>
       </div>
-      <p class="text-[12.5px] opacity-60">{copy.loginNote}</p>
-    </div>
-  </form>
+    </form>
+
+    <aside class="flex flex-col gap-5">
+      <div class="card bg-base-200 shadow">
+        <div class="card-body gap-5">
+          <h3 class="font-display text-[20px] tracking-[-0.005em]">{copy.loginAsideTitle}</h3>
+
+          <div class="flex items-start gap-3">
+            <div class="bg-primary/10 text-primary flex size-11 shrink-0 items-center justify-center rounded-full">
+              <svg class="size-5"><use href="#ic-bookmark"></use></svg>
+            </div>
+            <div>
+              <p class="font-bold">{copy.loginBenefit1Title}</p>
+              <p class="text-sm opacity-70">{copy.loginBenefit1Lead}</p>
+            </div>
+          </div>
+
+          <div class="flex items-start gap-3">
+            <div class="bg-accent/15 text-accent flex size-11 shrink-0 items-center justify-center rounded-full">
+              <svg class="size-5"><use href="#ic-bag"></use></svg>
+            </div>
+            <div>
+              <p class="font-bold">{copy.loginBenefit2Title}</p>
+              <p class="text-sm opacity-70">{copy.loginBenefit2Lead}</p>
+            </div>
+          </div>
+
+          <div class="flex items-start gap-3">
+            <div class="bg-secondary/15 text-secondary flex size-11 shrink-0 items-center justify-center rounded-full">
+              <svg class="size-5"><use href="#ic-book2"></use></svg>
+            </div>
+            <div>
+              <p class="font-bold">{copy.loginBenefit3Title}</p>
+              <p class="text-sm opacity-70">{copy.loginBenefit3Lead}</p>
+            </div>
+          </div>
+
+          <div class="mt-1 h-[88px] rounded-[14px] bg-[url('/assets/pattern.png')] bg-cover bg-center"></div>
+        </div>
+      </div>
+
+      <div class="card bg-accent text-accent-content shadow">
+        <div class="card-body gap-3">
+          <h3 class="font-display text-[19px] tracking-[-0.005em]">{copy.supportTitle}</h3>
+          <p class="text-sm opacity-90">{copy.supportLead}</p>
+          <a class="btn btn-neutral btn-block" href={supportHref}>
+            <svg class="size-4"><use href="#ic-heart"></use></svg>
+            {copy.donateCta}
+          </a>
+        </div>
+      </div>
+
+      <p class="text-[12.5px] opacity-60">{copy.loginAsideNote}</p>
+    </aside>
+  </div>
 </BaseLayout>
