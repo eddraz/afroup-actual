@@ -30,6 +30,7 @@ export const routeIds = {
   login: "login",
   signup: "registro",
   recover: "recuperar",
+  account: "cuenta",
   sitemap: "#",
 } as const;
 
@@ -65,6 +66,7 @@ export const paths = {
   login: "/login",
   signup: "/registro",
   recover: "/recuperar",
+  account: "/cuenta",
   sitemap: "#",
 } as const;
 
@@ -84,6 +86,7 @@ export type NavKey =
   | "login"
   | "signup"
   | "recover"
+  | "account"
   | "donar";
 
 export const socials = [
