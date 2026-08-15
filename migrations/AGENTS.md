@@ -29,3 +29,7 @@
 ## Child DOX Index
 
 - No nested child boundaries are needed in `migrations/` now.
+
+## Account migrations
+
+- `0009_afroup_users.sql` adds the public-site accounts schema (`afroup_users` + `afroup_email_verifications`). Keep it after `0008` so the legacy guide/admin migrations remain unaffected.
