@@ -11,7 +11,7 @@ export const routeIds = {
   article: "articulo",
   store: "tienda",
   product: "producto",
-  cart: "carrito",
+  cart: "tienda/carrito",
   resources: "recursos",
   resource: "recurso",
   donate: "donacion",
