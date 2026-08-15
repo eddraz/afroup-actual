@@ -1,0 +1,69 @@
+import type { APIRoute } from "astro";
+import { env } from "cloudflare:workers";
+import { sendInviteEmail, type EmailLocale } from "../../../../lib/email";
+
+export const prerender = false;
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const INVITE_TTL_MS = 1000 * 60 * 60 * 24;
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "content-type": "application/json; charset=utf-8" },
+  });
+}
+
+function isLocale(value: unknown): value is EmailLocale {
+  return value === "es" || value === "en";
+}
+
+export const POST: APIRoute = async ({ request }) => {
+  const form = await request.formData();
+  const name = String(form.get("name") ?? "").trim();
+  const email = String(form.get("email") ?? "").trim().toLowerCase();
+  const locale = isLocale(form.get("locale")) ? (form.get("locale") as EmailLocale) : "es";
+  const roleIdRaw = form.get("roleId");
+  const roleId = roleIdRaw && typeof roleIdRaw === "string" && roleIdRaw !== "" ? Number(roleIdRaw) : null;
+  const permissionIds = (form.getAll("permissionIds") as string[])
+    .map((value) => Number(value))
+    .filter((value) => Number.isFinite(value) && value > 0);
+
+  if (!name) return json({ ok: false, error: "name_required" }, 400);
+  if (!EMAIL_RE.test(email)) return json({ ok: false, error: "email_invalid" }, 400);
+
+  const existing = await env.DB.prepare(
+    "SELECT id, invite_pending FROM admin_users WHERE email = ? LIMIT 1",
+  ).bind(email).first<{ id: number; invite_pending: number }>();
+  if (existing) return json({ ok: false, error: "email_taken" }, 409);
+
+  const insert = await env.DB.prepare(
+    `INSERT INTO admin_users (name, email, password_hash, role_id, is_active, invite_pending)
+     VALUES (?, ?, NULL, ?, 1, 1)
+     RETURNING id`,
+  ).bind(name, email, roleId).first<{ id: number }>();
+  if (!insert) return json({ ok: false, error: "insert_failed" }, 500);
+
+  if (permissionIds.length > 0) {
+    const stmt = env.DB.prepare(
+      "INSERT INTO admin_user_permissions (user_id, permission_id) VALUES (?, ?)",
+    );
+    await env.DB.batch(permissionIds.map((permissionId) => stmt.bind(insert.id, permissionId)));
+  }
+
+  const token = crypto.randomUUID();
+  const expiresAt = new Date(Date.now() + INVITE_TTL_MS).toISOString();
+  await env.DB.prepare(
+    "INSERT INTO admin_user_invitations (token, user_id, expires_at) VALUES (?, ?, ?)",
+  ).bind(token, insert.id, expiresAt).run();
+
+  const acceptUrl = new URL(`/admin/usuarios/aceptar?token=${encodeURIComponent(token)}`, request.url).toString();
+  try {
+    await sendInviteEmail(env, { to: email, acceptUrl, locale, name });
+  } catch (error) {
+    console.error("admin invite: email send failed", error);
+    return json({ ok: false, error: "email_failed" }, 502);
+  }
+
+  return json({ ok: true, userId: insert.id, emailSentTo: email });
+};
