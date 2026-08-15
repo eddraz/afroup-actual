@@ -153,15 +153,15 @@ function tabClass(key: NavKey) {
         </nav>
       </div>
 
-      <div class="drawer-side z-30">
+      <div class="drawer-side z-30 overflow-hidden">
         <label for="site-drawer" aria-label="Cerrar menú" class="drawer-overlay"></label>
-        <div class="flex min-h-full w-[264px] flex-col border-r border-base-300 bg-base-200">
-          <div class="px-[30px] pt-[30px] pb-[21px]">
+        <div class="flex h-dvh max-h-dvh w-[264px] flex-col border-r border-base-300 bg-base-200">
+          <div class="shrink-0 px-[30px] pt-[30px] pb-[21px]">
             <a href={paths.home}>
               <img src="/assets/logo-black.png" alt="AfroUp" class="h-[30px] w-auto" />
             </a>
           </div>
-          <ul class="menu w-full grow overflow-y-auto px-5 py-0">
+          <ul class="menu min-h-0 w-full grow flex-nowrap overflow-x-hidden overflow-y-auto px-5 py-0">
             <li>
               <a class={navClass("inicio")} href={paths.home}>
                 <svg class="size-5"><use href="#ic-home"></use></svg>
@@ -237,7 +237,7 @@ function tabClass(key: NavKey) {
               </a>
             </li>
           </ul>
-          <div class="mt-auto flex flex-col gap-3 p-4 pt-0">
+          <div class="mt-auto flex shrink-0 flex-col gap-3 p-4 pt-0">
             <div class="join w-full">
               <button class="btn btn-sm btn-active join-item flex-1" type="button">ES</button>
               <button class="btn btn-sm join-item flex-1" type="button">EN</button>
