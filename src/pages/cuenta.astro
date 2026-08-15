@@ -1,14 +1,25 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import { env } from "cloudflare:workers";
 import { getLocaleFromUrl, localizedPath, t } from "../lib/i18n";
 import { routeIds } from "../lib/paths";
+import { getPublicUser, PUBLIC_SESSION_COOKIE, userInitials } from "../lib/public-session";
 
-export const prerender = true;
+export const prerender = false;
 
 const locale = getLocaleFromUrl(Astro.url);
 const copy = t(locale);
 const homeHref = localizedPath(locale, routeIds.home);
 const loginHref = localizedPath(locale, routeIds.login);
+const logoutHref = `/api/logout?next=${encodeURIComponent(loginHref)}`;
+
+const user = await getPublicUser(env.DB, Astro.cookies.get(PUBLIC_SESSION_COOKIE)?.value);
+if (!user) {
+  return Astro.redirect(`${loginHref}?next=${encodeURIComponent(Astro.url.pathname)}`, 303);
+}
+
+const initials = userInitials(user.name);
+const bio = user.bio ?? "";
 ---
 
 <BaseLayout title={copy.titleAccount} active="account">
@@ -43,9 +54,15 @@ const loginHref = localizedPath(locale, routeIds.login);
 
           <div class="flex flex-col items-start gap-5 sm:flex-row sm:items-center">
             <div class="avatar avatar-placeholder">
-              <div class="bg-neutral text-neutral-content w-20 rounded-full">
-                <span class="text-2xl font-bold">JM</span>
-              </div>
+              {user.avatar_url ? (
+                <div class="w-20 rounded-full">
+                  <img src={user.avatar_url} alt={user.name} />
+                </div>
+              ) : (
+                <div class="bg-neutral text-neutral-content w-20 rounded-full">
+                  <span class="text-2xl font-bold">{initials}</span>
+                </div>
+              )}
             </div>
             <div class="flex flex-1 flex-col gap-2">
               <p class="text-sm font-semibold">{copy.accountPhotoLabel}</p>
@@ -63,18 +80,18 @@ const loginHref = localizedPath(locale, routeIds.login);
 
           <fieldset class="fieldset">
             <legend class="fieldset-legend">{copy.accountName}</legend>
-            <input class="input w-full" type="text" name="name" autocomplete="name" value="Jenniffer M." placeholder={copy.accountNamePlaceholder} />
+            <input class="input w-full" type="text" name="name" autocomplete="name" value={user.name} placeholder={copy.accountNamePlaceholder} />
           </fieldset>
 
           <fieldset class="fieldset">
             <legend class="fieldset-legend">{copy.loginEmail}</legend>
-            <input class="input w-full" type="email" name="email" value="jenniffer@afroup.com" readonly aria-describedby="email-help" />
+            <input class="input w-full" type="email" name="email" value={user.email} readonly aria-describedby="email-help" />
             <p id="email-help" class="text-xs opacity-60">{copy.accountEmailReadonly}</p>
           </fieldset>
 
           <fieldset class="fieldset">
             <legend class="fieldset-legend">{copy.accountBioLabel}</legend>
-            <textarea id="bio" name="bio" rows="4" maxlength="280" placeholder={copy.accountBioLabel}>Investigadora afrolatina. Me interesa la memoria, las lenguas criollas y el afrofuturismo.</textarea>
+            <textarea id="bio" name="bio" rows="4" maxlength="280" placeholder={copy.accountBioLabel}>{bio}</textarea>
             <p class="text-xs opacity-60">{copy.accountBioHelp}</p>
           </fieldset>
 
@@ -143,19 +160,27 @@ const loginHref = localizedPath(locale, routeIds.login);
         <div class="card-body gap-4">
           <div class="flex items-center gap-3">
             <div class="avatar avatar-placeholder">
-              <div class="bg-neutral text-neutral-content w-12 rounded-full">
-                <span class="font-bold">JM</span>
-              </div>
+              {user.avatar_url ? (
+                <div class="w-12 rounded-full">
+                  <img src={user.avatar_url} alt={user.name} />
+                </div>
+              ) : (
+                <div class="bg-neutral text-neutral-content w-12 rounded-full">
+                  <span class="font-bold">{initials}</span>
+                </div>
+              )}
             </div>
             <div>
-              <p class="font-bold">Jenniffer M.</p>
-              <p class="text-sm opacity-70">jenniffer@afroup.com</p>
+              <p class="font-bold">{user.name}</p>
+              <p class="text-sm opacity-70">{user.email}</p>
             </div>
           </div>
-          <a class="btn btn-dash btn-sm self-start" href={loginHref}>
-            <svg class="size-4"><use href="#ic-logout"></use></svg>
-            {copy.accountLogout}
-          </a>
+          <form method="post" action={logoutHref}>
+            <button class="btn btn-dash btn-sm self-start" type="submit">
+              <svg class="size-4"><use href="#ic-logout"></use></svg>
+              {copy.accountLogout}
+            </button>
+          </form>
         </div>
       </div>
 
@@ -178,7 +203,7 @@ const loginHref = localizedPath(locale, routeIds.login);
         <form method="dialog" class="contents">
           <button class="btn btn-ghost btn-sm" type="submit">{copy.accountDeleteCancel}</button>
         </form>
-        <button class="btn btn-error btn-sm" type="button" disabled data-confirm-delete-submit data-target="eliminar">
+        <button class="btn btn-error btn-sm" type="button" disabled data-confirm-delete-submit data-target={locale === "en" ? "delete" : "eliminar"}>
           <svg class="size-4"><use href="#ic-trash"></use></svg>
           {copy.accountDeleteConfirm}
         </button>
