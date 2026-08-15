@@ -33,11 +33,11 @@ export default {
 
     try {
       if (path === "/admin" || path === "/admin/") {
-        return withSecurityHeaders(request, await env.ASSETS.fetch(new URL("/admin.html", url.origin)), { noStore: true });
+        return withSecurityHeaders(request, await env.ASSETS.fetch(new URL("/admin.html", url.origin)), { noStore: true, noIndex: true });
       }
 
       if (path === "/admin/password" || path === "/admin/password/") {
-        return withSecurityHeaders(request, await env.ASSETS.fetch(new URL("/admin-password.html", url.origin)), { noStore: true });
+        return withSecurityHeaders(request, await env.ASSETS.fetch(new URL("/admin-password.html", url.origin)), { noStore: true, noIndex: true });
       }
 
       if (path.startsWith("/api/")) {
@@ -722,6 +722,7 @@ function securityHeaders(request, opts = {}) {
       "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
   };
   if (opts.noStore) headers["cache-control"] = "no-store";
+  if (opts.noIndex) headers["x-robots-tag"] = "noindex, nofollow";
   if (request && new URL(request.url).protocol === "https:") {
     headers["strict-transport-security"] = "max-age=31536000; includeSubDomains";
   }

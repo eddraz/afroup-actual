@@ -1,0 +1,43 @@
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://afroup.com/#organization",
+      "name": "AfroUp",
+      "url": "https://afroup.com/",
+      "email": "hi@afroup.com",
+      "logo": "https://afroup.com/assets/logo-black.png",
+      "sameAs": [
+        "https://www.instagram.com/afroup",
+        "https://www.youtube.com/@afroup",
+        "https://www.threads.net/@afroup",
+        "https://x.com/afroup_",
+        "https://www.tiktok.com/@afroup",
+        "https://www.facebook.com/afroup"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://afroup.com/#website",
+      "url": "https://afroup.com/",
+      "name": "AfroUp",
+      "inLanguage": "es-CO",
+      "publisher": { "@id": "https://afroup.com/#organization" }
+    },
+    {
+      "@type": "WebPage",
+      "@id": "https://afroup.com/#webpage",
+      "url": "https://afroup.com/",
+      "name": "AfroUp — Ayudas para personas afectadas en Colombia",
+      "description": "Consulta puntos de acopio, canales de donación y bancos de sangre verificados por AfroUp. Zonas con atención especial: Chocó y Buenaventura.",
+      "inLanguage": "es-CO",
+      "isPartOf": { "@id": "https://afroup.com/#website" },
+      "about": {
+        "@type": "EmergencyService",
+        "name": "Red de ayuda humanitaria AfroUp",
+        "areaServed": ["Colombia", "Chocó", "Buenaventura"]
+      }
+    }
+  ]
+}

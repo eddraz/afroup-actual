@@ -3,7 +3,23 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>AfroUp — Ayudas de emergencia en Chocó</title>
+<title>AfroUp — Ayudas para personas afectadas en Colombia</title>
+<meta name="description" content="Consulta puntos de acopio, canales de donación y bancos de sangre verificados por AfroUp. Zonas con atención especial: Chocó y Buenaventura." />
+<meta name="robots" content="index,follow" />
+<link rel="canonical" href="https://afroup.com/" />
+<meta property="fb:app_id" content="698165984088939" />
+<meta property="og:type" content="website" />
+<meta property="og:locale" content="es_CO" />
+<meta property="og:site_name" content="AfroUp" />
+<meta property="og:title" content="AfroUp — Ayudas para personas afectadas en Colombia" />
+<meta property="og:description" content="Consulta puntos de acopio, canales de donación y bancos de sangre verificados por AfroUp. Zonas con atención especial: Chocó y Buenaventura." />
+<meta property="og:url" content="https://afroup.com/" />
+<meta property="og:image" content="https://afroup.com/assets/ayudas.jpeg" />
+<meta property="og:image:alt" content="Mano sosteniendo una bandera de Colombia" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="AfroUp — Ayudas para personas afectadas en Colombia" />
+<meta name="twitter:description" content="Consulta puntos de acopio, canales de donación y bancos de sangre verificados por AfroUp." />
+<meta name="twitter:image" content="https://afroup.com/assets/ayudas.jpeg" />
 <link rel="icon" href="assets/mark-black.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -33,6 +49,8 @@
   .msg.ok{ color:#0a5560; }
   .msg.err{ color:#9b2c2c; }
   .card{ cursor:default; }
+  .card .body{ gap:8px; }
+  .card .dek{ margin:0; font-size:15.5px; line-height:1.45; color:var(--ink); }
   .pager{ display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap; margin-top:16px; }
   .pager button{ min-width:38px; height:38px; border:1.5px solid var(--ink); background:transparent; border-radius:999px; font-weight:700; font-size:14px; color:var(--ink); cursor:pointer; }
   .pager button.on{ background:var(--ink); color:var(--cream); }
@@ -53,7 +71,7 @@
     .topbar .mantra{ display:none; }
     .topbar .search{ max-width:none; }
     .feed{ grid-template-columns:1fr; }
-    .feed .card .dek{ display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; }
+    .feed .card .dek{ display:block; }
   }
   @media (max-width:680px){
     .hero h1{ font-size:30px; }

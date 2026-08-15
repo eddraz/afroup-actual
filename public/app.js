@@ -73,14 +73,20 @@
       .join("");
   }
 
+  function compactText() {
+    var parts = [];
+    for (var i = 0; i < arguments.length; i += 1) {
+      var value = String(arguments[i] || "").replace(/\s+/g, " ").trim();
+      if (value && parts.indexOf(value) === -1) parts.push(value);
+    }
+    return parts.join(" ");
+  }
+
   function entryCard(entry) {
     var contact = [entry.contact_name, entry.contact_phone, entry.contact_email]
       .filter(Boolean)
-      .map(escapeHtml)
       .join(" · ");
-    var details = entry.body && entry.body !== entry.summary
-      ? '<p class="dek">' + escapeHtml(entry.body).replace(/\n/g, "<br>") + "</p>"
-      : "";
+    var text = compactText(entry.location, entry.summary, entry.body, contact);
     return (
       '<article class="card">' +
       '<div class="body">' +
@@ -91,11 +97,8 @@
       escapeHtml(entry.title) +
       "</h3>" +
       '<p class="dek">' +
-      escapeHtml(entry.summary || "Sin descripción adicional.") +
+      escapeHtml(text || "Sin descripción adicional.") +
       "</p>" +
-      details +
-      (entry.location ? '<div class="meta">' + escapeHtml(entry.location) + "</div>" : "") +
-      (contact ? '<div class="meta">' + contact + "</div>" : "") +
       "</div></article>"
     );
   }
