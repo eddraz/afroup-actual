@@ -1,0 +1,169 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getLocaleFromUrl, localizedPath, t } from "../../lib/i18n";
+import { routeIds } from "../../lib/paths";
+
+export const prerender = true;
+
+const locale = getLocaleFromUrl(Astro.url);
+const copy = t(locale);
+const homeHref = localizedPath(locale, routeIds.home);
+const collaborateHref = localizedPath(locale, routeIds.collaborate);
+const chips = [
+  copy.resourcesChipAll,
+  copy.resourcesChipGuides,
+  copy.resourcesChipTeachers,
+  copy.resourcesChipReadings,
+  copy.resourcesChipGlossary,
+  copy.resourcesChipMaps,
+] as const;
+const items = [
+  {
+    figure: "bg-primary/20",
+    label: "PDF",
+    tag: "Guía PDF · Para docentes",
+    tagClass: "text-secondary",
+    swatch: "bg-secondary",
+    title: "Guía docente: cimarronaje en el aula",
+    dek: "Actividades, fuentes primarias y rúbricas para secundaria.",
+    meta: "PDF · 24 págs · ES/EN",
+    action: "download",
+  },
+  {
+    figure: "bg-secondary/30",
+    label: "PDF",
+    tag: "Guía PDF",
+    tagClass: "text-accent",
+    swatch: "bg-accent",
+    title: "Guía: cine afrolatino esencial",
+    dek: "30 películas para entender la diáspora, con fichas y dónde verlas.",
+    meta: "PDF · 18 págs",
+    action: "download",
+  },
+  {
+    figure: "bg-accent/30",
+    label: "web",
+    tag: "Glosario",
+    tagClass: "text-secondary",
+    swatch: "bg-secondary",
+    title: "Glosario antirracista",
+    dek: "Términos clave para hablar de raza, racismo e identidad con precisión.",
+    meta: "Web · actualizado 2026",
+    action: "consult",
+  },
+  {
+    figure: "bg-[url('/assets/pattern.png')] bg-cover bg-center",
+    label: "",
+    tag: "Mapa",
+    tagClass: "text-primary",
+    swatch: "bg-primary",
+    title: "Mapa interactivo de la diáspora",
+    dek: "Rutas, asentamientos y comunidades afro en América Latina.",
+    meta: "Web · interactivo",
+    action: "explore",
+  },
+  {
+    figure: "bg-primary/20",
+    label: "lista",
+    tag: "Lecturas",
+    tagClass: "text-accent",
+    swatch: "bg-accent",
+    title: "50 lecturas fundamentales",
+    dek: "Bibliografía comentada: de Fanon a Lélia Gonzalez.",
+    meta: "PDF · 12 págs",
+    action: "download",
+  },
+] as const;
+---
+
+<BaseLayout title={copy.titleResources} active="recursos">
+  <div class="breadcrumbs text-sm">
+    <ul>
+      <li><a href={homeHref}>{copy.navHome}</a></li>
+      <li>{copy.navResources}</li>
+    </ul>
+  </div>
+
+  <section class="hero relative mt-6 overflow-hidden rounded-[24px] border border-base-300 bg-base-200 shadow-lg">
+    <div class="hero-content relative w-full flex-col items-start gap-3 px-6 py-8 lg:px-11 lg:py-11">
+      <p class="text-primary text-xs font-extrabold tracking-[0.18em] uppercase">{copy.resourcesEyebrow}</p>
+      <h1 class="font-display max-w-[18ch] text-[31px] font-bold lg:text-[44px]">{copy.resourcesTitle}</h1>
+      <p class="max-w-[56ch] text-[17px] leading-[1.55] opacity-70">{copy.resourcesLead}</p>
+    </div>
+  </section>
+
+  <div class="mt-6 mb-6 flex flex-wrap gap-2" data-chips>
+    {
+      chips.map((chip, index) => (
+        <button class:list={["btn btn-sm", index === 0 ? undefined : "btn-dash"]} data-chip type="button">
+          {chip}
+        </button>
+      ))
+    }
+  </div>
+
+  <ul class="list">
+    {
+      items.map((item) => (
+        <li class="list-row">
+          <div class:list={["relative size-20 overflow-hidden rounded-box", item.figure]}>
+            {item.label ? <span class="badge badge-sm absolute bottom-1.5 left-1.5">{item.label}</span> : null}
+          </div>
+          <div class="list-col-grow">
+            <span class:list={["inline-flex items-center gap-2 text-[11.5px] font-extrabold tracking-[0.1em] uppercase", item.tagClass]}>
+              <span class:list={["size-2.5 rounded-[3px]", item.swatch]}></span>
+              {item.tag}
+            </span>
+            <h3 class="font-display text-xl font-bold">{item.title}</h3>
+            <p class="opacity-70">{item.dek}</p>
+            <p class="text-sm opacity-50">{item.meta}</p>
+          </div>
+          {
+            item.action === "download" ? (
+              <button class="btn btn-accent btn-sm" type="button">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <use href="#ic-download"></use>
+                </svg>
+                {copy.resourcesDownload}
+              </button>
+            ) : (
+              <button class="btn btn-ghost btn-sm" type="button">
+                {item.action === "consult" ? copy.resourcesConsult : copy.resourcesExplore}
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <use href="#ic-arrow"></use>
+                </svg>
+              </button>
+            )
+          }
+        </li>
+      ))
+    }
+  </ul>
+
+  <div class="card bg-accent text-accent-content mt-9">
+    <div class="card-body sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h3 class="card-title">{copy.resourcesBandTitle}</h3>
+        <p>{copy.resourcesBandDek}</p>
+      </div>
+      <div class="card-actions">
+        <a class="btn btn-primary" href={collaborateHref}>
+          {copy.footerCollaborate}
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <use href="#ic-arrow"></use>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  const chips = document.querySelectorAll("[data-chip]");
+  chips.forEach((chip) => {
+    chip.addEventListener("click", () => {
+      chips.forEach((item) => item.classList.add("btn-dash"));
+      chip.classList.remove("btn-dash");
+    });
+  });
+</script>
