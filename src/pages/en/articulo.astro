@@ -174,7 +174,7 @@ const related = [
       <div class="mt-4 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {
           related.map((card) => (
-            <article class="card bg-base-100 shadow">
+            <a class="card bg-base-100 shadow" href={articleHref}>
               <figure class:list={["relative aspect-[16/10]", card.figure]}>
                 <span class="badge badge-sm absolute bottom-3 left-3">{card.label}</span>
               </figure>
@@ -184,11 +184,11 @@ const related = [
                   {card.tag}
                 </span>
                 <h3 class="card-title font-display">
-                  <a href={articleHref}>{card.title}</a>
+                  {card.title}
                 </h3>
                 <p class="text-sm opacity-70">{card.meta}</p>
               </div>
-            </article>
+            </a>
           ))
         }
       </div>

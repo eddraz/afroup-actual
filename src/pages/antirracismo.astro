@@ -87,7 +87,7 @@ const cards = [
   <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
     {
       cards.map((card) => (
-        <article class:list={["card bg-base-200 shadow", card.featured && "sm:col-span-2 sm:card-side"]}>
+        <a class:list={["card bg-base-200 shadow", card.featured && "sm:col-span-2 sm:card-side"]} href={articleHref}>
           <figure class:list={["relative", card.featured ? "min-h-64 sm:w-1/2" : "aspect-[16/10]", card.figure]}>
             <span class="badge badge-sm absolute bottom-3 left-3">{card.label}</span>
           </figure>
@@ -96,13 +96,11 @@ const cards = [
               <span class="size-2.5 rounded-[3px] bg-secondary"></span>
               {card.tag}
             </span>
-            <h3 class="card-title font-display">
-              <a href={articleHref}>{card.title}</a>
-            </h3>
+            <h3 class="card-title font-display">{card.title}</h3>
             <p>{card.dek}</p>
             <p class="text-sm opacity-70">{card.meta}</p>
           </div>
-        </article>
+        </a>
       ))
     }
   </div>
