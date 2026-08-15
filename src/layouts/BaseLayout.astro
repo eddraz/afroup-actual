@@ -62,8 +62,10 @@ function tabClass(key: NavKey) {
             </label>
             <form class="w-full max-w-[440px]" action={paths.search}>
               <label class="input h-11 min-h-11 w-full bg-base-200">
-                <svg class="h-[1em] opacity-50"><use href="#ic-search"></use></svg>
-                <input type="search" name="q" placeholder="Busca temas, artículos, autores…" />
+                <svg class="h-[1em] shrink-0 opacity-50" viewBox="0 0 24 24" aria-hidden="true">
+                  <use href="#ic-search"></use>
+                </svg>
+                <input class="grow" type="search" name="q" placeholder="Busca temas, artículos, autores…" aria-label="Buscar" />
               </label>
             </form>
           </div>
