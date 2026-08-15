@@ -209,6 +209,7 @@ const bio = user.bio ?? "";
       <p class="mt-2 text-sm opacity-70">{copy.accountDeleteConfirmLead}</p>
       <p class="mt-4 text-sm">{copy.accountDeletePhrase}</p>
       <input class="input mt-2 w-full" type="text" name="confirm" placeholder={copy.accountDeleteConfirmPlaceholder} data-confirm-delete />
+      <div class="alert alert-error mt-3 hidden" data-delete-error><span>{copy.accountDeleteError}</span></div>
       <div class="modal-action mt-5 flex-wrap gap-2">
         <form method="dialog" class="contents">
           <button class="btn btn-ghost btn-sm" type="submit">{copy.accountDeleteCancel}</button>
@@ -324,11 +325,29 @@ const bio = user.bio ?? "";
         if (!input || !submit || submit.dataset.bound === "true") return;
         submit.dataset.bound = "true";
         var target = (submit.getAttribute("data-target") || "").toLowerCase();
+        var errorBox = document.querySelector("[data-delete-error]");
         var update = function () {
           submit.disabled = input.value.trim().toLowerCase() !== target;
         };
         input.addEventListener("input", update);
         update();
+        submit.addEventListener("click", function () {
+          if (input.value.trim().toLowerCase() !== target) return;
+          if (errorBox) errorBox.classList.add("hidden");
+          submit.disabled = true;
+          var data = new FormData();
+          data.append("confirm", input.value.trim());
+          fetch("/api/account", { method: "DELETE", body: data })
+            .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
+            .then(function (result) {
+              if (!result.ok) throw new Error("delete");
+              window.location.href = document.documentElement.lang === "en" ? "/en/login" : "/login";
+            })
+            .catch(function () {
+              if (errorBox) errorBox.classList.remove("hidden");
+              submit.disabled = false;
+            });
+        });
       };
       bind();
       document.addEventListener("astro:after-swap", bind);
