@@ -1,0 +1,181 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getLocaleFromUrl, localizedPath, t } from "../lib/i18n";
+import { routeIds } from "../lib/paths";
+
+export const prerender = true;
+
+const locale = getLocaleFromUrl(Astro.url);
+const copy = t(locale);
+const homeHref = localizedPath(locale, routeIds.home);
+const storeHref = localizedPath(locale, routeIds.store);
+---
+
+<BaseLayout title={copy.titleCart} active="cart">
+  <div class="breadcrumbs text-sm">
+    <ul>
+      <li><a href={homeHref}>{copy.navHome}</a></li>
+      <li><a href={storeHref}>{copy.navStore}</a></li>
+      <li>{copy.storeCart}</li>
+    </ul>
+  </div>
+
+  <header class="mt-6 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-end">
+    <div>
+      <p class="text-primary text-xs font-extrabold tracking-[0.18em] uppercase">{copy.cartEyebrow}</p>
+      <h1 class="font-display text-[34px] leading-[1.04] font-bold tracking-[-0.005em] lg:text-[42px]">
+        {copy.cartTitle}
+        <span class="text-base-content/40 text-[22px] font-semibold"> · 3 {copy.cartCountSuffix}</span>
+      </h1>
+      <p class="mt-2 max-w-[58ch] text-[16px] leading-[1.5] opacity-70">{copy.cartLead}</p>
+    </div>
+    <a class="btn btn-sm btn-ghost" href={storeHref}>← {copy.cartKeepShopping}</a>
+  </header>
+
+  <div class="mt-7 grid grid-cols-1 gap-7 lg:grid-cols-[1fr_380px]">
+    <div class="flex flex-col gap-4">
+      <article class="card bg-base-200 shadow-sm">
+        <div class="card-body p-4 sm:p-5">
+          <div class="flex items-center gap-4">
+            <div class="bg-[#FCEBBE] flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-cover bg-center sm:h-24 sm:w-24">
+              <span class="badge badge-sm border-0 bg-secondary/80 text-secondary-content">ebook</span>
+            </div>
+            <div class="min-w-0 flex-1">
+              <span class="inline-flex items-center gap-2 text-[11.5px] font-extrabold tracking-[0.1em] text-[#b97e00] uppercase">
+                <span class="bg-secondary size-2 rounded-[3px]"></span>
+                eBook
+              </span>
+              <h3 class="font-display mt-1 text-[18px] leading-[1.1] font-bold tracking-[-0.005em] sm:text-[20px]">{copy.cartItemTitleEbook}</h3>
+              <p class="text-[13px] font-bold opacity-60">{copy.cartItemFormatEbook}</p>
+            </div>
+            <div class="hidden shrink-0 flex-col items-end gap-3 sm:flex">
+              <button class="btn btn-square btn-ghost btn-sm" type="button" aria-label={copy.cartRemoveAria} title={copy.cartRemove}>
+                <svg class="size-4"><use href="#ic-trash"></use></svg>
+              </button>
+              <div class="join">
+                <button class="btn btn-square btn-sm join-item" type="button" aria-label={copy.cartDecreaseAria}>−</button>
+                <span class="btn btn-sm join-item pointer-events-none">1</span>
+                <button class="btn btn-square btn-sm join-item" type="button" aria-label={copy.cartIncreaseAria}>+</button>
+              </div>
+              <span class="font-display text-[18px] font-bold">US$ 12</span>
+            </div>
+          </div>
+          <div class="mt-4 flex items-center justify-between border-t border-base-300 pt-3 sm:hidden">
+            <div class="join">
+              <button class="btn btn-square btn-sm join-item" type="button" aria-label={copy.cartDecreaseAria}>−</button>
+              <span class="btn btn-sm join-item pointer-events-none">1</span>
+              <button class="btn btn-square btn-sm join-item" type="button" aria-label={copy.cartIncreaseAria}>+</button>
+            </div>
+            <span class="font-display text-[18px] font-bold">US$ 12</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="card bg-base-200 shadow-sm">
+        <div class="card-body p-4 sm:p-5">
+          <div class="flex items-center gap-4">
+            <div class="bg-secondary flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl sm:h-24 sm:w-24">
+              <span class="badge badge-sm border-0 bg-secondary-content/90 text-secondary">lámina</span>
+            </div>
+            <div class="min-w-0 flex-1">
+              <span class="inline-flex items-center gap-2 text-[11.5px] font-extrabold tracking-[0.1em] text-[#0d97a6] uppercase">
+                <span class="bg-accent size-2 rounded-[3px]"></span>
+                Lámina
+              </span>
+              <h3 class="font-display mt-1 text-[18px] leading-[1.1] font-bold tracking-[-0.005em] sm:text-[20px]">{copy.cartItemTitlePrint}</h3>
+              <p class="text-[13px] font-bold opacity-60">{copy.cartItemFormatPrint}</p>
+            </div>
+            <div class="hidden shrink-0 flex-col items-end gap-3 sm:flex">
+              <button class="btn btn-square btn-ghost btn-sm" type="button" aria-label={copy.cartRemoveAria} title={copy.cartRemove}>
+                <svg class="size-4"><use href="#ic-trash"></use></svg>
+              </button>
+              <div class="join">
+                <button class="btn btn-square btn-sm join-item" type="button" aria-label={copy.cartDecreaseAria}>−</button>
+                <span class="btn btn-sm join-item pointer-events-none">1</span>
+                <button class="btn btn-square btn-sm join-item" type="button" aria-label={copy.cartIncreaseAria}>+</button>
+              </div>
+              <span class="font-display text-[18px] font-bold">US$ 18</span>
+            </div>
+          </div>
+          <div class="mt-4 flex items-center justify-between border-t border-base-300 pt-3 sm:hidden">
+            <div class="join">
+              <button class="btn btn-square btn-sm join-item" type="button" aria-label={copy.cartDecreaseAria}>−</button>
+              <span class="btn btn-sm join-item pointer-events-none">1</span>
+              <button class="btn btn-square btn-sm join-item" type="button" aria-label={copy.cartIncreaseAria}>+</button>
+            </div>
+            <span class="font-display text-[18px] font-bold">US$ 18</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="card bg-base-200 shadow-sm">
+        <div class="card-body p-4 sm:p-5">
+          <div class="flex items-center gap-4">
+            <div class="bg-accent flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl sm:h-24 sm:w-24">
+              <span class="badge badge-sm border-0 bg-accent-content/90 text-accent">camiseta</span>
+            </div>
+            <div class="min-w-0 flex-1">
+              <span class="inline-flex items-center gap-2 text-[11.5px] font-extrabold tracking-[0.1em] text-primary uppercase">
+                <span class="bg-primary size-2 rounded-[3px]"></span>
+                Merch
+              </span>
+              <h3 class="font-display mt-1 text-[18px] leading-[1.1] font-bold tracking-[-0.005em] sm:text-[20px]">{copy.cartItemTitleMerch}</h3>
+              <p class="text-[13px] font-bold opacity-60">{copy.cartItemFormatMerch}</p>
+            </div>
+            <div class="hidden shrink-0 flex-col items-end gap-3 sm:flex">
+              <button class="btn btn-square btn-ghost btn-sm" type="button" aria-label={copy.cartRemoveAria} title={copy.cartRemove}>
+                <svg class="size-4"><use href="#ic-trash"></use></svg>
+              </button>
+              <div class="join">
+                <button class="btn btn-square btn-sm join-item" type="button" aria-label={copy.cartDecreaseAria}>−</button>
+                <span class="btn btn-sm join-item pointer-events-none">1</span>
+                <button class="btn btn-square btn-sm join-item" type="button" aria-label={copy.cartIncreaseAria}>+</button>
+              </div>
+              <span class="font-display text-[18px] font-bold">US$ 22</span>
+            </div>
+          </div>
+          <div class="mt-4 flex items-center justify-between border-t border-base-300 pt-3 sm:hidden">
+            <div class="join">
+              <button class="btn btn-square btn-sm join-item" type="button" aria-label={copy.cartDecreaseAria}>−</button>
+              <span class="btn btn-sm join-item pointer-events-none">1</span>
+              <button class="btn btn-square btn-sm join-item" type="button" aria-label={copy.cartIncreaseAria}>+</button>
+            </div>
+            <span class="font-display text-[18px] font-bold">US$ 22</span>
+          </div>
+        </div>
+      </article>
+
+      <a class="mt-2 self-start font-bold text-primary" href={storeHref}>← {copy.cartKeepShopping}</a>
+    </div>
+
+    <aside class="lg:sticky lg:top-[90px]">
+      <div class="card bg-base-200 shadow-sm">
+        <div class="card-body gap-3">
+          <h2 class="card-title font-display text-[20px] tracking-[-0.005em]">{copy.cartSummary}</h2>
+          <div class="flex items-center justify-between text-sm">
+            <span class="opacity-70">{copy.cartSubtotal}</span>
+            <span class="font-bold">US$ 52</span>
+          </div>
+          <div class="flex items-center justify-between text-sm">
+            <span class="opacity-70">{copy.cartShipping}</span>
+            <span class="font-bold">US$ 6</span>
+          </div>
+          <div class="flex items-center justify-between text-sm text-success">
+            <span>{copy.cartRoundUp}</span>
+            <span class="font-bold">US$ 2</span>
+          </div>
+          <div class="divider my-1"></div>
+          <div class="flex items-baseline justify-between">
+            <span class="font-display text-[18px] font-bold tracking-[-0.005em]">{copy.cartTotal}</span>
+            <span class="font-display text-[26px] font-extrabold tracking-[-0.005em]">US$ 60</span>
+          </div>
+          <a class="btn btn-primary btn-block mt-2" href="#">
+            {copy.cartCheckout}
+            <svg class="size-4"><use href="#ic-arrow"></use></svg>
+          </a>
+          <p class="mt-3 text-[12.5px] opacity-60" set:html={copy.cartPaymentNote}></p>
+        </div>
+      </div>
+    </aside>
+  </div>
+</BaseLayout>
