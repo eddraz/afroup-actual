@@ -1,0 +1,177 @@
+---
+import BaseLayout from "../../../../layouts/BaseLayout.astro";
+import { getLocaleFromUrl, localizedPath, t } from "../../../../lib/i18n";
+import { routeIds } from "../../../../lib/paths";
+import { env } from "cloudflare:workers";
+
+export const prerender = false;
+
+const locale = getLocaleFromUrl(Astro.url);
+const copy = t(locale);
+const homeHref = localizedPath(locale, routeIds.home);
+
+const token = Astro.url.searchParams.get("token") ?? "";
+let invite: {
+  name: string;
+  email: string;
+  expiresAt: string;
+} | null = null;
+let invalidReason: "missing" | "invalid" | "consumed" | "expired" | "active" | null = null;
+
+if (!token) {
+  invalidReason = "missing";
+} else {
+  const row = await env.DB.prepare(
+    `SELECT i.token, i.expires_at, i.consumed_at, u.id, u.email, u.name, u.invite_pending
+       FROM admin_user_invitations i
+       JOIN admin_users u ON u.id = i.user_id
+      WHERE i.token = ? LIMIT 1`,
+  ).bind(token).first<{
+    token: string;
+    expires_at: string;
+    consumed_at: string | null;
+    id: number;
+    email: string;
+    name: string;
+    invite_pending: number;
+  }>();
+
+  if (!row) invalidReason = "invalid";
+  else if (row.consumed_at) invalidReason = "consumed";
+  else if (Date.parse(row.expires_at) < Date.now()) invalidReason = "expired";
+  else if (!row.invite_pending) invalidReason = "active";
+  else invite = { name: row.name, email: row.email, expiresAt: row.expires_at };
+}
+---
+
+<BaseLayout title={copy.titleInvite} active="inicio">
+  <div class="breadcrumbs text-sm">
+    <ul>
+      <li><a href={homeHref}>{copy.navHome}</a></li>
+      <li>{copy.inviteEyebrow}</li>
+    </ul>
+  </div>
+
+  <section class="hero relative mt-6 overflow-hidden rounded-[24px] border border-base-300 bg-neutral text-neutral-content shadow-lg">
+    <div class="hero-content relative w-full flex-col items-start gap-3 px-6 py-8 lg:px-11 lg:py-11">
+      <p class="text-accent text-xs font-extrabold tracking-[0.18em] uppercase">{copy.inviteEyebrow}</p>
+      <h1 class="font-display max-w-[22ch] text-[31px] leading-[1.06] font-bold lg:text-[44px]">{copy.inviteTitle}</h1>
+      <p class="max-w-[58ch] text-[17px] leading-[1.55] opacity-80">{copy.inviteLead}</p>
+    </div>
+  </section>
+
+  <div class="mx-auto mt-8 max-w-[480px]">
+    {invite && !invalidReason ? (
+      <form class="card bg-base-200 shadow" data-accept-form>
+        <div class="card-body gap-4">
+          <div class="rounded-box border border-base-300 bg-base-100 p-3 text-sm">
+            <p class="font-bold">{invite.name}</p>
+            <p class="opacity-70">{invite.email}</p>
+          </div>
+
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend">{copy.inviteNewPassword}</legend>
+            <input class="input w-full" type="password" name="password" autocomplete="new-password" minlength="8" required />
+          </fieldset>
+
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend">{copy.inviteConfirmPassword}</legend>
+            <input class="input w-full" type="password" name="confirm" autocomplete="new-password" minlength="8" required />
+          </fieldset>
+
+          <div class="alert alert-error mt-2 hidden" data-accept-error><span data-accept-error-text></span></div>
+          <div class="alert alert-success mt-2 hidden" data-accept-success>
+            <span data-accept-success-text></span>
+          </div>
+
+          <button class="btn btn-primary mt-2 h-[46px] min-h-[46px]" type="submit">
+            {copy.inviteSubmit}
+            <svg class="size-4"><use href="#ic-arrow"></use></svg>
+          </button>
+
+          <p class="text-[12.5px] opacity-60">{copy.inviteNote}</p>
+        </div>
+        <input type="hidden" name="token" value={token} />
+      </form>
+    ) : (
+      <div class="card bg-base-200 shadow">
+        <div class="card-body gap-4">
+          <h2 class="card-title font-display text-[22px] tracking-[-0.005em]">
+            {invalidReason === "expired" ? copy.inviteExpiredTitle :
+             invalidReason === "consumed" ? copy.inviteConsumedTitle :
+             invalidReason === "active" ? copy.inviteActiveTitle :
+             copy.inviteInvalidTitle}
+          </h2>
+          <p class="text-sm opacity-80">
+            {invalidReason === "expired" ? copy.inviteExpiredLead :
+             invalidReason === "consumed" ? copy.inviteConsumedLead :
+             invalidReason === "active" ? copy.inviteActiveLead :
+             copy.inviteInvalidLead}
+          </p>
+          <a class="btn btn-dash btn-sm self-start" href={homeHref}>{copy.navHome}</a>
+        </div>
+      </div>
+    )}
+  </div>
+
+  <script is:inline>
+    (function () {
+      var bind = function () {
+        var form = document.querySelector("[data-accept-form]");
+        if (!form || form.dataset.bound === "true") return;
+        form.dataset.bound = "true";
+        var errorBox = form.querySelector("[data-accept-error]");
+        var errorText = form.querySelector("[data-accept-error-text]");
+        var successBox = form.querySelector("[data-accept-success]");
+        var successText = form.querySelector("[data-accept-success-text]");
+        var submit = form.querySelector("button[type=submit]");
+        form.addEventListener("submit", function (event) {
+          event.preventDefault();
+          if (errorBox) errorBox.classList.add("hidden");
+          if (successBox) successBox.classList.add("hidden");
+          submit.disabled = true;
+          var data = new FormData(form);
+          var lang = document.documentElement.lang === "en" ? "en" : "es";
+          var messages = lang === "en" ? {
+            password_short: "Password must be at least 8 characters.",
+            password_mismatch: "Passwords don't match.",
+            token_invalid: "This invite link is invalid.",
+            token_consumed: "This invite was already used.",
+            token_expired: "This invite has expired.",
+            already_active: "This account is already active. Try signing in.",
+          } : {
+            password_short: "La contraseña debe tener al menos 8 caracteres.",
+            password_mismatch: "Las contraseñas no coinciden.",
+            token_invalid: "Este enlace de invitación no es válido.",
+            token_consumed: "Esta invitación ya fue utilizada.",
+            token_expired: "Esta invitación expiró.",
+            already_active: "Esta cuenta ya está activa. Probá iniciar sesión.",
+          };
+          fetch("/api/admin/users/accept", { method: "POST", body: data })
+            .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
+            .then(function (result) {
+              if (result.ok) {
+                if (successText) successText.textContent = lang === "en"
+                  ? "✓ Account active. You can sign in from the panel."
+                  : "✓ Cuenta activa. Ya podés iniciar sesión desde el panel.";
+                if (successBox) successBox.classList.remove("hidden");
+                form.querySelectorAll("input").forEach(function (input) { input.disabled = true; });
+                submit.disabled = true;
+                return;
+              }
+              if (errorText) errorText.textContent = messages[result.body && result.body.error] || (lang === "en" ? "Could not save." : "No pudimos guardar.");
+              if (errorBox) errorBox.classList.remove("hidden");
+              submit.disabled = false;
+            })
+            .catch(function () {
+              if (errorText) errorText.textContent = lang === "en" ? "Network error." : "Error de red.";
+              if (errorBox) errorBox.classList.remove("hidden");
+              submit.disabled = false;
+            });
+        });
+      };
+      bind();
+      document.addEventListener("astro:after-swap", bind);
+    })();
+  </script>
+</BaseLayout>
