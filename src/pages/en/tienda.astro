@@ -1,0 +1,157 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getLocaleFromUrl, localizedPath, t } from "../../lib/i18n";
+import { routeIds } from "../../lib/paths";
+
+export const prerender = true;
+
+const locale = getLocaleFromUrl(Astro.url);
+const copy = t(locale);
+const homeHref = localizedPath(locale, routeIds.home);
+const productHref = routeIds.product;
+const cartHref = routeIds.cart;
+const resourcesHref = localizedPath(locale, routeIds.resources);
+const chips = [
+  copy.storeChipAll,
+  copy.storeChipEbooks,
+  copy.storeChipPrints,
+  copy.storeChipMerch,
+  copy.storeChipDownloads,
+] as const;
+const products = [
+  { figure: "bg-[url('/assets/pattern.png')] bg-cover bg-center", label: "", tag: "eBook", tagClass: "text-secondary", swatch: "bg-secondary", title: "Raíces: historia afro de Abya Yala", price: "US$ 12", action: "add" },
+  { figure: "bg-primary/20", label: "portada", tag: "eBook", tagClass: "text-primary", swatch: "bg-primary", title: "Afrofuturismo latinoamericano", price: "US$ 9", action: "add" },
+  { figure: "bg-secondary/30", label: "lámina · nzinga", tag: "Lámina", tagClass: "text-secondary", swatch: "bg-secondary", title: "Lámina · Reina Nzinga", price: "US$ 18", action: "add" },
+  { figure: "bg-accent/30", label: "camiseta", tag: "Merch", tagClass: "text-accent", swatch: "bg-accent", title: "Camiseta “Conocimiento = poder”", price: "US$ 22", action: "add" },
+  { figure: "bg-secondary/30", label: "stickers", tag: "Merch", tagClass: "text-accent", swatch: "bg-accent", title: "Set de stickers Palenque", price: "US$ 8", action: "add" },
+  { figure: "bg-primary/20", label: "tote bag", tag: "Merch", tagClass: "text-primary", swatch: "bg-primary", title: "Tote “Diáspora”", price: "US$ 15", action: "add" },
+  { figure: "bg-accent/30", label: "PDF", tag: "Descargable", tagClass: "text-primary", swatch: "bg-primary", title: "Guía: cine afrolatino", price: copy.storeFree, action: "download" },
+  { figure: "bg-secondary/30", label: "póster", tag: "Lámina", tagClass: "text-secondary", swatch: "bg-secondary", title: "Mapa de la diáspora (A2)", price: "US$ 20", action: "add" },
+] as const;
+---
+
+<BaseLayout title={copy.titleStore} active="tienda">
+  <div class="breadcrumbs text-sm">
+    <ul>
+      <li><a href={homeHref}>{copy.navHome}</a></li>
+      <li>{copy.navStore}</li>
+    </ul>
+  </div>
+
+  <section class="hero relative mt-6 overflow-hidden rounded-[24px] bg-accent text-accent-content shadow-lg">
+    <div class="absolute inset-y-0 right-0 w-[200px] bg-[url('/assets/pattern.png')] bg-cover bg-center max-md:w-[90px]"></div>
+    <div class="hero-content relative w-full flex-col items-start gap-3 px-6 py-8 lg:px-11 lg:py-11">
+      <p class="text-xs font-extrabold tracking-[0.18em] uppercase opacity-70">{copy.storeEyebrow}</p>
+      <h1 class="font-display max-w-[18ch] text-[31px] font-bold lg:text-[44px]">{copy.storeTitle}</h1>
+      <p class="max-w-[56ch] text-[17px] leading-[1.55] opacity-80">{copy.storeLead}</p>
+    </div>
+  </section>
+
+  <article class="card bg-base-200 mt-7 shadow sm:card-side">
+    <figure class="relative min-h-64 bg-[url('/assets/pattern.png')] bg-cover bg-center sm:w-1/2"></figure>
+    <div class="card-body justify-center">
+      <span class="inline-flex items-center gap-2 text-[11.5px] font-extrabold tracking-[0.1em] text-secondary uppercase">
+        <span class="size-2.5 rounded-[3px] bg-secondary"></span>
+        Destacado · eBook
+      </span>
+      <h2 class="card-title font-display text-[26px] lg:text-[30px]">
+        <a href={productHref}>Raíces: historia afro de Abya Yala</a>
+      </h2>
+      <p class="opacity-70">Quinientos años de historia contados desde la diáspora: de los reinos africanos a los palenques y al presente. PDF + EPUB.</p>
+      <div class="card-actions items-center">
+        <span class="font-display text-[26px] font-extrabold">US$ 12 <span class="text-base font-semibold opacity-50 line-through">US$ 18</span></span>
+        <a class="btn btn-primary" href={productHref}>
+          {copy.storeView}
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <use href="#ic-arrow"></use>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </article>
+
+  <div class="mt-7 mb-6 flex flex-wrap gap-2" data-chips>
+    {
+      chips.map((chip, index) => (
+        <button class:list={["btn btn-sm", index === 0 ? undefined : "btn-dash"]} data-chip type="button">
+          {chip}
+        </button>
+      ))
+    }
+  </div>
+
+  <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+    {
+      products.map((item) => (
+        <article class="card bg-base-200 shadow">
+          <a href={productHref}>
+            <figure class:list={["relative aspect-[4/3]", item.figure]}>
+              {item.label ? <span class="badge badge-sm absolute bottom-3 left-3">{item.label}</span> : null}
+            </figure>
+          </a>
+          <div class="card-body">
+            <span class:list={["inline-flex items-center gap-2 text-[11.5px] font-extrabold tracking-[0.1em] uppercase", item.tagClass]}>
+              <span class:list={["size-2.5 rounded-[3px]", item.swatch]}></span>
+              {item.tag}
+            </span>
+            <h3 class="card-title font-display">
+              <a href={productHref}>{item.title}</a>
+            </h3>
+            <div class="card-actions mt-auto items-center justify-between">
+              <span class:list={["font-display text-xl font-extrabold", item.action === "download" && "text-accent"]}>{item.price}</span>
+              {
+                item.action === "download" ? (
+                  <a class="btn btn-accent btn-sm" href={productHref}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <use href="#ic-download"></use>
+                    </svg>
+                    {copy.storeDownload}
+                  </a>
+                ) : (
+                  <a class="btn btn-primary btn-sm" href={cartHref}>{copy.storeAdd}</a>
+                )
+              }
+            </div>
+          </div>
+        </article>
+      ))
+    }
+  </div>
+
+  <div class="card bg-accent text-accent-content mt-9">
+    <div class="card-body sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h3 class="card-title">{copy.storeBandTitle}</h3>
+        <p>{copy.storeBandDek}</p>
+      </div>
+      <div class="card-actions">
+        <a class="btn btn-primary" href={resourcesHref}>
+          {copy.storeBandCta}
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <use href="#ic-arrow"></use>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="indicator fixed right-5 bottom-24 z-40 lg:bottom-6">
+    <span class="indicator-item badge badge-accent badge-sm">2</span>
+    <a class="btn btn-neutral" href={cartHref}>
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <use href="#ic-bag"></use>
+      </svg>
+      {copy.storeCart}
+    </a>
+  </div>
+</BaseLayout>
+
+<script>
+  const chips = document.querySelectorAll("[data-chip]");
+  chips.forEach((chip) => {
+    chip.addEventListener("click", () => {
+      chips.forEach((item) => item.classList.add("btn-dash"));
+      chip.classList.remove("btn-dash");
+    });
+  });
+</script>

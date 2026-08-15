@@ -9,7 +9,7 @@ const locale = getLocaleFromUrl(Astro.url);
 const copy = t(locale);
 const homeHref = localizedPath(locale, routeIds.home);
 const donateHref = localizedPath(locale, routeIds.donate);
-const storeHref = routeIds.store;
+const storeHref = localizedPath(locale, routeIds.store);
 const collaborateHref = localizedPath(locale, routeIds.collaborate);
 const socials = [
   { href: "#", label: "Instagram", icon: "ic-ig" },
