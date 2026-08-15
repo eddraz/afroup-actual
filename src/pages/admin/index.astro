@@ -7,113 +7,142 @@ export const prerender = true;
 
 const locale = getLocaleFromUrl(Astro.url);
 const copy = t(locale);
-const homeHref = localizedPath(locale, routeIds.home);
+const adminBase = localizedPath(locale, routeIds.admin);
+const articlesHref = `${adminBase}/articulos`;
+const commentsHref = `${adminBase}/comentarios`;
+const projectsHref = `${adminBase}/proyectos`;
+const usersHref = `${adminBase}/usuarios`;
 ---
 
 <AdminLayout title={copy.titleAdmin} active="dashboard">
-  <header class="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-end">
-    <div>
-      <p class="text-primary text-xs font-extrabold tracking-[0.18em] uppercase">{copy.navAdmin}</p>
-      <h1 class="font-display text-[28px] leading-[1.06] font-bold tracking-[-0.005em] lg:text-[34px]">{copy.adminDashboard}</h1>
-    </div>
-    <a class="btn btn-sm btn-ghost" href={homeHref}>{copy.adminBackSite}</a>
+  <header class="flex flex-col gap-1">
+    <p class="text-xs font-extrabold tracking-[0.18em] text-base-content/50 uppercase">{copy.navAdmin}</p>
+    <h1 class="font-display text-[28px] leading-[1.06] font-bold tracking-[-0.005em] lg:text-[34px]">{copy.adminWelcome}</h1>
+    <p class="max-w-xl text-sm opacity-70">{copy.adminWelcomeLead}</p>
   </header>
 
-  <section class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-    <div class="card bg-base-100 border border-base-300 shadow-sm">
-      <div class="card-body gap-1">
-        <p class="text-xs font-extrabold tracking-[0.16em] text-base-content/60 uppercase">{copy.adminStatsArticles}</p>
-        <p class="font-display text-[32px] leading-none font-bold">128</p>
-        <p class="text-xs text-success font-bold">{copy.adminStatsArticlesTrend}</p>
+  <section class="stats stats-vertical bg-base-100 mt-6 w-full shadow-sm lg:stats-horizontal">
+    <div class="stat">
+      <div class="stat-figure text-primary">
+        <svg class="size-7"><use href="#ic-book2"></use></svg>
       </div>
+      <div class="stat-title">{copy.adminStatsArticles}</div>
+      <div class="stat-value text-primary">128</div>
+      <div class="stat-desc">{copy.adminStatsArticlesTrend}</div>
     </div>
-    <div class="card bg-base-100 border border-base-300 shadow-sm">
-      <div class="card-body gap-1">
-        <p class="text-xs font-extrabold tracking-[0.16em] text-base-content/60 uppercase">{copy.adminStatsUsers}</p>
-        <p class="font-display text-[32px] leading-none font-bold">4 218</p>
-        <p class="text-xs text-success font-bold">{copy.adminStatsUsersTrend}</p>
+    <div class="stat">
+      <div class="stat-figure text-secondary">
+        <svg class="size-7"><use href="#ic-users"></use></svg>
       </div>
+      <div class="stat-title">{copy.adminStatsUsers}</div>
+      <div class="stat-value">4 218</div>
+      <div class="stat-desc">{copy.adminStatsUsersTrend}</div>
     </div>
-    <div class="card bg-base-100 border border-base-300 shadow-sm">
-      <div class="card-body gap-1">
-        <p class="text-xs font-extrabold tracking-[0.16em] text-base-content/60 uppercase">{copy.adminStatsComments}</p>
-        <p class="font-display text-[32px] leading-none font-bold">23</p>
-        <p class="text-xs text-warning font-bold">{copy.adminStatsCommentsTrend}</p>
+    <div class="stat">
+      <div class="stat-figure text-warning">
+        <svg class="size-7"><use href="#ic-pin"></use></svg>
       </div>
+      <div class="stat-title">{copy.adminStatsComments}</div>
+      <div class="stat-value text-warning">23</div>
+      <div class="stat-desc">{copy.adminStatsCommentsTrend}</div>
     </div>
-    <div class="card bg-base-100 border border-base-300 shadow-sm">
-      <div class="card-body gap-1">
-        <p class="text-xs font-extrabold tracking-[0.16em] text-base-content/60 uppercase">{copy.adminStatsRevenue}</p>
-        <p class="font-display text-[32px] leading-none font-bold">$1.240</p>
-        <p class="text-xs text-success font-bold">{copy.adminStatsRevenueTrend}</p>
+    <div class="stat">
+      <div class="stat-figure text-success">
+        <svg class="size-7"><use href="#ic-heart"></use></svg>
       </div>
+      <div class="stat-title">{copy.adminStatsRevenue}</div>
+      <div class="stat-value">$1.240</div>
+      <div class="stat-desc text-success">{copy.adminStatsRevenueTrend}</div>
     </div>
   </section>
 
-  <section class="mt-7 grid grid-cols-1 gap-6 lg:grid-cols-[1.4fr_1fr]">
-    <div class="card bg-base-100 border border-base-300 shadow-sm">
-      <div class="card-body">
-        <h2 class="card-title font-display text-[20px] tracking-[-0.005em]">{copy.adminRecentActivity}</h2>
-        <ul class="mt-3 divide-y divide-base-300">
-          <li class="flex items-start gap-3 py-3">
-            <div class="bg-primary/10 text-primary flex size-9 shrink-0 items-center justify-center rounded-full">
-              <svg class="size-4"><use href="#ic-book2"></use></svg>
+  <div role="alert" class="alert alert-warning alert-soft mt-6">
+    <svg class="size-5"><use href="#ic-pin"></use></svg>
+    <span>{copy.adminStatsComments}: 23 · {copy.adminStatsCommentsTrend}</span>
+    <a class="btn btn-sm btn-warning" href={commentsHref}>{copy.adminAttentionCta}</a>
+  </div>
+
+  <section class="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[1.4fr_1fr]">
+    <div class="card card-border bg-base-100">
+      <div class="card-body gap-0 p-0">
+        <div class="flex items-center justify-between gap-3 px-5 pt-5 pb-2">
+          <h2 class="card-title font-display text-[20px] tracking-[-0.005em]">{copy.adminRecentActivity}</h2>
+          <a class="btn btn-ghost btn-sm" href={articlesHref}>{copy.adminViewAll}</a>
+        </div>
+        <ul class="list">
+          <li class="list-row">
+            <div class="avatar avatar-placeholder">
+              <div class="bg-primary text-primary-content w-10 rounded-box">
+                <svg class="size-5"><use href="#ic-book2"></use></svg>
+              </div>
             </div>
-            <div class="min-w-0 flex-1">
-              <p class="text-sm"><span class="font-bold">Jenniffer M.</span> {copy.adminActivity1}</p>
-              <p class="text-xs opacity-60">{copy.adminActivityTime1}</p>
+            <div>
+              <div class="font-semibold">Jenniffer M.</div>
+              <div class="text-xs opacity-60">{copy.adminActivity1}</div>
             </div>
+            <span class="badge badge-ghost badge-sm">{copy.adminActivityTime1}</span>
           </li>
-          <li class="flex items-start gap-3 py-3">
-            <div class="bg-warning/15 text-warning flex size-9 shrink-0 items-center justify-center rounded-full">
-              <svg class="size-4"><use href="#ic-pin"></use></svg>
+          <li class="list-row">
+            <div class="avatar avatar-placeholder">
+              <div class="bg-warning text-warning-content w-10 rounded-box">
+                <svg class="size-5"><use href="#ic-pin"></use></svg>
+              </div>
             </div>
-            <div class="min-w-0 flex-1">
-              <p class="text-sm"><span class="font-bold">Equipo AfroUp</span> {copy.adminActivity2}</p>
-              <p class="text-xs opacity-60">{copy.adminActivityTime2}</p>
+            <div>
+              <div class="font-semibold">Equipo AfroUp</div>
+              <div class="text-xs opacity-60">{copy.adminActivity2}</div>
             </div>
+            <span class="badge badge-warning badge-soft badge-sm">{copy.adminActivityTime2}</span>
           </li>
-          <li class="flex items-start gap-3 py-3">
-            <div class="bg-error/15 text-error flex size-9 shrink-0 items-center justify-center rounded-full">
-              <svg class="size-4"><use href="#ic-heart"></use></svg>
+          <li class="list-row">
+            <div class="avatar avatar-placeholder">
+              <div class="bg-success text-success-content w-10 rounded-box">
+                <svg class="size-5"><use href="#ic-heart"></use></svg>
+              </div>
             </div>
-            <div class="min-w-0 flex-1">
-              <p class="text-sm"><span class="font-bold">María P.</span> {copy.adminActivity3}</p>
-              <p class="text-xs opacity-60">{copy.adminActivityTime3}</p>
+            <div>
+              <div class="font-semibold">María P.</div>
+              <div class="text-xs opacity-60">{copy.adminActivity3}</div>
             </div>
+            <span class="badge badge-ghost badge-sm">{copy.adminActivityTime3}</span>
           </li>
-          <li class="flex items-start gap-3 py-3">
-            <div class="bg-accent/15 text-accent flex size-9 shrink-0 items-center justify-center rounded-full">
-              <svg class="size-4"><use href="#ic-share"></use></svg>
+          <li class="list-row">
+            <div class="avatar avatar-placeholder">
+              <div class="bg-neutral text-neutral-content w-10 rounded-box">
+                <svg class="size-5"><use href="#ic-share"></use></svg>
+              </div>
             </div>
-            <div class="min-w-0 flex-1">
-              <p class="text-sm"><span class="font-bold">Carlos R.</span> {copy.adminActivity4}</p>
-              <p class="text-xs opacity-60">{copy.adminActivityTime4}</p>
+            <div>
+              <div class="font-semibold">Carlos R.</div>
+              <div class="text-xs opacity-60">{copy.adminActivity4}</div>
             </div>
+            <span class="badge badge-ghost badge-sm">{copy.adminActivityTime4}</span>
           </li>
         </ul>
       </div>
     </div>
 
-    <div class="card bg-base-100 border border-base-300 shadow-sm">
-      <div class="card-body gap-3">
+    <div class="card card-border bg-base-100">
+      <div class="card-body">
         <h2 class="card-title font-display text-[20px] tracking-[-0.005em]">{copy.adminQuickActions}</h2>
-        <a class="btn btn-primary justify-start" href="#">
-          <svg class="size-4"><use href="#ic-book2"></use></svg>
-          {copy.adminNewArticle}
-        </a>
-        <a class="btn btn-dash justify-start" href="#">
-          <svg class="size-4"><use href="#ic-download"></use></svg>
-          {copy.adminNewResource}
-        </a>
-        <a class="btn btn-dash justify-start" href="#">
-          <svg class="size-4"><use href="#ic-pin"></use></svg>
-          {copy.adminModerateComments}
-        </a>
-        <a class="btn btn-dash justify-start" href="#">
-          <svg class="size-4"><use href="#ic-share"></use></svg>
-          {copy.adminReviewProjects}
-        </a>
+        <div class="flex flex-col gap-2">
+          <a class="btn btn-primary justify-start" href={articlesHref}>
+            <svg class="size-4"><use href="#ic-book2"></use></svg>
+            {copy.adminNewArticle}
+          </a>
+          <a class="btn btn-dash justify-start" href={commentsHref}>
+            <svg class="size-4"><use href="#ic-pin"></use></svg>
+            {copy.adminModerateComments}
+          </a>
+          <a class="btn btn-dash justify-start" href={projectsHref}>
+            <svg class="size-4"><use href="#ic-share"></use></svg>
+            {copy.adminReviewProjects}
+          </a>
+          <a class="btn btn-dash justify-start" href={usersHref}>
+            <svg class="size-4"><use href="#ic-users"></use></svg>
+            {copy.adminInviteUser}
+          </a>
+        </div>
       </div>
     </div>
   </section>
