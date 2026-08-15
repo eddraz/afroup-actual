@@ -10,7 +10,7 @@
     instagram: 'https://www.instagram.com/afroup',
     youtube: 'https://www.youtube.com/@afroup',
     threads: 'https://www.threads.net/@afroup',
-    x: 'https://x.com/afroup',
+    x: 'https://x.com/afroup_',
     tiktok: 'https://www.tiktok.com/@afroup',
     facebook: 'https://www.facebook.com/afroup'
   };

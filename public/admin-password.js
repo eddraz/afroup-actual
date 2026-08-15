@@ -14,7 +14,10 @@
     el.className = "msg " + (ok ? "ok" : "err");
   }
 
+  var csrfValue = "";
+
   function csrfToken() {
+    if (csrfValue) return csrfValue;
     var match = document.cookie.match(/(?:^|; )afroup_csrf=([^;]+)/);
     return match ? decodeURIComponent(match[1]) : "";
   }
@@ -31,6 +34,7 @@
       return res.json().catch(function () {
         return {};
       }).then(function (data) {
+        if (data && data.csrf) csrfValue = data.csrf;
         if (!res.ok) {
           var err = new Error(data.error || "No se pudo completar la solicitud.");
           err.status = res.status;

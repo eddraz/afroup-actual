@@ -96,6 +96,9 @@ async function handleApi(request, env, url) {
   if (entryMatch && method === "PATCH") {
     return updateAdminEntry(request, env, Number(entryMatch[1]));
   }
+  if (entryMatch && method === "DELETE") {
+    return deleteAdminEntry(request, env, Number(entryMatch[1]));
+  }
 
   return json({ error: "No encontrado." }, 404);
 }
@@ -288,7 +291,8 @@ async function adminLogin(request, env) {
 async function adminSession(request, env) {
   const session = await requireAdmin(request, env);
   if (session instanceof Response) return session;
-  return json({ ok: true, username: env.ADMIN_USER || "" });
+  const csrf = csrfCookies(request);
+  return jsonResponse({ ok: true, username: env.ADMIN_USER || "", csrf: csrf.token }, 200, request, csrf.cookies);
 }
 
 async function changeAdminPassword(request, env) {
@@ -376,7 +380,26 @@ async function listAdminEntries(request, env, url) {
     .bind(...binds)
     .all();
 
-  return json({ entries: results || [] });
+  const csrf = csrfCookies(request);
+  return jsonResponse({ entries: results || [], csrf: csrf.token }, 200, request, csrf.cookies);
+}
+
+async function deleteAdminEntry(request, env, id) {
+  const session = await requireAdmin(request, env);
+  if (session instanceof Response) return session;
+  const csrf = requireCsrf(request);
+  if (csrf) return csrf;
+
+  const existing = await env.DB.prepare("SELECT id, title, status FROM aid_entries WHERE id = ?")
+    .bind(id)
+    .first();
+  if (!existing) return json({ error: "Registro no encontrado." }, 404);
+  if (existing.status !== "rejected") {
+    return json({ error: "Solo se pueden eliminar registros rechazados." }, 400);
+  }
+
+  await env.DB.prepare("DELETE FROM aid_entries WHERE id = ?").bind(id).run();
+  return json({ ok: true, deleted: id, title: existing.title });
 }
 
 async function updateAdminEntry(request, env, id) {
@@ -527,18 +550,37 @@ function hasOwn(obj, key) {
 }
 
 function json(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      "content-type": "application/json; charset=utf-8",
-      "x-content-type-options": "nosniff",
-      "x-frame-options": "DENY",
-      "referrer-policy": "strict-origin-when-cross-origin",
-      "permissions-policy": "camera=(), microphone=(), geolocation=()",
-      "cross-origin-opener-policy": "same-origin",
-      "cache-control": "no-store",
-    },
+  return jsonResponse(data, status);
+}
+
+function jsonResponse(data, status = 200, request = null, extraCookies = []) {
+  const headers = new Headers({
+    "content-type": "application/json; charset=utf-8",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY",
+    "referrer-policy": "strict-origin-when-cross-origin",
+    "permissions-policy": "camera=(), microphone=(), geolocation=()",
+    "cross-origin-opener-policy": "same-origin",
+    "cache-control": "no-store",
   });
+  if (request) {
+    for (const [key, value] of Object.entries(securityHeaders(request, { noStore: true }))) {
+      headers.set(key, value);
+    }
+  }
+  for (const cookie of extraCookies) headers.append("set-cookie", cookie);
+  return new Response(JSON.stringify(data), { status, headers });
+}
+
+function csrfCookies(request) {
+  let token = cookieValue(request, CSRF_COOKIE);
+  const cookies = [];
+  if (!token) {
+    token = crypto.randomUUID();
+    const expiresAt = new Date(Date.now() + SESSION_HOURS * 60 * 60 * 1000).toISOString();
+    cookies.push(sessionCookie(CSRF_COOKIE, token, request, expiresAt, false));
+  }
+  return { token, cookies };
 }
 
 function cookieValue(request, name) {

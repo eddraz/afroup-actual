@@ -23,12 +23,15 @@ Values live in `.dev.vars` (not committed):
 - user: `admin`
 - password: `changeme`
 
-Change them before any shared or remote use.
+Change them before any shared or remote use. After login, use `/admin/password` to replace the bootstrap password. The new hash is stored in D1.
 
 ## What is seeded
 
-Migration `0001_init.sql` creates departments and empty aid tables. There are no invented earthquake facts or aid rows. Official listings will be loaded later from the source document.
+- `0001_init.sql` creates departments, aid entries, and admin sessions.
+- `0002_seed_official_guide.sql` loads the official AfroUp guide dated 14 August 2026.
+- `0003_admin_credentials.sql` stores hashed admin password overrides.
+- `0004_security.sql` tracks login and public-submit rate limits.
 
 ## Remote deploy (later)
 
-`wrangler` is not logged in yet. Remote D1 create, real `database_id`, and `wrangler deploy` wait for Cloudflare auth plus the PDF seed.
+Create a remote D1 database, replace the local `database_id` placeholder in `wrangler.jsonc`, put `ADMIN_USER` / `ADMIN_PASSWORD` / `SESSION_SECRET` as secrets, then run `wrangler deploy`.

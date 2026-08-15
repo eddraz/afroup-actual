@@ -33,7 +33,10 @@
     el.className = "msg " + (ok ? "ok" : "err");
   }
 
+  var csrfValue = "";
+
   function csrfToken() {
+    if (csrfValue) return csrfValue;
     var match = document.cookie.match(/(?:^|; )afroup_csrf=([^;]+)/);
     return match ? decodeURIComponent(match[1]) : "";
   }
@@ -50,6 +53,7 @@
       return res.json().catch(function () {
         return {};
       }).then(function (data) {
+        if (data && data.csrf) csrfValue = data.csrf;
         if (!res.ok) {
           var err = new Error(data.error || "No se pudo completar la solicitud.");
           err.status = res.status;
@@ -100,7 +104,11 @@
           "</td>" +
           "<td class='actions'><button class='btn btn-ghost btn-sm' type='button' data-edit='" +
           entry.id +
-          "'>Editar</button></td>" +
+          "'>Editar</button>" +
+          (entry.status === "rejected"
+            ? "<button class='btn btn-ghost btn-sm' type='button' data-delete='" + entry.id + "'>Eliminar</button>"
+            : "") +
+          "</td>" +
           "</tr>"
         );
       })
@@ -223,6 +231,28 @@
   });
 
   entriesBody.addEventListener("click", function (event) {
+    var deleteButton = event.target.closest("[data-delete]");
+    if (deleteButton) {
+      var deleteId = Number(deleteButton.getAttribute("data-delete"));
+      var doomed = state.entries.find(function (item) { return item.id === deleteId; });
+      if (!doomed || doomed.status !== "rejected") return;
+      if (!window.confirm("¿Eliminar \"" + (doomed.title || "este registro") + "\"? Esta acción no se puede deshacer.")) return;
+      fetchJson("/api/admin/entries/" + deleteId, { method: "DELETE" })
+        .then(function () {
+          if (state.current && state.current.id === deleteId) {
+            editor.classList.remove("open");
+            state.current = null;
+          }
+          return loadEntries();
+        })
+        .catch(function (err) {
+          if (err.status === 401) {
+            showDashboard(false);
+            setMsg(loginMsg, "La sesión venció. Vuelve a ingresar.", false);
+          }
+        });
+      return;
+    }
     var button = event.target.closest("[data-edit]");
     if (!button) return;
     var id = Number(button.getAttribute("data-edit"));
