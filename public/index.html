@@ -140,48 +140,10 @@
         </div>
       </div>
       <div class="field" style="margin-top:18px;">
-        <label for="title">Título</label>
-        <input id="title" name="title" type="text" required placeholder="Nombre de la ayuda o el punto de atención" />
+        <label for="information">Información</label>
+        <textarea id="information" name="information" required placeholder="Escribe aquí toda la información de la ayuda"></textarea>
       </div>
-      <div class="field" style="margin-top:18px;">
-        <label for="summary">Resumen</label>
-        <input id="summary" name="summary" type="text" placeholder="Qué se ofrece y a quién" />
-      </div>
-      <div class="field" style="margin-top:18px;">
-        <label for="body">Descripción</label>
-        <textarea id="body" name="body" placeholder="Detalles, horarios, requisitos o cómo llegar"></textarea>
-      </div>
-      <div class="fgrid" style="margin-top:18px;">
-        <div class="field">
-          <label for="location">Lugar</label>
-          <input id="location" name="location" type="text" placeholder="Municipio, barrio o dirección" />
-        </div>
-        <div class="field">
-          <label for="source">Fuente</label>
-          <input id="source" name="source" type="text" placeholder="Organización, alcaldía, comunidad…" />
-        </div>
-      </div>
-      <div class="fgrid" style="margin-top:18px;">
-        <div class="field">
-          <label for="contact_name">Nombre de contacto</label>
-          <input id="contact_name" name="contact_name" type="text" />
-        </div>
-        <div class="field">
-          <label for="contact_phone">Teléfono</label>
-          <input id="contact_phone" name="contact_phone" type="text" />
-        </div>
-      </div>
-      <div class="fgrid" style="margin-top:18px;">
-        <div class="field">
-          <label for="contact_email">Correo</label>
-          <input id="contact_email" name="contact_email" type="email" />
-        </div>
-        <div class="field">
-          <label for="submitted_by_name">Quién envía esta información</label>
-          <input id="submitted_by_name" name="submitted_by_name" type="text" />
-        </div>
-      </div>
-      <button class="btn btn-primary" type="submit" style="margin-top:18px;">Enviar para revisión <svg class="ic" style="width:16px;height:16px"><use href="#ic-arrow"/></svg></button>
+      <button class="btn btn-primary" type="submit" style="margin-top:18px;">Enviar <svg class="ic" style="width:16px;height:16px"><use href="#ic-arrow"/></svg></button>
       <p class="msg" id="form-msg" hidden></p>
     </form>
   </div>

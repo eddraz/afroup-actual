@@ -109,47 +109,13 @@
           </div>
         </div>
         <div class="field" style="margin-top:18px;">
-          <label for="edit-title">Título</label>
-          <input id="edit-title" type="text" required />
+          <label for="edit-category">Categoría</label>
+          <input id="edit-category" type="text" list="category-options" autocomplete="off" placeholder="Elegí una existente o escribí una nueva" />
+          <datalist id="category-options"></datalist>
         </div>
         <div class="field" style="margin-top:18px;">
-          <label for="edit-summary">Resumen</label>
-          <input id="edit-summary" type="text" />
-        </div>
-        <div class="field" style="margin-top:18px;">
-          <label for="edit-body">Descripción</label>
-          <textarea id="edit-body"></textarea>
-        </div>
-        <div class="fgrid" style="margin-top:18px;">
-          <div class="field">
-            <label for="edit-location">Lugar</label>
-            <input id="edit-location" type="text" />
-          </div>
-          <div class="field">
-            <label for="edit-category">Categoría</label>
-            <input id="edit-category" type="text" list="category-options" autocomplete="off" placeholder="Elegí una existente o escribí una nueva" />
-            <datalist id="category-options"></datalist>
-          </div>
-        </div>
-        <div class="fgrid" style="margin-top:18px;">
-          <div class="field">
-            <label for="edit-contact-name">Nombre de contacto</label>
-            <input id="edit-contact-name" type="text" />
-          </div>
-          <div class="field">
-            <label for="edit-contact-phone">Teléfono</label>
-            <input id="edit-contact-phone" type="text" />
-          </div>
-        </div>
-        <div class="fgrid" style="margin-top:18px;">
-          <div class="field">
-            <label for="edit-contact-email">Correo</label>
-            <input id="edit-contact-email" type="email" />
-          </div>
-          <div class="field">
-            <label for="edit-source">Fuente</label>
-            <input id="edit-source" type="text" />
-          </div>
+          <label for="edit-information">Información</label>
+          <textarea id="edit-information" required></textarea>
         </div>
         <div class="actions" style="margin-top:18px;">
           <button class="btn btn-primary" type="submit">Guardar cambios</button>

@@ -14,6 +14,7 @@ const PUBLIC_ENTRY_FIELDS = [
   "department_slug",
   "department_name",
   "title",
+  "information",
   "summary",
   "body",
   "contact_name",
@@ -136,16 +137,16 @@ async function listPublishedEntries(env, url) {
   if (q) {
     const like = `%${q}%`;
     where.push(
-      `(e.title LIKE ? OR IFNULL(e.summary, '') LIKE ? OR IFNULL(e.body, '') LIKE ?
+      `(e.title LIKE ? OR IFNULL(e.information, '') LIKE ? OR IFNULL(e.summary, '') LIKE ? OR IFNULL(e.body, '') LIKE ?
         OR IFNULL(e.location, '') LIKE ? OR IFNULL(e.contact_name, '') LIKE ?
         OR IFNULL(e.contact_phone, '') LIKE ? OR IFNULL(e.contact_email, '') LIKE ?)`
     );
-    binds.push(like, like, like, like, like, like, like);
+    binds.push(like, like, like, like, like, like, like, like);
   }
 
   const { results } = await env.DB.prepare(
     `SELECT e.id, e.department_id, d.slug AS department_slug, d.name AS department_name,
-            e.title, e.summary, e.body, e.contact_name, e.contact_phone, e.contact_email,
+            e.title, e.information, e.summary, e.body, e.contact_name, e.contact_phone, e.contact_email,
             e.location, e.category, e.source, e.created_at, e.published_at
        FROM aid_entries e
        JOIN departments d ON d.id = e.department_id
@@ -166,26 +167,13 @@ async function createPendingEntry(request, env) {
   if (!body) return json({ error: "JSON inválido." }, 400);
 
   const departmentSlug = text(body.department || body.department_slug, 80);
-  const title = text(body.title, 180);
-  const summary = text(body.summary, MAX_FIELD);
-  const details = text(body.body, MAX_BODY);
-  const contactName = text(body.contact_name, 120);
-  const contactPhone = text(body.contact_phone, 80);
-  const contactEmail = text(body.contact_email, 180);
-  const location = text(body.location, 240);
   const category = text(body.category, 80);
-  const source = text(body.source, 180);
-  const submittedByName = text(body.submitted_by_name, 120);
-  const submittedByContact = text(body.submitted_by_contact, 180);
+  const information = text(body.information || body.body, MAX_BODY);
+  const firstLine = information.split(/\r?\n/).map((line) => line.trim()).find(Boolean) || "";
+  const title = firstLine.slice(0, 180) || "Información de ayuda";
 
   if (!departmentSlug) return json({ error: "El departamento es obligatorio." }, 400);
-  if (!title) return json({ error: "El título es obligatorio." }, 400);
-  if (!summary && !details) {
-    return json({ error: "Incluye un resumen o una descripción." }, 400);
-  }
-  if (!contactName && !contactPhone && !contactEmail && !submittedByContact) {
-    return json({ error: "Incluye al menos un dato de contacto." }, 400);
-  }
+  if (!information) return json({ error: "La información es obligatoria." }, 400);
 
   const department = await env.DB.prepare(
     "SELECT id FROM departments WHERE slug = ?"
@@ -197,23 +185,15 @@ async function createPendingEntry(request, env) {
 
   const result = await env.DB.prepare(
     `INSERT INTO aid_entries (
-        department_id, title, summary, body, contact_name, contact_phone, contact_email,
-        location, category, source, status, submitted_by_name, submitted_by_contact
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)`
+        department_id, title, category, information, body, status
+      ) VALUES (?, ?, ?, ?, ?, 'pending')`
   )
     .bind(
       department.id,
       title,
-      summary || null,
-      details || null,
-      contactName || null,
-      contactPhone || null,
-      contactEmail || null,
-      location || null,
       category || null,
-      source || null,
-      submittedByName || null,
-      submittedByContact || contactPhone || contactEmail || null
+      information,
+      information
     )
     .run();
 
@@ -478,17 +458,14 @@ async function updateAdminEntry(request, env, id) {
     return json({ error: "Estado no válido." }, 400);
   }
 
-  const title = hasOwn(body, "title") ? text(body.title) : existing.title;
-  const summary = hasOwn(body, "summary") ? text(body.summary) : existing.summary;
-  const details = hasOwn(body, "body") ? text(body.body) : existing.body;
-  const contactName = hasOwn(body, "contact_name") ? text(body.contact_name) : existing.contact_name;
-  const contactPhone = hasOwn(body, "contact_phone") ? text(body.contact_phone) : existing.contact_phone;
-  const contactEmail = hasOwn(body, "contact_email") ? text(body.contact_email) : existing.contact_email;
-  const location = hasOwn(body, "location") ? text(body.location) : existing.location;
-  const category = hasOwn(body, "category") ? text(body.category) : existing.category;
-  const source = hasOwn(body, "source") ? text(body.source) : existing.source;
+  const information = hasOwn(body, "information")
+    ? text(body.information, MAX_BODY)
+    : (existing.information || existing.body || existing.summary || "");
+  const category = hasOwn(body, "category") ? text(body.category, 80) : existing.category;
+  const firstLine = information.split(/\r?\n/).map((line) => line.trim()).find(Boolean) || "";
+  const title = firstLine.slice(0, 180) || existing.title || "Información de ayuda";
 
-  if (!title) return json({ error: "El título es obligatorio." }, 400);
+  if (!information) return json({ error: "La información es obligatoria." }, 400);
 
   let publishedAt = existing.published_at;
   if (nextStatus === "published" && existing.status !== "published") {
@@ -500,22 +477,16 @@ async function updateAdminEntry(request, env, id) {
 
   await env.DB.prepare(
     `UPDATE aid_entries
-        SET department_id = ?, title = ?, summary = ?, body = ?, contact_name = ?,
-            contact_phone = ?, contact_email = ?, location = ?, category = ?, source = ?,
+        SET department_id = ?, title = ?, category = ?, information = ?, body = ?,
             status = ?, published_at = ?, updated_at = datetime('now')
       WHERE id = ?`
   )
     .bind(
       departmentId,
       title,
-      summary || null,
-      details || null,
-      contactName || null,
-      contactPhone || null,
-      contactEmail || null,
-      location || null,
       category || null,
-      source || null,
+      information,
+      information,
       nextStatus,
       publishedAt,
       id

@@ -139,15 +139,8 @@
     document.getElementById("edit-id").value = entry.id;
     departmentSelect.value = entry.department_slug;
     document.getElementById("edit-status").value = entry.status;
-    document.getElementById("edit-title").value = entry.title || "";
-    document.getElementById("edit-summary").value = entry.summary || "";
-    document.getElementById("edit-body").value = entry.body || "";
-    document.getElementById("edit-location").value = entry.location || "";
     document.getElementById("edit-category").value = entry.category || "";
-    document.getElementById("edit-contact-name").value = entry.contact_name || "";
-    document.getElementById("edit-contact-phone").value = entry.contact_phone || "";
-    document.getElementById("edit-contact-email").value = entry.contact_email || "";
-    document.getElementById("edit-source").value = entry.source || "";
+    document.getElementById("edit-information").value = entry.information || entry.body || entry.summary || "";
     setMsg(editMsg, "", true);
     editor.scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -156,15 +149,8 @@
     return {
       department: departmentSelect.value,
       status: status || document.getElementById("edit-status").value,
-      title: document.getElementById("edit-title").value,
-      summary: document.getElementById("edit-summary").value,
-      body: document.getElementById("edit-body").value,
-      location: document.getElementById("edit-location").value,
       category: document.getElementById("edit-category").value,
-      contact_name: document.getElementById("edit-contact-name").value,
-      contact_phone: document.getElementById("edit-contact-phone").value,
-      contact_email: document.getElementById("edit-contact-email").value,
-      source: document.getElementById("edit-source").value,
+      information: document.getElementById("edit-information").value,
     };
   }
 

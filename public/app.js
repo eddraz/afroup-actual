@@ -86,7 +86,7 @@
     var contact = [entry.contact_name, entry.contact_phone, entry.contact_email]
       .filter(Boolean)
       .join(" · ");
-    var text = compactText(entry.location, entry.summary, entry.body, contact);
+    var text = compactText(entry.information, entry.location, entry.summary, entry.body, contact);
     return (
       '<article class="card">' +
       '<div class="body">' +
@@ -244,16 +244,8 @@
       event.preventDefault();
       var payload = {
         department: departmentSelect.value,
-        title: document.getElementById("title").value,
-        summary: document.getElementById("summary").value,
-        body: document.getElementById("body").value,
         category: document.getElementById("category").value,
-        location: document.getElementById("location").value,
-        source: document.getElementById("source").value,
-        contact_name: document.getElementById("contact_name").value,
-        contact_phone: document.getElementById("contact_phone").value,
-        contact_email: document.getElementById("contact_email").value,
-        submitted_by_name: document.getElementById("submitted_by_name").value,
+        information: document.getElementById("information").value,
       };
       fetchJson("/api/entries", {
         method: "POST",
