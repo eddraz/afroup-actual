@@ -70,11 +70,21 @@ const bio = user.bio ?? "";
                 <label class="btn btn-dash btn-sm cursor-pointer">
                   <svg class="size-4"><use href="#ic-camera"></use></svg>
                   {copy.accountPhotoUpload}
-                  <input type="file" name="avatar" accept="image/png,image/jpeg" class="hidden" />
+                  <input
+                    class="hidden"
+                    type="file"
+                    name="avatar"
+                    accept="image/png,image/jpeg,image/webp"
+                    data-avatar-file
+                    data-error-type={copy.accountPhotoTypeError}
+                    data-error-size={copy.accountPhotoSizeError}
+                    data-error-upload={copy.accountPhotoUploadError}
+                  />
                 </label>
-                <button type="button" class="btn btn-ghost btn-sm">{copy.accountPhotoRemove}</button>
+                <button type="button" class="btn btn-ghost btn-sm" data-avatar-remove>{copy.accountPhotoRemove}</button>
               </div>
               <p class="text-xs opacity-60">{copy.accountPhotoHelp}</p>
+              <div class="alert alert-error hidden" data-avatar-error><span data-avatar-error-text></span></div>
             </div>
           </div>
 
@@ -212,7 +222,25 @@ const bio = user.bio ?? "";
     <form method="dialog" class="modal-backdrop"><button>close</button></form>
   </dialog>
 
+  <dialog id="avatar-crop-dialog" class="modal">
+    <div class="modal-box max-w-[440px]">
+      <h3 class="font-display text-[20px] tracking-[-0.005em]">{copy.accountPhotoCropTitle}</h3>
+      <p class="mt-2 text-sm opacity-70">{copy.accountPhotoCropLead}</p>
+      <canvas id="avatar-crop-canvas" class="mt-4 w-full cursor-move rounded-box border border-base-300 bg-neutral" width="360" height="360"></canvas>
+      <label class="mt-4 flex items-center gap-3 text-sm">
+        <span class="shrink-0">{copy.accountPhotoCropZoom}</span>
+        <input id="avatar-crop-zoom" class="range range-sm range-primary" type="range" min="1" max="3" step="0.01" value="1" />
+      </label>
+      <div class="modal-action">
+        <button class="btn btn-ghost btn-sm" type="button" data-avatar-crop-cancel>{copy.accountPhotoCropCancel}</button>
+        <button class="btn btn-primary btn-sm" type="button" data-avatar-crop-save>{copy.accountPhotoCropSave}</button>
+      </div>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button>close</button></form>
+  </dialog>
+
   <script is:inline src="/rich-editor.js"></script>
+  <script is:inline src="/avatar-crop.js"></script>
   <script is:inline>
     (function () {
       var bind = function () {
