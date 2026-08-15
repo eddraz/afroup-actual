@@ -72,6 +72,12 @@ const loginHref = localizedPath(locale, routeIds.login);
             <p id="email-help" class="text-xs opacity-60">{copy.accountEmailReadonly}</p>
           </fieldset>
 
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend">{copy.accountBioLabel}</legend>
+            <textarea id="bio" name="bio" rows="4" maxlength="280" placeholder={copy.accountBioLabel}>Investigadora afrolatina. Me interesa la memoria, las lenguas criollas y el afrofuturismo.</textarea>
+            <p class="text-xs opacity-60">{copy.accountBioHelp}</p>
+          </fieldset>
+
           <button class="btn btn-primary mt-2 h-[46px] min-h-[46px]" type="submit">
             {copy.accountProfileSave}
             <svg class="size-4"><use href="#ic-arrow"></use></svg>
@@ -181,9 +187,11 @@ const loginHref = localizedPath(locale, routeIds.login);
     <form method="dialog" class="modal-backdrop"><button>close</button></form>
   </dialog>
 
+  <script is:inline src="/rich-editor.js"></script>
   <script is:inline>
     (function () {
       var bind = function () {
+        if (window.AfroUpRichEditor) window.AfroUpRichEditor.attach("#bio");
         var input = document.querySelector("[data-confirm-delete]");
         var submit = document.querySelector("[data-confirm-delete-submit]");
         if (!input || !submit || submit.dataset.bound === "true") return;
