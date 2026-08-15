@@ -66,11 +66,12 @@ const cards = [
     </ul>
   </div>
 
-  <section class="hero mt-4 overflow-hidden rounded-box bg-primary text-primary-content">
-    <div class="hero-content w-full flex-col items-start gap-3 py-12">
+  <section class="hero relative mt-6 overflow-hidden rounded-[24px] bg-primary text-primary-content shadow-lg">
+    <div class="absolute inset-y-0 right-0 w-[200px] bg-[url('/assets/pattern.png')] bg-cover bg-center max-md:w-[90px]"></div>
+    <div class="hero-content relative w-full flex-col items-start gap-3 px-6 py-8 lg:px-11 lg:py-11">
       <p class="text-accent text-xs font-extrabold tracking-[0.18em] uppercase">{copy.categoryEyebrow}</p>
-      <h1 class="font-display text-5xl font-bold">{copy.navAfrica}</h1>
-      <p class="max-w-[56ch] text-lg text-primary-content/80">{copy.africaLead}</p>
+      <h1 class="font-display text-[31px] font-bold lg:text-[44px]">{copy.navAfrica}</h1>
+      <p class="max-w-[56ch] text-[17px] leading-[1.55] text-primary-content/80">{copy.africaLead}</p>
     </div>
   </section>
 
@@ -91,7 +92,10 @@ const cards = [
             <span class="badge badge-sm absolute bottom-3 left-3">{card.label}</span>
           </figure>
           <div class="card-body">
-            <span class="badge badge-soft badge-primary badge-sm">{card.tag}</span>
+            <span class="inline-flex items-center gap-2 text-[11.5px] font-extrabold tracking-[0.1em] text-primary uppercase">
+              <span class="size-2.5 rounded-[3px] bg-primary"></span>
+              {card.tag}
+            </span>
             <h3 class="card-title font-display">
               <a href={articleHref}>{card.title}</a>
             </h3>
