@@ -14,6 +14,30 @@ const recoverHref = localizedPath(locale, routeIds.recover);
 ---
 
 <BaseLayout title={copy.titleLogin} active="login">
+  <script is:inline define:vars={{ copyVerifiedTitle: copy.verifiedTitle, copyVerifiedLead: copy.verifiedLead, copyVerifiedInvalid: copy.verifiedInvalid, copyVerifiedExpired: copy.verifiedExpired, copyVerifiedAlready: copy.verifiedAlready }}>
+    (function () {
+      var bind = function () {
+        var banner = document.querySelector("[data-verified-banner]");
+        if (!banner || banner.dataset.bound === "true") return;
+        banner.dataset.bound = "true";
+        var text = document.querySelector("[data-verified-text]");
+        var params = new URLSearchParams(window.location.search);
+        var v = params.get("verified");
+        var messages = {
+          "1": copyVerifiedLead,
+          invalid: copyVerifiedInvalid,
+          expired: copyVerifiedExpired,
+          already: copyVerifiedAlready,
+        };
+        if (v && messages[v]) {
+          text.textContent = (v === "1" ? "✓ " : "") + messages[v];
+          banner.classList.remove("hidden");
+        }
+      };
+      bind();
+      document.addEventListener("astro:after-swap", bind);
+    })();
+  </script>
   <div class="breadcrumbs text-sm">
     <ul>
       <li><a href={homeHref}>{copy.navHome}</a></li>
@@ -30,7 +54,11 @@ const recoverHref = localizedPath(locale, routeIds.recover);
   </section>
 
   <div class="mt-9 grid grid-cols-1 gap-7 lg:grid-cols-[1.15fr_0.85fr]">
-    <form class="card bg-base-200 shadow" onsubmit="return false" data-login-form>
+    <div id="verified-banner" class="alert alert-success mt-4 hidden" data-verified-banner>
+  <span data-verified-text></span>
+</div>
+
+<form class="card bg-base-200 shadow" onsubmit="return false" data-login-form>
       <div class="card-body gap-4">
         <h2 class="card-title font-display text-[22px] tracking-[-0.005em]">{copy.loginTitle}</h2>
 

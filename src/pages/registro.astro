@@ -29,7 +29,7 @@ const loginHref = localizedPath(locale, routeIds.login);
   </section>
 
   <div class="mt-9 grid grid-cols-1 gap-7 lg:grid-cols-[1.15fr_0.85fr]">
-    <form class="card bg-base-200 shadow" onsubmit="return false">
+    <form class="card bg-base-200 shadow" data-register-form>
       <div class="card-body gap-4">
         <h2 class="card-title font-display text-[22px] tracking-[-0.005em]">{copy.signupTitle}</h2>
 
@@ -70,6 +70,107 @@ const loginHref = localizedPath(locale, routeIds.login);
 
       </div>
     </form>
+
+    <div class="card bg-success/10 border border-success/40 mt-6 hidden" data-register-success>
+      <div class="card-body gap-2">
+        <p class="text-xs font-extrabold tracking-[0.18em] text-success uppercase">{copy.signupSuccessEyebrow}</p>
+        <h2 class="font-display text-[22px] tracking-[-0.005em]">{copy.signupSuccessTitle}</h2>
+        <p class="text-sm opacity-80" data-register-success-text></p>
+        <a class="btn btn-ghost btn-sm mt-2 self-start" href={loginHref}>{copy.signupSuccessCta}</a>
+      </div>
+    </div>
+
+    <div class="alert alert-error mt-6 hidden" data-register-error>
+      <span data-register-error-text></span>
+    </div>
+
+    <script is:inline>
+      (function () {
+        var bind = function () {
+          var form = document.querySelector("[data-register-form]");
+          if (!form || form.dataset.bound === "true") return;
+          form.dataset.bound = "true";
+          var success = document.querySelector("[data-register-success]");
+          var successText = document.querySelector("[data-register-success-text]");
+          var errorBox = document.querySelector("[data-register-error]");
+          var errorText = document.querySelector("[data-register-error-text]");
+          var submit = form.querySelector("button[type=submit]");
+          form.addEventListener("submit", function (event) {
+            event.preventDefault();
+            if (!success || !errorBox) return;
+            success.classList.add("hidden");
+            errorBox.classList.add("hidden");
+            submit.disabled = true;
+            var data = {
+              name: form.querySelector("[name=name]").value.trim(),
+              email: form.querySelector("[name=email]").value.trim(),
+              password: form.querySelector("[name=password]").value,
+              confirm: form.querySelector("[name=confirm]").value,
+              locale: document.documentElement.lang || "es",
+            };
+            if (data.password !== data.confirm) {
+              errorText.textContent = (document.documentElement.lang === "en")
+                ? "Passwords don't match."
+                : "Las contraseñas no coinciden.";
+              errorBox.classList.remove("hidden");
+              submit.disabled = false;
+              return;
+            }
+            fetch("/api/register", {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({
+                name: data.name,
+                email: data.email,
+                password: data.password,
+                locale: data.locale,
+              }),
+            })
+              .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
+              .then(function (result) {
+                if (!result.ok) {
+                  var key = result.body && result.body.error;
+                  var lang = document.documentElement.lang === "en" ? "en" : "es";
+                  var msg = lang === "en"
+                    ? {
+                        name_required: "Please enter your name.",
+                        email_invalid: "Please enter a valid email.",
+                        password_short: "Password must be at least 8 characters.",
+                        email_taken: "An account already exists with that email.",
+                        email_failed: "We couldn't send the email. Try again in a moment.",
+                        insert_failed: "Could not save the account. Try again.",
+                      }[key] || "Something went wrong. Try again."
+                    : {
+                        name_required: "Ingresá tu nombre.",
+                        email_invalid: "Ingresá un correo válido.",
+                        password_short: "La contraseña debe tener al menos 8 caracteres.",
+                        email_taken: "Ya existe una cuenta con ese correo.",
+                        email_failed: "No pudimos enviar el correo. Probá de nuevo en un momento.",
+                        insert_failed: "No pudimos guardar la cuenta. Probá de nuevo.",
+                      }[key] || "Algo salió mal. Probá de nuevo.";
+                  errorText.textContent = msg;
+                  errorBox.classList.remove("hidden");
+                  submit.disabled = false;
+                  return;
+                }
+                successText.textContent = result.body.emailSentTo;
+                success.classList.remove("hidden");
+                form.classList.add("hidden");
+              })
+              .catch(function () {
+                var lang = document.documentElement.lang === "en" ? "en" : "es";
+                errorText.textContent = lang === "en"
+                  ? "Network error. Try again."
+                  : "Error de red. Probá de nuevo.";
+                errorBox.classList.remove("hidden");
+                submit.disabled = false;
+              });
+          });
+        };
+        bind();
+        document.addEventListener("astro:after-swap", bind);
+      })();
+    </script>
 
     <aside class="flex flex-col gap-5">
       <div class="card bg-base-200 shadow">
