@@ -16,6 +16,9 @@
     var save = $("[data-avatar-crop-save]");
     var cancel = $("[data-avatar-crop-cancel]");
     var remove = $("[data-avatar-remove]");
+    var removeDialog = $("#avatar-remove-dialog");
+    var removeConfirm = $("[data-avatar-remove-confirm]");
+    var removeCancel = $("[data-avatar-remove-cancel]");
     var errorBox = $("[data-avatar-error]");
     var errorText = $("[data-avatar-error-text]");
     if (!dialog || !fileInput || !canvas || !zoom || !save || dialog.dataset.bound === "true") return;
@@ -181,14 +184,34 @@
         });
     });
 
+    function deleteAvatar() {
+      hideError();
+      if (removeConfirm) removeConfirm.disabled = true;
+      fetch("/api/avatar", { method: "DELETE" })
+        .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
+        .then(function (result) {
+          if (!result.ok) throw new Error("delete");
+          window.location.reload();
+        })
+        .catch(function () {
+          if (removeConfirm) removeConfirm.disabled = false;
+          if (removeDialog) removeDialog.close();
+          showError(copy.upload);
+        });
+    }
+
     if (remove) {
       remove.addEventListener("click", function () {
         hideError();
-        fetch("/api/avatar", { method: "DELETE" })
-          .then(function (res) { return res.json(); })
-          .then(function () { window.location.reload(); })
-          .catch(function () { showError(copy.upload); });
+        if (removeDialog) removeDialog.showModal();
+        else deleteAvatar();
       });
+    }
+    if (removeCancel && removeDialog) {
+      removeCancel.addEventListener("click", function () { removeDialog.close(); });
+    }
+    if (removeConfirm) {
+      removeConfirm.addEventListener("click", deleteAvatar);
     }
   }
 

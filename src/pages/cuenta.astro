@@ -81,7 +81,9 @@ const bio = user.bio ?? "";
                     data-error-upload={copy.accountPhotoUploadError}
                   />
                 </label>
-                <button type="button" class="btn btn-ghost btn-sm" data-avatar-remove>{copy.accountPhotoRemove}</button>
+                {user.avatar_url ? (
+                  <button type="button" class="btn btn-ghost btn-sm" data-avatar-remove>{copy.accountPhotoRemove}</button>
+                ) : null}
               </div>
               <p class="text-xs opacity-60">{copy.accountPhotoHelp}</p>
               <div class="alert alert-error hidden" data-avatar-error><span data-avatar-error-text></span></div>
@@ -216,6 +218,21 @@ const bio = user.bio ?? "";
         <button class="btn btn-error btn-sm" type="button" disabled data-confirm-delete-submit data-target={locale === "en" ? "delete" : "eliminar"}>
           <svg class="size-4"><use href="#ic-trash"></use></svg>
           {copy.accountDeleteConfirm}
+        </button>
+      </div>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button>close</button></form>
+  </dialog>
+
+  <dialog id="avatar-remove-dialog" class="modal">
+    <div class="modal-box max-w-[440px]">
+      <h3 class="font-display text-[20px] tracking-[-0.005em]">{copy.accountPhotoRemoveTitle}</h3>
+      <p class="mt-2 text-sm opacity-70">{copy.accountPhotoRemoveLead}</p>
+      <div class="modal-action">
+        <button class="btn btn-ghost btn-sm" type="button" data-avatar-remove-cancel>{copy.accountPhotoCropCancel}</button>
+        <button class="btn btn-error btn-sm" type="button" data-avatar-remove-confirm>
+          <svg class="size-4"><use href="#ic-trash"></use></svg>
+          {copy.accountPhotoRemoveConfirm}
         </button>
       </div>
     </div>
