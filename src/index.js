@@ -115,7 +115,7 @@ async function listDepartments(env) {
        LEFT JOIN aid_entries e
          ON e.department_id = d.id AND e.status = 'published'
       GROUP BY d.id
-      ORDER BY CASE d.slug WHEN 'choco' THEN 0 WHEN 'otros' THEN 2 ELSE 1 END, d.name`
+      ORDER BY CASE d.slug WHEN 'choco' THEN 0 WHEN 'buenaventura' THEN 1 WHEN 'otros' THEN 3 ELSE 2 END, d.name`
   ).all();
 
   return json({ departments: results || [] });
@@ -150,7 +150,7 @@ async function listPublishedEntries(env, url) {
        FROM aid_entries e
        JOIN departments d ON d.id = e.department_id
       WHERE ${where.join(" AND ")}
-      ORDER BY CASE d.slug WHEN 'choco' THEN 0 WHEN 'otros' THEN 2 ELSE 1 END, d.name, e.published_at DESC, e.id DESC`
+      ORDER BY CASE d.slug WHEN 'choco' THEN 0 WHEN 'buenaventura' THEN 1 WHEN 'otros' THEN 3 ELSE 2 END, d.name, e.published_at DESC, e.id DESC`
   )
     .bind(...binds)
     .all();
