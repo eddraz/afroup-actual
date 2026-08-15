@@ -1,0 +1,119 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getLocaleFromUrl, localizedPath, t } from "../lib/i18n";
+import { paths as staticPaths, routeIds } from "../lib/paths";
+
+export const prerender = true;
+
+const locale = getLocaleFromUrl(Astro.url);
+const copy = t(locale);
+const homeHref = localizedPath(locale, routeIds.home);
+const articleHref = staticPaths.article;
+const cards = [
+  {
+    featured: true,
+    figure: "bg-primary/20",
+    label: "foto · gran zimbabue",
+    tag: "África · Destacado",
+    title: "Reinos que la escuela no nos contó",
+    dek: "De Mali a Gran Zimbabue: las potencias africanas que dominaron el comercio, la ciencia y el arte durante siglos.",
+    meta: "Jenniffer M. · 9 min de lectura",
+  },
+  {
+    featured: false,
+    figure: "bg-accent/30",
+    label: "archivo",
+    tag: "Lenguas",
+    title: "Lenguas criollas de la diáspora",
+    dek: "Del kikongo al palenquero: el viaje de las lenguas africanas a América.",
+    meta: "Equipo AfroUp · 7 min",
+  },
+  {
+    featured: false,
+    figure: "bg-warning/30",
+    label: "textil · kente",
+    tag: "Arte",
+    title: "Kente: el lenguaje del color",
+    dek: "Cada patrón del textil ghanés cuenta una historia. Aprende a leerlas.",
+    meta: "Equipo AfroUp · 5 min",
+  },
+  {
+    featured: false,
+    figure: "bg-primary/20",
+    label: "mapa",
+    tag: "Geografía",
+    title: "África no es un país",
+    dek: "54 países, 2.000+ lenguas: una guía contra el mapa único.",
+    meta: "Jenniffer M. · 6 min",
+  },
+  {
+    featured: false,
+    figure: "bg-accent/30",
+    label: "foto · lagos",
+    tag: "Presente",
+    title: "Lagos, capital creativa del mundo",
+    dek: "Afrobeats, cine y tecnología: la Nigeria que está marcando la cultura global.",
+    meta: "Equipo AfroUp · 6 min",
+  },
+] as const;
+---
+
+<BaseLayout title={copy.titleAfrica} active="africa">
+  <div class="breadcrumbs text-sm">
+    <ul>
+      <li><a href={homeHref}>{copy.navHome}</a></li>
+      <li>{copy.navAfrica}</li>
+    </ul>
+  </div>
+
+  <section class="hero mt-4 overflow-hidden rounded-box bg-primary text-primary-content">
+    <div class="hero-content w-full flex-col items-start gap-3 py-12">
+      <p class="text-accent text-xs font-extrabold tracking-[0.18em] uppercase">{copy.categoryEyebrow}</p>
+      <h1 class="font-display text-5xl font-bold">{copy.navAfrica}</h1>
+      <p class="max-w-[56ch] text-lg text-primary-content/80">{copy.africaLead}</p>
+    </div>
+  </section>
+
+  <div class="mt-6 mb-6 flex flex-wrap gap-2" data-chips>
+    <button class="btn btn-sm" data-chip type="button">{copy.africaChipAll}</button>
+    <button class="btn btn-dash btn-sm" data-chip type="button">{copy.africaChipKingdoms}</button>
+    <button class="btn btn-dash btn-sm" data-chip type="button">{copy.africaChipLanguages}</button>
+    <button class="btn btn-dash btn-sm" data-chip type="button">{copy.africaChipArt}</button>
+    <button class="btn btn-dash btn-sm" data-chip type="button">{copy.africaChipGeography}</button>
+    <button class="btn btn-dash btn-sm" data-chip type="button">{copy.africaChipPresent}</button>
+  </div>
+
+  <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+    {
+      cards.map((card) => (
+        <article class:list={["card bg-base-200 shadow", card.featured && "sm:col-span-2 sm:card-side"]}>
+          <figure class:list={["relative", card.featured ? "min-h-64 sm:w-1/2" : "aspect-[16/10]", card.figure]}>
+            <span class="badge badge-sm absolute bottom-3 left-3">{card.label}</span>
+          </figure>
+          <div class="card-body">
+            <span class="badge badge-soft badge-primary badge-sm">{card.tag}</span>
+            <h3 class="card-title font-display">
+              <a href={articleHref}>{card.title}</a>
+            </h3>
+            <p>{card.dek}</p>
+            <p class="text-sm opacity-70">{card.meta}</p>
+          </div>
+        </article>
+      ))
+    }
+  </div>
+
+  <div class="mt-8 text-center">
+    <button class="btn btn-ghost" type="button">{copy.africaLoadMore}</button>
+  </div>
+</BaseLayout>
+
+<script>
+  const chips = document.querySelectorAll("[data-chip]");
+  chips.forEach((chip) => {
+    chip.addEventListener("click", () => {
+      chips.forEach((item) => item.classList.add("btn-dash"));
+      chip.classList.remove("btn-dash");
+    });
+  });
+</script>

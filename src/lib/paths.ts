@@ -1,6 +1,7 @@
 export const routeIds = {
   home: "/",
   search: "buscar",
+  africa: "africa",
   category: "#",
   article: "#",
   store: "#",
@@ -24,6 +25,7 @@ export const routeIds = {
 export const paths = {
   home: "/",
   search: "/buscar",
+  africa: "/africa",
   category: "#",
   article: "#",
   store: "#",

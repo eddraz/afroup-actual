@@ -14,6 +14,7 @@ const copy = t(locale);
 const paths = {
   home: localizedPath(locale, routeIds.home),
   search: localizedPath(locale, routeIds.search),
+  africa: localizedPath(locale, routeIds.africa),
   category: routeIds.category,
   store: routeIds.store,
   resources: routeIds.resources,
@@ -144,7 +145,7 @@ function tabClass(key: NavKey) {
             <footer class="footer sm:footer-horizontal">
               <nav>
                 <h6 class="footer-title">{copy.navLearn}</h6>
-                <a href={paths.category}>{copy.navAfrica}</a>
+                <a href={paths.africa}>{copy.navAfrica}</a>
                 <a href={paths.category}>{copy.navDiaspora}</a>
                 <a href={paths.category}>{copy.navAntiracism}</a>
                 <a href={paths.category}>{copy.navHistory}</a>
@@ -230,7 +231,7 @@ function tabClass(key: NavKey) {
             </li>
             <li class="menu-title text-[11.5px] font-extrabold tracking-[0.16em] text-[#a9a496] uppercase">{copy.navLearn}</li>
             <li>
-              <a class={navClass("africa")} href={paths.category}>
+              <a class={navClass("africa")} href={paths.africa}>
                 <span class="size-2 rounded-full bg-primary"></span>
                 {copy.navAfrica}
               </a>
