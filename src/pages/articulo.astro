@@ -1,0 +1,199 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getLocaleFromUrl, localizedPath, t } from "../lib/i18n";
+import { routeIds } from "../lib/paths";
+
+export const prerender = true;
+
+const locale = getLocaleFromUrl(Astro.url);
+const copy = t(locale);
+const homeHref = localizedPath(locale, routeIds.home);
+const historyHref = localizedPath(locale, routeIds.historia);
+const articleHref = localizedPath(locale, routeIds.article);
+const donateHref = routeIds.donate;
+const related = [
+  {
+    figure: "bg-accent/30",
+    label: "foto · tambores",
+    tag: copy.navAesthetics,
+    tagClass: "text-accent",
+    swatch: "bg-accent",
+    title: "Las raíces del bullerengue",
+    meta: "6 min",
+  },
+  {
+    figure: "bg-primary/20",
+    label: "ilustración",
+    tag: copy.navCurrent,
+    tagClass: "text-primary",
+    swatch: "bg-primary",
+    title: "Afrofuturismo: imaginar el mañana",
+    meta: "5 min",
+  },
+  {
+    figure: "bg-accent/30",
+    label: "retrato",
+    tag: copy.navDiaspora,
+    tagClass: "text-accent",
+    swatch: "bg-accent",
+    title: "Trenzas como mapas de resistencia",
+    meta: "7 min",
+  },
+] as const;
+---
+
+<BaseLayout title={copy.titleArticle} active="historia">
+  <div class="breadcrumbs text-sm">
+    <ul>
+      <li><a href={homeHref}>{copy.navHome}</a></li>
+      <li><a href={historyHref}>{copy.navHistory}</a></li>
+    </ul>
+  </div>
+
+  <header class="mx-auto mt-2 max-w-[780px]">
+    <span class="inline-flex items-center gap-2 text-[11.5px] font-extrabold tracking-[0.1em] text-secondary uppercase">
+      <span class="size-2.5 rounded-[3px] bg-secondary"></span>
+      {copy.navHistory}
+    </span>
+    <h1 class="font-display mt-3 text-[32px] leading-[1.04] font-bold lg:text-[46px]">
+      Quilombos y palenques: territorios de libertad
+    </h1>
+    <p class="mt-3.5 max-w-[64ch] text-[17px] leading-[1.45] text-base-content/70 lg:text-[20px]">
+      Cómo las comunidades cimarronas construyeron autonomía, lengua y memoria en toda Abya Yala — y por qué siguen siendo un mapa para el presente.
+    </p>
+    <ul class="list mt-4">
+      <li class="list-row items-center">
+        <div class="avatar">
+          <div class="w-12 rounded-full border-2 border-secondary bg-secondary/30"></div>
+        </div>
+        <div>
+          <div class="font-extrabold">Jenniffer M.</div>
+          <div class="text-xs font-semibold opacity-60">{copy.articleAuthorRole}</div>
+        </div>
+        <div class="text-sm font-semibold opacity-60">12 mar 2026 · 8 min de lectura</div>
+        <div class="flex gap-2">
+          <div class="tooltip" data-tip={copy.articleShare}>
+            <button class="btn btn-circle btn-outline btn-sm" type="button" aria-label={copy.articleShare}>
+              <svg class="size-4"><use href="#ic-share"></use></svg>
+            </button>
+          </div>
+          <div class="tooltip" data-tip={copy.articleSave}>
+            <button class="btn btn-circle btn-outline btn-sm" type="button" aria-label={copy.articleSave}>
+              <svg class="size-4"><use href="#ic-bookmark"></use></svg>
+            </button>
+          </div>
+          <div class="tooltip" data-tip={copy.articleCopy}>
+            <button class="btn btn-circle btn-outline btn-sm" type="button" aria-label={copy.articleCopy}>
+              <svg class="size-4"><use href="#ic-link"></use></svg>
+            </button>
+          </div>
+        </div>
+      </li>
+    </ul>
+  </header>
+
+  <section class="hero mt-7 overflow-hidden rounded-box bg-[url('/assets/pattern.png')] bg-cover bg-center shadow-lg">
+    <div class="hero-overlay bg-transparent"></div>
+    <div class="hero-content min-h-[220px] w-full items-end justify-start self-end p-4 lg:min-h-[320px]">
+      <span class="badge badge-sm border-0 bg-primary/40 text-primary-content">imagen principal · grabado histórico</span>
+    </div>
+  </section>
+
+  <article class="mx-auto mt-8 max-w-[720px] text-[17.5px] leading-[1.74] text-base-content/85 lg:text-[18.5px]">
+    <p>
+      Durante siglos, miles de personas esclavizadas huyeron de las plantaciones para fundar sus propios mundos. Los llamaron
+      <strong>palenques</strong> en el Caribe hispano, <strong>quilombos</strong> en Brasil, <em>cumbes</em> en Venezuela. Eran más que escondites: eran proyectos políticos de libertad.
+    </p>
+    <p>
+      En estos territorios, hombres y mujeres reconstruyeron lenguas, espiritualidades y formas de gobierno propias. San Basilio de Palenque, en Colombia, conserva hoy la única lengua criolla de base española de América — un testimonio vivo de esa autonomía.
+    </p>
+    <blockquote class="border-accent font-display my-8 border-l-4 py-1 pl-6 text-[27px] leading-[1.2] font-bold not-italic">
+      “Cada palenque fue una declaración de que la libertad no se pide: se construye.”
+    </blockquote>
+    <h2 class="font-display mt-9 mb-3.5 text-[27px] font-bold">Mapas de una resistencia</h2>
+    <p>
+      La geografía del cimarronaje no fue azarosa. Montañas, ciénagas y selvas se convirtieron en aliadas estratégicas frente a los ejércitos coloniales. Conocer el territorio era, literalmente, conocer el camino hacia la libertad.
+    </p>
+    <div class="card bg-secondary/30 my-8 overflow-hidden">
+      <figure class="relative">
+        <div class="aspect-[16/9]"></div>
+        <span class="badge badge-sm absolute bottom-3 left-3">mapa · rutas del cimarronaje</span>
+      </figure>
+      <div class="card-body py-3">
+        <p class="text-center text-sm opacity-60">Rutas y asentamientos cimarrones en el Gran Caribe. Fuente: archivo AfroUp.</p>
+      </div>
+    </div>
+    <p>
+      Reconocer esta historia no es un ejercicio nostálgico. Es entender que la organización comunitaria, el cuidado colectivo y la defensa del territorio que vemos hoy en muchos pueblos afro tienen raíces profundas — y nombres propios.
+    </p>
+  </article>
+
+  <div class="card bg-accent text-accent-content mx-auto mt-8 max-w-[720px]">
+    <div class="card-body sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h3 class="card-title">{copy.articleDonateLead}</h3>
+        <p>{copy.articleDonateDek}</p>
+      </div>
+      <div class="card-actions">
+        <a class="btn btn-primary" href={donateHref}>
+          <svg class="size-4"><use href="#ic-heart"></use></svg>
+          {copy.donateCta}
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="mx-auto mt-8 flex max-w-[720px] flex-wrap gap-2">
+    <span class="badge badge-ghost">#cimarronaje</span>
+    <span class="badge badge-ghost">#palenque</span>
+    <span class="badge badge-ghost">#historia</span>
+    <span class="badge badge-ghost">#diáspora</span>
+  </div>
+
+  <div class="card bg-base-200 mx-auto mt-6 max-w-[720px] shadow">
+    <div class="card-body">
+      <div class="flex items-center gap-4">
+        <div class="avatar">
+          <div class="w-16 rounded-full border-2 border-secondary bg-secondary/30"></div>
+        </div>
+        <div>
+          <h3 class="card-title font-display">Jenniffer M.</h3>
+          <p class="text-sm opacity-60">{copy.articleAuthorBio}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section class="card bg-base-200 mt-10">
+    <div class="card-body">
+      <div class="flex items-end justify-between gap-4">
+        <h2 class="card-title font-display text-[26px]">{copy.articleKeepReading}</h2>
+        <a class="btn btn-ghost btn-sm" href={homeHref}>
+          {copy.articleSeeAll}
+          <svg class="size-4"><use href="#ic-arrow"></use></svg>
+        </a>
+      </div>
+      <div class="mt-4 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {
+          related.map((card) => (
+            <article class="card bg-base-100 shadow">
+              <figure class:list={["relative aspect-[16/10]", card.figure]}>
+                <span class="badge badge-sm absolute bottom-3 left-3">{card.label}</span>
+              </figure>
+              <div class="card-body">
+                <span class:list={["inline-flex items-center gap-2 text-[11.5px] font-extrabold tracking-[0.1em] uppercase", card.tagClass]}>
+                  <span class:list={["size-2.5 rounded-[3px]", card.swatch]}></span>
+                  {card.tag}
+                </span>
+                <h3 class="card-title font-display">
+                  <a href={articleHref}>{card.title}</a>
+                </h3>
+                <p class="text-sm opacity-70">{card.meta}</p>
+              </div>
+            </article>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+</BaseLayout>

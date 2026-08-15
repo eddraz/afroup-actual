@@ -7,7 +7,11 @@ export const prerender = true;
 
 const locale = getLocaleFromUrl(Astro.url);
 const copy = t(locale);
-const paths = { ...staticPaths, search: localizedPath(locale, routeIds.search) };
+const paths = {
+  ...staticPaths,
+  search: localizedPath(locale, routeIds.search),
+  article: localizedPath(locale, routeIds.article),
+};
 const query = Astro.url.searchParams.get("q")?.trim() || "palenques";
 const results = [
   {

@@ -1,7 +1,11 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import { localizedPath } from "../lib/i18n";
+import { routeIds } from "../lib/paths";
 
 export const prerender = true;
+
+const articleHref = localizedPath("es", routeIds.article);
 ---
 
 <BaseLayout title="AfroUp — Inicio" active="inicio">
@@ -14,7 +18,7 @@ export const prerender = true;
           Un especial sobre la lucha por los derechos civiles y su eco en la diáspora afrolatina, hoy.
         </p>
         <div>
-          <a class="btn btn-accent h-[42px] min-h-[42px]" href="#">
+          <a class="btn btn-accent h-[42px] min-h-[42px]" href={articleHref}>
             Leer el especial
             <svg class="size-4"><use href="#ic-arrow"></use></svg>
           </a>
@@ -51,7 +55,7 @@ export const prerender = true;
             Historia
           </span>
           <h3 class="card-title font-display block text-[21px] leading-[1.04] font-bold tracking-[-0.005em] lg:text-[30px]">
-            <a href="#">Quilombos y palenques: territorios de libertad</a>
+            <a href={articleHref}>Quilombos y palenques: territorios de libertad</a>
           </h3>
           <p>Cómo las comunidades cimarronas construyeron autonomía y memoria en toda Abya Yala — y por qué siguen siendo un mapa para el presente.</p>
           <div class="mt-2 flex items-center gap-2 text-sm opacity-70">
