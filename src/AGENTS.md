@@ -16,6 +16,7 @@
 - Keep the sidebar menu scrollbar thin and black-toned via the `sidebar-scroll` utility.
 - Keep branded light and dark themes in `styles/global.css` as `afroup` and `afroup-dark`; switch them with a daisyUI `theme-controller` in `layouts/BaseLayout.astro`.
 - Keep shared route targets in `lib/paths.ts` and the daisyUI theme and Tailwind entry in `styles/global.css`.
+- Keep the search mockup at `/buscar`, wired through `paths.search`.
 - Build UI with daisyUI first. If daisyUI cannot do it well, use daisyUI plus Tailwind. Use custom CSS only if that combination still cannot do it well.
 - Preserve Spanish UI and visual parity with the corresponding source screen under `design/`.
 - Keep runtime D1 access through the Cloudflare `DB` binding; `/api/health` currently exercises that binding.

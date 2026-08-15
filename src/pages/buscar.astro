@@ -1,0 +1,146 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { paths } from "../lib/paths";
+
+export const prerender = true;
+
+const query = Astro.url.searchParams.get("q")?.trim() || "palenques";
+const results = [
+  {
+    href: paths.article,
+    kind: "Artículo · Historia",
+    tone: "text-[#b97e00]",
+    square: "bg-secondary",
+    figure: "bg-[#FCEBBE]",
+    label: "grabado",
+    title: "Quilombos y palenques: territorios de libertad",
+    dek: "Cómo las comunidades cimarronas construyeron autonomía, lengua y memoria en toda Abya Yala…",
+    meta: "Jenniffer M. · 12 mar 2026 · 8 min",
+    end: "arrow",
+  },
+  {
+    href: paths.article,
+    kind: "Artículo · Diáspora",
+    tone: "text-[#0d97a6]",
+    square: "bg-accent",
+    figure: "bg-[#D6F4F8]",
+    label: "retrato",
+    title: "San Basilio de Palenque: la lengua que sobrevivió",
+    dek: "El criollo palenquero, patrimonio vivo de la resistencia afrocolombiana.",
+    meta: "Equipo AfroUp · 28 feb 2026 · 6 min",
+    end: "arrow",
+  },
+  {
+    href: paths.product,
+    kind: "Tienda · eBook",
+    tone: "text-[#b97e00]",
+    square: "bg-secondary",
+    figure: "bg-[url('/assets/pattern.png')] bg-cover bg-center",
+    label: "",
+    title: "Raíces: historia afro de Abya Yala",
+    dek: "Capítulo 4 dedicado a los palenques del Gran Caribe. PDF + EPUB.",
+    meta: "⭐ 4.9 (38)",
+    end: "price",
+    price: "US$ 12",
+  },
+  {
+    href: paths.resources,
+    kind: "Recurso · Guía PDF",
+    tone: "text-primary",
+    square: "bg-primary",
+    figure: "bg-[#CFE6EF]",
+    label: "PDF",
+    title: "Guía docente: cimarronaje en el aula",
+    dek: "Actividades y fuentes primarias para secundaria. Descarga gratuita.",
+    meta: "PDF · 24 págs · Gratis",
+    end: "download",
+  },
+  {
+    href: paths.project,
+    kind: "Proyecto · Comunidad",
+    tone: "text-[#0d97a6]",
+    square: "bg-accent",
+    figure: "bg-[#FCEBBE]",
+    label: "foto · taller",
+    title: "Memoria viva: rutas del cimarronaje",
+    dek: "Proyecto comunitario de cartografía histórica en el Caribe colombiano.",
+    meta: "En curso · Cartagena, Colombia",
+    end: "arrow",
+  },
+] as const;
+---
+
+<BaseLayout title="AfroUp — Búsqueda" active="buscar">
+  <form class="mt-[30px]" action={paths.search}>
+    <label class="input h-[60px] min-h-[60px] w-full rounded-field border-2 border-neutral bg-base-200 px-6 text-[18px] font-semibold shadow">
+      <svg class="size-[22px] shrink-0 opacity-50" viewBox="0 0 24 24" aria-hidden="true">
+        <use href="#ic-search"></use>
+      </svg>
+      <input class="grow" type="search" name="q" value={query} aria-label="Buscar" />
+      <button class="btn btn-neutral btn-sm" type="submit">Buscar</button>
+    </label>
+  </form>
+
+  <div class="mt-[18px] mb-3.5 flex flex-wrap gap-2" data-chips>
+    <button class="btn btn-neutral btn-sm h-8 min-h-8 px-[17px] text-[14px]" data-chip type="button">Todo</button>
+    <button class="btn btn-outline btn-neutral btn-sm h-8 min-h-8 px-[17px] text-[14px]" data-chip type="button">Artículos</button>
+    <button class="btn btn-outline btn-neutral btn-sm h-8 min-h-8 px-[17px] text-[14px]" data-chip type="button">Tienda</button>
+    <button class="btn btn-outline btn-neutral btn-sm h-8 min-h-8 px-[17px] text-[14px]" data-chip type="button">Recursos</button>
+    <button class="btn btn-outline btn-neutral btn-sm h-8 min-h-8 px-[17px] text-[14px]" data-chip type="button">Proyectos</button>
+  </div>
+
+  <p class="mb-3.5 text-sm font-bold text-base-content/60">
+    <span class="text-base-content">14 resultados</span> para “{query}”
+  </p>
+
+  <ul class="list bg-transparent">
+    {
+      results.map((item) => (
+        <li>
+          <a
+            class="list-row items-center rounded-box bg-base-200 no-underline shadow transition-[transform,translate,box-shadow] duration-300 ease-out hover:-translate-y-[3px] hover:shadow-[0_8px_18px_rgba(23,21,15,.08),0_26px_60px_rgba(23,21,15,.12)] motion-reduce:transform-none motion-reduce:transition-none"
+            href={item.href}
+          >
+            <div class:list={["relative size-20 shrink-0 overflow-hidden rounded-xl", item.figure]}>
+              {item.label ? <span class="badge badge-sm absolute bottom-1.5 left-1.5">{item.label}</span> : null}
+            </div>
+            <div class="list-col-grow min-w-0">
+              <span class:list={["inline-flex items-center gap-2 text-[11.5px] font-extrabold tracking-[0.1em] uppercase", item.tone]}>
+                <span class:list={["size-2.5 rounded-[3px]", item.square]}></span>
+                {item.kind}
+              </span>
+              <h3 class="font-display mt-1 text-xl leading-[1.04] font-bold tracking-[-0.005em]">{item.title}</h3>
+              <p class="mt-1 text-sm text-base-content/70">{item.dek}</p>
+              <p class="mt-1 text-sm font-semibold text-base-content/50">{item.meta}</p>
+            </div>
+            <div class="shrink-0">
+              {item.end === "price" ? (
+                <span class="font-display text-xl font-extrabold">{item.price}</span>
+              ) : item.end === "download" ? (
+                <span class="btn btn-accent btn-sm">Descargar</span>
+              ) : (
+                <svg class="size-5 opacity-50" aria-hidden="true">
+                  <use href="#ic-arrow"></use>
+                </svg>
+              )}
+            </div>
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+
+  <div class="mt-[30px] text-center">
+    <button class="btn btn-ghost" type="button">Cargar más resultados</button>
+  </div>
+</BaseLayout>
+
+<script>
+  const chips = document.querySelectorAll("[data-chip]");
+  chips.forEach((chip) => {
+    chip.addEventListener("click", () => {
+      chips.forEach((item) => item.classList.add("btn-outline"));
+      chip.classList.remove("btn-outline");
+    });
+  });
+</script>

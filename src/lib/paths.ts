@@ -1,6 +1,6 @@
 export const paths = {
   home: "/",
-  search: "#",
+  search: "/buscar",
   category: "#",
   article: "#",
   store: "#",
