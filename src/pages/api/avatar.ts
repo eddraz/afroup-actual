@@ -6,12 +6,26 @@ export const prerender = false;
 
 const MAX_BYTES = 2 * 1024 * 1024;
 const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp"]);
+const AVATAR_PREFIX = "/api/avatar/";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
     headers: { "content-type": "application/json; charset=utf-8" },
   });
+}
+
+function avatarKeyFromUrl(url: string | null | undefined, userId: number) {
+  if (!url || !url.startsWith(AVATAR_PREFIX)) return null;
+  const key = url.slice(AVATAR_PREFIX.length);
+  if (!key.startsWith(`avatars/${userId}/`)) return null;
+  return key;
+}
+
+async function deleteStoredAvatar(userId: number, url: string | null | undefined) {
+  const key = avatarKeyFromUrl(url, userId);
+  if (!key) return;
+  await env.AVATARS.delete(key);
 }
 
 export const POST: APIRoute = async ({ request, cookies }) => {
@@ -31,6 +45,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   });
 
   const url = `/api/avatar/${key}`;
+  await deleteStoredAvatar(user.id, user.avatar_url);
   await env.DB.prepare(
     "UPDATE afroup_users SET avatar_url = ?, updated_at = datetime('now') WHERE id = ?",
   )
@@ -43,6 +58,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 export const DELETE: APIRoute = async ({ cookies }) => {
   const user = await getPublicUser(env.DB, cookies.get(PUBLIC_SESSION_COOKIE)?.value);
   if (!user) return json({ ok: false, error: "unauthorized" }, 401);
+  await deleteStoredAvatar(user.id, user.avatar_url);
   await env.DB.prepare(
     "UPDATE afroup_users SET avatar_url = NULL, updated_at = datetime('now') WHERE id = ?",
   )
