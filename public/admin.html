@@ -103,7 +103,7 @@
         <input type="hidden" id="edit-id" />
         <div class="fgrid">
           <div class="field">
-            <label for="edit-department">Departamento</label>
+            <label for="edit-department">Ubicación</label>
             <select id="edit-department" required></select>
           </div>
           <div class="field">
@@ -117,8 +117,16 @@
         </div>
         <div class="field" style="margin-top:18px;">
           <label for="edit-category">Categoría</label>
-          <input id="edit-category" type="text" list="category-options" autocomplete="off" placeholder="Elegí una existente o escribí una nueva" />
-          <datalist id="category-options"></datalist>
+          <select id="edit-category">
+            <option value="">Selecciona una categoría</option>
+            <option value="Punto de acopio">Punto de acopio</option>
+            <option value="Donación económica">Donación económica</option>
+            <option value="Banco de sangre">Banco de sangre</option>
+            <option value="Albergue">Albergue</option>
+            <option value="Alimentos / insumos">Alimentos / insumos</option>
+            <option value="Otro">Otro</option>
+          </select>
+          <input id="edit-category-other" type="text" placeholder="Especifica la categoría" hidden />
         </div>
         <div class="field" style="margin-top:18px;">
           <label for="edit-information">Información</label>

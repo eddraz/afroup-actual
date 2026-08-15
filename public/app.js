@@ -45,10 +45,16 @@
     });
   }
 
+  function visibleDepartments() {
+    return state.departments.filter(function (dept) {
+      return Number(dept.published_count || 0) > 0;
+    });
+  }
+
   function renderChips() {
     if (!chips) return;
     var html = '<button class="chip' + (state.department === "" ? " on" : "") + '" type="button" data-slug="">Todos</button>';
-    state.departments.forEach(function (dept) {
+    visibleDepartments().forEach(function (dept) {
       html +=
         '<button class="chip' +
         (state.department === dept.slug ? " on" : "") +
@@ -191,10 +197,10 @@
       return;
     }
 
-    var label = "Todas las ayudas";
+    var label = "Puntos y canales de ayuda";
     if (state.query) label = "Resultados";
     else if (state.department) {
-      label = ((state.departments.find(function (dept) { return dept.slug === state.department; }) || {}).name || "Ayudas");
+      label = ((state.departments.find(function (dept) { return dept.slug === state.department; }) || {}).name || "Ubicación");
     }
     entriesEl.innerHTML = sectionMarkup(label, state.entries, "list");
     syncUrl();
@@ -213,13 +219,18 @@
 
   function formatUpdatedAt(value) {
     if (!value) return "";
-    var normalized = value.indexOf("T") === -1 ? value.replace(" ", "T") + "Z" : value;
-    var date = new Date(normalized);
+    var match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!match) return "";
+    var dateOnly = /T00:00:00/.test(value) || value.indexOf("T") === -1;
+    var date = dateOnly
+      ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
+      : new Date(value.indexOf("T") === -1 ? value.replace(" ", "T") + "Z" : value);
     if (isNaN(date.getTime())) return "";
     return new Intl.DateTimeFormat("es-CO", {
       day: "numeric",
       month: "long",
       year: "numeric",
+      timeZone: dateOnly ? undefined : "America/Bogota",
     }).format(date);
   }
 
@@ -228,8 +239,8 @@
     if (!el) return;
     var formatted = formatUpdatedAt(value);
     el.textContent = formatted
-      ? "La información proviene de la guía oficial de AfroUp, actualizada el " + formatted + ". Las fichas se agrupan por departamento. Los envíos nuevos quedan en revisión antes de publicarse."
-      : "La información proviene de la guía oficial de AfroUp. Las fichas se agrupan por departamento. Los envíos nuevos quedan en revisión antes de publicarse.";
+      ? "La información ha sido recopilada, verificada y se encuentra en actualización permanente. Última actualización: " + formatted + ". Los envíos de nuevos puntos son revisados antes de publicarse."
+      : "La información ha sido recopilada, verificada y se encuentra en actualización permanente. Los envíos de nuevos puntos son revisados antes de publicarse.";
   }
 
   function loadDepartments() {
@@ -268,6 +279,17 @@
 
   var infoEditor = window.AfroUpRichEditor ? window.AfroUpRichEditor.attach("#information") : null;
 
+  var categoryField = document.getElementById("category");
+  var categoryOther = document.getElementById("category-other");
+  if (categoryField && categoryOther) {
+    categoryField.addEventListener("change", function () {
+      var showOther = categoryField.value === "Otro";
+      categoryOther.hidden = !showOther;
+      categoryOther.required = showOther;
+      if (!showOther) categoryOther.value = "";
+    });
+  }
+
   if (form) {
     form.addEventListener("submit", function (event) {
       event.preventDefault();
@@ -276,9 +298,15 @@
         setMsg(formMsg, "La información es obligatoria.", false);
         return;
       }
+      var categoryField = document.getElementById("category");
+      var categoryOther = document.getElementById("category-other");
+      var category = categoryField ? categoryField.value : "";
+      if (category === "Otro" && categoryOther && categoryOther.value.trim()) {
+        category = categoryOther.value.trim();
+      }
       var payload = {
         department: departmentSelect.value,
-        category: document.getElementById("category").value,
+        category: category,
         information: information,
       };
       fetchJson("/api/entries", {

@@ -82,14 +82,47 @@
       .join("");
   }
 
-  function fillCategories() {
-    var list = document.getElementById("category-options");
-    if (!list) return;
-    list.innerHTML = state.categories
-      .map(function (category) {
-        return '<option value="' + escapeHtml(category) + '"></option>';
-      })
-      .join("");
+  var CATEGORIES = [
+    "Punto de acopio",
+    "Donación económica",
+    "Banco de sangre",
+    "Albergue",
+    "Alimentos / insumos",
+    "Otro",
+  ];
+  var categorySelect = document.getElementById("edit-category");
+  var categoryOther = document.getElementById("edit-category-other");
+
+  function setCategoryOther(show, value) {
+    if (!categoryOther) return;
+    categoryOther.hidden = !show;
+    categoryOther.required = !!show;
+    categoryOther.value = show ? (value || "") : "";
+  }
+
+  function setCategoryValue(value) {
+    var category = String(value || "").trim();
+    if (!categorySelect) return;
+    if (!category) {
+      categorySelect.value = "";
+      setCategoryOther(false);
+      return;
+    }
+    if (CATEGORIES.indexOf(category) !== -1 && category !== "Otro") {
+      categorySelect.value = category;
+      setCategoryOther(false);
+      return;
+    }
+    categorySelect.value = "Otro";
+    setCategoryOther(true, category === "Otro" ? "" : category);
+  }
+
+  function selectedCategory() {
+    var category = categorySelect ? categorySelect.value : "";
+    if (category === "Otro" && categoryOther && categoryOther.value.trim()) {
+      return categoryOther.value.trim();
+    }
+    return category;
   }
 
   function renderTable() {
@@ -140,7 +173,7 @@
     document.getElementById("edit-id").value = entry.id;
     departmentSelect.value = entry.department_slug;
     document.getElementById("edit-status").value = entry.status;
-    document.getElementById("edit-category").value = entry.category || "";
+    setCategoryValue(entry.category || "");
     var info = entry.information || entry.body || entry.summary || "";
     if (infoEditor) infoEditor.setHtml(info);
     else document.getElementById("edit-information").value = info;
@@ -152,7 +185,7 @@
     return {
       department: departmentSelect.value,
       status: status || document.getElementById("edit-status").value,
-      category: document.getElementById("edit-category").value,
+      category: selectedCategory(),
       information: infoEditor ? infoEditor.getHtml() : document.getElementById("edit-information").value,
     };
   }
@@ -178,7 +211,6 @@
   function loadCategories() {
     return fetchJson("/api/admin/categories").then(function (data) {
       state.categories = data.categories || [];
-      fillCategories();
     });
   }
 
@@ -287,6 +319,12 @@
     });
     if (entry) openEditor(entry);
   });
+
+  if (categorySelect) {
+    categorySelect.addEventListener("change", function () {
+      setCategoryOther(categorySelect.value === "Otro", "");
+    });
+  }
 
   editor.addEventListener("submit", function (event) {
     event.preventDefault();

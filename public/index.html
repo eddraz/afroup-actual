@@ -112,7 +112,7 @@
     </section>
 
     <div class="sec-head" id="ayudas">
-      <h2>Ayudas publicadas</h2>
+      <h2>Consulta por ubicación</h2>
     </div>
     <div class="chips" id="department-chips">
       <button class="chip on" type="button" data-slug="">Todos</button>
@@ -124,7 +124,8 @@
       </div>
       <aside class="panel">
         <h4>Cómo usar esta página</h4>
-        <p class="notice" id="guide-updated">La información proviene de la guía oficial de AfroUp. Las fichas se agrupan por departamento. Los envíos nuevos quedan en revisión antes de publicarse.</p>
+        <p class="notice" id="guide-updated">La información ha sido recopilada, verificada y se encuentra en actualización permanente. Los envíos de nuevos puntos son revisados antes de publicarse.</p>
+        <p class="notice">Confirma directamente con cada entidad los horarios, elementos requeridos y disponibilidad del punto antes de desplazarte o realizar una donación.</p>
       </aside>
     </div>
 
@@ -141,12 +142,21 @@
       <p class="notice">Los envíos quedan en revisión. No se publican de inmediato.</p>
       <div class="fgrid">
         <div class="field">
-          <label for="department">Departamento</label>
+          <label for="department">Ubicación</label>
           <select id="department" name="department" required></select>
         </div>
         <div class="field">
           <label for="category">Categoría</label>
-          <input id="category" name="category" type="text" placeholder="Albergue, salud, alimentos…" />
+          <select id="category" name="category" required>
+            <option value="">Selecciona una categoría</option>
+            <option value="Punto de acopio">Punto de acopio</option>
+            <option value="Donación económica">Donación económica</option>
+            <option value="Banco de sangre">Banco de sangre</option>
+            <option value="Albergue">Albergue</option>
+            <option value="Alimentos / insumos">Alimentos / insumos</option>
+            <option value="Otro">Otro</option>
+          </select>
+          <input id="category-other" name="category_other" type="text" placeholder="Especifica la categoría" hidden />
         </div>
       </div>
       <div class="field" style="margin-top:18px;">
