@@ -12,6 +12,7 @@ const paths = {
   search: localizedPath(locale, routeIds.search),
   article: localizedPath(locale, routeIds.article),
     resource: localizedPath(locale, routeIds.resource),
+    project: localizedPath(locale, routeIds.project),
 };
 const query = Astro.url.searchParams.get("q")?.trim() || "palenques";
 const results = [

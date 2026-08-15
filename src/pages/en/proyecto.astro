@@ -1,0 +1,132 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getLocaleFromUrl, localizedPath, t } from "../../lib/i18n";
+import { routeIds } from "../../lib/paths";
+
+export const prerender = true;
+
+const locale = getLocaleFromUrl(Astro.url);
+const copy = t(locale);
+const homeHref = localizedPath(locale, routeIds.home);
+const projectsHref = localizedPath(locale, routeIds.projects);
+const projectHref = localizedPath(locale, routeIds.project);
+const donateHref = localizedPath(locale, routeIds.donate);
+const collaborateHref = localizedPath(locale, routeIds.collaborate);
+const facts = [
+  { label: copy.projectStart, value: "Marzo 2025" },
+  { label: copy.projectStatus, value: copy.projectsStatusActive },
+  { label: copy.projectPlace, value: "Cali, Colombia" },
+  { label: copy.projectAllies, value: "2 colectivos · 3 bibliotecas" },
+  { label: copy.projectReaders, value: "+400 lectores" },
+] as const;
+const goals = [
+  "12 barrios visitados con la colección itinerante",
+  "500 libros de autores afro en circulación",
+  "8 mediadores de lectura formados en la comunidad",
+  "Alianza con 3 bibliotecas públicas locales",
+] as const;
+const more = [
+  { figure: "bg-accent/30", label: "foto · taller", title: "Memoria viva: rutas del cimarronaje", meta: "Cartagena · En curso" },
+  { figure: "bg-[url('/assets/pattern.png')] bg-cover bg-center", label: "", title: "Escuela de verano afrocéntrica", meta: "Quibdó · 2025" },
+] as const;
+---
+
+<BaseLayout title={copy.titleProject} active="comunidad">
+  <div class="breadcrumbs text-sm">
+    <ul>
+      <li><a href={homeHref}>{copy.navHome}</a></li>
+      <li><a href={projectsHref}>{copy.footerProjects}</a></li>
+      <li>Biblioteca Afro Itinerante</li>
+    </ul>
+  </div>
+
+  <div class="mt-4 flex flex-wrap items-center gap-3">
+    <span class="badge badge-soft badge-accent">{copy.projectsStatusActive}</span>
+    <span class="text-sm font-bold opacity-60">Cali, Colombia · desde 2025</span>
+  </div>
+  <h1 class="font-display mt-2.5 text-[32px] font-bold lg:text-[42px]">Biblioteca Afro Itinerante</h1>
+
+  <figure class="relative mt-6 overflow-hidden rounded-[22px] shadow-lg">
+    <div class="aspect-[16/10] bg-secondary/30 lg:aspect-[21/9]"></div>
+    <span class="badge badge-sm absolute bottom-3 left-3">foto · círculo de lectura en el barrio</span>
+  </figure>
+
+  <div class="mt-7 grid grid-cols-1 items-start gap-8 lg:grid-cols-[1fr_360px]">
+    <section>
+      <h2 class="font-display text-2xl font-bold">{copy.projectAbout}</h2>
+      <p class="mt-3 text-[15.5px] leading-[1.7] opacity-80">
+        Una biblioteca móvil que lleva literatura de autores afro a barrios y zonas rurales de Cali. Cada parada incluye círculos de lectura, cuentería y un taller de historia afrocolombiana para niñas, niños y jóvenes.
+      </p>
+      <h2 class="font-display mt-7 text-2xl font-bold">{copy.projectGoals}</h2>
+      <ul class="list mt-2">
+        {
+          goals.map((goal) => (
+            <li class="list-row">
+              <span class="badge badge-soft badge-accent">✓</span>
+              <span>{goal}</span>
+            </li>
+          ))
+        }
+      </ul>
+      <div class="mt-4 grid grid-cols-3 gap-2.5">
+        <div class="relative aspect-square overflow-hidden rounded-box bg-accent/30">
+          <span class="badge badge-sm absolute bottom-2 left-2">foto</span>
+        </div>
+        <div class="aspect-square overflow-hidden rounded-box bg-[url('/assets/pattern.png')] bg-cover bg-center"></div>
+        <div class="relative aspect-square overflow-hidden rounded-box bg-primary/20">
+          <span class="badge badge-sm absolute bottom-2 left-2">foto</span>
+        </div>
+      </div>
+    </section>
+
+    <aside class="card bg-base-200 lg:sticky lg:top-[90px] shadow">
+      <div class="card-body">
+        <h2 class="card-title">{copy.projectFacts}</h2>
+        <ul class="list">
+          {
+            facts.map((fact) => (
+              <li class="list-row">
+                <span class="opacity-60">{fact.label}</span>
+                <span class="list-col-grow text-right font-bold">{fact.value}</span>
+              </li>
+            ))
+          }
+        </ul>
+        <div class="card-actions flex-col">
+          <a class="btn btn-secondary btn-block" href={donateHref}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <use href="#ic-heart"></use>
+            </svg>
+            {copy.projectSupport}
+          </a>
+          <a class="btn btn-ghost btn-block" href={collaborateHref}>{copy.projectVolunteer}</a>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="mt-10 mb-5 flex items-end justify-between gap-4">
+    <h2 class="font-display text-[26px] font-bold">{copy.projectMore}</h2>
+    <a class="btn btn-ghost btn-sm" href={projectsHref}>
+      {copy.projectSeeAll}
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <use href="#ic-arrow"></use>
+      </svg>
+    </a>
+  </div>
+  <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+    {
+      more.map((item) => (
+        <a class="card bg-base-200 shadow" href={projectHref}>
+          <figure class:list={["relative aspect-[16/10]", item.figure]}>
+            {item.label ? <span class="badge badge-sm absolute bottom-3 left-3">{item.label}</span> : null}
+          </figure>
+          <div class="card-body">
+            <h3 class="card-title font-display">{item.title}</h3>
+            <p class="text-sm opacity-60">{item.meta}</p>
+          </div>
+        </a>
+      ))
+    }
+  </div>
+</BaseLayout>
