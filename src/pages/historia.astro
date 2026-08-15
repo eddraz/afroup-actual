@@ -1,0 +1,123 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getLocaleFromUrl, localizedPath, t } from "../lib/i18n";
+import { paths as staticPaths, routeIds } from "../lib/paths";
+
+export const prerender = true;
+
+const locale = getLocaleFromUrl(Astro.url);
+const copy = t(locale);
+const homeHref = localizedPath(locale, routeIds.home);
+const articleHref = staticPaths.article;
+const cards = [
+  {
+    featured: true,
+    figure: "bg-secondary/30",
+    label: "archivo · palenque",
+    tag: "Historia · Destacado",
+    title: "Palenques: las primeras libertades de América",
+    dek: "Antes de las independencias, las comunidades cimarronas ya habían construido territorios libres en Abya Yala.",
+    meta: "Jenniffer M. · 9 min de lectura",
+  },
+  {
+    featured: false,
+    figure: "bg-warning/30",
+    label: "retrato",
+    tag: "Memoria",
+    title: "Benkos Biohó y la memoria del cimarronaje",
+    dek: "La figura que organizó la resistencia y fundó San Basilio de Palenque.",
+    meta: "Equipo AfroUp · 7 min",
+  },
+  {
+    featured: false,
+    figure: "bg-primary/20",
+    label: "mapa",
+    tag: "Abya Yala",
+    title: "El Pacífico como archivo vivo",
+    dek: "Ríos, minas y pueblos que guardan una historia distinta a la del Caribe.",
+    meta: "Equipo AfroUp · 6 min",
+  },
+  {
+    featured: false,
+    figure: "bg-accent/30",
+    label: "manuscrito",
+    tag: "Archivo",
+    title: "Lo que no está en el libro de texto",
+    dek: "Fuentes, omisiones y cómo reconstruir genealogías afrodescendientes.",
+    meta: "Jenniffer M. · 8 min",
+  },
+  {
+    featured: false,
+    figure: "bg-secondary/20",
+    label: "foto · marcha",
+    tag: "Presente",
+    title: "Historia que todavía se disputa",
+    dek: "Monumentos, fechas y narrativas oficiales que siguen dejando gente afuera.",
+    meta: "Equipo AfroUp · 6 min",
+  },
+] as const;
+---
+
+<BaseLayout title={copy.titleHistory} active="historia">
+  <div class="breadcrumbs text-sm">
+    <ul>
+      <li><a href={homeHref}>{copy.navHome}</a></li>
+      <li>{copy.navHistory}</li>
+    </ul>
+  </div>
+
+  <section class="hero relative mt-6 overflow-hidden rounded-[24px] bg-primary text-primary-content shadow-lg">
+    <div class="absolute inset-y-0 right-0 w-[200px] bg-[url('/assets/pattern.png')] bg-cover bg-center max-md:w-[90px]"></div>
+    <div class="hero-content relative w-full flex-col items-start gap-3 px-6 py-8 lg:px-11 lg:py-11">
+      <p class="text-accent text-xs font-extrabold tracking-[0.18em] uppercase">{copy.categoryEyebrow}</p>
+      <h1 class="font-display text-[31px] font-bold lg:text-[44px]">{copy.navHistory}</h1>
+      <p class="max-w-[56ch] text-[17px] leading-[1.55] text-primary-content/80">{copy.historyLead}</p>
+    </div>
+  </section>
+
+  <div class="mt-6 mb-6 flex flex-wrap gap-2" data-chips>
+    <button class="btn btn-sm" data-chip type="button">{copy.historyChipAll}</button>
+    <button class="btn btn-dash btn-sm" data-chip type="button">{copy.historyChipMemory}</button>
+    <button class="btn btn-dash btn-sm" data-chip type="button">{copy.historyChipResistance}</button>
+    <button class="btn btn-dash btn-sm" data-chip type="button">{copy.historyChipAbyaYala}</button>
+    <button class="btn btn-dash btn-sm" data-chip type="button">{copy.historyChipArchive}</button>
+    <button class="btn btn-dash btn-sm" data-chip type="button">{copy.historyChipPresent}</button>
+  </div>
+
+  <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+    {
+      cards.map((card) => (
+        <article class:list={["card bg-base-200 shadow", card.featured && "sm:col-span-2 sm:card-side"]}>
+          <figure class:list={["relative", card.featured ? "min-h-64 sm:w-1/2" : "aspect-[16/10]", card.figure]}>
+            <span class="badge badge-sm absolute bottom-3 left-3">{card.label}</span>
+          </figure>
+          <div class="card-body">
+            <span class="inline-flex items-center gap-2 text-[11.5px] font-extrabold tracking-[0.1em] text-secondary uppercase">
+              <span class="size-2.5 rounded-[3px] bg-secondary"></span>
+              {card.tag}
+            </span>
+            <h3 class="card-title font-display">
+              <a href={articleHref}>{card.title}</a>
+            </h3>
+            <p>{card.dek}</p>
+            <p class="text-sm opacity-70">{card.meta}</p>
+          </div>
+        </article>
+      ))
+    }
+  </div>
+
+  <div class="mt-8 text-center">
+    <button class="btn btn-ghost" type="button">{copy.historyLoadMore}</button>
+  </div>
+</BaseLayout>
+
+<script>
+  const chips = document.querySelectorAll("[data-chip]");
+  chips.forEach((chip) => {
+    chip.addEventListener("click", () => {
+      chips.forEach((item) => item.classList.add("btn-dash"));
+      chip.classList.remove("btn-dash");
+    });
+  });
+</script>
