@@ -1,0 +1,97 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getLocaleFromUrl, localizedPath, t } from "../../lib/i18n";
+import { routeIds } from "../../lib/paths";
+
+export const prerender = true;
+
+const locale = getLocaleFromUrl(Astro.url);
+const copy = t(locale);
+const homeHref = localizedPath(locale, routeIds.home);
+const details = [
+  { icon: "ic-mail", title: copy.contactInfoEmail, value: "hello@afroup.org" },
+  { icon: "ic-users", title: copy.contactInfoWhatsapp, value: "+57 320 7146 · +31 20 211 7146" },
+  { icon: "ic-pin", title: copy.contactInfoBase, value: copy.contactInfoBaseValue },
+  { icon: "ic-ig", title: copy.contactInfoSocial, value: copy.contactInfoSocialValue },
+] as const;
+---
+
+<BaseLayout title={copy.titleContact}>
+  <div class="breadcrumbs text-sm">
+    <ul>
+      <li><a href={homeHref}>{copy.navHome}</a></li>
+      <li>{copy.footerContact}</li>
+    </ul>
+  </div>
+
+  <section class="hero relative mt-6 overflow-hidden rounded-[24px] border border-base-300 bg-base-200 shadow-lg">
+    <div class="hero-content relative w-full flex-col items-start gap-3 px-6 py-8 lg:px-11 lg:py-11">
+      <p class="text-primary text-xs font-extrabold tracking-[0.18em] uppercase">{copy.contactEyebrow}</p>
+      <h1 class="font-display max-w-[18ch] text-[31px] font-bold lg:text-[44px]">{copy.contactTitle}</h1>
+      <p class="max-w-[56ch] text-[17px] leading-[1.55] opacity-70">{copy.contactLead}</p>
+    </div>
+  </section>
+
+  <div class="mt-[30px] grid grid-cols-1 items-start gap-8 lg:grid-cols-[1.2fr_0.8fr]">
+    <form class="card bg-base-200 shadow" onsubmit="return false">
+      <div class="card-body">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend">{copy.contactName}</legend>
+            <input class="input w-full" type="text" name="name" placeholder={copy.contactNamePlaceholder} />
+          </fieldset>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend">{copy.contactEmail}</legend>
+            <input class="input w-full" type="email" name="email" placeholder={copy.contactEmailPlaceholder} />
+          </fieldset>
+        </div>
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">{copy.contactSubject}</legend>
+          <select class="select w-full" name="subject">
+            <option>{copy.contactSubjectAlliances}</option>
+            <option>{copy.contactSubjectPress}</option>
+            <option>{copy.contactSubjectWorkshops}</option>
+            <option>{copy.contactSubjectStore}</option>
+            <option>{copy.contactSubjectOther}</option>
+          </select>
+        </fieldset>
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">{copy.contactMessage}</legend>
+          <textarea class="textarea w-full" name="message" rows="5" placeholder={copy.contactMessagePlaceholder}></textarea>
+        </fieldset>
+        <div class="card-actions">
+          <button class="btn btn-primary" type="submit">
+            {copy.contactSubmit}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <use href="#ic-arrow"></use>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </form>
+
+    <aside class="card bg-base-200 shadow">
+      <div class="card-body">
+        <h2 class="card-title">{copy.contactInfoTitle}</h2>
+        <ul class="list">
+          {
+            details.map((item) => (
+              <li class="list-row">
+                <span class="btn btn-square pointer-events-none no-animation border-0 bg-base-100 text-primary shadow-none">
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <use href={`#${item.icon}`}></use>
+                  </svg>
+                </span>
+                <div>
+                  <div class="font-bold">{item.title}</div>
+                  <div class="text-sm opacity-60">{item.value}</div>
+                </div>
+              </li>
+            ))
+          }
+        </ul>
+        <div class="h-[90px] rounded-box bg-[url('/assets/pattern.png')] bg-cover bg-center"></div>
+      </div>
+    </aside>
+  </div>
+</BaseLayout>

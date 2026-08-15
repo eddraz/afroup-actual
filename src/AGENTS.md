@@ -30,6 +30,7 @@
 - Keep the support mockup at `/apoyanos` and `/en/apoyanos`, wired through `paths.support`.
 - Keep the About mockup at `/nosotros` and `/en/nosotros`, wired through `paths.about`.
 - Keep the Collaborate mockup at `/colabora` and `/en/colabora`, wired through `paths.collaborate`.
+- Keep the Contact mockup at `/contacto` and `/en/contacto`, wired through `paths.contact`.
 - Use official Astro i18n only: Spanish default at unprefixed routes, English under `/en`, dictionaries in `lib/i18n.ts`.
 - Build UI with daisyUI first. If daisyUI cannot do it well, use daisyUI plus Tailwind. Use custom CSS only if that combination still cannot do it well.
 - Preserve Spanish UI and visual parity with the corresponding source screen under `design/`.
