@@ -102,8 +102,8 @@ function navClass(key: string) {
         <header class="bg-base-100 sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-base-300 px-5 py-3 lg:px-8">
           <div class="flex items-center gap-3 text-sm">
             <span class="text-base-content/60">{copy.adminSignedInAs}</span>
-            <span class="font-bold">admin@afroup.com</span>
-            <span class="badge badge-sm badge-accent">{copy.adminRoleAdmin}</span>
+            <span class="font-bold" data-admin-user-name>admin@afroup.com</span>
+            <span class="badge badge-sm badge-accent" data-admin-user-email hidden></span>
           </div>
           <div class="flex items-center gap-3">
             <a class="btn btn-sm btn-ghost" href={esAdminHref}>ES</a>
@@ -125,15 +125,43 @@ function navClass(key: string) {
       (function () {
         var ROLE_KEY = "afroup-role";
         var LOGIN_PATH = "/login";
+        var ADMIN_USER_KEY = "afroup-admin-user";
+
+        var readAdminUser = function () {
+          try {
+            var raw = localStorage.getItem(ADMIN_USER_KEY);
+            return raw ? JSON.parse(raw) : null;
+          } catch (e) { return null; }
+        };
+
+        var paintUser = function () {
+          var user = readAdminUser();
+          if (!user) return;
+          var name = document.querySelector("[data-admin-user-name]");
+          if (name) name.textContent = user.name || user.email;
+        };
+
+        paintUser();
+
+        var ADMIN_USER_KEY = "afroup-admin-user";
+        var PUBLIC_PATHS = ["/admin/login", "/admin/usuarios/aceptar"];
+
+        var readAdminUser = function () {
+          try {
+            var raw = localStorage.getItem(ADMIN_USER_KEY);
+            return raw ? JSON.parse(raw) : null;
+          } catch (e) { return null; }
+        };
 
         var gate = function () {
           var path = window.location.pathname;
-          // Skip the admin gate on the invite-accept page; invitees aren't signed in yet.
-          if (path.endsWith("/usuarios/aceptar")) return;
-          var role = localStorage.getItem(ROLE_KEY);
-          if (role !== "admin") {
-            var back = encodeURIComponent(path);
-            window.location.replace(LOGIN_PATH + "?next=" + back);
+          // Allow the admin login and the invite-accept pages without an active session.
+          for (var i = 0; i < PUBLIC_PATHS.length; i += 1) {
+            if (path.indexOf(PUBLIC_PATHS[i]) !== -1) return;
+          }
+          var user = readAdminUser();
+          if (!user) {
+            window.location.replace("/admin/login");
           }
         };
 
@@ -144,7 +172,8 @@ function navClass(key: string) {
             button.dataset.bound = "true";
             button.addEventListener("click", function () {
               localStorage.removeItem(ROLE_KEY);
-              window.location.href = LOGIN_PATH;
+              localStorage.removeItem(ADMIN_USER_KEY);
+              window.location.href = "/admin/login";
             });
           });
         };
@@ -154,6 +183,7 @@ function navClass(key: string) {
         document.addEventListener("astro:after-swap", function () {
           gate();
           bindSignOut();
+          paintUser();
         });
       })();
     </script>
