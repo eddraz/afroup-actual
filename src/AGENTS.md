@@ -22,6 +22,7 @@
 - Keep the Diaspora category mockup at `/diaspora` and `/en/diaspora`, wired through `paths.diaspora`.
 - Keep the Antiracism category mockup at `/antirracismo` and `/en/antirracismo`, wired through `paths.antirracismo`.
 - Keep the History category mockup at `/historia` and `/en/historia`, wired through `paths.historia`.
+- Keep the Aesthetics category mockup at `/estetica` and `/en/estetica`, wired through `paths.estetica`.
 - Use official Astro i18n only: Spanish default at unprefixed routes, English under `/en`, dictionaries in `lib/i18n.ts`.
 - Build UI with daisyUI first. If daisyUI cannot do it well, use daisyUI plus Tailwind. Use custom CSS only if that combination still cannot do it well.
 - Preserve Spanish UI and visual parity with the corresponding source screen under `design/`.
