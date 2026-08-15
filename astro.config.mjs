@@ -3,7 +3,10 @@ import cloudflare from "@astrojs/cloudflare";
 import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
-  adapter: cloudflare(),
+  adapter: cloudflare({
+    platformProxy: { enabled: true },
+    sessionKVBindingName: "SESSION",
+  }),
   output: "server",
   i18n: {
     defaultLocale: "es",

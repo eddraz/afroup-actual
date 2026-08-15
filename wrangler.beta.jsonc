@@ -1,13 +1,13 @@
-// AfroUp Worker — Cloudflare
+// AfroUp Worker — beta
 {
-  "name": "afroup",
-  "main": "@astrojs/cloudflare/entrypoints/server",
+  "name": "afroup-beta",
+  "main": "dist/server/entry.mjs",
   "compatibility_date": "2026-03-14",
   "compatibility_flags": [
     "nodejs_compat"
   ],
   "assets": {
-    "directory": "./dist",
+    "directory": "./dist/client",
     "binding": "ASSETS"
   },
   "observability": {
@@ -16,8 +16,8 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "afroup-db",
-      "database_id": "7b41bfc3-d3f0-4eb0-a89f-c3111dbb4ecb",
+      "database_name": "afroup-db-beta",
+      "database_id": "6ccc3d4e-479f-4cde-8ad7-7b7c96154ce7",
       "migrations_dir": "migrations"
     }
   ],
@@ -31,5 +31,16 @@
     "EMAIL_FROM_ADDRESS": "verificacion@afroup.com",
     "EMAIL_FROM_NAME": "AfroUp"
   },
-  "routes": []
+  "kv_namespaces": [
+    {
+      "binding": "SESSION",
+      "id": "6aac44af22a944cf8599e8e66b4f4aa4"
+    }
+  ],
+  "routes": [
+    {
+      "pattern": "beta.afroup.com/*",
+      "zone_name": "afroup.com"
+    }
+  ]
 }
