@@ -1,0 +1,112 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getLocaleFromUrl, localizedPath, t } from "../../lib/i18n";
+import { routeIds } from "../../lib/paths";
+
+export const prerender = true;
+
+const locale = getLocaleFromUrl(Astro.url);
+const copy = t(locale);
+const homeHref = localizedPath(locale, routeIds.home);
+const communityHref = localizedPath(locale, routeIds.community);
+const collaborateHref = localizedPath(locale, routeIds.collaborate);
+const entrepreneurHref = routeIds.entrepreneur;
+const chips = [
+  copy.entrepreneursChipAll,
+  copy.entrepreneursChipFashion,
+  copy.entrepreneursChipFood,
+  copy.entrepreneursChipBeauty,
+  copy.entrepreneursChipEditorial,
+  copy.entrepreneursChipArt,
+] as const;
+const ventures = [
+  { figure: "bg-secondary/30", label: "foto · textiles", tag: "Moda", tagClass: "text-secondary", swatch: "bg-secondary", title: "Tejidos Ubuntu", dek: "Moda con estampas africanas hecha por mujeres del Pacífico.", place: "Buenaventura, Colombia" },
+  { figure: "bg-accent/30", label: "foto · cocina", tag: "Alimentos", tagClass: "text-accent", swatch: "bg-accent", title: "Sabores del Manglar", dek: "Cocina tradicional del Pacífico a domicilio y catering.", place: "Cali, Colombia" },
+  { figure: "bg-primary/20", label: "foto · cosmética", tag: "Belleza", tagClass: "text-primary", swatch: "bg-primary", title: "Crespa & Libre", dek: "Cuidado natural para cabello afro, sin químicos agresivos.", place: "Bogotá, Colombia" },
+  { figure: "bg-[url('/assets/pattern.png')] bg-cover bg-center", label: "", tag: "Editorial", tagClass: "text-secondary", swatch: "bg-secondary", title: "Editorial Palenque", dek: "Libros infantiles con protagonistas afro.", place: "Medellín, Colombia" },
+  { figure: "bg-secondary/30", label: "foto · joyería", tag: "Arte", tagClass: "text-accent", swatch: "bg-accent", title: "Oro Negro Joyas", dek: "Joyería artesanal inspirada en símbolos adinkra.", place: "Quibdó, Colombia" },
+  { figure: "bg-accent/30", label: "foto · café", tag: "Alimentos", tagClass: "text-primary", swatch: "bg-primary", title: "Café Cimarrón", dek: "Café de origen cultivado por familias afrocampesinas.", place: "Cauca, Colombia" },
+] as const;
+---
+
+<BaseLayout title={copy.titleEntrepreneurs} active="comunidad">
+  <div class="breadcrumbs text-sm">
+    <ul>
+      <li><a href={homeHref}>{copy.navHome}</a></li>
+      <li><a href={communityHref}>{copy.navCommunity}</a></li>
+      <li>{copy.footerEntrepreneurs}</li>
+    </ul>
+  </div>
+
+  <section class="hero relative mt-6 overflow-hidden rounded-[24px] bg-secondary text-secondary-content shadow-lg">
+    <div class="absolute inset-y-0 right-0 w-[200px] bg-[url('/assets/pattern.png')] bg-cover bg-center max-md:w-[90px]"></div>
+    <div class="hero-content relative w-full flex-col items-start gap-3 px-6 py-8 lg:px-11 lg:py-11">
+      <p class="text-xs font-extrabold tracking-[0.18em] uppercase opacity-70">{copy.entrepreneursEyebrow}</p>
+      <h1 class="font-display max-w-[18ch] text-[31px] font-bold lg:text-[44px]">{copy.entrepreneursTitle}</h1>
+      <p class="max-w-[56ch] text-[17px] leading-[1.55] opacity-80">{copy.entrepreneursLead}</p>
+    </div>
+  </section>
+
+  <div class="mt-6 mb-6 flex flex-wrap gap-2" data-chips>
+    {
+      chips.map((chip, index) => (
+        <button class:list={["btn btn-sm", index === 0 ? undefined : "btn-dash"]} data-chip type="button">
+          {chip}
+        </button>
+      ))
+    }
+  </div>
+
+  <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    {
+      ventures.map((item) => (
+        <a class="card bg-base-200 shadow" href={entrepreneurHref}>
+          <figure class:list={["relative aspect-[16/10]", item.figure]}>
+            {item.label ? <span class="badge badge-sm absolute bottom-3 left-3">{item.label}</span> : null}
+          </figure>
+          <div class="card-body">
+            <span class:list={["inline-flex items-center gap-2 text-[11.5px] font-extrabold tracking-[0.1em] uppercase", item.tagClass]}>
+              <span class:list={["size-2.5 rounded-[3px]", item.swatch]}></span>
+              {item.tag}
+            </span>
+            <h3 class="card-title font-display">{item.title}</h3>
+            <p class="opacity-70">{item.dek}</p>
+            <p class="flex items-center gap-1.5 text-sm opacity-60">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <use href="#ic-pin"></use>
+              </svg>
+              {item.place}
+            </p>
+          </div>
+        </a>
+      ))
+    }
+  </div>
+
+  <div class="card bg-accent text-accent-content mt-9">
+    <div class="card-body sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h3 class="card-title">{copy.entrepreneursBandTitle}</h3>
+        <p>{copy.entrepreneursBandDek}</p>
+      </div>
+      <div class="card-actions">
+        <a class="btn btn-primary" href={collaborateHref}>
+          {copy.entrepreneursCta}
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <use href="#ic-arrow"></use>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  const chips = document.querySelectorAll("[data-chip]");
+  chips.forEach((chip) => {
+    chip.addEventListener("click", () => {
+      chips.forEach((item) => item.classList.add("btn-dash"));
+      chip.classList.remove("btn-dash");
+    });
+  });
+</script>
