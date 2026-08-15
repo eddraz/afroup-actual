@@ -41,6 +41,7 @@
 ## Admin invitations
 
 - `0011_admin_invitations.sql` recreates `admin_users` with `password_hash` nullable and an `invite_pending` flag, then adds the `admin_user_invitations` token table for the email-link activation flow (24h TTL).
+- `0012_public_sessions.sql` adds `bio` and `avatar_url` to `afroup_users` plus `afroup_sessions` for the public-site cookie session used by `/cuenta`.
 
 ## Manual D1 apply notes
 
