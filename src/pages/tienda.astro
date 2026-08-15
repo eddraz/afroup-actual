@@ -9,7 +9,7 @@ const locale = getLocaleFromUrl(Astro.url);
 const copy = t(locale);
 const homeHref = localizedPath(locale, routeIds.home);
 const productHref = localizedPath(locale, routeIds.product);
-const cartHref = routeIds.cart;
+const cartHref = localizedPath(locale, routeIds.cart);
 const resourcesHref = localizedPath(locale, routeIds.resources);
 const chips = [
   copy.storeChipAll,
