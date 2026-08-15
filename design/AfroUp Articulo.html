@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AfroUp — Quilombos y palenques</title>
+<link rel="icon" href="assets/mark-black.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Mulish:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="brand-site.css" />
+<link rel="stylesheet" href="site-pages.css" />
+<style>
+  .bread{ color:var(--muted); font-size:13.5px; font-weight:700; padding:24px 0 4px; }
+  .bread a:hover{ color:var(--azul); } .bread span{ margin:0 8px; color:#c4bdad; }
+  .ahead{ max-width:780px; margin:0 auto; padding:10px 0 6px; }
+  .ahead h1{ font-size:46px; line-height:1.04; margin:12px 0 14px; }
+  .ahead .dek{ font-size:20px; color:#46412f; line-height:1.45; max-width:64ch; }
+  .byline{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-top:22px; }
+  .avatar{ width:46px; height:46px; border-radius:50%; background:var(--oro-soft); border:2px solid var(--oro); flex:none; }
+  .byline .who{ font-weight:800; font-size:15px; } .byline .who small{ display:block; color:var(--muted); font-weight:600; }
+  .share{ display:flex; gap:8px; margin-left:auto; }
+  .share button{ width:40px; height:40px; border-radius:50%; border:1.5px solid var(--line); background:var(--paper); color:var(--ink); cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .share button:hover{ background:var(--cream); }
+  .share .ic{ width:18px; height:18px; }
+  .hero-img{ margin:26px auto 0; max-width:980px; }
+  .hero-img .ph{ aspect-ratio:21/9; border-radius:22px; box-shadow:var(--shadow-lg); }
+  .prose{ max-width:720px; margin:34px auto 0; font-size:18.5px; line-height:1.74; color:#2c281f; }
+  .prose p{ margin:0 0 22px; }
+  .prose h2{ font-size:27px; margin:36px 0 14px; }
+  .prose strong{ color:var(--ink); }
+  .pull{ border-left:4px solid var(--cian); padding:4px 0 4px 24px; margin:30px 0; font-family:var(--disp); font-weight:700; font-size:27px; line-height:1.2; color:var(--ink); }
+  .figure{ margin:30px 0; } .figure .ph{ aspect-ratio:16/9; border-radius:16px; } .figure figcaption{ color:var(--muted); font-size:13.5px; text-align:center; margin-top:10px; }
+  .cta{ max-width:720px; margin:34px auto; background:var(--cian); border-radius:20px; padding:30px 32px; display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap; }
+  .cta h3{ color:#063b42; font-size:24px; } .cta p{ margin:4px 0 0; color:#0a4f59; font-size:15px; }
+  .tagrow{ max-width:720px; margin:30px auto 0; display:flex; gap:9px; flex-wrap:wrap; }
+  .bio{ max-width:720px; margin:26px auto 0; background:var(--paper); border-radius:18px; padding:24px; display:flex; gap:18px; box-shadow:var(--shadow); align-items:center; }
+  .bio .avatar{ width:64px; height:64px; }
+  .related{ background:var(--paper); border-top:1px solid var(--line); margin-top:40px; }
+  .related .grid3{ display:grid; grid-template-columns:repeat(3,1fr); gap:24px; }
+  @media (max-width:980px){
+    .ahead h1{ font-size:32px; } .ahead .dek{ font-size:17px; } .prose{ font-size:17.5px; }
+    .related .grid3{ grid-template-columns:repeat(2,1fr); gap:16px; } .hero-img .ph{ border-radius:16px; aspect-ratio:16/10; }
+  }
+  @media (max-width:560px){
+    .related .grid3 .card h3{ font-size:15.5px; } .related .grid3 .card .body{ padding:11px 12px 14px; gap:6px; }
+  }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="ic-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="ic-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 11 12 4l8 7"/><path d="M6 10v9h12v-9"/></symbol>
+  <symbol id="ic-bag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 8h12l-1 12H7z"/><path d="M9 8a3 3 0 0 1 6 0"/></symbol>
+  <symbol id="ic-book2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5v15l4-2 4 2 4-2 4 2V5"/><path d="M8 8h8M8 12h8"/></symbol>
+  <symbol id="ic-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M16 6a3 3 0 0 1 0 6M21 20a6 6 0 0 0-5-5.9"/></symbol>
+  <symbol id="ic-bookmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 4h12v16l-6-4-6 4z"/></symbol>
+  <symbol id="ic-heart" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7-4.5-9.5-9C1 9 2.5 5.5 6 5.5c2 0 3.2 1.2 4 2.3.8-1.1 2-2.3 4-2.3 3.5 0 5 3.5 3.5 6.5C19 16.5 12 21 12 21z"/></symbol>
+  <symbol id="ic-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="ic-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+  <symbol id="ic-share" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="m8 11 8-4M8 13l8 4"/></symbol>
+  <symbol id="ic-bm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 4h12v16l-6-4-6 4z"/></symbol>
+  <symbol id="ic-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 14a4 4 0 0 0 6 0l2-2a4 4 0 0 0-6-6l-1 1"/><path d="M14 10a4 4 0 0 0-6 0l-2 2a4 4 0 0 0 6 6l1-1"/></symbol>
+</defs></svg>
+
+<div class="app">
+  <aside class="side">
+    <div class="brand"><a href="AfroUp Home (diseño).html"><img src="assets/logo-black.png" alt="AfroUp" /></a></div>
+    <a class="nav-i" href="AfroUp Home (diseño).html"><svg class="ic"><use href="#ic-home"/></svg> Inicio</a>
+    <a class="nav-i" href="AfroUp Busqueda.html"><svg class="ic"><use href="#ic-search"/></svg> Buscar</a>
+    <div class="nav-h">Aprende</div>
+    <a class="nav-i" href="AfroUp Categoria Africa.html"><span class="dot" style="background:var(--azul)"></span> África</a>
+    <a class="nav-i" href="AfroUp Categoria Africa.html"><span class="dot" style="background:var(--cian)"></span> Diáspora</a>
+    <a class="nav-i" href="AfroUp Categoria Africa.html"><span class="dot" style="background:var(--oro)"></span> Antirracismo</a>
+    <a class="nav-i on" href="AfroUp Categoria Africa.html"><span class="dot" style="background:var(--oro)"></span> Historia</a>
+    <a class="nav-i" href="AfroUp Categoria Africa.html"><span class="dot" style="background:var(--cian)"></span> Estética</a>
+    <a class="nav-i" href="AfroUp Categoria Africa.html"><span class="dot" style="background:var(--azul)"></span> Actualidad</a>
+    <div class="nav-h">Comunidad</div>
+    <a class="nav-i" href="AfroUp Tienda.html"><svg class="ic"><use href="#ic-bag"/></svg> Tienda</a>
+    <a class="nav-i" href="AfroUp Recursos.html"><svg class="ic"><use href="#ic-book2"/></svg> Recursos</a>
+    <a class="nav-i" href="AfroUp Proyectos.html"><svg class="ic"><use href="#ic-users"/></svg> Comunidad</a>
+    <div class="nav-i"><svg class="ic"><use href="#ic-bookmark"/></svg> Guardados</div>
+    <div class="spacer"></div>
+    <div class="lang"><button class="on">ES</button><button>EN</button></div>
+    <a class="btn btn-oro btn-block" href="AfroUp Donacion.html"><svg class="ic" style="width:18px;height:18px"><use href="#ic-heart"/></svg> Haz tu Donación</a>
+  </aside>
+
+  <div class="main">
+    <div class="topbar"><div class="wrap"><div class="inner">
+      <button class="btn btn-ghost btn-sm burger"><svg class="ic" style="width:20px;height:20px"><use href="#ic-menu"/></svg></button>
+      <form class="search" action="AfroUp Busqueda.html"><svg class="ic"><use href="#ic-search"/></svg><input type="search" name="q" placeholder="Busca temas, artículos, autores…" /></form>
+      <span class="mantra">Conocimiento = poder</span>
+    </div></div></div>
+
+    <div class="wrap">
+      <div class="bread"><a href="AfroUp Home (diseño).html">Inicio</a><span>/</span><a>Historia</a></div>
+
+      <header class="ahead">
+        <span class="tag c-historia"><span class="sq"></span> Historia</span>
+        <h1>Quilombos y palenques: territorios de libertad</h1>
+        <p class="dek">Cómo las comunidades cimarronas construyeron autonomía, lengua y memoria en toda Abya Yala — y por qué siguen siendo un mapa para el presente.</p>
+        <div class="byline">
+          <span class="avatar"></span>
+          <span class="who">Jenniffer M.<small>Editora · AfroUp</small></span>
+          <span style="color:var(--muted);font-weight:600;font-size:14px;">12 mar 2026 · 8 min de lectura</span>
+          <span class="share">
+            <button title="Compartir"><svg class="ic"><use href="#ic-share"/></svg></button>
+            <button title="Guardar"><svg class="ic"><use href="#ic-bm"/></svg></button>
+            <button title="Copiar enlace"><svg class="ic"><use href="#ic-link"/></svg></button>
+          </span>
+        </div>
+      </header>
+
+      <figure class="hero-img"><div class="ph pat"><span class="lbl" style="background:rgba(10,121,166,.4);color:#fff">imagen principal · grabado histórico</span></div></figure>
+
+      <article class="prose">
+        <p>Durante siglos, miles de personas esclavizadas huyeron de las plantaciones para fundar sus propios mundos. Los llamaron <strong>palenques</strong> en el Caribe hispano, <strong>quilombos</strong> en Brasil, <em>cumbes</em> en Venezuela. Eran más que escondites: eran proyectos políticos de libertad.</p>
+        <p>En estos territorios, hombres y mujeres reconstruyeron lenguas, espiritualidades y formas de gobierno propias. San Basilio de Palenque, en Colombia, conserva hoy la única lengua criolla de base española de América — un testimonio vivo de esa autonomía.</p>
+
+        <div class="pull">“Cada palenque fue una declaración de que la libertad no se pide: se construye.”</div>
+
+        <h2>Mapas de una resistencia</h2>
+        <p>La geografía del cimarronaje no fue azarosa. Montañas, ciénagas y selvas se convirtieron en aliadas estratégicas frente a los ejércitos coloniales. Conocer el territorio era, literalmente, conocer el camino hacia la libertad.</p>
+
+        <figure class="figure"><div class="ph t-oro"><span class="lbl">mapa · rutas del cimarronaje</span></div><figcaption>Rutas y asentamientos cimarrones en el Gran Caribe. Fuente: archivo AfroUp.</figcaption></figure>
+
+        <p>Reconocer esta historia no es un ejercicio nostálgico. Es entender que la organización comunitaria, el cuidado colectivo y la defensa del territorio que vemos hoy en muchos pueblos afro tienen raíces profundas — y nombres propios.</p>
+      </article>
+
+      <div class="cta">
+        <div><h3>Sé parte de la comunidad AfroUp</h3><p>Con tu apoyo seguimos educando sobre el legado afro.</p></div>
+        <button class="btn btn-primary"><svg class="ic" style="width:18px;height:18px"><use href="#ic-heart"/></svg> Haz tu Donación</button>
+      </div>
+
+      <div class="tagrow">
+        <span class="chip">#cimarronaje</span><span class="chip">#palenque</span><span class="chip">#historia</span><span class="chip">#diáspora</span>
+      </div>
+
+      <div class="bio">
+        <span class="avatar"></span>
+        <div><div style="font-family:var(--disp);font-weight:700;font-size:18px;">Jenniffer M.</div><p style="margin:4px 0 0;color:var(--muted);font-size:14.5px;">Fundadora y editora de AfroUp. Escribe sobre historia, identidad y cultura de la diáspora africana en Latinoamérica.</p></div>
+      </div>
+    </div>
+
+    <section class="related">
+      <div class="wrap" style="padding-top:36px;padding-bottom:44px;">
+        <div class="sec-head" style="margin-bottom:20px;display:flex;align-items:flex-end;justify-content:space-between;"><h2 style="font-size:26px;">Sigue leyendo</h2><a class="btn btn-ghost btn-sm" href="AfroUp Home (diseño).html">Ver todo <svg class="ic" style="width:16px;height:16px"><use href="#ic-arrow"/></svg></a></div>
+        <div class="grid3">
+          <article class="card"><div class="ph t-cian"><span class="lbl">foto · tambores</span></div><div class="body"><span class="tag c-estetica"><span class="sq"></span> Estética</span><h3>Las raíces del bullerengue</h3><div class="meta"><span class="av"></span> 6 min</div></div></article>
+          <article class="card"><div class="ph t-azul"><span class="lbl">ilustración</span></div><div class="body"><span class="tag c-actualidad"><span class="sq"></span> Actualidad</span><h3>Afrofuturismo: imaginar el mañana</h3><div class="meta"><span class="av"></span> 5 min</div></div></article>
+          <article class="card"><div class="ph t-cian"><span class="lbl">retrato</span></div><div class="body"><span class="tag c-diaspora"><span class="sq"></span> Diáspora</span><h3>Trenzas como mapas de resistencia</h3><div class="meta"><span class="av"></span> 7 min</div></div></article>
+        </div>
+      </div>
+    </section>
+
+    <footer class="foot">
+      <div class="pat"></div>
+      <div class="wrap"><div class="inner">
+        <div class="top">
+          <img src="assets/logo-white.png" alt="AfroUp" />
+          <button class="btn btn-oro"><svg class="ic" style="width:18px;height:18px"><use href="#ic-heart"/></svg> Haz tu Donación</button>
+        </div>
+        <div class="cols">
+          <div><h5>Aprende</h5><ul><li><a href="AfroUp Categoria Africa.html">África</a></li><li><a href="AfroUp Categoria Africa.html">Diáspora</a></li><li><a href="AfroUp Categoria Africa.html">Antirracismo</a></li><li><a href="AfroUp Categoria Africa.html">Historia</a></li><li><a href="AfroUp Categoria Africa.html">Estética</a></li><li><a href="AfroUp Categoria Africa.html">Actualidad</a></li></ul></div>
+          <div><h5>AfroUp</h5><ul><li><a href="AfroUp Tienda.html">Tienda</a></li><li><a href="AfroUp Recursos.html">Recursos</a></li><li><a href="AfroUp Nosotros.html">Nosotros</a></li><li><a href="AfroUp Contacto.html">Contacto</a></li><li><a href="AfroUp Apoyanos.html">Apóyanos</a></li></ul></div>
+          <div><h5>Comunidad</h5><ul><li><a href="AfroUp Proyectos.html">Proyectos</a></li><li><a href="AfroUp Emprendedores.html">Emprendedores</a></li><li><a href="AfroUp Referentes.html">Referentes</a></li><li><a href="AfroUp Colabora.html">Colabora</a></li></ul></div>
+          <div><h5>Contáctanos</h5><ul><li><a href="AfroUp Contacto.html">hello@afroup.org</a></li><li><a href="AfroUp Contacto.html">+57 320 7146</a></li></ul></div>
+          <div><h5>Síguenos</h5><ul><li><a>Instagram</a></li><li><a>TikTok</a></li><li><a>YouTube</a></li><li><a>Facebook</a></li></ul></div>
+        </div>
+      </div></div>
+    </footer>
+  </div>
+
+  <nav class="mtab">
+    <a class="on" href="AfroUp Home (diseño).html"><svg class="ic"><use href="#ic-home"/></svg> Inicio</a>
+    <a href="AfroUp Busqueda.html"><svg class="ic"><use href="#ic-search"/></svg> Buscar</a>
+    <a href="AfroUp Tienda.html"><svg class="ic"><use href="#ic-bag"/></svg> Tienda</a>
+    <a><svg class="ic"><use href="#ic-bookmark"/></svg> Guardados</a>
+    <a href="AfroUp Donacion.html"><svg class="ic"><use href="#ic-heart"/></svg> Donar</a>
+  </nav>
+</div>
+<script src="drawer.js"></script>
+</body>
+</html>

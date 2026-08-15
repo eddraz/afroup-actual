@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AfroUp — Ayudas de emergencia en Chocó</title>
+<link rel="icon" href="assets/mark-black.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Mulish:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="brand-site.css" />
+<link rel="stylesheet" href="site-pages.css" />
+<style>
+  .hero{ position:relative; border-radius:24px; overflow:hidden; background:var(--azul); color:#fff; display:grid; grid-template-columns:1.15fr .85fr; min-height:300px; box-shadow:var(--shadow-lg); }
+  .hero .copy{ padding:46px 44px; display:flex; flex-direction:column; gap:16px; justify-content:center; z-index:1; }
+  .hero .ey{ font-weight:800; font-size:12.5px; letter-spacing:.18em; text-transform:uppercase; color:var(--cian); }
+  .hero h1{ font-size:46px; color:#fff; max-width:16ch; }
+  .hero p{ margin:0; color:#d7ecf4; font-size:17px; max-width:46ch; }
+  .hero .art{ position:relative; }
+  .hero .art .ph{ position:absolute; inset:0; }
+  .aid-layout{ display:grid; grid-template-columns:1fr 326px; gap:32px; align-items:start; }
+  .dept-block{ margin-bottom:28px; }
+  .dept-head{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:12px; flex-wrap:wrap; }
+  .dept-block h3{ font-size:24px; margin:0; }
+  .empty{ color:var(--muted); font-size:14.5px; padding:8px 0 4px; }
+  .notice{ margin:0 0 14px; color:#0a4f59; font-size:14.5px; }
+  .msg{ margin-top:14px; font-weight:700; font-size:14.5px; }
+  .msg.ok{ color:#0a5560; }
+  .msg.err{ color:#9b2c2c; }
+  .card{ cursor:default; }
+  .pager{ display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap; margin-top:16px; }
+  .pager button{ min-width:38px; height:38px; border:1.5px solid var(--ink); background:transparent; border-radius:999px; font-weight:700; font-size:14px; color:var(--ink); cursor:pointer; }
+  .pager button.on{ background:var(--ink); color:var(--cream); }
+  .pager button:disabled{ opacity:.35; cursor:default; }
+  .pager-gap{ color:var(--muted); font-weight:800; padding:0 2px; }
+  .page-meta{ color:var(--muted); font-size:13.5px; font-weight:700; }
+  .mtab{ width:100%; max-width:100vw; box-sizing:border-box; }
+  @media (max-width:1240px){
+    .aid-layout{ grid-template-columns:1fr; }
+  }
+  @media (max-width:980px){
+    .hero{ grid-template-columns:1fr; }
+    .hero h1{ font-size:34px; }
+    .hero .copy{ padding:30px 24px; }
+    .hero .art{ min-height:180px; }
+    .topbar .mantra{ display:none; }
+    .topbar .search{ max-width:none; }
+    .feed{ grid-template-columns:1fr; }
+    .feed .card .dek{ display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; }
+  }
+  @media (max-width:680px){
+    .pager button{ min-width:34px; height:34px; font-size:13px; }
+  }
+</style>
+</head>
+<body data-active="inicio">
+<main class="content">
+  <div class="wrap" style="padding-top:30px;padding-bottom:46px;">
+    <section class="hero">
+      <div class="copy">
+        <span class="ey">Emergencia · Chocó / Colombia</span>
+        <h1>Ayudas para personas afectadas</h1>
+        <p>Puntos de acopio, canales de donación y bancos de sangre recopilados por AfroUp. Antes de desplazarte o donar, confirma horarios y necesidades con cada entidad: pueden cambiar a medida que avanza la emergencia.</p>
+        <div>
+          <a class="btn btn-cian" href="#ayudas">Ver ayudas por departamento <svg class="ic" style="width:18px;height:18px"><use href="#ic-arrow"/></svg></a>
+        </div>
+      </div>
+      <div class="art"><div class="ph pat"><span class="lbl" style="background:rgba(10,121,166,.45);color:#fff">ayuda · chocó</span></div></div>
+    </section>
+
+    <div class="sec-head" id="ayudas">
+      <h2>Ayudas publicadas</h2>
+    </div>
+    <div class="chips" id="department-chips">
+      <button class="chip on" type="button" data-slug="">Todos</button>
+    </div>
+
+    <div class="aid-layout" style="margin-top:24px;">
+      <div>
+        <div id="entries" class="rows"></div>
+      </div>
+      <aside class="panel">
+        <h4>Cómo usar esta página</h4>
+        <p class="notice">La información proviene de la guía oficial de AfroUp, actualizada el 14 de agosto de 2026. Las fichas se agrupan por departamento. Los envíos nuevos quedan en revisión antes de publicarse.</p>
+      </aside>
+    </div>
+
+    <div class="band ink" style="margin-top:36px;">
+      <div>
+        <h3>¿Tienes información de ayuda?</h3>
+        <p>Envíala aquí. El equipo la revisa antes de publicarla.</p>
+      </div>
+      <a class="btn btn-cian" href="#enviar">Agregar información</a>
+    </div>
+
+    <form class="panel" id="submit-form" style="margin-top:18px;">
+      <h4 id="enviar">Agregar información de ayuda</h4>
+      <p class="notice">Los envíos quedan en revisión. No se publican de inmediato.</p>
+      <div class="fgrid">
+        <div class="field">
+          <label for="department">Departamento</label>
+          <select id="department" name="department" required></select>
+        </div>
+        <div class="field">
+          <label for="category">Categoría</label>
+          <input id="category" name="category" type="text" placeholder="Albergue, salud, alimentos…" />
+        </div>
+      </div>
+      <div class="field" style="margin-top:18px;">
+        <label for="title">Título</label>
+        <input id="title" name="title" type="text" required placeholder="Nombre de la ayuda o el punto de atención" />
+      </div>
+      <div class="field" style="margin-top:18px;">
+        <label for="summary">Resumen</label>
+        <input id="summary" name="summary" type="text" placeholder="Qué se ofrece y a quién" />
+      </div>
+      <div class="field" style="margin-top:18px;">
+        <label for="body">Descripción</label>
+        <textarea id="body" name="body" placeholder="Detalles, horarios, requisitos o cómo llegar"></textarea>
+      </div>
+      <div class="fgrid" style="margin-top:18px;">
+        <div class="field">
+          <label for="location">Lugar</label>
+          <input id="location" name="location" type="text" placeholder="Municipio, barrio o dirección" />
+        </div>
+        <div class="field">
+          <label for="source">Fuente</label>
+          <input id="source" name="source" type="text" placeholder="Organización, alcaldía, comunidad…" />
+        </div>
+      </div>
+      <div class="fgrid" style="margin-top:18px;">
+        <div class="field">
+          <label for="contact_name">Nombre de contacto</label>
+          <input id="contact_name" name="contact_name" type="text" />
+        </div>
+        <div class="field">
+          <label for="contact_phone">Teléfono</label>
+          <input id="contact_phone" name="contact_phone" type="text" />
+        </div>
+      </div>
+      <div class="fgrid" style="margin-top:18px;">
+        <div class="field">
+          <label for="contact_email">Correo</label>
+          <input id="contact_email" name="contact_email" type="email" />
+        </div>
+        <div class="field">
+          <label for="submitted_by_name">Quién envía esta información</label>
+          <input id="submitted_by_name" name="submitted_by_name" type="text" />
+        </div>
+      </div>
+      <button class="btn btn-primary" type="submit" style="margin-top:18px;">Enviar para revisión <svg class="ic" style="width:16px;height:16px"><use href="#ic-arrow"/></svg></button>
+      <p class="msg" id="form-msg" hidden></p>
+    </form>
+  </div>
+</main>
+<script src="site.js"></script>
+<script src="drawer.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

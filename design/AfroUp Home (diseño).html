@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AfroUp — Inicio</title>
+<link rel="icon" href="assets/mark-black.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Mulish:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="brand-site.css" />
+<link rel="stylesheet" href="site-pages.css" />
+<style>
+  .feed-layout{ display:grid; grid-template-columns:1fr 326px; gap:32px; align-items:start; }
+  .feed{ display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+  .feed .span2{ grid-column:1 / -1; }
+  .feat{ display:grid; grid-template-columns:1.08fr 1fr; }
+  .feat .ph{ aspect-ratio:auto; height:100%; min-height:260px; }
+  .feat .body{ padding:28px 30px; gap:12px; justify-content:center; }
+  .feat h3{ font-size:30px; }
+  .hero{ position:relative; border-radius:24px; overflow:hidden; background:var(--azul); color:#fff; display:grid; grid-template-columns:1.15fr .85fr; min-height:300px; box-shadow:var(--shadow-lg); }
+  .hero .copy{ padding:46px 44px; display:flex; flex-direction:column; gap:16px; justify-content:center; z-index:1; }
+  .hero .ey{ font-weight:800; font-size:12.5px; letter-spacing:.18em; text-transform:uppercase; color:var(--cian); }
+  .hero h1{ font-size:50px; color:#fff; max-width:14ch; }
+  .hero p{ margin:0; color:#d7ecf4; font-size:17px; max-width:42ch; }
+  .hero .art{ position:relative; }
+  .hero .art .ph{ position:absolute; inset:0; }
+  .quote{ grid-column:1 / -1; background:var(--ink); color:var(--cream); border-radius:var(--r); padding:42px 46px; position:relative; overflow:hidden; }
+  .quote .pat{ position:absolute; right:0; top:0; bottom:0; width:160px; background:url('assets/pattern.png') center/cover; opacity:.9; }
+  .quote q{ font-family:var(--disp); font-weight:700; font-size:34px; line-height:1.12; display:block; max-width:20ch; }
+  .quote q::before, .quote q::after{ content:''; }
+  .rail{ display:flex; flex-direction:column; gap:22px; position:sticky; top:90px; }
+  .panel{ background:var(--paper); border-radius:var(--r); box-shadow:var(--shadow); padding:22px 22px; }
+  .panel h4{ font-size:19px; margin-bottom:14px; }
+  .read{ display:flex; gap:13px; padding:11px 0; border-top:1px solid var(--line); }
+  .read:first-of-type{ border-top:0; }
+  .read .n{ font-family:var(--disp); font-weight:800; font-size:24px; color:var(--cian); line-height:1; width:26px; flex:none; }
+  .read .t{ font-weight:700; font-size:15px; line-height:1.25; }
+  .read .t small{ display:block; color:var(--muted); font-weight:600; font-size:12.5px; margin-top:4px; }
+  .news{ background:var(--cian); color:#063b42; }
+  .news h4{ color:#063b42; }
+  .news input{ width:100%; border:0; border-radius:999px; padding:11px 16px; font-family:var(--text); font-size:14px; margin:12px 0; background:rgba(255,255,255,.7); }
+  .igrid{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:12px; }
+  .igrid .ph{ aspect-ratio:1; border-radius:9px; }
+  .sec-head{ display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin:34px 0 18px; }
+  .play{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
+  .play span{ width:58px; height:58px; border-radius:50%; background:rgba(251,245,233,.92); display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow); }
+  .play svg{ width:24px; height:24px; margin-left:3px; color:var(--ink); }
+  /* tablet landscape / small laptop — keep sidebar, drop rail below feed */
+  @media (min-width:981px) and (max-width:1240px){
+    .wrap{ padding:0 30px; }
+    .feed-layout{ grid-template-columns:1fr; }
+    .feed{ grid-template-columns:1fr 1fr; gap:24px; }
+    .rail{ position:static; top:auto; display:grid; grid-template-columns:repeat(3,1fr); gap:22px; margin-top:30px; align-items:start; }
+  }
+  @media (max-width:980px){
+    .feed-layout{ grid-template-columns:1fr; } .feed{ grid-template-columns:repeat(2,1fr); gap:18px; }
+    .feat{ grid-template-columns:1fr; } .feat .ph{ min-height:200px; aspect-ratio:16/10; }
+    .hero{ grid-template-columns:1fr; } .hero h1{ font-size:34px; } .hero .copy{ padding:30px 24px; }
+    .hero .art{ min-height:180px; } .quote q{ font-size:25px; }
+    .rail{ position:static; top:auto; display:grid; grid-template-columns:repeat(2,1fr); gap:18px; margin-top:26px; align-items:start; }
+  }
+  @media (max-width:560px){
+    .feed{ gap:13px; }
+    .feed .card h3{ font-size:15.5px; }
+    .feed .card .dek{ display:none; }
+    .feed .card .body{ padding:11px 12px 14px; gap:6px; }
+    .feed .card .meta{ font-size:11.5px; padding-top:2px; }
+    .feed .tag{ font-size:10px; }
+    .feat .body{ padding:18px 18px; } .feat h3{ font-size:21px; } .feat .body .dek{ display:block; }
+    .rail{ grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="ic-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="ic-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 11 12 4l8 7"/><path d="M6 10v9h12v-9"/></symbol>
+  <symbol id="ic-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M5 4h9a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H5z"/><path d="M19 7h0"/></symbol>
+  <symbol id="ic-bag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 8h12l-1 12H7z"/><path d="M9 8a3 3 0 0 1 6 0"/></symbol>
+  <symbol id="ic-book2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5v15l4-2 4 2 4-2 4 2V5"/><path d="M8 8h8M8 12h8"/></symbol>
+  <symbol id="ic-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M16 6a3 3 0 0 1 0 6M21 20a6 6 0 0 0-5-5.9"/></symbol>
+  <symbol id="ic-bookmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 4h12v16l-6-4-6 4z"/></symbol>
+  <symbol id="ic-heart" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7-4.5-9.5-9C1 9 2.5 5.5 6 5.5c2 0 3.2 1.2 4 2.3.8-1.1 2-2.3 4-2.3 3.5 0 5 3.5 3.5 6.5C19 16.5 12 21 12 21z"/></symbol>
+  <symbol id="ic-play" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5v14l12-7z"/></symbol>
+  <symbol id="ic-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="ic-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+  <symbol id="ic-ig" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="5"/><circle cx="12" cy="12" r="3.5"/><circle cx="17" cy="7" r="1" fill="currentColor" stroke="none"/></symbol>
+</defs></svg>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="side">
+    <div class="brand"><img src="assets/logo-black.png" alt="AfroUp" /></div>
+    <div class="nav-i on"><svg class="ic"><use href="#ic-home"/></svg> Inicio</div>
+    <a class="nav-i" href="AfroUp Busqueda.html"><svg class="ic"><use href="#ic-search"/></svg> Buscar</a>
+    <div class="nav-h">Aprende</div>
+    <a class="nav-i" href="AfroUp Categoria Africa.html"><span class="dot" style="background:var(--azul)"></span> África</a>
+    <a class="nav-i" href="AfroUp Categoria Africa.html"><span class="dot" style="background:var(--cian)"></span> Diáspora</a>
+    <a class="nav-i" href="AfroUp Categoria Africa.html"><span class="dot" style="background:var(--oro)"></span> Antirracismo</a>
+    <a class="nav-i" href="AfroUp Categoria Africa.html"><span class="dot" style="background:var(--oro)"></span> Historia</a>
+    <a class="nav-i" href="AfroUp Categoria Africa.html"><span class="dot" style="background:var(--cian)"></span> Estética</a>
+    <a class="nav-i" href="AfroUp Categoria Africa.html"><span class="dot" style="background:var(--azul)"></span> Actualidad</a>
+    <div class="nav-h">Comunidad</div>
+    <a class="nav-i" href="AfroUp Tienda.html"><svg class="ic"><use href="#ic-bag"/></svg> Tienda</a>
+    <a class="nav-i" href="AfroUp Recursos.html"><svg class="ic"><use href="#ic-book2"/></svg> Recursos</a>
+    <a class="nav-i" href="AfroUp Proyectos.html"><svg class="ic"><use href="#ic-users"/></svg> Comunidad</a>
+    <div class="nav-i"><svg class="ic"><use href="#ic-bookmark"/></svg> Guardados</div>
+    <div class="spacer"></div>
+    <div class="lang"><button class="on">ES</button><button>EN</button></div>
+    <a class="btn btn-oro btn-block" href="AfroUp Donacion.html"><svg class="ic" style="width:18px;height:18px"><use href="#ic-heart"/></svg> Haz tu Donación</a>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar"><div class="wrap"><div class="inner">
+      <button class="btn btn-ghost btn-sm burger" aria-label="Menú"><svg class="ic" style="width:20px;height:20px"><use href="#ic-menu"/></svg></button>
+      <form class="search" action="AfroUp Busqueda.html"><svg class="ic"><use href="#ic-search"/></svg><input type="search" name="q" placeholder="Busca temas, artículos, autores…" /></form>
+      <span class="mantra">Conocimiento = poder</span>
+    </div></div></div>
+
+    <div class="wrap" style="padding-top:30px;">
+      <!-- HERO: tema del mes -->
+      <section class="hero">
+        <div class="copy">
+          <span class="ey">Tema del mes · Junio</span>
+          <h1>El legado de Martin Luther King</h1>
+          <p>Un especial sobre la lucha por los derechos civiles y su eco en la diáspora afrolatina, hoy.</p>
+          <div><a class="btn btn-cian" href="AfroUp Articulo.html">Leer el especial <svg class="ic" style="width:18px;height:18px"><use href="#ic-arrow"/></svg></a></div>
+        </div>
+        <div class="art"><div class="ph pat"><span class="lbl" style="background:rgba(10,121,166,.45);color:#fff">foto · especial MLK</span></div></div>
+      </section>
+
+      <!-- CHIPS -->
+      <div class="sec-head">
+        <h2 style="font-size:26px;">Lo último</h2>
+      </div>
+      <div class="chips" style="margin-bottom:24px;">
+        <button class="chip on">Todos</button>
+        <button class="chip">África</button>
+        <button class="chip">Diáspora</button>
+        <button class="chip">Antirracismo</button>
+        <button class="chip">Historia</button>
+        <button class="chip">Estética</button>
+        <button class="chip">Actualidad</button>
+      </div>
+
+      <!-- FEED + RAIL -->
+      <div class="feed-layout">
+        <div class="feed">
+          <!-- featured -->
+          <article class="card feat span2">
+            <div class="ph t-oro"><span class="lbl">foto · mapa histórico</span></div>
+            <div class="body">
+              <span class="tag c-historia"><span class="sq"></span> Historia</span>
+              <h3><a href="AfroUp Articulo.html">Quilombos y palenques: territorios de libertad</a></h3>
+              <p class="dek">Cómo las comunidades cimarronas construyeron autonomía y memoria en toda Abya Yala — y por qué siguen siendo un mapa para el presente.</p>
+              <div class="meta"><span class="av"></span> Jenniffer M. · 8 min de lectura</div>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="ph t-cian"><span class="lbl">foto · tambores</span></div>
+            <div class="body">
+              <span class="tag c-estetica"><span class="sq"></span> Estética</span>
+              <h3>Las raíces del bullerengue en el Pacífico</h3>
+              <p class="dek">El tambor como archivo vivo de la resistencia femenina afrocolombiana.</p>
+              <div class="meta"><span class="av"></span> Equipo AfroUp · 6 min</div>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="ph t-azul"><span class="lbl">ilustración</span></div>
+            <div class="body">
+              <span class="tag c-actualidad"><span class="sq"></span> Actualidad</span>
+              <h3>Afrofuturismo: imaginar el mañana</h3>
+              <p class="dek">Arte, ciencia ficción y diáspora: futuros donde lo negro es protagonista.</p>
+              <div class="meta"><span class="av"></span> Jenniffer M. · 5 min</div>
+            </div>
+          </article>
+
+          <!-- video -->
+          <article class="card">
+            <div class="ph t-azul" style="aspect-ratio:16/10;"><span class="lbl">video · 6:20</span><div class="play"><span><svg><use href="#ic-play"/></svg></span></div></div>
+            <div class="body">
+              <span class="tag c-actualidad"><span class="sq"></span> Video · Actualidad</span>
+              <h3>Voces de la diáspora</h3>
+              <p class="dek">Cinco generaciones cuentan qué significa ser afrolatino hoy.</p>
+              <div class="meta"><span class="av"></span> AfroUp TV · 6 min</div>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="ph t-cian"><span class="lbl">retrato</span></div>
+            <div class="body">
+              <span class="tag c-diaspora"><span class="sq"></span> Diáspora</span>
+              <h3>Trenzas como mapas de resistencia</h3>
+              <p class="dek">La historia oculta tejida en los peinados ancestrales.</p>
+              <div class="meta"><span class="av"></span> Equipo AfroUp · 7 min</div>
+            </div>
+          </article>
+
+          <!-- quote -->
+          <div class="quote span2">
+            <div class="pat"></div>
+            <q>La memoria también es un acto de resistencia.</q>
+            <div style="margin-top:14px;color:#b9b3a4;font-weight:700;">— Editorial AfroUp</div>
+          </div>
+        </div>
+
+        <!-- RAIL -->
+        <aside class="rail">
+          <div class="panel">
+            <h4>Lo más leído</h4>
+            <div class="read"><span class="n">1</span><div class="t">Quilombos y palenques: territorios de libertad<small>Historia</small></div></div>
+            <div class="read"><span class="n">2</span><div class="t">Las raíces del bullerengue en el Pacífico<small>Estética</small></div></div>
+            <div class="read"><span class="n">3</span><div class="t">Afrofuturismo: imaginar el mañana<small>Actualidad</small></div></div>
+            <div class="read"><span class="n">4</span><div class="t">Lenguas criollas de la diáspora<small>África</small></div></div>
+          </div>
+
+          <div class="panel news">
+            <h4>Sé parte de la comunidad</h4>
+            <p style="margin:0;font-size:14.5px;">Recibe lo mejor de AfroUp cada semana.</p>
+            <input type="email" placeholder="tu@correo.com" />
+            <button class="btn btn-primary btn-block btn-sm">Suscribirme</button>
+          </div>
+
+          <div class="panel">
+            <div style="display:flex;align-items:center;gap:9px;margin-bottom:6px;"><svg class="ic" style="width:20px;height:20px;color:var(--ink)"><use href="#ic-ig"/></svg><h4 style="margin:0">@afroup</h4></div>
+            <div class="igrid">
+              <div class="ph pat"></div><div class="ph t-cian"></div><div class="ph t-oro"></div>
+              <div class="ph t-azul"></div><div class="ph pat"></div><div class="ph t-cian"></div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="foot">
+      <div class="pat"></div>
+      <div class="wrap"><div class="inner">
+        <div class="top">
+          <img src="assets/logo-white.png" alt="AfroUp" />
+          <button class="btn btn-oro"><svg class="ic" style="width:18px;height:18px"><use href="#ic-heart"/></svg> Haz tu Donación</button>
+        </div>
+        <div class="cols">
+          <div><h5>Aprende</h5><ul><li><a href="AfroUp Categoria Africa.html">África</a></li><li><a href="AfroUp Categoria Africa.html">Diáspora</a></li><li><a href="AfroUp Categoria Africa.html">Antirracismo</a></li><li><a href="AfroUp Categoria Africa.html">Historia</a></li><li><a href="AfroUp Categoria Africa.html">Estética</a></li><li><a href="AfroUp Categoria Africa.html">Actualidad</a></li></ul></div>
+          <div><h5>AfroUp</h5><ul><li><a href="AfroUp Tienda.html">Tienda</a></li><li><a href="AfroUp Recursos.html">Recursos</a></li><li><a href="AfroUp Nosotros.html">Nosotros</a></li><li><a href="AfroUp Contacto.html">Contacto</a></li><li><a href="AfroUp Apoyanos.html">Apóyanos</a></li></ul></div>
+          <div><h5>Comunidad</h5><ul><li><a href="AfroUp Proyectos.html">Proyectos</a></li><li><a href="AfroUp Emprendedores.html">Emprendedores</a></li><li><a href="AfroUp Referentes.html">Referentes</a></li><li><a href="AfroUp Colabora.html">Colabora</a></li></ul></div>
+          <div><h5>Contáctanos</h5><ul><li><a href="AfroUp Contacto.html">hello@afroup.org</a></li><li><a href="AfroUp Contacto.html">+57 320 7146</a></li></ul></div>
+          <div><h5>Síguenos</h5><ul><li><a>Instagram</a></li><li><a>TikTok</a></li><li><a>YouTube</a></li><li><a>Facebook</a></li></ul></div>
+        </div>
+      </div></div>
+    </footer>
+  </div>
+
+  <!-- MOBILE TAB BAR -->
+  <nav class="mtab">
+    <a class="on"><svg class="ic"><use href="#ic-home"/></svg> Inicio</a>
+    <a href="AfroUp Busqueda.html"><svg class="ic"><use href="#ic-search"/></svg> Buscar</a>
+    <a href="AfroUp Tienda.html"><svg class="ic"><use href="#ic-bag"/></svg> Tienda</a>
+    <a><svg class="ic"><use href="#ic-bookmark"/></svg> Guardados</a>
+    <a href="AfroUp Donacion.html"><svg class="ic"><use href="#ic-heart"/></svg> Donar</a>
+  </nav>
+</div>
+
+<script>
+  // chip toggle
+  document.querySelectorAll('.chip').forEach(c => c.addEventListener('click', () => {
+    document.querySelectorAll('.chip').forEach(x => x.classList.remove('on')); c.classList.add('on');
+  }));
+</script>
+<script src="drawer.js"></script>
+</body>
+</html>

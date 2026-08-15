@@ -1,0 +1,7 @@
+# Local Pi runtime state
+.atl/
+
+# Local secrets and Worker runtime
+.dev.vars
+.wrangler/
+node_modules/

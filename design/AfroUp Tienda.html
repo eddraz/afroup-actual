@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AfroUp — Tienda</title>
+<link rel="icon" href="assets/mark-black.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Mulish:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="brand-site.css" />
+<link rel="stylesheet" href="site-pages.css" />
+<style>
+  .cartfab{ position:fixed; right:22px; bottom:22px; z-index:40; }
+  @media (max-width:980px){ .cartfab{ bottom:84px; } }
+  .cartfab a{ display:flex; align-items:center; gap:9px; background:var(--ink); color:var(--cream); border-radius:999px; padding:13px 20px; font-family:var(--disp); font-weight:700; box-shadow:var(--shadow-lg); }
+  .cartfab .ct{ background:var(--cian); color:#063b42; border-radius:999px; font-size:12.5px; padding:2px 9px; font-weight:800; }
+</style>
+</head>
+<body data-active="tienda">
+<main class="content">
+  <div class="wrap" style="padding-bottom:46px;">
+    <div class="bread"><a href="AfroUp Home (diseño).html">Inicio</a><span>/</span><a>Tienda</a></div>
+
+    <header class="phero cian">
+      <div class="patside"></div>
+      <span class="ey">Tienda AfroUp</span>
+      <h1>Conocimiento que también sostiene</h1>
+      <p class="lead">eBooks, láminas y merch con propósito — cada compra financia contenido libre para la diáspora.</p>
+    </header>
+
+    <!-- featured -->
+    <div class="feed" style="margin-top:28px;">
+      <article class="card feat span2">
+        <div class="ph pat"></div>
+        <div class="body">
+          <span class="tag c-historia"><span class="sq"></span> Destacado · eBook</span>
+          <h3><a href="AfroUp Producto.html">Raíces: historia afro de Abya Yala</a></h3>
+          <p class="dek">Quinientos años de historia contados desde la diáspora: de los reinos africanos a los palenques y al presente. PDF + EPUB.</p>
+          <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+            <span class="price" style="font-size:26px;">US$ 12 <span class="strike">US$ 18</span></span>
+            <a class="btn btn-primary" href="AfroUp Producto.html">Ver producto <svg class="ic" style="width:16px;height:16px"><use href="#ic-arrow"/></svg></a>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <div class="chips" style="margin-top:28px;">
+      <button class="chip on">Todos</button>
+      <button class="chip">eBooks</button>
+      <button class="chip">Láminas</button>
+      <button class="chip">Merch</button>
+      <button class="chip">Descargables</button>
+    </div>
+
+    <div class="grid4" style="margin-top:22px;">
+      <article class="card pcard">
+        <a href="AfroUp Producto.html"><div class="ph pat"></div></a>
+        <div class="body">
+          <span class="tag c-historia"><span class="sq"></span> eBook</span>
+          <h3><a href="AfroUp Producto.html">Raíces: historia afro de Abya Yala</a></h3>
+          <div class="buy"><span class="price">US$ 12</span><a class="btn btn-primary btn-sm" href="AfroUp Carrito.html">Añadir</a></div>
+        </div>
+      </article>
+      <article class="card pcard">
+        <a href="AfroUp Producto.html"><div class="ph t-azul"><span class="lbl">portada</span></div></a>
+        <div class="body">
+          <span class="tag c-actualidad"><span class="sq"></span> eBook</span>
+          <h3><a href="AfroUp Producto.html">Afrofuturismo latinoamericano</a></h3>
+          <div class="buy"><span class="price">US$ 9</span><a class="btn btn-primary btn-sm" href="AfroUp Carrito.html">Añadir</a></div>
+        </div>
+      </article>
+      <article class="card pcard">
+        <a href="AfroUp Producto.html"><div class="ph t-oro"><span class="lbl">lámina · nzinga</span></div></a>
+        <div class="body">
+          <span class="tag c-anti"><span class="sq"></span> Lámina</span>
+          <h3><a href="AfroUp Producto.html">Lámina · Reina Nzinga</a></h3>
+          <div class="buy"><span class="price">US$ 18</span><a class="btn btn-primary btn-sm" href="AfroUp Carrito.html">Añadir</a></div>
+        </div>
+      </article>
+      <article class="card pcard">
+        <a href="AfroUp Producto.html"><div class="ph t-cian"><span class="lbl">camiseta</span></div></a>
+        <div class="body">
+          <span class="tag c-diaspora"><span class="sq"></span> Merch</span>
+          <h3><a href="AfroUp Producto.html">Camiseta “Conocimiento = poder”</a></h3>
+          <div class="buy"><span class="price">US$ 22</span><a class="btn btn-primary btn-sm" href="AfroUp Carrito.html">Añadir</a></div>
+        </div>
+      </article>
+      <article class="card pcard">
+        <a href="AfroUp Producto.html"><div class="ph t-oro"><span class="lbl">stickers</span></div></a>
+        <div class="body">
+          <span class="tag c-estetica"><span class="sq"></span> Merch</span>
+          <h3><a href="AfroUp Producto.html">Set de stickers Palenque</a></h3>
+          <div class="buy"><span class="price">US$ 8</span><a class="btn btn-primary btn-sm" href="AfroUp Carrito.html">Añadir</a></div>
+        </div>
+      </article>
+      <article class="card pcard">
+        <a href="AfroUp Producto.html"><div class="ph t-azul"><span class="lbl">tote bag</span></div></a>
+        <div class="body">
+          <span class="tag c-africa"><span class="sq"></span> Merch</span>
+          <h3><a href="AfroUp Producto.html">Tote “Diáspora”</a></h3>
+          <div class="buy"><span class="price">US$ 15</span><a class="btn btn-primary btn-sm" href="AfroUp Carrito.html">Añadir</a></div>
+        </div>
+      </article>
+      <article class="card pcard">
+        <a href="AfroUp Producto.html"><div class="ph t-cian"><span class="lbl">PDF</span></div></a>
+        <div class="body">
+          <span class="tag c-actualidad"><span class="sq"></span> Descargable</span>
+          <h3><a href="AfroUp Producto.html">Guía: cine afrolatino</a></h3>
+          <div class="buy"><span class="price free">Gratis</span><a class="btn btn-cian btn-sm" href="AfroUp Producto.html"><svg class="ic" style="width:15px;height:15px"><use href="#ic-dl"/></svg> Bajar</a></div>
+        </div>
+      </article>
+      <article class="card pcard">
+        <a href="AfroUp Producto.html"><div class="ph t-oro"><span class="lbl">póster</span></div></a>
+        <div class="body">
+          <span class="tag c-historia"><span class="sq"></span> Lámina</span>
+          <h3><a href="AfroUp Producto.html">Mapa de la diáspora (A2)</a></h3>
+          <div class="buy"><span class="price">US$ 20</span><a class="btn btn-primary btn-sm" href="AfroUp Carrito.html">Añadir</a></div>
+        </div>
+      </article>
+    </div>
+
+    <div class="band cian">
+      <div><h3>Descargables gratuitos</h3><p>Guías y recursos libres para captar, aprender y compartir.</p></div>
+      <a class="btn btn-primary" href="AfroUp Recursos.html">Ver recursos <svg class="ic" style="width:16px;height:16px"><use href="#ic-arrow"/></svg></a>
+    </div>
+  </div>
+
+  <div class="cartfab"><a href="AfroUp Carrito.html"><svg class="ic" style="width:19px;height:19px"><use href="#ic-bag"/></svg> Carrito <span class="ct">2</span></a></div>
+</main>
+<script src="site.js"></script>
+<script src="drawer.js"></script>
+</body>
+</html>

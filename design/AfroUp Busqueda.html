@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AfroUp — Búsqueda</title>
+<link rel="icon" href="assets/mark-black.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Mulish:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="brand-site.css" />
+<link rel="stylesheet" href="site-pages.css" />
+<style>
+  .bigsearch{ display:flex; align-items:center; gap:14px; background:var(--paper); border:2px solid var(--ink); border-radius:999px; padding:16px 24px; margin-top:30px; box-shadow:var(--shadow); }
+  .bigsearch input{ flex:1; border:0; background:transparent; font-family:var(--text); font-size:18px; font-weight:600; color:var(--ink); outline:none; }
+  .bigsearch .ic{ width:22px; height:22px; color:var(--muted); }
+  .rescount{ color:var(--muted); font-weight:700; font-size:14px; margin:22px 0 14px; }
+  .rescount b{ color:var(--ink); }
+</style>
+</head>
+<body data-active="buscar">
+<main class="content">
+  <div class="wrap" style="padding-bottom:46px;">
+    <form class="bigsearch" action="AfroUp Busqueda.html">
+      <svg class="ic"><use href="#ic-search"/></svg>
+      <input type="search" name="q" value="palenques" />
+      <button class="btn btn-primary btn-sm">Buscar</button>
+    </form>
+
+    <div class="chips" style="margin-top:18px;">
+      <button class="chip on">Todo</button>
+      <button class="chip">Artículos</button>
+      <button class="chip">Tienda</button>
+      <button class="chip">Recursos</button>
+      <button class="chip">Proyectos</button>
+    </div>
+
+    <p class="rescount"><b>14 resultados</b> para “palenques”</p>
+
+    <div class="rows">
+      <a class="srow" href="AfroUp Articulo.html">
+        <div class="ph t-oro"><span class="lbl">grabado</span></div>
+        <div>
+          <span class="tag c-historia"><span class="sq"></span> Artículo · Historia</span>
+          <h3>Quilombos y palenques: territorios de libertad</h3>
+          <p class="dek">Cómo las comunidades cimarronas construyeron autonomía, lengua y memoria en toda Abya Yala…</p>
+          <div class="meta">Jenniffer M. · 12 mar 2026 · 8 min</div>
+        </div>
+        <div class="endcol"><svg class="ic" style="width:20px;height:20px;color:var(--muted)"><use href="#ic-arrow"/></svg></div>
+      </a>
+
+      <a class="srow" href="AfroUp Articulo.html">
+        <div class="ph t-cian"><span class="lbl">retrato</span></div>
+        <div>
+          <span class="tag c-diaspora"><span class="sq"></span> Artículo · Diáspora</span>
+          <h3>San Basilio de Palenque: la lengua que sobrevivió</h3>
+          <p class="dek">El criollo palenquero, patrimonio vivo de la resistencia afrocolombiana.</p>
+          <div class="meta">Equipo AfroUp · 28 feb 2026 · 6 min</div>
+        </div>
+        <div class="endcol"><svg class="ic" style="width:20px;height:20px;color:var(--muted)"><use href="#ic-arrow"/></svg></div>
+      </a>
+
+      <a class="srow" href="AfroUp Producto.html">
+        <div class="ph pat"></div>
+        <div>
+          <span class="tag c-anti"><span class="sq"></span> Tienda · eBook</span>
+          <h3>Raíces: historia afro de Abya Yala</h3>
+          <p class="dek">Capítulo 4 dedicado a los palenques del Gran Caribe. PDF + EPUB.</p>
+          <div class="meta">⭐ 4.9 (38)</div>
+        </div>
+        <div class="endcol"><span class="price">US$ 12</span></div>
+      </a>
+
+      <a class="srow" href="AfroUp Recursos.html">
+        <div class="ph t-azul"><span class="lbl">PDF</span></div>
+        <div>
+          <span class="tag c-actualidad"><span class="sq"></span> Recurso · Guía PDF</span>
+          <h3>Guía docente: cimarronaje en el aula</h3>
+          <p class="dek">Actividades y fuentes primarias para secundaria. Descarga gratuita.</p>
+          <div class="meta">PDF · 24 págs · Gratis</div>
+        </div>
+        <div class="endcol"><button class="btn btn-cian btn-sm"><svg class="ic" style="width:16px;height:16px"><use href="#ic-dl"/></svg> Descargar</button></div>
+      </a>
+
+      <a class="srow" href="AfroUp Proyecto (detalle).html">
+        <div class="ph t-oro"><span class="lbl">foto · taller</span></div>
+        <div>
+          <span class="tag c-estetica"><span class="sq"></span> Proyecto · Comunidad</span>
+          <h3>Memoria viva: rutas del cimarronaje</h3>
+          <p class="dek">Proyecto comunitario de cartografía histórica en el Caribe colombiano.</p>
+          <div class="meta">En curso · Cartagena, Colombia</div>
+        </div>
+        <div class="endcol"><svg class="ic" style="width:20px;height:20px;color:var(--muted)"><use href="#ic-arrow"/></svg></div>
+      </a>
+    </div>
+
+    <div style="text-align:center;margin-top:30px;"><button class="btn btn-ghost">Cargar más resultados</button></div>
+  </div>
+</main>
+<script src="site.js"></script>
+<script src="drawer.js"></script>
+<script>
+  // refleja la consulta enviada desde la caja de búsqueda de cualquier página
+  (function(){
+    var q = new URLSearchParams(location.search).get('q');
+    if (q) {
+      document.querySelector('.bigsearch input').value = q;
+      var rc = document.querySelector('.rescount');
+      if (rc) rc.innerHTML = '<b>14 resultados</b> para “' + q.replace(/</g,'&lt;') + '”';
+    }
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AfroUp — Colabora</title>
+<link rel="icon" href="assets/mark-black.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Mulish:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="brand-site.css" />
+<link rel="stylesheet" href="site-pages.css" />
+<style>
+  .roles{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-top:28px; }
+  @media (max-width:980px){ .roles{ grid-template-columns:repeat(2,1fr); } }
+  .role-c{ background:var(--paper); border-radius:16px; padding:20px; box-shadow:var(--shadow); text-align:center; }
+  .role-c .icw{ width:46px; height:46px; border-radius:50%; margin:0 auto 10px; display:flex; align-items:center; justify-content:center; }
+  .role-c h3{ font-size:17px; } .role-c p{ margin:5px 0 0; color:var(--muted); font-size:13px; line-height:1.5; }
+  .colab-form{ max-width:680px; margin:34px auto 0; }
+</style>
+</head>
+<body data-active="comunidad">
+<main class="content">
+  <div class="wrap" style="padding-bottom:46px;">
+    <div class="bread"><a href="AfroUp Home (diseño).html">Inicio</a><span>/</span><a href="AfroUp Proyectos.html">Comunidad</a><span>/</span><a>Colabora</a></div>
+
+    <header class="phero cian">
+      <div class="patside"></div>
+      <span class="ey">Colabora</span>
+      <h1>AfroUp se construye en comunidad</h1>
+      <p class="lead">Aporta tu talento: cada artículo, traducción o ilustración amplía el acceso al conocimiento afro.</p>
+    </header>
+
+    <div class="roles">
+      <div class="role-c"><div class="icw" style="background:var(--cian-soft);color:#0d97a6;"><svg class="ic" style="width:21px;height:21px"><use href="#ic-book2"/></svg></div><h3>Escribe</h3><p>Artículos, reseñas y crónicas sobre cultura afro.</p></div>
+      <div class="role-c"><div class="icw" style="background:var(--oro-soft);color:#b97e00;"><svg class="ic" style="width:21px;height:21px"><use href="#ic-share"/></svg></div><h3>Traduce</h3><p>Lleva el contenido a EN, PT y FR para toda la diáspora.</p></div>
+      <div class="role-c"><div class="icw" style="background:var(--azul-soft);color:var(--azul);"><svg class="ic" style="width:21px;height:21px"><use href="#ic-search"/></svg></div><h3>Investiga</h3><p>Fuentes, archivo y verificación de datos.</p></div>
+      <div class="role-c"><div class="icw" style="background:var(--cian-soft);color:#0d97a6;"><svg class="ic" style="width:21px;height:21px"><use href="#ic-play"/></svg></div><h3>Crea</h3><p>Ilustración, video y diseño para los contenidos.</p></div>
+    </div>
+
+    <form class="panel colab-form" onsubmit="return false">
+      <h4 style="font-size:21px;">Cuéntanos de ti</h4>
+      <div class="fgrid" style="margin-top:8px;">
+        <div class="field"><label>Nombre</label><input type="text" placeholder="Tu nombre" /></div>
+        <div class="field"><label>Correo</label><input type="email" placeholder="tu@correo.com" /></div>
+      </div>
+      <div class="field" style="margin-top:18px;"><label>Quiero colaborar como…</label>
+        <select><option>Escritor/a</option><option>Traductor/a</option><option>Investigador/a</option><option>Ilustrador/a · Diseño</option><option>Video · Audio</option><option>Otro</option></select>
+      </div>
+      <div class="field" style="margin-top:18px;"><label>Cuéntanos sobre tu experiencia o idea</label><textarea placeholder="Enlaces a tu trabajo, tema que te interesa…"></textarea></div>
+      <button class="btn btn-primary" style="margin-top:18px;">Enviar postulación <svg class="ic" style="width:16px;height:16px"><use href="#ic-arrow"/></svg></button>
+      <p style="margin:12px 0 0;color:var(--muted);font-size:12.5px;">Te respondemos en menos de 72 horas. Las colaboraciones publicadas se remuneran.</p>
+    </form>
+  </div>
+</main>
+<script src="site.js"></script>
+<script src="drawer.js"></script>
+</body>
+</html>

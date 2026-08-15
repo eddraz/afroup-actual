@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AfroUp — Revisión de ayudas</title>
+<link rel="icon" href="assets/mark-black.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Mulish:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="brand-site.css" />
+<link rel="stylesheet" href="site-pages.css" />
+<style>
+  .admin-table{ width:100%; border-collapse:collapse; }
+  .admin-table th,.admin-table td{ text-align:left; vertical-align:top; padding:12px 10px; border-bottom:1px solid var(--line); font-size:14px; }
+  .admin-table th{ font-size:12.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+  .status{ display:inline-flex; border-radius:999px; padding:4px 10px; font-size:12px; font-weight:800; }
+  .status.pending{ background:var(--oro-soft); color:#7a5c08; }
+  .status.published{ background:var(--cian-soft); color:#0a5560; }
+  .status.rejected{ background:#f3d6d6; color:#9b2c2c; }
+  .actions{ display:flex; gap:8px; flex-wrap:wrap; }
+  .editor{ display:none; margin-top:18px; }
+  .editor.open{ display:block; }
+  .msg{ margin-top:14px; font-weight:700; font-size:14.5px; }
+  .msg.ok{ color:#0a5560; }
+  .msg.err{ color:#9b2c2c; }
+  .hidden{ display:none; }
+  .empty{ color:var(--muted); font-size:14.5px; padding:8px 0 4px; }
+</style>
+</head>
+<body data-active="admin">
+<main class="content">
+  <div class="wrap" style="padding-bottom:46px;">
+    <div class="bread"><a href="/">Inicio</a><span>/</span><a href="/admin">Revisión</a></div>
+
+    <header class="phero ink">
+      <div class="patside"></div>
+      <span class="ey">Administración</span>
+      <h1>Revisar información de ayuda</h1>
+      <p class="lead">Inicia sesión para revisar envíos, editar datos y publicar solo la información verificada.</p>
+    </header>
+
+    <section class="panel" id="login-panel" style="margin-top:24px;max-width:520px;">
+      <h4>Ingreso</h4>
+      <form id="login-form">
+        <div class="field">
+          <label for="username">Usuario</label>
+          <input id="username" name="username" type="text" autocomplete="username" required />
+        </div>
+        <div class="field" style="margin-top:18px;">
+          <label for="password">Contraseña</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" required />
+        </div>
+        <button class="btn btn-primary" type="submit" style="margin-top:18px;">Entrar</button>
+        <p class="msg" id="login-msg" hidden></p>
+      </form>
+    </section>
+
+    <section class="hidden" id="dashboard">
+      <div class="sec-head">
+        <h2>Envíos</h2>
+            <div class="actions">
+              <a class="btn btn-ghost btn-sm" href="/admin/password">Cambiar contraseña</a>
+        <button class="btn btn-ghost btn-sm" id="logout-btn" type="button">Cerrar sesión</button>
+            </div>
+      </div>
+      <div class="chips" id="status-chips">
+        <button class="chip on" type="button" data-status="pending">Pendientes</button>
+        <button class="chip" type="button" data-status="published">Publicados</button>
+        <button class="chip" type="button" data-status="rejected">Rechazados</button>
+        <button class="chip" type="button" data-status="all">Todos</button>
+      </div>
+      <div class="panel" style="margin-top:18px;overflow-x:auto;">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Título</th>
+              <th>Departamento</th>
+              <th>Estado</th>
+              <th>Contacto</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="entries-body"></tbody>
+        </table>
+        <p class="empty" id="empty-msg" hidden>No hay registros en este filtro.</p>
+      </div>
+
+      <form class="panel editor" id="editor">
+        <h4>Editar registro</h4>
+        <input type="hidden" id="edit-id" />
+        <div class="fgrid">
+          <div class="field">
+            <label for="edit-department">Departamento</label>
+            <select id="edit-department" required></select>
+          </div>
+          <div class="field">
+            <label for="edit-status">Estado</label>
+            <select id="edit-status">
+              <option value="pending">Pendiente</option>
+              <option value="published">Publicado</option>
+              <option value="rejected">Rechazado</option>
+            </select>
+          </div>
+        </div>
+        <div class="field" style="margin-top:18px;">
+          <label for="edit-title">Título</label>
+          <input id="edit-title" type="text" required />
+        </div>
+        <div class="field" style="margin-top:18px;">
+          <label for="edit-summary">Resumen</label>
+          <input id="edit-summary" type="text" />
+        </div>
+        <div class="field" style="margin-top:18px;">
+          <label for="edit-body">Descripción</label>
+          <textarea id="edit-body"></textarea>
+        </div>
+        <div class="fgrid" style="margin-top:18px;">
+          <div class="field">
+            <label for="edit-location">Lugar</label>
+            <input id="edit-location" type="text" />
+          </div>
+          <div class="field">
+            <label for="edit-category">Categoría</label>
+            <input id="edit-category" type="text" />
+          </div>
+        </div>
+        <div class="fgrid" style="margin-top:18px;">
+          <div class="field">
+            <label for="edit-contact-name">Nombre de contacto</label>
+            <input id="edit-contact-name" type="text" />
+          </div>
+          <div class="field">
+            <label for="edit-contact-phone">Teléfono</label>
+            <input id="edit-contact-phone" type="text" />
+          </div>
+        </div>
+        <div class="fgrid" style="margin-top:18px;">
+          <div class="field">
+            <label for="edit-contact-email">Correo</label>
+            <input id="edit-contact-email" type="email" />
+          </div>
+          <div class="field">
+            <label for="edit-source">Fuente</label>
+            <input id="edit-source" type="text" />
+          </div>
+        </div>
+        <div class="actions" style="margin-top:18px;">
+          <button class="btn btn-primary" type="submit">Guardar cambios</button>
+          <button class="btn btn-cian" type="button" id="publish-btn">Publicar</button>
+          <button class="btn btn-ghost" type="button" id="reject-btn">Rechazar</button>
+        </div>
+        <p class="msg" id="edit-msg" hidden></p>
+      </form>
+    </section>
+  </div>
+</main>
+<script src="site.js"></script>
+<script src="drawer.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>

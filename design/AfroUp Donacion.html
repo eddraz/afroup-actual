@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AfroUp — Haz tu Donación</title>
+<link rel="icon" href="assets/mark-black.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Mulish:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="brand-site.css" />
+<link rel="stylesheet" href="site-pages.css" />
+<style>
+  .don-layout{ display:grid; grid-template-columns:1fr 420px; gap:34px; align-items:start; margin-top:30px; }
+  @media (max-width:1100px){ .don-layout{ grid-template-columns:1fr; } }
+  .impact{ display:flex; gap:14px; align-items:flex-start; padding:16px 0; border-top:1px solid var(--line); }
+  .impact:first-of-type{ border-top:0; }
+  .impact .icw{ flex:none; width:46px; height:46px; border-radius:14px; display:flex; align-items:center; justify-content:center; }
+  .impact h3{ font-size:18px; } .impact p{ margin:4px 0 0; color:var(--muted); font-size:14.5px; line-height:1.55; }
+  .doncard{ position:sticky; top:90px; }
+  .methods{ display:flex; gap:8px; flex-wrap:wrap; margin-top:14px; }
+  .methods span{ border:1.5px solid var(--line); border-radius:999px; padding:5px 13px; font-size:12.5px; font-weight:800; color:var(--muted); }
+</style>
+</head>
+<body data-active="">
+<main class="content">
+  <div class="wrap" style="padding-bottom:46px;">
+    <div class="bread"><a href="AfroUp Home (diseño).html">Inicio</a><span>/</span><a>Haz tu Donación</a></div>
+
+    <header class="phero ink">
+      <div class="patside"></div>
+      <span class="ey">Apóyanos</span>
+      <h1>Tu apoyo sostiene el conocimiento</h1>
+      <p class="lead">AfroUp es independiente y de acceso libre. Cada aporte financia investigación, autores afro y contenido educativo gratuito para toda la diáspora.</p>
+    </header>
+
+    <div class="don-layout">
+      <section>
+        <h2 style="font-size:26px;margin-bottom:10px;">¿Qué hace posible tu donación?</h2>
+        <div class="impact">
+          <div class="icw" style="background:var(--cian-soft);"><svg class="ic" style="width:22px;height:22px;color:#0d97a6"><use href="#ic-book2"/></svg></div>
+          <div><h3>Contenido libre y riguroso</h3><p>Artículos, guías y videos educativos sin muros de pago, revisados con fuentes y disponibles en español e inglés.</p></div>
+        </div>
+        <div class="impact">
+          <div class="icw" style="background:var(--oro-soft);"><svg class="ic" style="width:22px;height:22px;color:#b97e00"><use href="#ic-users"/></svg></div>
+          <div><h3>Autores y voces afro</h3><p>Pagamos a investigadores, escritores e ilustradores de la comunidad por su trabajo.</p></div>
+        </div>
+        <div class="impact">
+          <div class="icw" style="background:var(--azul-soft);"><svg class="ic" style="width:22px;height:22px;color:var(--azul)"><use href="#ic-pin"/></svg></div>
+          <div><h3>Proyectos en territorio</h3><p>Bibliotecas itinerantes, talleres y cartografías de memoria con comunidades en Colombia y la región.</p></div>
+        </div>
+        <div class="band ink" style="margin-top:26px;">
+          <div><h3>Transparencia</h3><p>Publicamos un reporte anual de cómo usamos cada aporte.</p></div>
+          <a class="btn btn-cian" href="AfroUp Nosotros.html">Conócenos</a>
+        </div>
+      </section>
+
+      <aside class="panel doncard">
+        <h4 style="font-size:22px;">Haz tu Donación</h4>
+        <div class="seg" style="margin:6px 0 16px;">
+          <button class="on">Única</button>
+          <button>Mensual</button>
+        </div>
+        <div class="amounts">
+          <button class="amt">US$ 5</button>
+          <button class="amt on">US$ 10</button>
+          <button class="amt">US$ 25</button>
+          <button class="amt">US$ 50</button>
+        </div>
+        <div class="field" style="margin-top:14px;">
+          <label>Otro monto</label>
+          <input type="text" placeholder="US$ —" />
+        </div>
+        <a class="btn btn-oro btn-block" style="margin-top:18px;" href="#"><svg class="ic" style="width:18px;height:18px"><use href="#ic-heart"/></svg> Donar US$ 10</a>
+        <div class="methods"><span>Tarjeta</span><span>PayPal</span><span>Nequi</span><span>PSE</span></div>
+        <p style="margin:14px 0 0;color:var(--muted);font-size:12.5px;">🔒 Pago seguro. Recibirás un comprobante por correo.</p>
+      </aside>
+    </div>
+  </div>
+</main>
+<script src="site.js"></script>
+<script src="drawer.js"></script>
+</body>
+</html>

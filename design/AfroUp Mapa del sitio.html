@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AfroUp — Mapa del sitio (diseño)</title>
+<link rel="icon" href="assets/mark-black.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Mulish:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="brand-site.css" />
+<link rel="stylesheet" href="site-pages.css" />
+<style>
+  .hub-wrap{ max-width:1100px; margin:0 auto; padding:40px 28px 70px; }
+  .hub-head{ display:flex; align-items:center; gap:18px; flex-wrap:wrap; }
+  .hub-head img{ height:38px; }
+  .hub-head .v{ font-family:var(--disp); font-weight:700; color:var(--azul); font-size:15px; background:var(--azul-soft); border-radius:999px; padding:5px 14px; }
+  .hub-sec{ margin-top:34px; }
+  .hub-sec h2{ font-size:21px; display:flex; align-items:center; gap:10px; }
+  .hub-sec h2 .sq{ width:11px; height:11px; border-radius:4px; }
+  .hub-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:14px; }
+  @media (max-width:980px){ .hub-grid{ grid-template-columns:repeat(2,1fr); } }
+  @media (max-width:620px){ .hub-grid{ grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<template id="__bundler_thumbnail" data-bg-color="#FBF5E9">
+  <svg viewBox="0 0 120 84" xmlns="http://www.w3.org/2000/svg">
+    <rect x="48" y="18" width="24" height="14" rx="4" fill="#0A79A6"></rect>
+    <path d="M60 32v8M36 48v-4q0-4 4-4h40q4 0 4 4v4" stroke="#17150F" stroke-width="2.5" fill="none" stroke-linecap="round"></path>
+    <rect x="24" y="48" width="24" height="14" rx="4" fill="#18D2E2"></rect>
+    <rect x="48" y="48" width="24" height="14" rx="4" fill="#F5C03A"></rect>
+    <rect x="72" y="48" width="24" height="14" rx="4" fill="#17150F"></rect>
+  </svg>
+</template>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="ic-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+</defs></svg>
+
+<div style="height:10px;background:url('assets/pattern.png') left/280px;"></div>
+<div class="hub-wrap">
+  <div class="hub-head">
+    <img src="assets/logo-black.png" alt="AfroUp" />
+    <h1 style="font-size:30px;">Mapa del sitio · Diseño</h1>
+    <span class="v">19 pantallas</span>
+  </div>
+  <p style="color:var(--muted);font-size:15px;max-width:60ch;margin:10px 0 0;">Todas las páginas del diseño en alta fidelidad, enlazadas entre sí. Haz clic para navegar — también puedes recorrer el sitio con su propia navegación (sidebar, footer y botones).</p>
+
+  <section class="hub-sec">
+    <h2><span class="sq" style="background:var(--cian)"></span> Núcleo</h2>
+    <div class="hub-grid">
+      <a class="hub-card" href="AfroUp Home (diseño).html"><div><h3>Landing / Inicio</h3><p>Feed con hero "Tema del mes"</p></div><span class="go"><svg class="ic" style="width:16px;height:16px"><use href="#ic-arrow"/></svg></span></a>
+      <a class="hub-card" href="AfroUp Busqueda.html"><div><h3>Resultados de búsqueda</h3><p>Resultados mixtos + filtros</p></div><span class="go"><svg class="ic" style="width:16px;height:16px"><use href="#ic-arrow"/></svg></span></a>
+      <a class="hub-card" href="AfroUp Categoria Africa.html"><div><h3>Categoría · África</h3><p>Hero azul + subfiltros + grilla</p></div><span class="go"><svg class="ic" style="width:16px;height:16px"><use href="#ic-arrow"/></svg></span></a>
+      <a class="hub-card" href="AfroUp Articulo.html"><div><h3>Artículo</h3><p>Lectura: quilombos y palenques</p></div><span class="go"><svg class="ic" style="width:16px;height:16px"><use href="#ic-arrow"/></svg></span></a>
+      <a class="hub-card" href="AfroUp Donacion.html"><div><h3>Donación</h3><p>Montos + impacto + métodos</p></div><span class="go"><svg class="ic" style="width:16px;height:16px"><use href="#ic-arrow"/></svg></span></a>
+    </div>
+  </section>
+
+  <section class="hub-sec">
+    <h2><span class="sq" style="background:var(--oro)"></span> Tienda</h2>
+    <div class="hub-grid">
+      <a class="hub-card" href="AfroUp Tienda.html"><div><h3>Tienda</h3><p>Catálogo + destacado + filtros</p></div><span class="go"><svg class="ic" style="width:16px;height:16px"><use href="#ic-arrow"/></svg></span></a>
+      <a class="hub-card" href="AfroUp Producto.html"><div><h3>Detalle de producto</h3><p>eBook "Raíces" · galería + compra</p></div><span class="go"><svg class="ic" style="width:16px;height:16px"><use href="#ic-arrow"/></svg></span></a>
+      <a class="hub-card" href="AfroUp Carrito.html"><div><h3>Carro de compras</h3><p>3 artículos + resumen</p></div><span class="go"><svg class="ic" style="width:16px;height:16px"><use href="#ic-arrow"/></svg></span></a>
+    </div>
+  </section>
+
+  <section class="hub-sec">
+    <h2><span class="sq" style="background:var(--azul)"></span> Comunidad</h2>
+    <div class="hub-grid">
+      <a class="hub-card" href="AfroUp Proyectos.html"><div><h3>Proyectos</h3><p>Iniciativas en territorio</p></div><span class="go"><svg class="ic" style="width:16px;height:16px"><use href="#ic-arrow"/></svg></span></a>
+      <a class="hub-card" href="AfroUp Proyecto (detalle).html"><div><h3>Detalle del proyecto</h3><p>Biblioteca Afro Itinerante</p></div><span class="go"><svg class="ic" style="width:16px;height:16px"><use href="#ic-arrow"/></svg></span></a>
+      <a class="hub-card" href="AfroUp Emprendedores.html"><div><h3>Emprendedores</h3><p>Directorio de negocios afro</p></div><span class="go"><svg class="ic" style="width:16px;height:16px"><use href="#ic-arrow"/></svg></span></a>
+      <a class="hub-card" href="AfroUp Emprendimiento (detalle).html"><div><h3>Emprendimiento</h3><p>Tejidos Ubuntu</p></div><span class="go"><svg class="ic" style="width:16px;height:16px"><use href="#ic-arrow"/></svg></span></a>
+      <a class="hub-card" href="AfroUp Referentes.html"><div><h3>Referentes</h3><p>Personas que abrieron camino</p></div><span class="go"><svg class="ic" style="width:16px;height:16px"><use href="#ic-arrow"/></svg></span></a>
+      <a class="hub-card" href="AfroUp Referente (detalle).html"><div><h3>Referente</h3><p>Martin Luther King Jr.</p></div><span class="go"><svg class="ic" style="width:16px;height:16px"><use href="#ic-arrow"/></svg></span></a>
+      <a class="hub-card" href="AfroUp Colabora.html"><div><h3>Colabora</h3><p>Roles + formulario</p></div><span class="go"><svg class="ic" style="width:16px;height:16px"><use href="#ic-arrow"/></svg></span></a>
+    </div>
+  </section>
+
+  <section class="hub-sec">
+    <h2><span class="sq" style="background:var(--ink)"></span> Institucional</h2>
+    <div class="hub-grid">
+      <a class="hub-card" href="AfroUp Recursos.html"><div><h3>Recursos</h3><p>Biblioteca libre descargable</p></div><span class="go"><svg class="ic" style="width:16px;height:16px"><use href="#ic-arrow"/></svg></span></a>
+      <a class="hub-card" href="AfroUp Nosotros.html"><div><h3>Nosotros</h3><p>Misión, visión, equipo</p></div><span class="go"><svg class="ic" style="width:16px;height:16px"><use href="#ic-arrow"/></svg></span></a>
+      <a class="hub-card" href="AfroUp Contacto.html"><div><h3>Contacto</h3><p>Formulario + datos</p></div><span class="go"><svg class="ic" style="width:16px;height:16px"><use href="#ic-arrow"/></svg></span></a>
+      <a class="hub-card" href="AfroUp Apoyanos.html"><div><h3>Apóyanos</h3><p>4 formas de apoyar</p></div><span class="go"><svg class="ic" style="width:16px;height:16px"><use href="#ic-arrow"/></svg></span></a>
+    </div>
+  </section>
+</div>
+</body>
+</html>

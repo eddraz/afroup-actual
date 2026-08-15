@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AfroUp — Tejidos Ubuntu</title>
+<link rel="icon" href="assets/mark-black.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Mulish:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="brand-site.css" />
+<link rel="stylesheet" href="site-pages.css" />
+<style>
+  .bhead{ display:flex; gap:22px; align-items:center; margin-top:24px; flex-wrap:wrap; }
+  .blogo{ width:108px; height:108px; border-radius:24px; flex:none; box-shadow:var(--shadow); }
+  .bhead h1{ font-size:38px; }
+  .b-layout{ display:grid; grid-template-columns:1fr 340px; gap:32px; align-items:start; margin-top:28px; }
+  @media (max-width:1100px){ .b-layout{ grid-template-columns:1fr; } }
+  .gal3{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:14px; }
+  .gal3 .ph{ aspect-ratio:1; border-radius:14px; }
+  .dato{ display:flex; justify-content:space-between; gap:12px; padding:9px 0; border-top:1px solid var(--line); font-size:14px; }
+  .dato:first-of-type{ border-top:0; }
+  .dato b{ color:var(--ink); text-align:right; } .dato span{ color:var(--muted); font-weight:700; }
+</style>
+</head>
+<body data-active="comunidad">
+<main class="content">
+  <div class="wrap" style="padding-bottom:46px;">
+    <div class="bread"><a href="AfroUp Home (diseño).html">Inicio</a><span>/</span><a href="AfroUp Emprendedores.html">Emprendedores</a><span>/</span><a>Tejidos Ubuntu</a></div>
+
+    <div class="bhead">
+      <div class="ph pat blogo"></div>
+      <div>
+        <span class="tag c-anti"><span class="sq"></span> Moda · Hecho a mano</span>
+        <h1>Tejidos Ubuntu</h1>
+        <div style="color:var(--muted);font-weight:700;font-size:14px;margin-top:4px;"><svg class="ic" style="width:15px;height:15px;vertical-align:-2px"><use href="#ic-pin"/></svg> Buenaventura, Colombia · desde 2022</div>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:10px;flex-wrap:wrap;">
+        <a class="btn btn-primary" href="#"><svg class="ic" style="width:17px;height:17px"><use href="#ic-ig"/></svg> @tejidosubuntu</a>
+      </div>
+    </div>
+
+    <div class="b-layout">
+      <section>
+        <h2 style="font-size:24px;">La historia</h2>
+        <p style="color:#46412f;font-size:15.5px;line-height:1.7;margin:12px 0 0;">Un taller de doce mujeres de Buenaventura que transforma telas de estampa africana en moda contemporánea. Cada prenda lleva el nombre de la artesana que la confeccionó, y parte de las ganancias financia un fondo de becas para jóvenes del barrio.</p>
+        <blockquote style="border-left:4px solid var(--oro);padding-left:20px;margin:22px 0 0;font-family:var(--disp);font-weight:700;font-size:22px;line-height:1.25;">“Ubuntu: soy porque somos. Cosemos comunidad.”</blockquote>
+        <div class="gal3">
+          <div class="ph t-oro"><span class="lbl">producto</span></div>
+          <div class="ph t-cian"><span class="lbl">taller</span></div>
+          <div class="ph t-azul"><span class="lbl">equipo</span></div>
+        </div>
+      </section>
+
+      <aside class="panel">
+        <h4>Ficha</h4>
+        <div class="dato"><span>Rubro</span><b>Moda · textiles</b></div>
+        <div class="dato"><span>Equipo</span><b>12 artesanas</b></div>
+        <div class="dato"><span>Envíos</span><b>Toda Colombia</b></div>
+        <div class="dato"><span>Contacto</span><b>hola@tejidosubuntu.co</b></div>
+        <a class="btn btn-oro btn-block" style="margin-top:16px;" href="#">Visitar tienda <svg class="ic" style="width:16px;height:16px"><use href="#ic-arrow"/></svg></a>
+      </aside>
+    </div>
+
+    <div class="sec-head"><h2>Más emprendimientos</h2><a class="btn btn-ghost btn-sm" href="AfroUp Emprendedores.html">Ver directorio <svg class="ic" style="width:15px;height:15px"><use href="#ic-arrow"/></svg></a></div>
+    <div class="grid3">
+      <article class="card">
+        <div class="ph t-cian"><span class="lbl">foto · cocina</span></div>
+        <div class="body"><h3><a href="AfroUp Emprendimiento (detalle).html">Sabores del Manglar</a></h3><div class="meta">Alimentos · Cali</div></div>
+      </article>
+      <article class="card">
+        <div class="ph t-azul"><span class="lbl">foto · cosmética</span></div>
+        <div class="body"><h3><a href="AfroUp Emprendimiento (detalle).html">Crespa &amp; Libre</a></h3><div class="meta">Belleza · Bogotá</div></div>
+      </article>
+      <article class="card">
+        <div class="ph t-oro"><span class="lbl">foto · joyería</span></div>
+        <div class="body"><h3><a href="AfroUp Emprendimiento (detalle).html">Oro Negro Joyas</a></h3><div class="meta">Arte · Quibdó</div></div>
+      </article>
+    </div>
+  </div>
+</main>
+<script src="site.js"></script>
+<script src="drawer.js"></script>
+</body>
+</html>

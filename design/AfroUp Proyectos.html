@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AfroUp — Proyectos</title>
+<link rel="icon" href="assets/mark-black.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Mulish:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="brand-site.css" />
+<link rel="stylesheet" href="site-pages.css" />
+<style>
+  .estado{ display:inline-flex; align-items:center; gap:6px; border-radius:999px; padding:4px 12px; font-size:11.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; }
+  .estado::before{ content:''; width:7px; height:7px; border-radius:50%; background:currentColor; }
+  .estado.curso{ background:var(--cian-soft); color:#0a6c78; }
+  .estado.done{ background:var(--oro-soft); color:#8a6206; }
+</style>
+</head>
+<body data-active="comunidad">
+<main class="content">
+  <div class="wrap" style="padding-bottom:46px;">
+    <div class="bread"><a href="AfroUp Home (diseño).html">Inicio</a><span>/</span><a>Comunidad</a><span>/</span><a>Proyectos</a></div>
+
+    <header class="phero azul">
+      <div class="patside"></div>
+      <span class="ey">Comunidad</span>
+      <h1>Proyectos en territorio</h1>
+      <p class="lead">Del contenido a la acción: iniciativas educativas y culturales que construimos con comunidades de la diáspora.</p>
+    </header>
+
+    <div class="grid3" style="margin-top:30px;">
+      <article class="card">
+        <a href="AfroUp Proyecto (detalle).html"><div class="ph t-oro"><span class="lbl">foto · biblioteca</span></div></a>
+        <div class="body">
+          <span class="estado curso">En curso</span>
+          <h3><a href="AfroUp Proyecto (detalle).html">Biblioteca Afro Itinerante</a></h3>
+          <p class="dek">Llevamos libros de autores afro a barrios y veredas, con círculos de lectura.</p>
+          <div class="meta"><svg class="ic" style="width:15px;height:15px"><use href="#ic-pin"/></svg> Cali, Colombia</div>
+        </div>
+      </article>
+      <article class="card">
+        <a href="AfroUp Proyecto (detalle).html"><div class="ph t-cian"><span class="lbl">foto · taller</span></div></a>
+        <div class="body">
+          <span class="estado curso">En curso</span>
+          <h3><a href="AfroUp Proyecto (detalle).html">Memoria viva: rutas del cimarronaje</a></h3>
+          <p class="dek">Cartografía comunitaria de la historia cimarrona del Caribe colombiano.</p>
+          <div class="meta"><svg class="ic" style="width:15px;height:15px"><use href="#ic-pin"/></svg> Cartagena, Colombia</div>
+        </div>
+      </article>
+      <article class="card">
+        <a href="AfroUp Proyecto (detalle).html"><div class="ph pat"></div></a>
+        <div class="body">
+          <span class="estado done">Completado</span>
+          <h3><a href="AfroUp Proyecto (detalle).html">Escuela de verano afrocéntrica</a></h3>
+          <p class="dek">Talleres de historia y autoestima para 120 niñas y niños.</p>
+          <div class="meta"><svg class="ic" style="width:15px;height:15px"><use href="#ic-pin"/></svg> Quibdó, Colombia · 2025</div>
+        </div>
+      </article>
+    </div>
+
+    <div class="band cian">
+      <div><h3>¿Tienes una idea para tu comunidad?</h3><p>Propón un proyecto y construyámoslo juntos.</p></div>
+      <a class="btn btn-primary" href="AfroUp Colabora.html">Proponer proyecto <svg class="ic" style="width:16px;height:16px"><use href="#ic-arrow"/></svg></a>
+    </div>
+  </div>
+</main>
+<script src="site.js"></script>
+<script src="drawer.js"></script>
+</body>
+</html>

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AfroUp — Tu carrito</title>
+<link rel="icon" href="assets/mark-black.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Mulish:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="brand-site.css" />
+<link rel="stylesheet" href="site-pages.css" />
+<style>
+  .cart-layout{ display:grid; grid-template-columns:1fr 380px; gap:32px; align-items:start; margin-top:26px; }
+  @media (max-width:1100px){ .cart-layout{ grid-template-columns:1fr; } }
+  .sum{ position:sticky; top:90px; }
+</style>
+</head>
+<body data-active="tienda">
+<main class="content">
+  <div class="wrap" style="padding-bottom:46px;">
+    <div class="bread"><a href="AfroUp Home (diseño).html">Inicio</a><span>/</span><a href="AfroUp Tienda.html">Tienda</a><span>/</span><a>Carrito</a></div>
+
+    <h1 style="font-size:36px;margin-top:14px;">Tu carrito <span style="color:var(--muted);font-size:22px;">· 3 artículos</span></h1>
+
+    <div class="cart-layout">
+      <div class="rows">
+        <div class="cartline">
+          <div class="ph pat"></div>
+          <div>
+            <span class="tag c-historia"><span class="sq"></span> eBook</span>
+            <h3>Raíces: historia afro de Abya Yala</h3>
+            <div style="color:var(--muted);font-size:13px;font-weight:700;margin-top:3px;">PDF + EPUB · descarga inmediata</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:10px;">
+            <button class="rm" title="Quitar">✕</button>
+            <span class="qty"><button data-d="-">−</button><span class="v">1</span><button data-d="+">+</button></span>
+            <span class="price">US$ 12</span>
+          </div>
+        </div>
+
+        <div class="cartline">
+          <div class="ph t-oro"><span class="lbl">lámina</span></div>
+          <div>
+            <span class="tag c-anti"><span class="sq"></span> Lámina</span>
+            <h3>Lámina · Reina Nzinga</h3>
+            <div style="color:var(--muted);font-size:13px;font-weight:700;margin-top:3px;">A3 · papel algodón</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:10px;">
+            <button class="rm" title="Quitar">✕</button>
+            <span class="qty"><button data-d="-">−</button><span class="v">1</span><button data-d="+">+</button></span>
+            <span class="price">US$ 18</span>
+          </div>
+        </div>
+
+        <div class="cartline">
+          <div class="ph t-cian"><span class="lbl">camiseta</span></div>
+          <div>
+            <span class="tag c-diaspora"><span class="sq"></span> Merch</span>
+            <h3>Camiseta “Conocimiento = poder”</h3>
+            <div style="color:var(--muted);font-size:13px;font-weight:700;margin-top:3px;">Talla M · algodón orgánico</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:10px;">
+            <button class="rm" title="Quitar">✕</button>
+            <span class="qty"><button data-d="-">−</button><span class="v">1</span><button data-d="+">+</button></span>
+            <span class="price">US$ 22</span>
+          </div>
+        </div>
+
+        <a href="AfroUp Tienda.html" style="font-weight:800;color:var(--azul);font-size:14.5px;">← Seguir comprando</a>
+      </div>
+
+      <aside class="panel sum">
+        <h4 style="font-size:21px;">Resumen</h4>
+        <div class="sumrow"><span>Subtotal</span><b>US$ 52</b></div>
+        <div class="sumrow"><span>Envío (lámina + merch)</span><b>US$ 6</b></div>
+        <div class="sumrow" style="color:#0d97a6;"><span>Donación redondeo 💛</span><b>US$ 2</b></div>
+        <div class="sumrow total"><span>Total</span><span>US$ 60</span></div>
+        <a class="btn btn-oro btn-block" style="margin-top:16px;" href="#">Finalizar compra <svg class="ic" style="width:17px;height:17px"><use href="#ic-arrow"/></svg></a>
+        <p style="margin:14px 0 0;color:var(--muted);font-size:12.5px;">🔒 Pago seguro · Tarjeta, PayPal, Nequi, PSE.<br/>Tu compra financia contenido educativo libre.</p>
+      </aside>
+    </div>
+  </div>
+</main>
+<script src="site.js"></script>
+<script src="drawer.js"></script>
+</body>
+</html>

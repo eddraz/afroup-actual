@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AfroUp — Contacto</title>
+<link rel="icon" href="assets/mark-black.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Mulish:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="brand-site.css" />
+<link rel="stylesheet" href="site-pages.css" />
+<style>
+  .c-layout{ display:grid; grid-template-columns:1.2fr .8fr; gap:32px; align-items:start; margin-top:30px; }
+  @media (max-width:980px){ .c-layout{ grid-template-columns:1fr; } }
+  .cinfo{ display:flex; gap:13px; align-items:flex-start; padding:13px 0; border-top:1px solid var(--line); }
+  .cinfo:first-of-type{ border-top:0; }
+  .cinfo .icw{ flex:none; width:42px; height:42px; border-radius:13px; background:var(--cream); display:flex; align-items:center; justify-content:center; color:var(--azul); }
+  .cinfo b{ display:block; font-size:14.5px; } .cinfo span{ color:var(--muted); font-size:14px; }
+</style>
+</head>
+<body data-active="">
+<main class="content">
+  <div class="wrap" style="padding-bottom:46px;">
+    <div class="bread"><a href="AfroUp Home (diseño).html">Inicio</a><span>/</span><a>Contacto</a></div>
+
+    <header class="phero crema">
+      <span class="ey">Contáctanos</span>
+      <h1>Hablemos</h1>
+      <p class="lead">Prensa, alianzas, talleres o simplemente saludar — te respondemos en menos de 72 horas.</p>
+    </header>
+
+    <div class="c-layout">
+      <form class="panel" onsubmit="return false">
+        <div class="fgrid">
+          <div class="field"><label>Nombre</label><input type="text" placeholder="Tu nombre" /></div>
+          <div class="field"><label>Correo</label><input type="email" placeholder="tu@correo.com" /></div>
+        </div>
+        <div class="field" style="margin-top:18px;"><label>Asunto</label>
+          <select><option>Alianzas y colaboraciones</option><option>Prensa</option><option>Talleres y charlas</option><option>Tienda y pedidos</option><option>Otro</option></select>
+        </div>
+        <div class="field" style="margin-top:18px;"><label>Mensaje</label><textarea placeholder="Cuéntanos…"></textarea></div>
+        <button class="btn btn-primary" style="margin-top:18px;">Enviar mensaje <svg class="ic" style="width:16px;height:16px"><use href="#ic-arrow"/></svg></button>
+      </form>
+
+      <aside class="panel">
+        <h4>Información</h4>
+        <div class="cinfo"><div class="icw"><svg class="ic" style="width:19px;height:19px"><use href="#ic-mail"/></svg></div><div><b>Correo</b><span>hello@afroup.org</span></div></div>
+        <div class="cinfo"><div class="icw"><svg class="ic" style="width:19px;height:19px"><use href="#ic-users"/></svg></div><div><b>WhatsApp</b><span>+57 320 7146 · +31 20 211 7146</span></div></div>
+        <div class="cinfo"><div class="icw"><svg class="ic" style="width:19px;height:19px"><use href="#ic-pin"/></svg></div><div><b>Base</b><span>Colombia · trabajamos con toda la diáspora</span></div></div>
+        <div class="cinfo"><div class="icw"><svg class="ic" style="width:19px;height:19px"><use href="#ic-ig"/></svg></div><div><b>Redes</b><span>@afroup en Instagram, TikTok, YouTube y Facebook</span></div></div>
+        <div style="border-radius:14px;height:90px;background:url('assets/pattern.png') center/cover;margin-top:14px;"></div>
+      </aside>
+    </div>
+  </div>
+</main>
+<script src="site.js"></script>
+<script src="drawer.js"></script>
+</body>
+</html>
