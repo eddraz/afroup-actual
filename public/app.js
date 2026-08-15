@@ -79,25 +79,107 @@
       .join("");
   }
 
-  function looksLikeHtml(value) {
-    return /<[a-z][\s\S]*>/i.test(String(value || ""));
+  function normalizeText(value) {
+    return String(value || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/[^a-z0-9@./]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
   }
 
-  function formatPlain(value) {
-    return escapeHtml(value).replace(/\n/g, "<br>");
+  function similarText(a, b) {
+    if (!a || !b) return false;
+    if (a === b) return true;
+    if (a.length >= 12 && b.indexOf(a) !== -1 && a.length / b.length > 0.7) return true;
+    if (b.length >= 12 && a.indexOf(b) !== -1 && b.length / a.length > 0.7) return true;
+    return false;
   }
 
-  function entryHtml(entry) {
-    var raw = entry.information || entry.body || entry.summary || "";
-    if (looksLikeHtml(raw)) return raw;
-    var extras = [entry.location, [entry.contact_name, entry.contact_phone, entry.contact_email].filter(Boolean).join(" · ")]
-      .filter(Boolean)
-      .join("\n");
-    var text = [raw, extras].filter(Boolean).join("\n");
-    return text ? formatPlain(text) : "Sin descripción adicional.";
+  function infoLines(value) {
+    return String(value || "")
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<\/(p|div|li)>/gi, "\n")
+      .replace(/<[^>]+>/g, "")
+      .replace(/&nbsp;/gi, " ")
+      .split(/\n+/)
+      .map(function (line) {
+        return line.replace(/^[·•|\s]+|[·•|\s]+$/g, "").trim();
+      })
+      .filter(Boolean);
+  }
+
+  function isContactOnly(line, entry) {
+    var leftover = normalizeText(line);
+    var bits = [entry.contact_name, entry.contact_phone, entry.contact_email]
+      .map(normalizeText)
+      .filter(Boolean);
+    if (!bits.length) return false;
+    bits.forEach(function (bit) {
+      leftover = leftover.split(bit).join(" ");
+    });
+    return !leftover.replace(/\s+/g, " ").trim();
+  }
+
+  function uniqueInfoLines(entry) {
+    var known = [entry.title, entry.location, entry.category, entry.department_name]
+      .map(normalizeText)
+      .filter(Boolean);
+    var seen = {};
+    var lines = [];
+    infoLines(entry.information || entry.body || entry.summary || "").forEach(function (line) {
+      var n = normalizeText(line);
+      if (!n || seen[n]) return;
+      if (known.some(function (item) { return similarText(n, item); })) return;
+      if (isContactOnly(line, entry)) return;
+      var stripped = n.replace(/^(punto de acopio|punto de donaciones|punto de donacion|canal de donacion|centro de acopio)( en| de)?\s+/, "");
+      if (stripped !== n && (!stripped || known.some(function (item) {
+        return similarText(stripped, item) || item.indexOf(stripped) !== -1;
+      }))) return;
+      if (entry.contact_phone && n.indexOf(normalizeText(entry.contact_phone)) !== -1 && n.replace(normalizeText(entry.contact_phone), "").trim().length < 8) return;
+      seen[n] = true;
+      lines.push(line);
+    });
+    return lines;
+  }
+
+  function showLocation(entry) {
+    var location = String(entry.location || "").trim();
+    if (!location) return "";
+    var n = normalizeText(location);
+    if (similarText(n, normalizeText(entry.title))) return "";
+    if (similarText(n, normalizeText(entry.department_name))) return "";
+    if (n === "buenaventura" || n === "choco" || n === "quibdo") return "";
+    return location;
+  }
+
+  function showContact(entry, lines) {
+    var contact = [entry.contact_name, entry.contact_phone, entry.contact_email].filter(Boolean).join(" · ");
+    if (!contact) return "";
+    var phone = normalizeText(entry.contact_phone || "");
+    var already = lines.some(function (line) {
+      var n = normalizeText(line);
+      return similarText(n, normalizeText(contact)) || (phone && n.indexOf(phone) !== -1);
+    });
+    return already ? "" : contact;
+  }
+
+  function looksLikeRichHtml(value) {
+    return /<(span|strong|b|em|i|ul|ol|li)\b/i.test(String(value || ""));
   }
 
   function entryCard(entry) {
+    var rich = looksLikeRichHtml(entry.information);
+    var lines = rich ? [] : uniqueInfoLines(entry);
+    var location = rich ? "" : showLocation(entry);
+    var contact = rich ? "" : showContact(entry, lines);
+    var dek = rich
+      ? (window.AfroUpRichEditor ? window.AfroUpRichEditor.sanitize(entry.information) : entry.information)
+      : lines.concat(contact ? [contact] : []).map(function (line) {
+          return escapeHtml(line);
+        }).join("<br>");
     return (
       '<article class="card">' +
       '<div class="body">' +
@@ -107,9 +189,8 @@
       "<h3>" +
       escapeHtml(entry.title) +
       "</h3>" +
-      '<div class="dek">' +
-      entryHtml(entry) +
-      "</div>" +
+      (location ? '<p class="where">' + escapeHtml(location) + "</p>" : "") +
+      (dek ? '<div class="dek">' + dek + "</div>" : "") +
       "</div></article>"
     );
   }

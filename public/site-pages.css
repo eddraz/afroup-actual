@@ -36,7 +36,7 @@
   .grid3,.grid4{ grid-template-columns:repeat(2,1fr); gap:16px; } .grid2{ grid-template-columns:1fr; }
 }
 @media (max-width:560px){
-  .feed{ gap:13px; } .feed .card h3{ font-size:15.5px; } .feed .card .dek{ display:block; }
+  .feed{ gap:13px; } .feed .card h3{ font-size:15.5px; } .feed .card .dek{ display:block; } .feed .card .where{ margin:0; color:var(--muted); font-size:13.5px; }
   .feed .card .body{ padding:11px 12px 14px; gap:6px; }
   .feat .body{ padding:18px; } .feat h3{ font-size:21px; } .feat .body .dek{ display:block; }
 }

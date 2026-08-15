@@ -571,6 +571,49 @@ function htmlToPlain(value) {
     .trim();
 }
 
+function safeColor(value) {
+  const color = String(value || "").trim().toLowerCase();
+  const named = {
+    black: "#111111",
+    white: "#ffffff",
+    red: "#c0392b",
+    blue: "#1d4ed8",
+    green: "#0f766e",
+    orange: "#c2410c",
+    purple: "#6d28d9",
+    gray: "#4b5563",
+    grey: "#4b5563",
+  };
+  if (named[color]) return named[color];
+  if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(color)) return color;
+  return "";
+}
+
+function safeSize(value) {
+  const size = String(value || "").trim().toLowerCase();
+  const mapped = { "1": "14px", "2": "14px", "3": "16px", "4": "20px", "5": "28px", "6": "28px", "7": "28px" };
+  if (mapped[size]) return mapped[size];
+  if (["14px", "16px", "20px", "28px"].includes(size)) return size;
+  return "";
+}
+
+function safeStyle(style) {
+  let color = "";
+  let size = "";
+  String(style || "").split(";").forEach((part) => {
+    const bits = part.split(":");
+    if (bits.length < 2) return;
+    const key = bits.shift().trim().toLowerCase();
+    const val = bits.join(":").trim();
+    if (key === "color") color = safeColor(val);
+    if (key === "font-size") size = safeSize(val);
+  });
+  const out = [];
+  if (color) out.push(`color:${color}`);
+  if (size) out.push(`font-size:${size}`);
+  return out.join(";");
+}
+
 function sanitizeHtml(value, max = MAX_BODY) {
   const raw = String(value == null ? "" : value).slice(0, max);
   if (!/<[a-z][\s\S]*>/i.test(raw)) {
@@ -579,7 +622,7 @@ function sanitizeHtml(value, max = MAX_BODY) {
       .map((block) => `<p>${escapeHtmlText(block).replace(/\n/g, "<br>")}</p>`)
       .join("");
   }
-  const allowed = new Set(["P", "BR", "B", "STRONG", "I", "EM", "UL", "OL", "LI", "A", "DIV"]);
+  const allowed = new Set(["P", "BR", "B", "STRONG", "I", "EM", "UL", "OL", "LI", "A", "DIV", "SPAN"]);
   let out = raw
     .replace(/<script[\s\S]*?<\/script>/gi, "")
     .replace(/on[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
@@ -596,6 +639,11 @@ function sanitizeHtml(value, max = MAX_BODY) {
         || "";
       if (!/^https?:\/\//i.test(href) && !/^mailto:/i.test(href)) return "<a>";
       return `<a href="${escapeHtmlText(href)}" rel="noopener noreferrer" target="_blank">`;
+    }
+    if (name === "SPAN") {
+      const styleMatch = attrs.match(/style\s*=\s*("([^"]*)"|'([^']*)')/i);
+      const style = safeStyle((styleMatch && (styleMatch[2] || styleMatch[3])) || "");
+      return style ? `<span style="${style}">` : "<span>";
     }
     return `<${name.toLowerCase()}>`;
   });
