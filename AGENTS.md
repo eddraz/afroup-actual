@@ -76,7 +76,7 @@ Default section order:
 
 ## User Preferences
 
-- Build UI with daisyUI components first, Tailwind utilities second, and custom CSS only when neither can cover the requirement.
+- Build UI with daisyUI first. If daisyUI cannot do it well, use daisyUI plus Tailwind. Use custom CSS only if that combination still cannot do it well.
 - Preserve visual parity with the corresponding source mockup under `design/` when migrating pages to Astro.
 
 When the user requests a durable behavior change, record it here or in the relevant child AGENTS.md

@@ -15,7 +15,7 @@
 - Keep the sidebar logo and bottom language/donation controls outside the scroll region; only the menu item list may own vertical overflow.
 - Keep the sidebar menu scrollbar thin and black-toned via the `sidebar-scroll` utility.
 - Keep shared route targets in `lib/paths.ts` and the daisyUI theme and Tailwind entry in `styles/global.css`.
-- Build UI with daisyUI components first, Tailwind utilities second, and custom CSS only when neither covers the requirement.
+- Build UI with daisyUI first. If daisyUI cannot do it well, use daisyUI plus Tailwind. Use custom CSS only if that combination still cannot do it well.
 - Preserve Spanish UI and visual parity with the corresponding source screen under `design/`.
 - Keep runtime D1 access through the Cloudflare `DB` binding; `/api/health` currently exercises that binding.
 

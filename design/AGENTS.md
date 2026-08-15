@@ -12,6 +12,7 @@
 ## Local Contracts
 
 - Preserve visual parity between each implemented product page and its corresponding design screen.
+- When implementing a design screen in Astro, use daisyUI first. If daisyUI cannot do it well, use daisyUI plus Tailwind. Use custom CSS only if that combination still cannot do it well.
 - Keep product UI and navigation copy in Spanish unless a requirement explicitly changes the language.
 - Preserve the evidenced AfroUp system: Baloo 2 display type, Mulish body type, ink `#17150F`, cream `#FBF5E9`, cyan `#18D2E2`, gold `#F5C03A`, blue `#0A79A6`, rounded surfaces, and the shared logo, mark, and pattern assets.
 - Keep `AfroUp Mapa del sitio.html` as the navigable inventory of the product screens.
