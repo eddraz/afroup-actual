@@ -145,12 +145,12 @@ export interface SendEmailEnv {
 export async function sendVerificationEmail(
   env: SendEmailEnv,
   payload: VerificationEmail,
-): Promise<void> {
+): Promise<unknown> {
   const message = buildVerificationEmail(payload);
   if (!env.EMAIL) {
     throw new Error("EMAIL binding not configured");
   }
-  await env.EMAIL.send({
+  return env.EMAIL.send({
     to: message.to,
     from: {
       email: env.EMAIL_FROM_ADDRESS ?? "verificacion@afroup.com",

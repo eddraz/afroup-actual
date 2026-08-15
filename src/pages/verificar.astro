@@ -1,0 +1,9 @@
+---
+export const prerender = false;
+
+const token = Astro.url.searchParams.get("token") ?? "";
+const target = token
+  ? `/api/verify?token=${encodeURIComponent(token)}`
+  : "/login?verified=invalid";
+return Astro.redirect(target, 303);
+---

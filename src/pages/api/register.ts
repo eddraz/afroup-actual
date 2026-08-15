@@ -69,9 +69,11 @@ export const POST: APIRoute = async ({ request }) => {
     "INSERT INTO afroup_email_verifications (token, user_id, expires_at) VALUES (?, ?, ?)",
   ).bind(token, insert.id, expiresAt).run();
 
-  const verifyUrl = new URL(`/verificar?token=${encodeURIComponent(token)}`, request.url).toString();
+  const verifyPath = locale === "en" ? "/en/verificar" : "/verificar";
+  const verifyUrl = new URL(`${verifyPath}?token=${encodeURIComponent(token)}`, request.url).toString();
   try {
-    await sendVerificationEmail(env, { to: email, verifyUrl, locale, name });
+    const sent = await sendVerificationEmail(env, { to: email, verifyUrl, locale, name });
+    console.log("register: verification email accepted", { to: email, sent });
   } catch (error) {
     console.error("register: email send failed", error);
     await env.DB.prepare(
