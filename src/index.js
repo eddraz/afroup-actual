@@ -119,7 +119,13 @@ async function listDepartments(env) {
       ORDER BY CASE d.slug WHEN 'choco' THEN 0 WHEN 'buenaventura' THEN 1 WHEN 'otros' THEN 3 ELSE 2 END, d.name`
   ).all();
 
-  return json({ departments: results || [] });
+  const latest = await env.DB.prepare(
+    `SELECT MAX(COALESCE(published_at, updated_at, created_at)) AS updated_at
+       FROM aid_entries
+      WHERE status = 'published'`
+  ).first();
+
+  return json({ departments: results || [], updated_at: latest?.updated_at || null });
 }
 
 async function listPublishedEntries(env, url) {

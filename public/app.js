@@ -211,9 +211,31 @@
     });
   }
 
+  function formatUpdatedAt(value) {
+    if (!value) return "";
+    var normalized = value.indexOf("T") === -1 ? value.replace(" ", "T") + "Z" : value;
+    var date = new Date(normalized);
+    if (isNaN(date.getTime())) return "";
+    return new Intl.DateTimeFormat("es-CO", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }).format(date);
+  }
+
+  function renderUpdatedAt(value) {
+    var el = document.getElementById("guide-updated");
+    if (!el) return;
+    var formatted = formatUpdatedAt(value);
+    el.textContent = formatted
+      ? "La información proviene de la guía oficial de AfroUp, actualizada el " + formatted + ". Las fichas se agrupan por departamento. Los envíos nuevos quedan en revisión antes de publicarse."
+      : "La información proviene de la guía oficial de AfroUp. Las fichas se agrupan por departamento. Los envíos nuevos quedan en revisión antes de publicarse.";
+  }
+
   function loadDepartments() {
     return fetchJson("/api/departments").then(function (data) {
       state.departments = data.departments || [];
+      renderUpdatedAt(data.updated_at);
       renderChips();
       fillDepartmentSelect();
     });
