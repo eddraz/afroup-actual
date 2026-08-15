@@ -162,6 +162,134 @@ export async function sendVerificationEmail(
   });
 }
 
+const RESET_COPY: Record<
+  EmailLocale,
+  {
+    subject: string;
+    eyebrow: string;
+    title: string;
+    lead: string;
+    cta: string;
+    fallback: string;
+    ignore: string;
+    footer: string;
+    rights: string;
+    expires: string;
+  }
+> = {
+  es: {
+    subject: "Restablecé tu contraseña en AfroUp",
+    eyebrow: "Recuperar contraseña",
+    title: "Elegí una nueva contraseña",
+    lead: "Recibimos un pedido para restablecer tu cuenta. El enlace vence en 1 hora.",
+    cta: "Restablecer contraseña",
+    fallback: "Si el botón no funciona, copiá y pegá este enlace en tu navegador:",
+    ignore: "Si no pediste este cambio, podés ignorar este mensaje.",
+    footer: "AfroUp · Conocimiento afro libre",
+    rights: "© 2026 AfroUp. Todos los derechos reservados.",
+    expires: "Por seguridad, este enlace expira en 1 hora.",
+  },
+  en: {
+    subject: "Reset your AfroUp password",
+    eyebrow: "Recover password",
+    title: "Choose a new password",
+    lead: "We received a request to reset your account. The link expires in 1 hour.",
+    cta: "Reset password",
+    fallback: "If the button doesn't work, copy and paste this link into your browser:",
+    ignore: "If you didn't request this change, you can ignore this message.",
+    footer: "AfroUp · Free Afro knowledge",
+    rights: "© 2026 AfroUp. All rights reserved.",
+    expires: "For security, this link expires in 1 hour.",
+  },
+};
+
+export interface ResetEmail {
+  to: string;
+  resetUrl: string;
+  locale: EmailLocale;
+  name?: string;
+}
+
+export function buildResetEmail({ to, resetUrl, locale, name }: ResetEmail) {
+  const copy = RESET_COPY[locale];
+  const safeUrl = escape(resetUrl);
+  const safeName = name ? escape(name) : "";
+  const html = `<!doctype html>
+<html lang="${locale}">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escape(copy.subject)}</title></head>
+<body style="margin:0;padding:0;background:${BRAND.cream};font-family:'Mulish',Helvetica,Arial,sans-serif;color:${BRAND.ink};">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${BRAND.cream};padding:32px 16px;">
+  <tr><td align="center">
+    <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;width:100%;">
+      <tr><td style="background:${BRAND.teal};padding:18px 24px;border-radius:14px 14px 0 0;">
+        <span style="font-family:'Baloo 2','Baloo',Helvetica,Arial,sans-serif;font-size:20px;font-weight:800;color:${BRAND.tealInk};letter-spacing:-0.01em;">AfroUp</span>
+      </td></tr>
+      <tr><td style="background:${BRAND.paper};padding:32px 24px 8px 24px;">
+        <p style="margin:0 0 12px 0;font-size:11.5px;font-weight:800;letter-spacing:0.18em;color:${BRAND.teal};text-transform:uppercase;">${escape(copy.eyebrow)}</p>
+        <h1 style="margin:0 0 14px 0;font-family:'Baloo 2','Baloo',Helvetica,Arial,sans-serif;font-size:28px;line-height:1.1;font-weight:800;color:${BRAND.ink};letter-spacing:-0.005em;">${escape(copy.title)}</h1>
+        <p style="margin:0 0 22px 0;font-size:16px;line-height:1.55;color:${BRAND.ink};">${safeName ? `<strong>${safeName}</strong>, ` : ""}${escape(copy.lead)}</p>
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px 0;">
+          <tr><td style="background:${BRAND.teal};border-radius:999px;">
+            <a href="${safeUrl}" style="display:inline-block;padding:14px 28px;font-family:'Baloo 2','Baloo',Helvetica,Arial,sans-serif;font-size:16px;font-weight:800;color:${BRAND.tealInk};text-decoration:none;letter-spacing:-0.005em;">${escape(copy.cta)}</a>
+          </td></tr>
+        </table>
+        <p style="margin:0 0 6px 0;font-size:13.5px;line-height:1.5;color:${BRAND.muted};">${escape(copy.fallback)}</p>
+        <p style="word-break:break-all;margin:0 0 16px 0;font-size:13px;color:${BRAND.teal};"><a href="${safeUrl}" style="color:${BRAND.teal};">${safeUrl}</a></p>
+        <p style="margin:0 0 24px 0;font-size:13px;color:${BRAND.amberInk};font-weight:700;">${escape(copy.expires)}</p>
+        <hr style="border:0;border-top:1px solid ${BRAND.border};margin:24px 0;">
+        <p style="margin:0;font-size:13px;line-height:1.5;color:${BRAND.muted};">${escape(copy.ignore)}</p>
+      </td></tr>
+      <tr><td style="background:${BRAND.amber};padding:18px 24px;border-radius:0 0 14px 14px;text-align:center;">
+        <p style="margin:0 0 4px 0;font-family:'Baloo 2','Baloo',Helvetica,Arial,sans-serif;font-size:14px;font-weight:800;color:${BRAND.amberInk};">${escape(copy.footer)}</p>
+        <p style="margin:0;font-size:12px;color:${BRAND.amberInk};opacity:0.85;">${escape(copy.rights)}</p>
+      </td></tr>
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>`;
+  const text = [
+    copy.subject,
+    "",
+    copy.title,
+    "",
+    name ? `${name}, ` : "",
+    copy.lead,
+    "",
+    copy.cta,
+    resetUrl,
+    "",
+    copy.fallback,
+    resetUrl,
+    "",
+    copy.expires,
+    "",
+    copy.ignore,
+    "",
+    copy.rights,
+  ]
+    .filter(Boolean)
+    .join("\n");
+  return { subject: copy.subject, html, text, to };
+}
+
+export async function sendResetEmail(env: SendEmailEnv, payload: ResetEmail): Promise<unknown> {
+  const message = buildResetEmail(payload);
+  if (!env.EMAIL) {
+    throw new Error("EMAIL binding not configured");
+  }
+  return env.EMAIL.send({
+    to: message.to,
+    from: {
+      email: env.EMAIL_FROM_ADDRESS ?? "verificacion@afroup.com",
+      name: env.EMAIL_FROM_NAME ?? "AfroUp",
+    },
+    subject: message.subject,
+    html: message.html,
+    text: message.text,
+  });
+}
+
 const INVITE_COPY: Record<
   EmailLocale,
   {

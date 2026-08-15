@@ -30,7 +30,7 @@ const supportHref = localizedPath(locale, routeIds.support);
   </section>
 
   <div class="mt-9 grid grid-cols-1 gap-7 lg:grid-cols-[1.15fr_0.85fr]">
-    <form class="card bg-base-200 shadow" onsubmit="return false">
+    <form class="card bg-base-200 shadow" data-recover-form>
       <div class="card-body gap-4">
         <h2 class="card-title font-display text-[22px] tracking-[-0.005em]">{copy.recoverTitle}</h2>
 
@@ -38,6 +38,11 @@ const supportHref = localizedPath(locale, routeIds.support);
           <legend class="fieldset-legend">{copy.loginEmail}</legend>
           <input class="input w-full" type="email" name="email" autocomplete="email" placeholder={copy.loginEmailPlaceholder} required />
         </fieldset>
+
+        <div class="alert alert-success hidden" data-recover-success>
+          <span>{copy.recoverSentLead}</span>
+        </div>
+        <div class="alert alert-error hidden" data-recover-error><span data-recover-error-text>{copy.recoverEmailFailed}</span></div>
 
         <button class="btn btn-primary mt-2 h-[46px] min-h-[46px]" type="submit">
           {copy.recoverSubmit}
@@ -78,3 +83,38 @@ const supportHref = localizedPath(locale, routeIds.support);
     </aside>
   </div>
 </BaseLayout>
+  <script is:inline>
+    (function () {
+      var form = document.querySelector("[data-recover-form]");
+      if (!form || form.dataset.bound === "true") return;
+      form.dataset.bound = "true";
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+        var submit = form.querySelector("button[type=submit]");
+        var success = form.querySelector("[data-recover-success]");
+        var errorBox = form.querySelector("[data-recover-error]");
+        var errorText = form.querySelector("[data-recover-error-text]");
+        if (success) success.classList.add("hidden");
+        if (errorBox) errorBox.classList.add("hidden");
+        if (submit) submit.disabled = true;
+        var data = new FormData(form);
+        data.set("locale", document.documentElement.lang === "en" ? "en" : "es");
+        fetch("/api/recover", { method: "POST", body: data })
+          .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
+          .then(function (result) {
+            if (!result.ok) {
+              if (errorText && result.body && result.body.error === "email_invalid") {
+                errorText.textContent = document.documentElement.lang === "en" ? "Enter a valid email." : "Ingresá un correo válido.";
+              }
+              throw new Error("recover");
+            }
+            if (success) success.classList.remove("hidden");
+            if (submit) submit.disabled = false;
+          })
+          .catch(function () {
+            if (errorBox) errorBox.classList.remove("hidden");
+            if (submit) submit.disabled = false;
+          });
+      });
+    })();
+  </script>

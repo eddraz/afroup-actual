@@ -1,0 +1,119 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { env } from "cloudflare:workers";
+import { getLocaleFromUrl, localizedPath, t } from "../../lib/i18n";
+import { routeIds } from "../../lib/paths";
+
+export const prerender = false;
+
+const locale = getLocaleFromUrl(Astro.url);
+const copy = t(locale);
+const homeHref = localizedPath(locale, routeIds.home);
+const loginHref = localizedPath(locale, routeIds.login);
+const recoverHref = localizedPath(locale, routeIds.recover);
+const token = Astro.url.searchParams.get("token") ?? "";
+
+let invalidReason: "missing" | "invalid" | "consumed" | "expired" | null = null;
+if (!token) {
+  invalidReason = "missing";
+} else {
+  const row = await env.DB.prepare(
+    `SELECT token, expires_at, consumed_at FROM afroup_password_resets WHERE token = ? LIMIT 1`,
+  )
+    .bind(token)
+    .first<{ token: string; expires_at: string; consumed_at: string | null }>();
+  if (!row) invalidReason = "invalid";
+  else if (row.consumed_at) invalidReason = "consumed";
+  else if (Date.parse(row.expires_at) < Date.now()) invalidReason = "expired";
+}
+---
+
+<BaseLayout title={copy.titleRecover} active="recover">
+  <div class="breadcrumbs text-sm">
+    <ul>
+      <li><a href={homeHref}>{copy.navHome}</a></li>
+      <li><a href={loginHref}>{copy.navLogin}</a></li>
+      <li>{copy.recoverResetTitle}</li>
+    </ul>
+  </div>
+
+  <section class="hero relative mt-6 overflow-hidden rounded-[24px] border border-base-300 bg-base-200 shadow-lg">
+    <div class="hero-content relative w-full flex-col items-start gap-3 px-6 py-8 lg:px-11 lg:py-11">
+      <p class="text-primary text-xs font-extrabold tracking-[0.18em] uppercase">{copy.recoverEyebrow}</p>
+      <h1 class="font-display max-w-[20ch] text-[31px] leading-[1.06] font-bold lg:text-[46px]">{copy.recoverResetTitle}</h1>
+      <p class="max-w-[58ch] text-[17px] leading-[1.55] opacity-70">{copy.recoverResetLead}</p>
+    </div>
+  </section>
+
+  <div class="mx-auto mt-8 max-w-[480px]">
+    {!invalidReason ? (
+      <form class="card bg-base-200 shadow" data-reset-form>
+        <div class="card-body gap-4">
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend">{copy.accountNewPassword}</legend>
+            <input class="input w-full" type="password" name="password" autocomplete="new-password" minlength="8" required />
+          </fieldset>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend">{copy.accountConfirmPassword}</legend>
+            <input class="input w-full" type="password" name="confirm" autocomplete="new-password" minlength="8" required />
+          </fieldset>
+          <input type="hidden" name="token" value={token} />
+          <div class="alert alert-success hidden" data-reset-success><span>{copy.recoverResetSaved}</span></div>
+          <div class="alert alert-error hidden" data-reset-error><span data-reset-error-text>{copy.recoverResetError}</span></div>
+          <button class="btn btn-primary mt-2 h-[46px] min-h-[46px]" type="submit">{copy.recoverResetSubmit}</button>
+          <a class="btn btn-ghost btn-sm self-center" href={loginHref}>{copy.recoverBack}</a>
+        </div>
+      </form>
+    ) : (
+      <div class="card bg-base-200 shadow">
+        <div class="card-body gap-4">
+          <h2 class="card-title font-display text-[22px] tracking-[-0.005em]">
+            {invalidReason === "expired" ? copy.recoverResetExpired : invalidReason === "consumed" ? copy.recoverResetConsumed : copy.recoverResetInvalid}
+          </h2>
+          <a class="btn btn-primary self-start" href={recoverHref}>{copy.recoverSubmit}</a>
+        </div>
+      </div>
+    )}
+  </div>
+
+  <script is:inline>
+    (function () {
+      var form = document.querySelector("[data-reset-form]");
+      if (!form || form.dataset.bound === "true") return;
+      form.dataset.bound = "true";
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+        var submit = form.querySelector("button[type=submit]");
+        var success = form.querySelector("[data-reset-success]");
+        var errorBox = form.querySelector("[data-reset-error]");
+        var errorText = form.querySelector("[data-reset-error-text]");
+        if (success) success.classList.add("hidden");
+        if (errorBox) errorBox.classList.add("hidden");
+        if (submit) submit.disabled = true;
+        var lang = document.documentElement.lang === "en" ? "en" : "es";
+        var messages = {
+          password_mismatch: lang === "en" ? "The passwords don't match." : "Las contraseñas no coinciden.",
+          password_short: lang === "en" ? "Use at least 8 characters." : "Usá al menos 8 caracteres.",
+          token_expired: lang === "en" ? "This link expired. Request a new one." : "Este enlace expiró. Pedí uno nuevo.",
+          token_consumed: lang === "en" ? "This link was already used." : "Este enlace ya fue usado.",
+          token_invalid: lang === "en" ? "This link is invalid." : "Este enlace no es válido.",
+        };
+        fetch("/api/reset", { method: "POST", body: new FormData(form) })
+          .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
+          .then(function (result) {
+            if (!result.ok) {
+              if (errorText) errorText.textContent = messages[result.body && result.body.error] || errorText.textContent;
+              throw new Error("reset");
+            }
+            if (success) success.classList.remove("hidden");
+            form.querySelectorAll("input").forEach(function (input) { input.disabled = true; });
+            if (submit) submit.disabled = true;
+          })
+          .catch(function () {
+            if (errorBox) errorBox.classList.remove("hidden");
+            if (submit) submit.disabled = false;
+          });
+      });
+    })();
+  </script>
+</BaseLayout>
