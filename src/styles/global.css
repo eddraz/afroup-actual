@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @plugin "daisyui" {
-  themes: false;
+  themes: afroup --default, afroup-dark --prefersdark;
   exclude: rootscrollgutter;
   logs: false;
 }
@@ -43,6 +43,45 @@
   --noise: 0;
 }
 
+@plugin "daisyui/theme" {
+  name: "afroup-dark";
+  default: false;
+  prefersdark: true;
+  color-scheme: dark;
+
+  --color-base-100: #12110d;
+  --color-base-200: #1c1a14;
+  --color-base-300: #3a382f;
+  --color-base-content: #fbf5e9;
+  --color-primary: #0a79a6;
+  --color-primary-content: #fbf5e9;
+  --color-secondary: #f5c03a;
+  --color-secondary-content: #5a4406;
+  --color-accent: #18d2e2;
+  --color-accent-content: #063b42;
+  --color-neutral: #0c0b08;
+  --color-neutral-content: #fbf5e9;
+  --color-info: #0a79a6;
+  --color-info-content: #fbf5e9;
+  --color-success: #0d97a6;
+  --color-success-content: #fbf5e9;
+  --color-warning: #f5c03a;
+  --color-warning-content: #5a4406;
+  --color-error: #b91c1c;
+  --color-error-content: #fbf5e9;
+
+  --radius-box: 1.125rem;
+  --radius-field: 2rem;
+  --radius-selector: 1rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
+
+@custom-variant dark (&:where([data-theme=afroup-dark], [data-theme=afroup-dark] *));
+
 @theme {
   --font-sans: "Mulish", system-ui, sans-serif;
   --font-display: "Baloo 2", system-ui, sans-serif;
@@ -50,7 +89,7 @@
 
 @utility sidebar-scroll {
   scrollbar-width: thin;
-  scrollbar-color: #17150f #ece5d5;
+  scrollbar-color: var(--color-base-content) var(--color-base-300);
 }
 
 @utility sidebar-scroll {
@@ -59,15 +98,15 @@
   }
 
   &::-webkit-scrollbar-track {
-    background: #ece5d5;
+    background: var(--color-base-300);
   }
 
   &::-webkit-scrollbar-thumb {
-    background: #17150f;
+    background: var(--color-base-content);
     border-radius: 999px;
   }
 
   &::-webkit-scrollbar-thumb:hover {
-    background: #000000;
+    background: var(--color-neutral);
   }
 }

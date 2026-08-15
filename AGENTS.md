@@ -78,6 +78,7 @@ Default section order:
 
 - Build UI with daisyUI first. If daisyUI cannot do it well, use daisyUI plus Tailwind. Use custom CSS only if that combination still cannot do it well.
 - Preserve visual parity with the corresponding source mockup under `design/` when migrating pages to Astro.
+- Support branded light (`afroup`) and dark (`afroup-dark`) themes with a daisyUI theme-controller toggle.
 
 When the user requests a durable behavior change, record it here or in the relevant child AGENTS.md
 
