@@ -80,13 +80,7 @@ const recoverHref = localizedPath(locale, routeIds.recover);
           <a class="link link-hover text-primary" href={recoverHref}>{copy.loginForgot}</a>
         </div>
 
-        <label class="label mt-2 cursor-pointer items-start gap-2 rounded-box border border-dashed border-base-300 bg-base-100 p-3">
-          <input type="checkbox" name="admin" class="checkbox checkbox-sm checkbox-accent mt-0.5" data-admin-toggle />
-          <span class="flex flex-col gap-1">
-            <span class="label-text font-bold">{copy.adminLoginAsAdmin}</span>
-            <span class="text-xs opacity-70">{copy.adminLoginAsAdminLead}</span>
-          </span>
-        </label>
+
 
         <button class="btn btn-primary mt-2 h-[46px] min-h-[46px]" type="submit">
           {copy.loginSubmit}
@@ -164,11 +158,9 @@ const recoverHref = localizedPath(locale, routeIds.recover);
         form.dataset.bound = "true";
         form.addEventListener("submit", function (event) {
           event.preventDefault();
-          var adminToggle = form.querySelector("[data-admin-toggle]");
-          var role = adminToggle && adminToggle.checked ? "admin" : "user";
-          localStorage.setItem("afroup-role", role);
+          localStorage.setItem("afroup-role", "user");
           var next = new URLSearchParams(window.location.search).get("next");
-          window.location.href = next || (role === "admin" ? "/admin" : "/cuenta");
+          window.location.href = next || "/cuenta";
         });
       };
       bind();
