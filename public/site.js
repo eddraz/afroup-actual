@@ -62,7 +62,7 @@
   function topbarHTML() {
     return '<div class="topbar"><div class="wrap"><div class="inner">' +
       '<button class="btn btn-ghost btn-sm burger" aria-label="Menú">' + ic('ic-menu', 20) + '</button>' +
-      '<form class="search" action="/">' + ic('ic-search') + '<input type="search" name="q" placeholder="Busca ayudas, lugares o contactos…" /></form>' +
+      '<form class="search" action="/" method="get">' + ic('ic-search') + '<input type="search" name="q" placeholder="Busca ayudas, lugares o contactos…" aria-label="Buscar" /><button class="btn btn-primary btn-sm" type="submit">Buscar</button></form>' +
       '</div></div></div>';
   }
   function footHTML() {
