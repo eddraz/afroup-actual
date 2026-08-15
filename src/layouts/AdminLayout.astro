@@ -127,9 +127,12 @@ function navClass(key: string) {
         var LOGIN_PATH = "/login";
 
         var gate = function () {
+          var path = window.location.pathname;
+          // Skip the admin gate on the invite-accept page; invitees aren't signed in yet.
+          if (path.endsWith("/usuarios/aceptar")) return;
           var role = localStorage.getItem(ROLE_KEY);
           if (role !== "admin") {
-            var back = encodeURIComponent(window.location.pathname);
+            var back = encodeURIComponent(path);
             window.location.replace(LOGIN_PATH + "?next=" + back);
           }
         };
