@@ -8,6 +8,7 @@ export const prerender = true;
 const locale = getLocaleFromUrl(Astro.url);
 const copy = t(locale);
 const homeHref = localizedPath(locale, routeIds.home);
+const communityHref = localizedPath(locale, routeIds.community);
 const roles = [
   { icon: "ic-book2", wrap: "bg-accent/20 text-accent", title: copy.collabWriteTitle, dek: copy.collabWriteDek },
   { icon: "ic-share", wrap: "bg-secondary/30 text-secondary-content", title: copy.collabTranslateTitle, dek: copy.collabTranslateDek },
@@ -20,7 +21,7 @@ const roles = [
   <div class="breadcrumbs text-sm">
     <ul>
       <li><a href={homeHref}>{copy.navHome}</a></li>
-      <li>{copy.navCommunity}</li>
+      <li><a href={communityHref}>{copy.navCommunity}</a></li>
       <li>{copy.footerCollaborate}</li>
     </ul>
   </div>

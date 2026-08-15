@@ -8,7 +8,7 @@ export const prerender = true;
 const locale = getLocaleFromUrl(Astro.url);
 const copy = t(locale);
 const homeHref = localizedPath(locale, routeIds.home);
-const projectsHref = localizedPath(locale, routeIds.projects);
+const communityHref = localizedPath(locale, routeIds.community);
 const collaborateHref = localizedPath(locale, routeIds.collaborate);
 const personHref = routeIds.person;
 const chips = [
@@ -33,7 +33,7 @@ const people = [
   <div class="breadcrumbs text-sm">
     <ul>
       <li><a href={homeHref}>{copy.navHome}</a></li>
-      <li><a href={projectsHref}>{copy.navCommunity}</a></li>
+      <li><a href={communityHref}>{copy.navCommunity}</a></li>
       <li>{copy.footerPeople}</li>
     </ul>
   </div>

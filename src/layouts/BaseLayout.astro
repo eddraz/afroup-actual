@@ -27,6 +27,7 @@ const paths = {
   about: localizedPath(locale, routeIds.about),
   contact: localizedPath(locale, routeIds.contact),
   support: localizedPath(locale, routeIds.support),
+  community: localizedPath(locale, routeIds.community),
   projects: localizedPath(locale, routeIds.projects),
   entrepreneurs: routeIds.entrepreneurs,
   people: localizedPath(locale, routeIds.people),
@@ -293,7 +294,7 @@ function tabClass(key: NavKey) {
               </a>
             </li>
             <li>
-              <a class={navClass("comunidad")} href={paths.projects}>
+              <a class={navClass("comunidad")} href={paths.community}>
                 <svg class="size-5"><use href="#ic-users"></use></svg>
                 {copy.navCommunity}
               </a>
