@@ -83,5 +83,10 @@ When the user requests a durable behavior change, record it here or in the relev
 
 ## Child DOX Index
 
-- No child AGENTS.md files are needed for the current repository structure.
-- Root-owned files: `README.md`, `LICENSE`, `banner.jpg`, `video-thumbnail.jpg`, and root-level project documentation.
+- `design/AGENTS.md` — visual source screens, sitemap, shared design assets, and visual parity rules.
+- `src/AGENTS.md` — current Astro pages, API routes, shared layout/chrome, route map, and application styling.
+- `migrations/AGENTS.md` — ordered D1 schema, seed, and data-transform migrations.
+- `legacy/AGENTS.md` — legacy emergency-aid Worker, static/admin UI, configuration, and tests.
+- All current root items not delegated above remain root-owned. Root files are `AGENTS.md`, `README.md`, `.gitignore`, `package.json`, `bun.lock`, `astro.config.mjs`, `tsconfig.json`, and `wrangler.jsonc`.
+- Root-owned support directories: `public/` supplies Astro static assets; `docs/` holds the source PDF and related material; `scripts/` provides seed-generator support for the migrations.
+- Generated or local state is excluded from the DOX hierarchy, including `.astro/`, `.wrangler/`, `dist/`, `node_modules/`, `.git/`, `.atl/`, and `.codegraph/`; only `.codegraph/.gitignore` is tracked to keep its database and runtime files local.
