@@ -155,14 +155,28 @@ function navClass(key: string) {
 
         var gate = function () {
           var path = window.location.pathname;
-          // Allow the admin login and the invite-accept pages without an active session.
           for (var i = 0; i < PUBLIC_PATHS.length; i += 1) {
             if (path.indexOf(PUBLIC_PATHS[i]) !== -1) return;
           }
-          var user = readAdminUser();
-          if (!user) {
-            window.location.replace("/admin/login");
+          var cached = readAdminUser();
+          if (cached) {
+            paintUser();
+            return;
           }
+          fetch("/api/admin/session", { credentials: "same-origin" })
+            .then(function (res) { return res.json(); })
+            .then(function (result) {
+              if (result && result.ok && result.user) {
+                localStorage.setItem(ADMIN_USER_KEY, JSON.stringify(result.user));
+                localStorage.setItem(ROLE_KEY, "admin");
+                paintUser();
+                return;
+              }
+              window.location.replace("/login?next=" + encodeURIComponent(path));
+            })
+            .catch(function () {
+              window.location.replace("/login?next=" + encodeURIComponent(path));
+            });
         };
 
         var bindSignOut = function () {
@@ -173,7 +187,7 @@ function navClass(key: string) {
             button.addEventListener("click", function () {
               localStorage.removeItem(ROLE_KEY);
               localStorage.removeItem(ADMIN_USER_KEY);
-              window.location.href = "/admin/login";
+              window.location.href = "/login";
             });
           });
         };

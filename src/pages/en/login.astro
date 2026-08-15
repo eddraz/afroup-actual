@@ -176,8 +176,21 @@ const recoverHref = localizedPath(locale, routeIds.recover);
             .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
             .then(function (result) {
               if (result.ok) {
+                if (result.body.admin) {
+                  localStorage.setItem("afroup-admin-user", JSON.stringify(result.body.admin));
+                  localStorage.setItem("afroup-role", "admin");
+                } else {
+                  localStorage.removeItem("afroup-admin-user");
+                  localStorage.removeItem("afroup-role");
+                }
                 var next = new URLSearchParams(window.location.search).get("next");
-                window.location.href = next || (lang === "en" ? "/en/cuenta" : "/cuenta");
+                if (next) {
+                  window.location.href = next;
+                  return;
+                }
+                window.location.href = result.body.admin
+                  ? (lang === "en" ? "/en/admin" : "/admin")
+                  : (lang === "en" ? "/en/cuenta" : "/cuenta");
                 return;
               }
               if (errorText) errorText.textContent = messages[result.body && result.body.error] || (lang === "en" ? "Could not sign in." : "No pudimos iniciar sesión.");

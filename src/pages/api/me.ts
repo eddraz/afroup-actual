@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { env } from "cloudflare:workers";
-import { getPublicUser, PUBLIC_SESSION_COOKIE } from "../../lib/public-session";
+import { getAdminUserByEmail, getPublicUser, PUBLIC_SESSION_COOKIE } from "../../lib/public-session";
 
 export const prerender = false;
 
@@ -12,8 +12,13 @@ export const GET: APIRoute = async ({ cookies }) => {
       headers: { "content-type": "application/json; charset=utf-8" },
     });
   }
-  return new Response(JSON.stringify({ ok: true, user }), {
-    status: 200,
-    headers: { "content-type": "application/json; charset=utf-8" },
-  });
+  const admin = await getAdminUserByEmail(env.DB, user.email);
+  return new Response(
+    JSON.stringify({
+      ok: true,
+      user,
+      admin: admin ? { id: admin.id, name: admin.name, email: admin.email } : null,
+    }),
+    { status: 200, headers: { "content-type": "application/json; charset=utf-8" } },
+  );
 };

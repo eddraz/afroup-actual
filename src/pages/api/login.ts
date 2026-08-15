@@ -3,6 +3,7 @@ import { env } from "cloudflare:workers";
 import { verifyPassword } from "../../lib/crypto";
 import {
   createPublicSession,
+  getAdminUserByEmail,
   sessionCookieOptions,
 } from "../../lib/public-session";
 
@@ -44,8 +45,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   const session = await createPublicSession(env.DB, row.id);
   cookies.set("afroup_session", session.token, sessionCookieOptions(session.expiresAt));
 
+  const admin = await getAdminUserByEmail(env.DB, row.email);
   return json({
     ok: true,
     user: { id: row.id, name: row.name, email: row.email },
+    admin: admin ? { id: admin.id, name: admin.name, email: admin.email } : null,
   });
 };
