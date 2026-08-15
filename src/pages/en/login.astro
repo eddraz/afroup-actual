@@ -30,7 +30,7 @@ const recoverHref = localizedPath(locale, routeIds.recover);
   </section>
 
   <div class="mt-9 grid grid-cols-1 gap-7 lg:grid-cols-[1.15fr_0.85fr]">
-    <form class="card bg-base-200 shadow" onsubmit="return false">
+    <form class="card bg-base-200 shadow" onsubmit="return false" data-login-form>
       <div class="card-body gap-4">
         <h2 class="card-title font-display text-[22px] tracking-[-0.005em]">{copy.loginTitle}</h2>
 
@@ -51,6 +51,14 @@ const recoverHref = localizedPath(locale, routeIds.recover);
           </label>
           <a class="link link-hover text-primary" href={recoverHref}>{copy.loginForgot}</a>
         </div>
+
+        <label class="label mt-2 cursor-pointer items-start gap-2 rounded-box border border-dashed border-base-300 bg-base-100 p-3">
+          <input type="checkbox" name="admin" class="checkbox checkbox-sm checkbox-accent mt-0.5" data-admin-toggle />
+          <span class="flex flex-col gap-1">
+            <span class="label-text font-bold">{copy.adminLoginAsAdmin}</span>
+            <span class="text-xs opacity-70">{copy.adminLoginAsAdminLead}</span>
+          </span>
+        </label>
 
         <button class="btn btn-primary mt-2 h-[46px] min-h-[46px]" type="submit">
           {copy.loginSubmit}
@@ -120,4 +128,23 @@ const recoverHref = localizedPath(locale, routeIds.recover);
       <p class="text-[12.5px] opacity-60">{copy.loginAsideNote}</p>
     </aside>
   </div>
+  <script is:inline>
+    (function () {
+      var bind = function () {
+        var form = document.querySelector("form[data-login-form]");
+        if (!form || form.dataset.bound === "true") return;
+        form.dataset.bound = "true";
+        form.addEventListener("submit", function (event) {
+          event.preventDefault();
+          var adminToggle = form.querySelector("[data-admin-toggle]");
+          var role = adminToggle && adminToggle.checked ? "admin" : "user";
+          localStorage.setItem("afroup-role", role);
+          var next = new URLSearchParams(window.location.search).get("next");
+          window.location.href = next || (role === "admin" ? "/admin" : "/cuenta");
+        });
+      };
+      bind();
+      document.addEventListener("astro:after-swap", bind);
+    })();
+  </script>
 </BaseLayout>
