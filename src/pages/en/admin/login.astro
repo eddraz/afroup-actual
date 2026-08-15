@@ -1,0 +1,99 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import { getLocaleFromUrl, localizedPath, t } from "../../../lib/i18n";
+import { routeIds } from "../../../lib/paths";
+
+export const prerender = false;
+
+const locale = getLocaleFromUrl(Astro.url);
+const copy = t(locale);
+const homeHref = localizedPath(locale, routeIds.home);
+---
+
+<BaseLayout title={copy.titleAdminLogin} active="inicio">
+  <div class="breadcrumbs text-sm">
+    <ul>
+      <li><a href={homeHref}>{copy.navHome}</a></li>
+      <li>Admin</li>
+    </ul>
+  </div>
+
+  <section class="hero relative mt-6 overflow-hidden rounded-[24px] border border-base-300 bg-neutral text-neutral-content shadow-lg">
+    <div class="hero-content relative w-full flex-col items-start gap-3 px-6 py-8 lg:px-11 lg:py-11">
+      <p class="text-accent text-xs font-extrabold tracking-[0.18em] uppercase">{copy.adminLoginEyebrow}</p>
+      <h1 class="font-display max-w-[22ch] text-[31px] leading-[1.06] font-bold lg:text-[44px]">{copy.adminLoginTitle}</h1>
+      <p class="max-w-[58ch] text-[17px] leading-[1.55] opacity-80">{copy.adminLoginLead}</p>
+    </div>
+  </section>
+
+  <form class="card bg-base-200 mx-auto mt-8 max-w-[440px] shadow" data-admin-login-form>
+    <div class="card-body gap-4">
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">{copy.adminLoginEmail}</legend>
+        <input class="input w-full" type="email" name="email" autocomplete="username" required />
+      </fieldset>
+
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">{copy.adminLoginPassword}</legend>
+        <input class="input w-full" type="password" name="password" autocomplete="current-password" required />
+      </fieldset>
+
+      <div class="alert alert-error mt-2 hidden" data-admin-login-error><span data-admin-login-error-text></span></div>
+
+      <button class="btn btn-primary mt-2 h-[46px] min-h-[46px]" type="submit">
+        {copy.adminLoginSubmit}
+        <svg class="size-4"><use href="#ic-arrow"></use></svg>
+      </button>
+
+      <a class="btn btn-ghost btn-sm mt-1 self-center" href={homeHref}>{copy.adminLoginBackSite}</a>
+    </div>
+  </form>
+
+  <script is:inline>
+    (function () {
+      var bind = function () {
+        var form = document.querySelector("[data-admin-login-form]");
+        if (!form || form.dataset.bound === "true") return;
+        form.dataset.bound = "true";
+        var errorBox = form.querySelector("[data-admin-login-error]");
+        var errorText = form.querySelector("[data-admin-login-error-text]");
+        var submit = form.querySelector("button[type=submit]");
+        var lang = document.documentElement.lang === "en" ? "en" : "es";
+        var messages = {
+          invalid_credentials: lang === "en" ? "Wrong email or password." : "Correo o contraseña incorrectos.",
+          account_pending: lang === "en"
+            ? "Your account isn't active yet. Check the invite email and finish setting up."
+            : "Tu cuenta aún no está activa. Revisá el correo de invitación y completá el registro.",
+          account_inactive: lang === "en" ? "Your account is paused." : "Tu cuenta está pausada.",
+          missing_fields: lang === "en" ? "Email and password are required." : "Ingresá correo y contraseña.",
+        };
+        form.addEventListener("submit", function (event) {
+          event.preventDefault();
+          if (errorBox) errorBox.classList.add("hidden");
+          submit.disabled = true;
+          var data = new FormData(form);
+          fetch("/api/admin/login", { method: "POST", body: data })
+            .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
+            .then(function (result) {
+              if (result.ok) {
+                localStorage.setItem("afroup-admin-user", JSON.stringify(result.body.user));
+                localStorage.setItem("afroup-role", "admin");
+                window.location.href = "/admin";
+                return;
+              }
+              if (errorText) errorText.textContent = messages[result.body && result.body.error] || (lang === "en" ? "Could not sign in." : "No pudimos iniciar sesión.");
+              if (errorBox) errorBox.classList.remove("hidden");
+              submit.disabled = false;
+            })
+            .catch(function () {
+              if (errorText) errorText.textContent = lang === "en" ? "Network error." : "Error de red.";
+              if (errorBox) errorBox.classList.remove("hidden");
+              submit.disabled = false;
+            });
+        });
+      };
+      bind();
+      document.addEventListener("astro:after-swap", bind);
+    })();
+  </script>
+</BaseLayout>
