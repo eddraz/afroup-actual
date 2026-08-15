@@ -18,7 +18,14 @@
       "migrations_dir": "migrations"
     }
   ],
+  "send_email": [
+    {
+      "name": "EMAIL"
+    }
+  ],
   "vars": {
-    "APP_NAME": "AfroUp"
+    "APP_NAME": "AfroUp",
+    "EMAIL_FROM_ADDRESS": "verificacion@afroup.com",
+    "EMAIL_FROM_NAME": "AfroUp"
   }
 }
