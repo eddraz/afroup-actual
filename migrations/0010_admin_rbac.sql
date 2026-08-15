@@ -59,12 +59,14 @@ INSERT INTO admin_modules (name, slug, description) VALUES
   ('Roles', 'roles', 'Agrupadores de permisos.');
 
 -- Generate the four base permissions per module.
+-- D1/SQLite on Workers does not support `VALUES (...)` as a derived table;
+-- use UNION ALL of SELECT literals instead.
 INSERT INTO admin_permissions (module_id, action, name)
 SELECT m.id, a.action, m.slug || ':' || a.action
 FROM admin_modules m
 CROSS JOIN (
-  VALUES ('create'), ('read'), ('update'), ('delete')
-) AS a(action);
+  SELECT 'create' AS action UNION ALL SELECT 'read' UNION ALL SELECT 'update' UNION ALL SELECT 'delete'
+) AS a;
 
 -- Default roles.
 INSERT INTO admin_roles (name, description) VALUES

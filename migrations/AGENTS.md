@@ -41,3 +41,7 @@
 ## Admin invitations
 
 - `0011_admin_invitations.sql` recreates `admin_users` with `password_hash` nullable and an `invite_pending` flag, then adds the `admin_user_invitations` token table for the email-link activation flow (24h TTL).
+
+## Manual D1 apply notes
+
+- If `wrangler d1 migrations apply` fails on `0010_admin_rbac.sql` with "near (": syntax error", the cause is D1's lack of support for `VALUES (...)` as a derived table. The fix lives in the migration file itself (`UNION ALL` of `SELECT` literals). On a stuck production DB you can (1) mark `0010_admin_rbac.sql` as applied in `d1_migrations` if its schema is already in place, or (2) re-run the schema blocks via `wrangler d1 execute --file` and re-apply.
