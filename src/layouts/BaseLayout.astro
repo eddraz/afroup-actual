@@ -186,7 +186,7 @@ function tabClass(key: NavKey) {
               </nav>
               <nav>
                 <h6 class="footer-title">{copy.footerContactUs}</h6>
-                <a href={paths.contact}>info@afroup.com</a>
+                <a href={`mailto:info@afroup.com?subject=${encodeURIComponent(copy.footerMailSubject)}`}>info@afroup.com</a>
               </nav>
               <nav>
                 <h6 class="footer-title">{copy.footerFollow}</h6>
