@@ -82,6 +82,8 @@ const recoverHref = localizedPath(locale, routeIds.recover);
 
 
 
+        <div class="alert alert-error mt-2 hidden" data-login-error><span data-login-error-text></span></div>
+
         <button class="btn btn-primary mt-2 h-[46px] min-h-[46px]" type="submit">
           {copy.loginSubmit}
           <svg class="size-4"><use href="#ic-arrow"></use></svg>
@@ -158,9 +160,35 @@ const recoverHref = localizedPath(locale, routeIds.recover);
         form.dataset.bound = "true";
         form.addEventListener("submit", function (event) {
           event.preventDefault();
-          localStorage.setItem("afroup-role", "user");
-          var next = new URLSearchParams(window.location.search).get("next");
-          window.location.href = next || "/cuenta";
+          var submit = form.querySelector("button[type=submit]");
+          var errorBox = form.querySelector("[data-login-error]");
+          var errorText = form.querySelector("[data-login-error-text]");
+          if (errorBox) errorBox.classList.add("hidden");
+          if (submit) submit.disabled = true;
+          var data = new FormData(form);
+          var lang = document.documentElement.lang === "en" ? "en" : "es";
+          var messages = {
+            invalid_credentials: lang === "en" ? "Wrong email or password." : "Correo o contraseña incorrectos.",
+            unverified: lang === "en" ? "Verify your email before signing in." : "Verificá tu correo antes de iniciar sesión.",
+            missing_fields: lang === "en" ? "Email and password are required." : "Ingresá correo y contraseña.",
+          };
+          fetch("/api/login", { method: "POST", body: data })
+            .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
+            .then(function (result) {
+              if (result.ok) {
+                var next = new URLSearchParams(window.location.search).get("next");
+                window.location.href = next || (lang === "en" ? "/en/cuenta" : "/cuenta");
+                return;
+              }
+              if (errorText) errorText.textContent = messages[result.body && result.body.error] || (lang === "en" ? "Could not sign in." : "No pudimos iniciar sesión.");
+              if (errorBox) errorBox.classList.remove("hidden");
+              if (submit) submit.disabled = false;
+            })
+            .catch(function () {
+              if (errorText) errorText.textContent = lang === "en" ? "Network error." : "Error de red.";
+              if (errorBox) errorBox.classList.remove("hidden");
+              if (submit) submit.disabled = false;
+            });
         });
       };
       bind();
