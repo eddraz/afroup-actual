@@ -38,6 +38,7 @@
 - Keep the People mockup at `/referentes` and `/en/referentes`, wired through `paths.people`.
 - Keep the Community hub at `/comunidad` and `/en/comunidad`, wired through `paths.community`, with links to Referentes, Proyectos, Emprendedores, and Colabora.
 - Keep the Entrepreneurs mockup at `/emprendedores` and `/en/emprendedores`, wired through `paths.entrepreneurs`.
+- Keep the entrepreneur detail mockup at `/emprendimiento` and `/en/emprendimiento`, wired through `paths.entrepreneur`.
 - Keep the Saved mockup at `/guardados` and `/en/guardados`, wired through `paths.saved`, listing saved articles, resources, and products.
 - Keep the Store mockup at `/tienda` and `/en/tienda`, wired through `paths.store`.
 - Use official Astro i18n only: Spanish default at unprefixed routes, English under `/en`, dictionaries in `lib/i18n.ts`.
