@@ -20,11 +20,9 @@ const loginHref = localizedPath(locale, routeIds.login);
 const languages = await listSiteLanguages(env.DB);
 ---
 
-<AdminLayout title={`${copy.titleAdmin} · ${copy.adminLanguages}`} active="languages">
+<AdminLayout title={copy.adminLanguages} active="languages">
   <header class="flex flex-col gap-1">
-    <p class="text-xs font-extrabold tracking-[0.18em] text-base-content/50 uppercase">{copy.navAdmin}</p>
     <h1 class="font-display text-[28px] leading-[1.06] font-bold tracking-[-0.005em] lg:text-[34px]">{copy.adminLanguages}</h1>
-    <p class="max-w-xl text-sm opacity-70">{copy.adminPermissionMatrixHelp}</p>
   </header>
 
   <details class="card card-border bg-base-100 mt-6">

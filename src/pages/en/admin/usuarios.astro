@@ -66,10 +66,9 @@ const usuariosReadId = permissions.find((permission) => {
 })?.id;
 ---
 
-<AdminLayout title={`${copy.titleAdmin} · ${copy.adminUsers}`} active="users">
+<AdminLayout title={copy.adminUsers} active="users">
   <header class="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-end">
     <div>
-      <p class="text-primary text-xs font-extrabold tracking-[0.18em] uppercase">{copy.navAdmin}</p>
       <h1 class="font-display text-[28px] leading-[1.06] font-bold tracking-[-0.005em] lg:text-[34px]">{copy.adminUsers}</h1>
     </div>
   </header>
