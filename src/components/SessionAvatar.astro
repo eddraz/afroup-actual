@@ -16,19 +16,21 @@ const showPhoto = Boolean(avatarUrl) && !guest;
 const showInitials = !guest && !showPhoto;
 ---
 
-<div class:list={["avatar", !showPhoto && "avatar-placeholder"]} data-session-avatar>
-  <div class:list={[sizeClass, "rounded-full", !showPhoto && "bg-neutral text-neutral-content"]}>
-    <img
-      class:list={[!showPhoto && "hidden", "size-full object-cover"]}
-      src={showPhoto ? avatarUrl! : undefined}
-      alt={name}
-      data-session-photo
-    />
-    <span class:list={[!showInitials && "hidden", textClass]} data-session-initials>{initials}</span>
-    {guest ? (
-      <span class="flex size-full items-center justify-center" data-session-guest>
-        <svg class="size-5"><use href="#ic-user"></use></svg>
-      </span>
-    ) : null}
+<div class="tooltip tooltip-right" data-tip={name} data-session-tooltip>
+  <div class:list={["avatar", !showPhoto && "avatar-placeholder"]} data-session-avatar>
+    <div class:list={[sizeClass, "rounded-full", !showPhoto && "bg-neutral text-neutral-content"]}>
+      <img
+        class:list={[!showPhoto && "hidden", "size-full object-cover"]}
+        src={showPhoto ? avatarUrl! : undefined}
+        alt={name}
+        data-session-photo
+      />
+      <span class:list={[!showInitials && "hidden", textClass]} data-session-initials>{initials}</span>
+      {guest ? (
+        <span class="flex size-full items-center justify-center" data-session-guest>
+          <svg class="size-5"><use href="#ic-user"></use></svg>
+        </span>
+      ) : null}
+    </div>
   </div>
 </div>

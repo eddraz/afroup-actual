@@ -7,6 +7,12 @@ interface Props {
   avatarUrl?: string | null;
   size?: "sm" | "md" | "lg";
   showEmail?: boolean;
+  compact?: boolean;
+  menu?: boolean;
+  extraHref?: string;
+  extraLabel?: string;
+  logoutHref?: string;
+  logoutLabel?: string;
 }
 
 const {
@@ -15,13 +21,68 @@ const {
   avatarUrl = null,
   size = "sm",
   showEmail = false,
+  compact = false,
+  menu = false,
+  extraHref,
+  extraLabel,
+  logoutHref = "/api/logout?next=/login",
+  logoutLabel = "Cerrar sesión",
 } = Astro.props;
 ---
 
-<div class="flex min-w-0 items-center gap-2" data-session-user>
-  <SessionAvatar name={name} avatarUrl={avatarUrl} size={size} />
-  <div class="min-w-0 leading-tight">
-    <p class="truncate text-sm font-bold" data-session-name>{name}</p>
-    {showEmail ? <p class="truncate text-xs opacity-60" data-session-email>{email}</p> : null}
+{menu ? (
+  <div class:list={[compact ? "" : "w-full"]}>
+    <button
+      type="button"
+      class:list={[
+        compact
+          ? "btn btn-square btn-ghost overflow-hidden border border-base-300 bg-base-100 p-0"
+          : "w-full rounded-box p-1 text-left hover:bg-base-200",
+      ]}
+      popovertarget="session-user-menu"
+      style="anchor-name:--session-user"
+    >
+      {compact ? (
+        <SessionAvatar name={name} avatarUrl={avatarUrl} size={size} />
+      ) : (
+        <div class="flex min-w-0 items-center gap-2" data-session-user>
+          <SessionAvatar name={name} avatarUrl={avatarUrl} size={size} />
+          <div class="min-w-0 leading-tight">
+            <p class="truncate text-sm font-bold" data-session-name>{name}</p>
+            {showEmail ? <p class="truncate text-xs opacity-60" data-session-email>{email}</p> : null}
+          </div>
+        </div>
+      )}
+    </button>
+    <div
+      id="session-user-menu"
+      popover
+      class:list={[
+        "dropdown bg-base-100 rounded-box z-20 w-64 border border-base-300 p-2 shadow",
+        compact ? "dropdown-bottom dropdown-end mt-2" : "dropdown-top mb-2",
+      ]}
+      style="position-anchor:--session-user"
+    >
+      {extraHref && extraLabel ? (
+        <a class="btn btn-ghost btn-sm w-full justify-start" href={extraHref}>
+          <svg class="size-4"><use href="#ic-arrow"></use></svg>
+          {extraLabel}
+        </a>
+      ) : null}
+      <form method="post" action={logoutHref}>
+        <button type="submit" class="btn btn-ghost btn-sm w-full justify-start" data-admin-signout>
+          <svg class="size-4"><use href="#ic-logout"></use></svg>
+          {logoutLabel}
+        </button>
+      </form>
+    </div>
   </div>
-</div>
+) : (
+  <div class="flex min-w-0 items-center gap-2" data-session-user>
+    <SessionAvatar name={name} avatarUrl={avatarUrl} size={size} />
+    <div class="min-w-0 leading-tight">
+      <p class="truncate text-sm font-bold" data-session-name>{name}</p>
+      {showEmail ? <p class="truncate text-xs opacity-60" data-session-email>{email}</p> : null}
+    </div>
+  </div>
+)}

@@ -42,6 +42,12 @@
       frame.classList.toggle("bg-neutral", !user.avatar_url);
       frame.classList.toggle("text-neutral-content", !user.avatar_url);
     });
+    document.querySelectorAll("[data-session-guest-nav]").forEach(function (node) {
+      node.classList.add("hidden");
+    });
+    document.querySelectorAll("[data-session-user-nav]").forEach(function (node) {
+      node.classList.remove("hidden");
+    });
     document.querySelectorAll("[data-session-link]").forEach(function (node) {
       var href = node.getAttribute("data-session-href");
       if (href) node.setAttribute("href", href);

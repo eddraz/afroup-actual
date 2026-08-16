@@ -159,16 +159,22 @@ function tabClass(key: NavKey) {
                   <svg class="swap-off size-5"><use href="#ic-sun"></use></svg>
                   <svg class="swap-on size-5"><use href="#ic-moon"></use></svg>
                 </label>
-                <div class="tooltip tooltip-bottom" data-session-tooltip data-tip={copy.navLogin}>
-                  <a
-                    class="btn btn-square btn-ghost overflow-hidden border border-base-300 bg-base-100 p-0"
-                    href={paths.login}
-                    aria-label={copy.navLogin}
-                    data-session-link
-                    data-session-href={paths.account}
-                  >
-                    <SessionAvatar guest />
-                  </a>
+                <div class="hidden" data-session-guest-nav>
+                  <div class="tooltip tooltip-bottom" data-tip={copy.navLogin}>
+                    <a class="btn btn-square btn-ghost overflow-hidden border border-base-300 bg-base-100 p-0" href={paths.login} aria-label={copy.navLogin}>
+                      <SessionAvatar guest />
+                    </a>
+                  </div>
+                </div>
+                <div class="hidden" data-session-user-nav>
+                  <SessionUser
+                    menu
+                    compact
+                    extraHref={paths.account}
+                    extraLabel={copy.navAccount}
+                    logoutHref={`/api/logout?next=${encodeURIComponent(paths.login)}`}
+                    logoutLabel={copy.accountLogout}
+                  />
                 </div>
           </div>
         </div>

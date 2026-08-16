@@ -89,18 +89,7 @@ const showAccess = can.modules || can.permissions || can.roles || can.users || c
               <p class="font-display text-[18px] leading-none font-bold">{title.replace("AfroUp — ", "")}</p>
             </div>
           </div>
-          <div class="navbar-end gap-2">
-            <LanguageSwitcher scope="all" />
-            <div class="hidden sm:block">
-              <SessionUser showEmail />
-            </div>
-            <form method="post" action={`/api/logout?next=${encodeURIComponent("/login")}`}>
-              <button type="submit" class="btn btn-sm btn-ghost" data-admin-signout>
-                <svg class="size-4"><use href="#ic-logout"></use></svg>
-                <span class="hidden sm:inline">{copy.adminSignOut}</span>
-              </button>
-            </form>
-          </div>
+          <div class="navbar-end gap-2"></div>
         </div>
 
         <main class="mx-auto w-full max-w-[1180px] flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
@@ -189,11 +178,16 @@ const showAccess = can.modules || can.permissions || can.roles || can.users || c
               </li>
             ) : null}
           </ul>
-          <div class="border-t border-base-300 p-3">
-            <a class="btn btn-ghost btn-sm btn-block justify-start" href={paths.home}>
-              <svg class="size-4"><use href="#ic-arrow"></use></svg>
-              {copy.adminBackSite}
-            </a>
+          <div class="mt-auto flex shrink-0 flex-col gap-3 border-t border-base-300 p-3">
+            <LanguageSwitcher scope="all" />
+            <SessionUser
+              showEmail
+              menu
+              extraHref={paths.home}
+              extraLabel={copy.adminBackSite}
+              logoutHref={`/api/logout?next=${encodeURIComponent("/login")}`}
+              logoutLabel={copy.adminSignOut}
+            />
           </div>
         </aside>
       </div>
