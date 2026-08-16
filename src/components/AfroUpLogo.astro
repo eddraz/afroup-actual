@@ -1,0 +1,37 @@
+---
+import { LOGO_PATHS, logoSize, type LogoVariant } from "../lib/logo";
+
+interface Props {
+  variant?: LogoVariant;
+  height?: number;
+  color?: string;
+  class?: string;
+  title?: string;
+}
+
+const {
+  variant = "wordmark",
+  height = 30,
+  color = "currentColor",
+  class: className,
+  title = "AfroUp",
+} = Astro.props;
+
+const { width, viewBox } = logoSize(variant, height);
+const paths = LOGO_PATHS[variant];
+---
+
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox={viewBox}
+  width={width}
+  height={height}
+  fill={color}
+  fill-rule="evenodd"
+  class:list={["inline-block shrink-0 align-middle", className]}
+  role="img"
+  aria-label={title}
+>
+  <title>{title}</title>
+  {paths.map((d) => <path d={d} />)}
+</svg>

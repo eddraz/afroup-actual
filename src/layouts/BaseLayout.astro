@@ -1,5 +1,6 @@
 ---
 import { ClientRouter } from "astro:transitions";
+import AfroUpLogo from "../components/AfroUpLogo.astro";
 import SessionAvatar from "../components/SessionAvatar.astro";
 import LanguageSwitcher from "../components/LanguageSwitcher.astro";
 import "../styles/global.css";
@@ -180,7 +181,7 @@ function tabClass(key: NavKey) {
           <div class="h-3 w-full bg-[url('/assets/pattern.png')] bg-left bg-[length:300px]"></div>
           <div class="mx-auto w-full max-w-[1180px] px-4 py-10 sm:px-[18px] lg:px-[38px]">
             <div class="mb-7 flex flex-col items-start justify-between gap-4 border-b border-white/10 pb-6 sm:flex-row sm:items-center">
-              <img src="/assets/logo-white.png" alt="AfroUp" class="h-[30px] w-auto" />
+              <AfroUpLogo height={30} class="text-neutral-content" />
               <a class="btn btn-secondary max-sm:btn-block" href={paths.donate}>
                 <svg class="size-4"><use href="#ic-heart"></use></svg>
                 {copy.donateCta}
@@ -254,9 +255,8 @@ function tabClass(key: NavKey) {
         <label for="site-drawer" aria-label={copy.closeMenuAria} class="drawer-overlay"></label>
         <div class="flex h-dvh max-h-dvh w-[264px] flex-col border-r border-base-300 bg-base-200">
           <div class="shrink-0 px-[30px] pt-[30px] pb-[21px]">
-            <a href={paths.home}>
-              <img src="/assets/logo-black.png" alt="AfroUp" class="h-[30px] w-auto dark:hidden" />
-                  <img src="/assets/logo-white.png" alt="AfroUp" class="hidden h-[30px] w-auto dark:block" />
+            <a href={paths.home} class="text-base-content">
+              <AfroUpLogo height={30} />
             </a>
           </div>
           <ul class="sidebar-scroll menu min-h-0 w-full grow flex-nowrap overflow-x-hidden overflow-y-auto px-5 py-0">
