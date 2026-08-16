@@ -1344,9 +1344,24 @@ export function t(locale: Locale): Dictionary {
   return dictionaries[locale];
 }
 
-export function localizedPath(locale: Locale, path: string): string {
+export function mergeDictionary(locale: string, extra?: Record<string, string> | null): Dictionary {
+  const base = isLocale(locale) ? dictionaries[locale] : dictionaries[defaultLocale];
+  if (!extra) return base;
+  return { ...base, ...extra } as Dictionary;
+}
+
+export function localeFromPath(pathname: string): string {
+  const first = pathname.split("/").filter(Boolean)[0];
+  return first && /^[a-z]{2}$/.test(first) ? first : defaultLocale;
+}
+
+export function localizedPath(locale: string, path: string): string {
   const clean = path === "/" ? "/" : path.replace(/^\//, "");
-  return getRelativeLocaleUrl(locale, clean).replace(/\/+$/, "") || "/";
+  if (isLocale(locale)) {
+    return getRelativeLocaleUrl(locale, clean).replace(/\/+$/, "") || "/";
+  }
+  if (locale === defaultLocale) return clean === "/" ? "/" : `/${clean}`;
+  return `/${locale}${clean === "/" ? "" : `/${clean}`}`;
 }
 
 export function joinPath(base: string, segment: string): string {
