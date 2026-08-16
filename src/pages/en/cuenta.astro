@@ -6,6 +6,8 @@ import { env } from "cloudflare:workers";
 import { getLocaleFromUrl, localizedPath, t } from "../../lib/i18n";
 import { routeIds } from "../../lib/paths";
 import { getPublicUser, obfuscateEmail, PUBLIC_SESSION_COOKIE } from "../../lib/public-session";
+import { listSiteLanguages } from "../../lib/site-languages";
+import { loadUserBios, translationAccessForEmail } from "../../lib/user-bios";
 
 export const prerender = false;
 
@@ -21,7 +23,10 @@ if (!user) {
 }
 
 const maskedEmail = obfuscateEmail(user.email);
-const bio = user.bio ?? "";
+const languages = await listSiteLanguages(env.DB);
+const bios = await loadUserBios(env.DB, user.id);
+if (!bios.es && user.bio) bios.es = user.bio;
+const translation = await translationAccessForEmail(env.DB, user.email);
 ---
 
 <BaseLayout title={copy.titleAccount} active="account">
@@ -89,11 +94,41 @@ const bio = user.bio ?? "";
               <p class="mt-1 text-[17px] font-bold">{maskedEmail}</p>
             </div>
 
-            <fieldset class="fieldset">
-              <legend class="fieldset-legend">{copy.accountBioLabel}</legend>
-              <textarea id="bio" name="bio" rows="4" maxlength="280" placeholder={copy.accountBioLabel}>{bio}</textarea>
+            <div class="flex flex-col gap-3">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <p class="text-sm font-semibold">{copy.accountBioLabel}</p>
+                {translation.canUseAi ? (
+                  <button class="btn btn-dash btn-sm" type="button" data-bio-translate>{copy.accountBioTranslate}</button>
+                ) : null}
+              </div>
+              <p class="text-xs opacity-60">
+                {translation.canUseAi
+                  ? copy.accountBioTranslateHelp
+                  : translation.canWrite
+                    ? copy.accountBioManualOnly
+                    : copy.accountBioNoTranslate}
+              </p>
+              {languages.map((language) => {
+                const locked = !translation.canWrite && language.code !== "es";
+                return (
+                  <fieldset class="fieldset">
+                    <legend class="fieldset-legend">{copy.accountBioLabel} · {language.native_name}</legend>
+                    <textarea
+                      id={language.code === "es" ? "bio" : `bio-${language.code}`}
+                      class="textarea w-full"
+                      name={`bio[${language.code}]`}
+                      rows="4"
+                      maxlength="280"
+                      placeholder={language.native_name}
+                      data-bio-locale={language.code}
+                      readonly={locked}
+                    >{bios[language.code] ?? ""}</textarea>
+                  </fieldset>
+                );
+              })}
               <p class="text-xs opacity-60">{copy.accountBioHelp}</p>
-            </fieldset>
+              <div class="alert alert-error hidden" data-bio-translate-error><span>{copy.accountBioTranslateError}</span></div>
+            </div>
 
             <div class="alert alert-success hidden" data-profile-success><span>{copy.accountProfileSaved}</span></div>
             <div class="alert alert-error hidden" data-profile-error><span>{copy.accountProfileSaveError}</span></div>
@@ -235,7 +270,41 @@ const bio = user.bio ?? "";
   <script is:inline>
     (function () {
       var bind = function () {
-        if (window.AfroUpRichEditor) window.AfroUpRichEditor.attach("#bio");
+        if (window.AfroUpRichEditor) {
+          document.querySelectorAll("[data-bio-locale]").forEach(function (field) {
+            if (field.id) window.AfroUpRichEditor.attach("#" + field.id);
+          });
+        }
+        var translateBtn = document.querySelector("[data-bio-translate]");
+        if (translateBtn && translateBtn.dataset.bound !== "true") {
+          translateBtn.dataset.bound = "true";
+          translateBtn.addEventListener("click", function () {
+            var source = document.querySelector('[data-bio-locale="es"]');
+            var targets = document.querySelectorAll("[data-bio-locale]:not([data-bio-locale=es])");
+            var errorBox = document.querySelector("[data-bio-translate-error]");
+            if (!source || !source.value.trim()) return;
+            if (errorBox) errorBox.classList.add("hidden");
+            translateBtn.disabled = true;
+            var jobs = Array.prototype.map.call(targets, function (field) {
+              var data = new FormData();
+              data.set("source", source.value);
+              data.set("target", field.getAttribute("data-bio-locale"));
+              return fetch("/api/profile/translate", { method: "POST", body: data })
+                .then(function (res) { return res.json(); })
+                .then(function (result) {
+                  if (!result || !result.ok) throw new Error("translate");
+                  field.value = result.text;
+                });
+            });
+            Promise.all(jobs)
+              .catch(function () {
+                if (errorBox) errorBox.classList.remove("hidden");
+              })
+              .finally(function () {
+                translateBtn.disabled = false;
+              });
+          });
+        }
         var profileForm = document.querySelector("[data-profile-form]");
         if (profileForm && profileForm.dataset.bound !== "true") {
           profileForm.dataset.bound = "true";

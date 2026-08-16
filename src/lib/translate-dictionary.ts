@@ -67,6 +67,31 @@ export async function translateUiDictionary(
   return { ...source, ...translated };
 }
 
+export async function translatePlainText(
+  ai: AiRunner,
+  sourceText: string,
+  sourceName: string,
+  targetCode: string,
+  targetName: string,
+): Promise<string> {
+  const payload = await ai.run(TRANSLATION_MODEL, {
+    messages: [
+      {
+        role: "system",
+        content:
+          "Translate the user text faithfully. Return only the translated text. Keep names like AfroUp. Do not add quotes or explanations.",
+      },
+      {
+        role: "user",
+        content: `Translate this ${sourceName} text into ${targetName} (${targetCode}):\n${sourceText}`,
+      },
+    ],
+  });
+  const content = extractContent(payload)?.trim();
+  if (!content) throw new Error("translate_failed");
+  return content.replace(/^['"“”]+|['"“”]+$/g, "").trim();
+}
+
 export function dictionaryAsJson(dictionary: Record<string, string> | Dictionary): string {
   return JSON.stringify(dictionary);
 }
