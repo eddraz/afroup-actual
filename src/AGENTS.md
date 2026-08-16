@@ -22,6 +22,7 @@
 - Keep the sidebar logo and bottom language/donation controls outside the scroll region; only the menu item list may own vertical overflow.
 - Keep the sidebar menu scrollbar thin and black-toned via the `sidebar-scroll` utility.
 - Keep branded light and dark themes in `styles/global.css` as `afroup` and `afroup-dark`; switch them with a daisyUI `theme-controller` in `layouts/BaseLayout.astro`.
+- Keep AI actions in purple via the `ai` theme token and `btn-ai` / `checkbox-ai` / `badge-ai`. Only elements that execute or grant AI use those classes.
 - Keep site-wide Astro view transitions via `ClientRouter` in `layouts/BaseLayout.astro` and reapply the theme on `astro:before-swap` / `astro:after-swap`.
 - Keep shared route targets in `lib/paths.ts` and the daisyUI theme and Tailwind entry in `styles/global.css`.
 - Keep the search mockup at `/buscar`, wired through `paths.search`.

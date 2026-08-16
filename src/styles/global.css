@@ -32,6 +32,8 @@
   --color-warning-content: #5A4406;
   --color-error: #B91C1C;
   --color-error-content: #FBF5E9;
+  --color-ai: #7C3AED;
+  --color-ai-content: #F5F3FF;
 
   --radius-box: 1.125rem;
   --radius-field: 2rem;
@@ -69,6 +71,8 @@
   --color-warning-content: #5a4406;
   --color-error: #b91c1c;
   --color-error-content: #fbf5e9;
+  --color-ai: #a78bfa;
+  --color-ai-content: #2e1065;
 
   --radius-box: 1.125rem;
   --radius-field: 2rem;
@@ -90,6 +94,20 @@
 @utility sidebar-scroll {
   scrollbar-width: thin;
   scrollbar-color: var(--color-base-content) var(--color-base-300);
+}
+
+@utility btn-ai {
+  --btn-color: var(--color-ai);
+  --btn-fg: var(--color-ai-content);
+}
+
+@utility checkbox-ai {
+  --input-color: var(--color-ai);
+}
+
+@utility badge-ai {
+  --badge-color: var(--color-ai);
+  --badge-fg: var(--color-ai-content);
 }
 
 @utility sidebar-scroll {

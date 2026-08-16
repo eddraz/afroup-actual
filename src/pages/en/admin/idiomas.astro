@@ -47,14 +47,14 @@ const languages = await listSiteLanguages(env.DB);
           <legend class="fieldset-legend">{copy.adminLanguageNative}</legend>
           <div class="join w-full">
             <input class="input join-item w-full" name="nativeName" maxlength="80" placeholder="Português" data-native-name />
-            <button class="btn join-item" type="button" data-suggest-native>{copy.adminLanguageSuggest}</button>
+            <button class="btn btn-ai join-item" type="button" data-suggest-native>{copy.adminLanguageSuggest}</button>
           </div>
           <p class="label">{copy.adminLanguageNativeHelp}</p>
         </fieldset>
       </div>
       <div class="alert alert-error mt-3 hidden" data-language-error><span data-language-error-text></span></div>
       <div class="mt-3 flex justify-end">
-        <button class="btn btn-primary btn-sm" type="submit">{copy.adminLanguageTranslate}</button>
+        <button class="btn btn-ai btn-sm" type="submit">{copy.adminLanguageTranslate}</button>
       </div>
     </form>
   </details>
