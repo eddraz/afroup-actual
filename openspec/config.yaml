@@ -1,0 +1,48 @@
+# openspec/config.yaml — afroup-original-site
+# Source of truth for SDD project config. Read by every SDD phase.
+
+schema: spec-driven
+
+context: |
+  Stack: Astro 7 with @astrojs/cloudflare, Bun, Cloudflare Workers, D1, R2, Workers AI,
+  daisyUI 5 + Tailwind 4, official Astro i18n (es default, /en). Architecture follows
+  the DOX hierarchy in AGENTS.md. Current identity is split: afroup_users for public
+  accounts and admin_users for RBAC. Testing uses bun test on legacy/test and src/lib.
+  Persistence: hybrid. Skill registry at .atl/skill-registry.md.
+
+artifact_store: hybrid
+strict_tdd: true
+chained_pr_strategy: ask-on-risk
+review_budget_lines: 400
+detail_level: standard
+
+skill_registry: .atl/skill-registry.md
+engram_project: afroup-original-site
+
+rules:
+  proposal:
+    - Keep identity, authorization, and public/admin chrome in one first slice.
+    - Do not invent a third-party auth provider.
+  specs:
+    - Use Given/When/Then for every scenario.
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY) verbatim.
+  design:
+    - Document the single users table, default grants, and admin menu gating.
+    - Record migration from afroup_users + admin_users without dual login.
+  tasks:
+    - Group by phase: 1. schema, 2. auth, 3. grants, 4. chrome, 5. docs.
+    - Each task must be completable in a single session and produce a reviewable commit.
+  apply:
+    tdd: true
+    test_command: "bun test src/lib"
+  verify:
+    test_command: "bun test src/lib"
+    build_command: "bun run build"
+  archive:
+    - Warn before merging destructive deltas (REMOVED sections, schema rewrites).
+
+testing:
+  strict_tdd: true
+  runner:
+    command: "bun test src/lib"
+    framework: bun:test
