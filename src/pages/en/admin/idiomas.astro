@@ -1,0 +1,135 @@
+---
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import { getLocaleFromUrl, localizedPath, t } from "../../../lib/i18n";
+import { routeIds } from "../../../lib/paths";
+import { env } from "cloudflare:workers";
+import { getCurrentAdmin, sessionTokenFrom } from "../../../lib/admin-scope";
+import { listSiteLanguages } from "../../../lib/site-languages";
+
+export const prerender = false;
+
+const locale = getLocaleFromUrl(Astro.url);
+const copy = t(locale);
+const loginHref = localizedPath(locale, routeIds.login);
+const actor = await getCurrentAdmin(env.DB, sessionTokenFrom(Astro.cookies));
+if (!actor) {
+  return Astro.redirect(`${loginHref}?next=${encodeURIComponent(Astro.url.pathname)}`, 303);
+}
+
+const languages = await listSiteLanguages(env.DB);
+---
+
+<AdminLayout title={`${copy.titleAdmin} · ${copy.adminLanguages}`} active="languages">
+  <header class="flex flex-col gap-1">
+    <p class="text-xs font-extrabold tracking-[0.18em] text-base-content/50 uppercase">{copy.navAdmin}</p>
+    <h1 class="font-display text-[28px] leading-[1.06] font-bold tracking-[-0.005em] lg:text-[34px]">{copy.adminLanguages}</h1>
+  </header>
+
+  <details class="card card-border bg-base-100 mt-6">
+    <summary class="card-body cursor-pointer list-none">
+      <span class="flex items-center gap-2 font-bold">
+        <svg class="size-4"><use href="#ic-plus"></use></svg>
+        {copy.adminLanguageAdd}
+      </span>
+    </summary>
+    <form method="post" action="/api/admin/languages" class="card-body border-t border-base-300 pt-4" data-language-form>
+      <input type="hidden" name="_intent" value="create" />
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">{copy.adminLanguageCode}</legend>
+          <input class="input w-full" name="code" required maxlength="2" pattern="[a-zA-Z]{2}" placeholder="pt" />
+        </fieldset>
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">{copy.adminLanguageName}</legend>
+          <input class="input w-full" name="name" required maxlength="80" placeholder="Portuguese" />
+        </fieldset>
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">{copy.adminLanguageNative}</legend>
+          <input class="input w-full" name="nativeName" required maxlength="80" placeholder="Português" />
+        </fieldset>
+      </div>
+      <div class="alert alert-error mt-3 hidden" data-language-error><span data-language-error-text></span></div>
+      <div class="mt-3 flex justify-end">
+        <button class="btn btn-primary btn-sm" type="submit">{copy.adminLanguageTranslate}</button>
+      </div>
+    </form>
+  </details>
+
+  <div class="card card-border bg-base-100 mt-6 overflow-x-auto">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>{copy.adminLanguageShow}</th>
+          <th>{copy.adminLanguageCode}</th>
+          <th>{copy.adminLanguageName}</th>
+          <th>{copy.adminLanguageNative}</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {languages.map((language) => (
+          <tr>
+            <td>
+              <form method="post" action="/api/admin/languages" data-language-toggle>
+                <input type="hidden" name="_intent" value="toggle" />
+                <input type="hidden" name="code" value={language.code} />
+                <input type="hidden" name="visible" value={language.is_visible ? "0" : "1"} />
+                <input type="checkbox" class="checkbox" checked={language.is_visible === 1} data-show-toggle />
+              </form>
+            </td>
+            <td class="font-mono uppercase">{language.code}</td>
+            <td>{language.name}</td>
+            <td>{language.native_name}</td>
+            <td>{language.is_pillar ? <span class="badge badge-sm">{copy.adminLanguagePillar}</span> : null}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+
+  <script is:inline>
+    (function () {
+      var bind = function () {
+        document.querySelectorAll("[data-language-toggle]").forEach(function (form) {
+          if (form.dataset.bound === "true") return;
+          form.dataset.bound = "true";
+          var box = form.querySelector("[data-show-toggle]");
+          if (!box) return;
+          box.addEventListener("change", function () {
+            form.querySelector('input[name="visible"]').value = box.checked ? "1" : "0";
+            fetch(form.action, { method: "POST", body: new FormData(form) })
+              .then(function (res) { return res.json(); })
+              .then(function () { window.location.reload(); });
+          });
+        });
+
+        var create = document.querySelector("[data-language-form]");
+        if (create && create.dataset.bound !== "true") {
+          create.dataset.bound = "true";
+          create.addEventListener("submit", function (event) {
+            event.preventDefault();
+            var errorBox = create.querySelector("[data-language-error]");
+            var errorText = create.querySelector("[data-language-error-text]");
+            var submit = create.querySelector("button[type=submit]");
+            if (errorBox) errorBox.classList.add("hidden");
+            if (submit) submit.disabled = true;
+            fetch(create.action, { method: "POST", body: new FormData(create) })
+              .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
+              .then(function (result) {
+                if (result.ok) { window.location.reload(); return; }
+                var lang = document.documentElement.lang === "en" ? "en" : "es";
+                if (errorText) errorText.textContent = lang === "en" ? "Could not add the language." : "No pudimos agregar el idioma.";
+                if (errorBox) errorBox.classList.remove("hidden");
+                if (submit) submit.disabled = false;
+              })
+              .catch(function () {
+                if (submit) submit.disabled = false;
+              });
+          });
+        }
+      };
+      bind();
+      document.addEventListener("astro:after-swap", bind);
+    })();
+  </script>
+</AdminLayout>

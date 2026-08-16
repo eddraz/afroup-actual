@@ -1,0 +1,82 @@
+---
+import { defaultLocale, getLocaleFromUrl } from "../lib/i18n";
+
+const current = getLocaleFromUrl(Astro.url);
+---
+
+<div class="hidden" data-language-switcher data-current={current} data-default={defaultLocale}></div>
+<script is:inline>
+  (function () {
+    var switchPath = function (nextCode, currentCode, defaultCode) {
+      var url = new URL(window.location.href);
+      var parts = url.pathname.split("/").filter(Boolean);
+      if (parts[0] && parts[0].length === 2) parts.shift();
+      var rest = parts.join("/");
+      var nextPath = nextCode === defaultCode
+        ? (rest ? "/" + rest : "/")
+        : "/" + nextCode + (rest ? "/" + rest : "");
+      return nextPath + url.search;
+    };
+
+    var render = function (root, languages) {
+      var current = root.getAttribute("data-current") || "es";
+      var defaultCode = root.getAttribute("data-default") || "es";
+      var visible = languages || [];
+      if (!visible.some(function (item) { return item.code === current; }) && visible.length) {
+        window.location.replace(switchPath(visible[0].code, current, defaultCode));
+        return;
+      }
+      root.innerHTML = "";
+      root.className = "";
+      if (visible.length <= 1) {
+        root.classList.add("hidden");
+        return;
+      }
+      if (visible.length === 2) {
+        root.className = "join w-full overflow-hidden rounded-field border border-base-300";
+        visible.forEach(function (item) {
+          var link = document.createElement("a");
+          link.className = "btn btn-sm join-item flex-1 font-bold" + (item.code === current ? " btn-active bg-neutral/80 text-neutral-content" : "");
+          link.href = switchPath(item.code, current, defaultCode);
+          link.textContent = item.code.toUpperCase();
+          root.appendChild(link);
+        });
+        return;
+      }
+      var select = document.createElement("select");
+      select.className = "select select-sm w-full";
+      select.setAttribute("aria-label", "Language");
+      visible.forEach(function (item) {
+        var option = document.createElement("option");
+        option.value = item.code;
+        option.textContent = item.code.toUpperCase() + " — " + (item.nativeName || item.name);
+        if (item.code === current) option.selected = true;
+        select.appendChild(option);
+      });
+      select.addEventListener("change", function () {
+        window.location.href = switchPath(select.value, current, defaultCode);
+      });
+      root.appendChild(select);
+    };
+
+    var bind = function () {
+      var root = document.querySelector("[data-language-switcher]");
+      if (!root || root.dataset.bound === "true") return;
+      root.dataset.bound = "true";
+      fetch("/api/languages", { credentials: "same-origin" })
+        .then(function (res) { return res.json(); })
+        .then(function (result) {
+          if (!result || !result.ok) return;
+          render(root, result.languages || []);
+        })
+        .catch(function () {});
+    };
+
+    bind();
+    document.addEventListener("astro:page-load", function () {
+      var root = document.querySelector("[data-language-switcher]");
+      if (root) root.dataset.bound = "";
+      bind();
+    });
+  })();
+</script>

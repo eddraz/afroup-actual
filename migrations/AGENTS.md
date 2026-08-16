@@ -45,6 +45,7 @@
 - `0013_password_resets.sql` adds `afroup_password_resets` for one-hour public password-reset tokens.
 - `0014_admin_parent_scope.sql` adds `admin_users.created_by` and `admin_parent_grants` so an admin only sees users they created, unless they receive explicit parent CRUD grants.
 - `0015_permission_quotas.sql` adds `parent` and `quota` to `admin_user_permissions` and `admin_role_permissions` so every module action can grant parent access and a numeric record limit.
+- `0016_site_languages.sql` adds `site_languages` plus `site_language_dictionaries`, seeds Spanish and English as visible pillars, and registers the `idiomas` admin module.
 
 ## Manual D1 apply notes
 

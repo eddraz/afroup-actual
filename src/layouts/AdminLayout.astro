@@ -7,7 +7,7 @@ import { routeIds } from "../lib/paths";
 
 interface Props {
   title?: string;
-  active?: "dashboard" | "articles" | "users" | "comments" | "projects" | "modules" | "permissions" | "roles";
+  active?: "dashboard" | "articles" | "users" | "comments" | "projects" | "modules" | "permissions" | "roles" | "languages";
 }
 
 const locale = getLocaleFromUrl(Astro.url);
@@ -24,6 +24,7 @@ const paths = {
   modules: `${localizedPath(locale, routeIds.admin)}/modulos`,
   permissions: `${localizedPath(locale, routeIds.admin)}/permisos`,
   roles: `${localizedPath(locale, routeIds.admin)}/roles`,
+  languages: `${localizedPath(locale, routeIds.admin)}/idiomas`,
 };
 
 const esAdminHref = locale === "es" ? paths.admin : "/admin";
@@ -150,6 +151,12 @@ const enAdminHref = locale === "en" ? paths.admin : "/en/admin";
               <a class:list={[active === "users" && "menu-active"]} href={paths.users}>
                 <svg class="size-5"><use href="#ic-users"></use></svg>
                 {copy.adminUsers}
+              </a>
+            </li>
+            <li>
+              <a class:list={[active === "languages" && "menu-active"]} href={paths.languages}>
+                <svg class="size-5"><use href="#ic-book2"></use></svg>
+                {copy.adminLanguages}
               </a>
             </li>
           </ul>

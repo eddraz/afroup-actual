@@ -26,6 +26,9 @@
       "name": "EMAIL"
     }
   ],
+  "ai": {
+    "binding": "AI"
+  },
   "vars": {
     "APP_NAME": "AfroUp",
     "EMAIL_FROM_ADDRESS": "verificacion@afroup.com",
