@@ -1,4 +1,5 @@
 import { dictionaries, type Dictionary } from "./i18n";
+import { buildPlainTextTranslationMessages } from "./translate-plain-text";
 
 export const TRANSLATION_MODEL = "@cf/deepseek-ai/deepseek-v4-pro-0813";
 
@@ -73,19 +74,16 @@ export async function translatePlainText(
   sourceName: string,
   targetCode: string,
   targetName: string,
+  currentText = "",
 ): Promise<string> {
   const payload = await ai.run(TRANSLATION_MODEL, {
-    messages: [
-      {
-        role: "system",
-        content:
-          "Translate the user text faithfully. Return only the translated text. Keep names like AfroUp. Do not add quotes or explanations.",
-      },
-      {
-        role: "user",
-        content: `Translate this ${sourceName} text into ${targetName} (${targetCode}):\n${sourceText}`,
-      },
-    ],
+    messages: buildPlainTextTranslationMessages({
+      sourceText,
+      sourceName,
+      targetCode,
+      targetName,
+      currentText,
+    }),
   });
   const content = extractContent(payload)?.trim();
   if (!content) throw new Error("translate_failed");

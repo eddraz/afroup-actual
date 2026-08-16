@@ -1,4 +1,5 @@
 import type { D1Database } from "@cloudflare/workers-types";
+import { isBlankBio, plannedBioWrites } from "./bio-writes";
 import { defaultLocale } from "./i18n";
 import { getAdminUserByEmail } from "./public-session";
 import { effectiveGrant } from "./permission-grants";
@@ -26,19 +27,20 @@ export async function saveUserBios(
   bios: Record<string, string>,
   access: TranslationAccess,
 ): Promise<void> {
-  const entries = Object.entries(bios).map(([locale, body]) => [locale.trim().toLowerCase(), body.trim()] as const);
-  const allowed = access.canWrite
-    ? entries
-    : entries.filter(([locale]) => locale === defaultLocale);
+  const submitted = Object.fromEntries(
+    Object.entries(bios).map(([locale, body]) => [locale.trim().toLowerCase(), body.trim()]),
+  );
+  const existing = await loadUserBios(db, userId);
+  const planned = plannedBioWrites(submitted, existing, access, defaultLocale);
+  const spanish = planned[defaultLocale] ?? "";
 
-  const spanish = allowed.find(([locale]) => locale === defaultLocale)?.[1] ?? "";
   await db
     .prepare("UPDATE afroup_users SET bio = ?, updated_at = datetime('now') WHERE id = ?")
     .bind(spanish || null, userId)
     .run();
 
   await db.prepare("DELETE FROM afroup_user_bios WHERE user_id = ?").bind(userId).run();
-  const toInsert = allowed.filter(([, body]) => body.length > 0);
+  const toInsert = Object.entries(planned).filter(([, body]) => !isBlankBio(body));
   if (toInsert.length === 0) return;
   const stmt = db.prepare(
     "INSERT INTO afroup_user_bios (user_id, locale, body, updated_at) VALUES (?, ?, ?, datetime('now'))",

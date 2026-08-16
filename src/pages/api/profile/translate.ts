@@ -24,7 +24,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
   const form = await request.formData();
   const source = String(form.get("source") ?? "").trim();
-  const target = String(form.get("target") ?? "").trim().toLowerCase();
+  const current = String(form.get("current") ?? "");
+  const target = String(form.get("target") ?? "")
+    .trim()
+    .toLowerCase();
   if (!source) return json({ ok: false, error: "source_required" }, 400);
   if (!/^[a-z]{2}$/.test(target) || target === defaultLocale) {
     return json({ ok: false, error: "target_invalid" }, 400);
@@ -42,6 +45,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       sourceLang?.native_name || "Spanish",
       target,
       targetLang.native_name || targetLang.name,
+      current.slice(0, BIO_MAX),
     );
     return json({ ok: true, text: translated.slice(0, BIO_MAX) });
   } catch (error) {
