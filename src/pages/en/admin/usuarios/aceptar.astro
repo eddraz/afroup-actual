@@ -145,7 +145,7 @@ if (!token) {
             token_invalid: "Este enlace de invitación no es válido.",
             token_consumed: "Esta invitación ya fue utilizada.",
             token_expired: "Esta invitación expiró.",
-            already_active: "Esta cuenta ya está activa. Probá iniciar sesión.",
+            already_active: "Esta cuenta ya está activa. Intenta iniciar sesión.",
           };
           fetch("/api/admin/users/accept", { method: "POST", body: data })
             .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
@@ -153,7 +153,7 @@ if (!token) {
               if (result.ok) {
                 if (successText) successText.textContent = lang === "en"
                   ? "✓ Account active. You can sign in from the panel."
-                  : "✓ Cuenta activa. Ya podés iniciar sesión desde el panel.";
+                  : "✓ Cuenta activa. Ya puedes iniciar sesión desde el panel.";
                 if (successBox) successBox.classList.remove("hidden");
                 form.querySelectorAll("input").forEach(function (input) { input.disabled = true; });
                 submit.disabled = true;

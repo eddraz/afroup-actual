@@ -104,7 +104,7 @@ const supportHref = localizedPath(locale, routeIds.support);
           .then(function (result) {
             if (!result.ok) {
               if (errorText && result.body && result.body.error === "email_invalid") {
-                errorText.textContent = document.documentElement.lang === "en" ? "Enter a valid email." : "Ingresá un correo válido.";
+                errorText.textContent = document.documentElement.lang === "en" ? "Enter a valid email." : "Ingresa un correo válido.";
               }
               throw new Error("recover");
             }

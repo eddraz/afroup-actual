@@ -169,8 +169,8 @@ const recoverHref = localizedPath(locale, routeIds.recover);
           var lang = document.documentElement.lang === "en" ? "en" : "es";
           var messages = {
             invalid_credentials: lang === "en" ? "Wrong email or password." : "Correo o contraseña incorrectos.",
-            unverified: lang === "en" ? "Verify your email before signing in." : "Verificá tu correo antes de iniciar sesión.",
-            missing_fields: lang === "en" ? "Email and password are required." : "Ingresá correo y contraseña.",
+            unverified: lang === "en" ? "Verify your email before signing in." : "Verifica tu correo antes de iniciar sesión.",
+            missing_fields: lang === "en" ? "Email and password are required." : "Ingresa correo y contraseña.",
           };
           fetch("/api/login", { method: "POST", body: data })
             .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })

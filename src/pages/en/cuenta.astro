@@ -276,7 +276,7 @@ const bio = user.bio ?? "";
             var messages = {
               password_mismatch: lang === "en" ? "The new passwords don't match." : "Las contraseñas nuevas no coinciden.",
               invalid_current: lang === "en" ? "The current password is incorrect." : "La contraseña actual no es correcta.",
-              password_short: lang === "en" ? "Use at least 8 characters." : "Usá al menos 8 caracteres.",
+              password_short: lang === "en" ? "Use at least 8 characters." : "Usa al menos 8 caracteres.",
             };
             fetch("/api/password", { method: "POST", body: new FormData(passwordForm) })
               .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })

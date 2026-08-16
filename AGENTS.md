@@ -80,6 +80,7 @@ Default section order:
 - Preserve visual parity with the corresponding source mockup under `design/` when migrating pages to Astro.
 - Support branded light (`afroup`) and dark (`afroup-dark`) themes with a daisyUI theme-controller toggle.
 - Use official Astro i18n for Spanish (default, unprefixed) and English (`/en`). Do not add a third-party i18n library.
+- Keep all Spanish product copy in neutral/professional Spanish. Do not use Rioplatense voseo or regional slang in UI, emails, or public comments.
 
 When the user requests a durable behavior change, record it here or in the relevant child AGENTS.md
 

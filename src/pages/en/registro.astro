@@ -141,13 +141,13 @@ const loginHref = localizedPath(locale, routeIds.login);
                         insert_failed: "Could not save the account. Try again.",
                       }[key] || "Something went wrong. Try again."
                     : {
-                        name_required: "Ingresá tu nombre.",
-                        email_invalid: "Ingresá un correo válido.",
+                        name_required: "Ingresa tu nombre.",
+                        email_invalid: "Ingresa un correo válido.",
                         password_short: "La contraseña debe tener al menos 8 caracteres.",
                         email_taken: "Ya existe una cuenta con ese correo.",
-                        email_failed: "No pudimos enviar el correo. Probá de nuevo en un momento.",
-                        insert_failed: "No pudimos guardar la cuenta. Probá de nuevo.",
-                      }[key] || "Algo salió mal. Probá de nuevo.";
+                        email_failed: "No pudimos enviar el correo. Inténtalo de nuevo en un momento.",
+                        insert_failed: "No pudimos guardar la cuenta. Inténtalo de nuevo.",
+                      }[key] || "Algo salió mal. Inténtalo de nuevo.";
                   errorText.textContent = msg;
                   errorBox.classList.remove("hidden");
                   submit.disabled = false;
@@ -161,7 +161,7 @@ const loginHref = localizedPath(locale, routeIds.login);
                 var lang = document.documentElement.lang === "en" ? "en" : "es";
                 errorText.textContent = lang === "en"
                   ? "Network error. Try again."
-                  : "Error de red. Probá de nuevo.";
+                  : "Error de red. Inténtalo de nuevo.";
                 errorBox.classList.remove("hidden");
                 submit.disabled = false;
               });

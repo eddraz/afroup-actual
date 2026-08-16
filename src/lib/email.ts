@@ -15,13 +15,13 @@ const COPY: Record<
   }
 > = {
   es: {
-    subject: "Verificá tu correo en AfroUp",
+    subject: "Verifica tu correo en AfroUp",
     eyebrow: "Cuenta nueva",
-    title: "Confirmá tu correo para entrar a AfroUp",
-    lead: "Recibimos un registro con este correo. Para activar tu cuenta y empezar a guardar artículos, hacé click en el botón.",
+    title: "Confirma tu correo para entrar a AfroUp",
+    lead: "Recibimos un registro con este correo. Para activar tu cuenta y empezar a guardar artículos, haz clic en el botón.",
     cta: "Verificar mi correo",
-    fallback: "Si el botón no funciona, copiá y pegá este enlace en tu navegador:",
-    ignore: "Si no creaste esta cuenta, podés ignorar este mensaje.",
+    fallback: "Si el botón no funciona, copia y pega este enlace en tu navegador:",
+    ignore: "Si no creaste esta cuenta, puedes ignorar este mensaje.",
     footer: "AfroUp · Conocimiento afro libre",
     rights: "© 2026 AfroUp. Todos los derechos reservados.",
   },
@@ -178,13 +178,13 @@ const RESET_COPY: Record<
   }
 > = {
   es: {
-    subject: "Restablecé tu contraseña en AfroUp",
+    subject: "Restablece tu contraseña en AfroUp",
     eyebrow: "Recuperar contraseña",
-    title: "Elegí una nueva contraseña",
+    title: "Elige una nueva contraseña",
     lead: "Recibimos un pedido para restablecer tu cuenta. El enlace vence en 1 hora.",
     cta: "Restablecer contraseña",
-    fallback: "Si el botón no funciona, copiá y pegá este enlace en tu navegador:",
-    ignore: "Si no pediste este cambio, podés ignorar este mensaje.",
+    fallback: "Si el botón no funciona, copia y pega este enlace en tu navegador:",
+    ignore: "Si no pediste este cambio, puedes ignorar este mensaje.",
     footer: "AfroUp · Conocimiento afro libre",
     rights: "© 2026 AfroUp. Todos los derechos reservados.",
     expires: "Por seguridad, este enlace expira en 1 hora.",
@@ -306,13 +306,13 @@ const INVITE_COPY: Record<
   }
 > = {
   es: {
-    subject: "Activá tu cuenta en AfroUp Admin",
+    subject: "Activa tu cuenta en AfroUp Admin",
     eyebrow: "Invitación",
     title: "Te invitaron al equipo administrador de AfroUp",
-    lead: "Alguien del equipo te creó una cuenta. Activá tu acceso definiendo una contraseña antes de que expire el enlace.",
+    lead: "Alguien del equipo te creó una cuenta. Activa tu acceso definiendo una contraseña antes de que expire el enlace.",
     cta: "Activar mi cuenta",
-    fallback: "Si el botón no funciona, copiá y pegá este enlace en tu navegador:",
-    ignore: "Si no esperabas este correo, podés ignorarlo.",
+    fallback: "Si el botón no funciona, copia y pega este enlace en tu navegador:",
+    ignore: "Si no esperabas este correo, puedes ignorarlo.",
     footer: "AfroUp · Panel de administración",
     rights: "© 2026 AfroUp. Todos los derechos reservados.",
     expires: "Por seguridad, este enlace expira en 24 horas.",
