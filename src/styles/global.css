@@ -198,6 +198,16 @@
     line-height: 1.55;
     color: var(--color-base-content);
   }
+  .rich-editor.is-locked {
+    background: var(--color-base-200);
+  }
+  .rich-editor.is-locked .rich-toolbar {
+    pointer-events: none;
+    opacity: 0.45;
+  }
+  .rich-editor.is-locked .rich-surface {
+    background: var(--color-base-200);
+  }
   .rich-surface p {
     margin: 0 0 0.6em;
   }

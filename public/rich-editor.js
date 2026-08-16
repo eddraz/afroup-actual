@@ -124,6 +124,7 @@
   function attach(selector) {
     var textarea = document.querySelector(selector);
     if (!textarea) return null;
+    if (textarea._afroupEditor) return textarea._afroupEditor;
     var wrap = document.createElement("div");
     wrap.className = "rich-editor";
     var toolbar = document.createElement("div");
@@ -146,9 +147,14 @@
       "</label>";
     var surface = document.createElement("div");
     surface.className = "rich-surface";
-    surface.contentEditable = "true";
+    var locked = textarea.hasAttribute("readonly") || textarea.disabled;
+    surface.contentEditable = locked ? "false" : "true";
     surface.setAttribute("role", "textbox");
     surface.setAttribute("aria-multiline", "true");
+    if (locked) {
+      wrap.classList.add("is-locked");
+      surface.setAttribute("aria-readonly", "true");
+    }
     textarea.classList.add("rich-source");
     textarea.required = false;
     textarea.parentNode.insertBefore(wrap, textarea);
@@ -209,7 +215,7 @@
     surface.addEventListener("blur", sync);
     setHtml(textarea.value);
 
-    return {
+    var api = {
       getHtml: function () {
         sync();
         return textarea.value;
@@ -218,7 +224,16 @@
       isEmpty: function () {
         return !surface.innerText.replace(/\u00a0/g, " ").trim();
       },
+      setLocked: function (nextLocked) {
+        locked = !!nextLocked;
+        surface.contentEditable = locked ? "false" : "true";
+        wrap.classList.toggle("is-locked", locked);
+        if (locked) surface.setAttribute("aria-readonly", "true");
+        else surface.removeAttribute("aria-readonly");
+      },
     };
+    textarea._afroupEditor = api;
+    return api;
   }
 
   global.AfroUpRichEditor = { attach: attach, sanitize: sanitize, textToHtml: textToHtml };
