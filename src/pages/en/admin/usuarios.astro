@@ -236,9 +236,13 @@ const usuariosReadId = permissions.find((permission) => {
               var grant = grants[input.getAttribute("data-permission-id")];
               input.value = grant && grant.quota != null ? grant.quota : "";
             });
-            matrix.querySelectorAll("[data-translate-select]").forEach(function (select) {
-              var grant = grants[select.getAttribute("data-permission-id")];
-              select.value = grant && grant.translate ? grant.translate : "none";
+            matrix.querySelectorAll("[data-translate-manual]").forEach(function (box) {
+              var grant = grants[box.getAttribute("data-permission-id")];
+              box.checked = Boolean(grant && grant.translateManual);
+            });
+            matrix.querySelectorAll("[data-translate-ai]").forEach(function (box) {
+              var grant = grants[box.getAttribute("data-permission-id")];
+              box.checked = Boolean(grant && grant.translateAi);
             });
             if (window.AfroUpPermissions) window.AfroUpPermissions.paint(matrix);
           }

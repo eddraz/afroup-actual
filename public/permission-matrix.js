@@ -5,10 +5,12 @@
     var permissionId = chip.getAttribute("data-perm-chip");
     var parent = matrix.querySelector('[data-parent-box][value="' + permissionId + '"]');
     var quota = matrix.querySelector('[data-quota-input][data-permission-id="' + permissionId + '"]');
-    var translate = matrix.querySelector('[data-translate-select][data-permission-id="' + permissionId + '"]');
+    var manual = matrix.querySelector('[data-translate-manual][data-permission-id="' + permissionId + '"]');
+    var ai = matrix.querySelector('[data-translate-ai][data-permission-id="' + permissionId + '"]');
     var parentOn = Boolean(parent && parent.checked);
     var quotaValue = quota && String(quota.value || "").trim();
-    var translateValue = translate ? String(translate.value || "none") : "none";
+    var manualOn = Boolean(manual && manual.checked);
+    var aiOn = Boolean(ai && ai.checked);
     var labelParent = matrix.getAttribute("data-label-parent") || "Parent";
     var labelAll = matrix.getAttribute("data-label-all") || "All";
     var labelNone = matrix.getAttribute("data-label-none") || "—";
@@ -18,8 +20,8 @@
     if (parentOn) parts.push(labelParent);
     if (quotaValue) parts.push(quotaValue);
     else if (parentOn) parts.push(labelAll);
-    if (translateValue === "ai") parts.push(labelAi);
-    else if (translateValue === "manual") parts.push(labelManual);
+    if (manualOn) parts.push(labelManual);
+    if (aiOn) parts.push(labelAi);
     var text = parts.length ? parts.join(" · ") : labelNone;
     chip.textContent = text;
     chip.classList.toggle("badge-ghost", text === labelNone);
@@ -50,7 +52,7 @@
       });
     });
 
-    matrix.querySelectorAll("[data-parent-box], [data-quota-input], [data-translate-select]").forEach(function (input) {
+    matrix.querySelectorAll("[data-parent-box], [data-quota-input], [data-translate-manual], [data-translate-ai]").forEach(function (input) {
       input.addEventListener("input", function () { paintMatrix(matrix); });
       input.addEventListener("change", function () { paintMatrix(matrix); });
     });

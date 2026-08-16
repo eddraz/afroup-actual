@@ -14,9 +14,9 @@
 - Keep shared navigation, responsive dock/sidebar, top bar, and page chrome in `layouts/BaseLayout.astro` rather than copying them into pages.
 - Keep signed-in photo and name in `components/SessionAvatar.astro` and `components/SessionUser.astro`; hydrate them from `/api/me` via `public/session-user.js`.
 - Keep admin user visibility scoped in `lib/admin-scope.ts`: an admin sees themselves and the users they created. Parent visibility and parent CRUD require the Parent flag on that module action.
-- Keep permission assignment in `components/PermissionMatrix.astro`: show compact chips in the matrix and edit Parent, Limit, and Translation in one modal per module. Translation is `none`, `manual`, or `ai` on every module action. An empty Limit means all matching records. Persist those values through `lib/permission-grants.ts`.
+- Keep permission assignment in `components/PermissionMatrix.astro`: show compact chips in the matrix and edit Parent, Limit, and Translation in one modal per module. Translation is two independent checks on every module action: by hand and with AI. An empty Limit means all matching records. Persist those values through `lib/permission-grants.ts`.
 - Keep public language visibility in `site_languages` and `components/LanguageSwitcher.astro`: 0/1 visible languages hide the switcher, 2 show a sigla toggle, 3+ show a select. Admin stays Spanish/English only.
-- Keep account bios per locale in `afroup_user_bios`. The `usuarios:update` translation mode gates that form: `manual` writes translations by hand, `ai` also unlocks AI translation.
+- Keep account bios per locale in `afroup_user_bios`. The `usuarios:update` translation checks gate that form: by hand writes translations, with AI unlocks Workers AI. They can be combined.
 - Keep site icons as official Tabler outline symbols in `layouts/BaseLayout.astro`.
 - Keep the sidebar logo and bottom language/donation controls outside the scroll region; only the menu item list may own vertical overflow.
 - Keep the sidebar menu scrollbar thin and black-toned via the `sidebar-scroll` utility.

@@ -54,8 +54,8 @@ export async function translationAccessForEmail(
   if (!admin) return { canWrite: false, canUseAi: false };
   const grant = await effectiveGrant(db, admin.id, "usuarios", "update");
   return {
-    canUseAi: grant.translate === "ai",
-    canWrite: grant.translate === "manual" || grant.translate === "ai",
+    canUseAi: grant.translateAi,
+    canWrite: grant.translateManual,
   };
 }
 

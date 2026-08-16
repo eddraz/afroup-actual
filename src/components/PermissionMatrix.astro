@@ -1,6 +1,6 @@
 ---
 import type { PermissionAction } from "../lib/rbac";
-import type { PermissionGrant, TranslateMode } from "../lib/permission-grants";
+import type { PermissionGrant } from "../lib/permission-grants";
 
 interface ModuleItem {
   id: number;
@@ -75,20 +75,14 @@ for (const permission of permissions) {
   byModuleAction.set(`${permission.module_id}:${permission.action}`, permission.id);
 }
 
-function translateText(mode: TranslateMode | undefined) {
-  if (mode === "ai") return translateAiLabel;
-  if (mode === "manual") return translateManualLabel;
-  return "";
-}
-
 function chipLabel(grant: PermissionGrant | undefined) {
   if (!grant) return noneLabel;
   const parts: string[] = [];
   if (grant.parent) parts.push(parentLabel);
   if (grant.quota !== null) parts.push(String(grant.quota));
   else if (grant.parent) parts.push(unlimitedLabel);
-  const translation = translateText(grant.translate);
-  if (translation) parts.push(translation);
+  if (grant.translateManual) parts.push(translateManualLabel);
+  if (grant.translateAi) parts.push(translateAiLabel);
   return parts.length ? parts.join(" · ") : noneLabel;
 }
 ---
@@ -193,19 +187,32 @@ function chipLabel(grant: PermissionGrant | undefined) {
                     data-permission-id={permissionId}
                   />
                 </label>
-                <label class="label flex-col items-start gap-1">
-                  <span class="label-text opacity-70">{translateLabel}</span>
-                  <select
-                    class="select select-sm w-full"
-                    name={`translate-${permissionId}`}
+                <p class="label-text opacity-70">{translateLabel}</p>
+                <label class="label cursor-pointer justify-start gap-2">
+                  <input
+                    type="checkbox"
+                    class="checkbox checkbox-sm"
+                    name="translateManualIds"
+                    value={permissionId}
+                    checked={grant?.translateManual === true}
                     disabled={readonly}
-                    data-translate-select
+                    data-translate-manual
                     data-permission-id={permissionId}
-                  >
-                    <option value="none" selected={grant?.translate !== "manual" && grant?.translate !== "ai"}>{translateNoneLabel}</option>
-                    <option value="manual" selected={grant?.translate === "manual"}>{translateManualLabel}</option>
-                    <option value="ai" selected={grant?.translate === "ai"}>{translateAiLabel}</option>
-                  </select>
+                  />
+                  <span class="label-text">{translateManualLabel}</span>
+                </label>
+                <label class="label cursor-pointer justify-start gap-2">
+                  <input
+                    type="checkbox"
+                    class="checkbox checkbox-sm"
+                    name="translateAiIds"
+                    value={permissionId}
+                    checked={grant?.translateAi === true}
+                    disabled={readonly}
+                    data-translate-ai
+                    data-permission-id={permissionId}
+                  />
+                  <span class="label-text">{translateAiLabel}</span>
                 </label>
               </fieldset>
             );
