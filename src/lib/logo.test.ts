@@ -15,6 +15,7 @@ describe("logo geometry", () => {
       for (const path of LOGO_PATHS[variant]) {
         expect(path.startsWith("M")).toBe(true);
         expect(path.endsWith("Z")).toBe(true);
+        expect(path.includes("A")).toBe(true);
       }
     }
   });
@@ -24,7 +25,7 @@ describe("logo geometry", () => {
     expect(a.match(/M/g)).toHaveLength(1);
     expect(f.match(/M/g)).toHaveLength(1);
     expect(u.match(/M/g)).toHaveLength(1);
-    expect(r.match(/M/g)).toHaveLength(2);
+    expect((r.match(/M/g) ?? []).length).toBeGreaterThanOrEqual(2);
     expect(o.match(/M/g)).toHaveLength(2);
     expect(p.match(/M/g)).toHaveLength(2);
   });

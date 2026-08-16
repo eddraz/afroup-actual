@@ -12,7 +12,7 @@
 ## Local Contracts
 
 - Keep shared navigation, responsive dock/sidebar, top bar, and page chrome in `layouts/BaseLayout.astro` rather than copying them into pages.
-- Keep the AfroUp wordmark and AU mark as the SVG `components/AfroUpLogo.astro`, with traced paths in `lib/logo.ts`. Use `variant="wordmark"` or `variant="mark"`, scale with `height`, and color through `currentColor` or the `color` prop. Do not swap PNG logo files for in-app chrome.
+- Keep the AfroUp wordmark and AU mark as the SVG `components/AfroUpLogo.astro`, with geometric arc paths in `lib/logo.ts`. Use `variant="wordmark"` or `variant="mark"`, scale with `height`, and color through `currentColor` or the `color` prop. Do not swap PNG logo files for in-app chrome.
 - Keep signed-in photo and name in `components/SessionAvatar.astro` and `components/SessionUser.astro`; hydrate them from `/api/me` via `public/session-user.js`.
 - Keep admin user visibility scoped in `lib/admin-scope.ts`: an admin sees themselves and the users they created. Parent visibility and parent CRUD require the Parent flag on that module action.
 - Keep permission assignment in `components/PermissionMatrix.astro`: show one compact chip per flag in the matrix, with a daisyUI tooltip for the permission name (`Todos`/`5` → Limit, `A mano`/`Con IA` → Translation), and edit Parent, Limit, and Translation in one modal per module. Translation is two independent checks on every module action: by hand and with AI. The AI chip uses `badge-ai`. An empty Limit means all matching records. Persist those values through `lib/permission-grants.ts`.
