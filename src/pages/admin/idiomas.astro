@@ -92,19 +92,74 @@ const languages = await listSiteLanguages(env.DB);
     </table>
   </div>
 
+  <dialog id="language-last-modal" class="modal">
+    <div class="modal-box">
+      <h3 class="font-display text-lg font-bold">{copy.adminLanguageLastTitle}</h3>
+      <p class="py-4 text-sm opacity-80">{copy.adminLanguageLastLead}</p>
+      <div class="modal-action">
+        <button type="button" class="btn btn-ghost" data-last-cancel>{copy.adminCancel}</button>
+        <button type="button" class="btn btn-primary" data-last-confirm>{copy.adminLanguageLastConfirm}</button>
+      </div>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+      <button type="submit">{copy.adminCancel}</button>
+    </form>
+  </dialog>
+
   <script is:inline>
     (function () {
       var bind = function () {
+        var lastModal = document.getElementById("language-last-modal");
+        var pendingHide = null;
+        var visibleCount = function () {
+          return document.querySelectorAll("[data-show-toggle]:checked").length;
+        };
+        var sendToggle = function (form, box) {
+          form.querySelector('input[name="visible"]').value = box.checked ? "1" : "0";
+          fetch(form.action, { method: "POST", body: new FormData(form) })
+            .then(function (res) { return res.json(); })
+            .then(function () { window.location.reload(); });
+        };
+        var closeLastModal = function () {
+          if (pendingHide) {
+            pendingHide.box.checked = true;
+            pendingHide = null;
+          }
+          if (lastModal) lastModal.close();
+        };
+        if (lastModal && lastModal.dataset.bound !== "true") {
+          lastModal.dataset.bound = "true";
+          var cancel = lastModal.querySelector("[data-last-cancel]");
+          var confirm = lastModal.querySelector("[data-last-confirm]");
+          if (cancel) cancel.addEventListener("click", closeLastModal);
+          lastModal.addEventListener("cancel", function () {
+            if (pendingHide) pendingHide.box.checked = true;
+            pendingHide = null;
+          });
+          if (confirm) {
+            confirm.addEventListener("click", function () {
+              if (!pendingHide) return;
+              var current = pendingHide;
+              pendingHide = null;
+              current.box.checked = false;
+              if (lastModal) lastModal.close();
+              sendToggle(current.form, current.box);
+            });
+          }
+        }
         document.querySelectorAll("[data-language-toggle]").forEach(function (form) {
           if (form.dataset.bound === "true") return;
           form.dataset.bound = "true";
           var box = form.querySelector("[data-show-toggle]");
           if (!box) return;
           box.addEventListener("change", function () {
-            form.querySelector('input[name="visible"]').value = box.checked ? "1" : "0";
-            fetch(form.action, { method: "POST", body: new FormData(form) })
-              .then(function (res) { return res.json(); })
-              .then(function () { window.location.reload(); });
+            if (!box.checked && visibleCount() === 0) {
+              box.checked = true;
+              pendingHide = { form: form, box: box };
+              if (lastModal && typeof lastModal.showModal === "function") lastModal.showModal();
+              return;
+            }
+            sendToggle(form, box);
           });
         });
 

@@ -94,13 +94,13 @@ export async function setLanguageVisibility(
     return { ok: true };
   }
 
-  const fallback = code === "es" ? "en" : "es";
-  const otherPillar = languages.find((language) => language.code === fallback);
-  if (!otherPillar) return { ok: false, error: "need_pillar" };
+  if (code === defaultLocale) {
+    return { ok: false, error: "need_pillar" };
+  }
 
   await db.batch([
     db.prepare("UPDATE site_languages SET is_visible = 0 WHERE code = ?").bind(code),
-    db.prepare("UPDATE site_languages SET is_visible = 1 WHERE code = ?").bind(fallback),
+    db.prepare("UPDATE site_languages SET is_visible = 1 WHERE code = ?").bind(defaultLocale),
   ]);
   return { ok: true };
 }
