@@ -1,6 +1,7 @@
 ---
 import { ClientRouter } from "astro:transitions";
 import { env } from "cloudflare:workers";
+import AfroUpLogo from "../components/AfroUpLogo.astro";
 import SessionUser from "../components/SessionUser.astro";
 import "../styles/global.css";
 import LanguageSwitcher from "../components/LanguageSwitcher.astro";
@@ -101,7 +102,7 @@ const showAccess = can.modules || can.permissions || can.roles || can.users || c
         <label for="admin-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
         <aside class="bg-base-100 flex min-h-full w-72 flex-col border-r border-base-300">
           <a href={paths.admin} class="flex items-center gap-2 px-5 py-5">
-            <span class="font-display text-[20px] font-extrabold tracking-[-0.005em]">AfroUp</span>
+            <AfroUpLogo height={28} />
             <span class="badge badge-sm badge-accent font-extrabold tracking-[0.14em] uppercase">Admin</span>
           </a>
           <ul class="menu w-full grow px-3">

@@ -15,19 +15,21 @@ describe("logo geometry", () => {
       for (const path of LOGO_PATHS[variant]) {
         expect(path.startsWith("M")).toBe(true);
         expect(path.endsWith("Z")).toBe(true);
-        expect(path.includes("A")).toBe(true);
       }
+    }
+    for (const path of LOGO_PATHS.mark) {
+      expect(path.includes("A")).toBe(true);
     }
   });
 
-  test("cuts counters out of O, R and P", () => {
-    const [a, f, r, o, u, p] = LOGO_PATHS.wordmark;
-    expect(a.match(/M/g)).toHaveLength(1);
-    expect(f.match(/M/g)).toHaveLength(1);
-    expect(u.match(/M/g)).toHaveLength(1);
-    expect((r.match(/M/g) ?? []).length).toBeGreaterThanOrEqual(2);
-    expect(o.match(/M/g)).toHaveLength(2);
-    expect(p.match(/M/g)).toHaveLength(2);
+  test("keeps the official logo-black.svg silhouettes", () => {
+    expect(LOGO_PATHS.wordmark[0].startsWith("M86.8 1.1")).toBe(true);
+    expect(LOGO_PATHS.wordmark[1].startsWith("M248 139")).toBe(true);
+    expect(LOGO_PATHS.wordmark[5].startsWith("M1330 139.5")).toBe(true);
+  });
+
+  test("cuts counters out of R, O and P", () => {
+    expect(LOGO_PATHS.wordmark.map((path) => (path.match(/M/g) ?? []).length)).toEqual([1, 1, 2, 2, 1, 2]);
   });
 });
 
