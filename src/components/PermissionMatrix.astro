@@ -20,6 +20,7 @@ interface Props {
   actionLabels: Record<PermissionAction, string>;
   parentLabel: string;
   limitLabel: string;
+  unlimitedLabel?: string;
   readonly?: boolean;
 }
 
@@ -30,6 +31,7 @@ const {
   actionLabels,
   parentLabel,
   limitLabel,
+  unlimitedLabel = "All",
   readonly = false,
 } = Astro.props;
 
@@ -80,6 +82,7 @@ for (const permission of permissions) {
                       step="1"
                       name={`quota-${permissionId}`}
                       value={grant?.quota ?? ""}
+                      placeholder={unlimitedLabel}
                       disabled={readonly}
                       data-quota-input
                       data-permission-id={permissionId}
