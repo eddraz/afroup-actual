@@ -68,6 +68,7 @@ const actionLabels: Record<PermissionRow["action"], string> = {
       </span>
     </summary>
     <form method="post" action="/api/admin/roles" class="card-body border-t border-base-300 pt-4" data-admin-form data-intent="create_role">
+      <input type="hidden" name="_intent" value="create_role" />
       <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <fieldset class="fieldset">
           <legend class="fieldset-legend">{copy.adminRoleName}</legend>
@@ -77,6 +78,17 @@ const actionLabels: Record<PermissionRow["action"], string> = {
           <legend class="fieldset-legend">{copy.adminRoleDescription}</legend>
           <input class="input w-full" name="description" maxlength="240" />
         </fieldset>
+      </div>
+      <p class="mt-4 text-xs font-extrabold tracking-[0.16em] text-base-content/60 uppercase">{copy.adminRolePermissions}</p>
+      <p class="mt-1 text-sm opacity-70">{copy.adminPermissionMatrixHelp}</p>
+      <div class="mt-2">
+        <PermissionMatrix
+          modules={modules}
+          permissions={permissions}
+          actionLabels={actionLabels}
+          parentLabel={copy.adminPermissionParent}
+          limitLabel={copy.adminPermissionLimit}
+        />
       </div>
       <div class="alert alert-error mt-3 hidden" data-admin-error><span data-admin-error-text></span></div>
       <div class="flex justify-end gap-2">

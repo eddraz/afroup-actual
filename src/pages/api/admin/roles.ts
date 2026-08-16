@@ -9,22 +9,9 @@ import {
   sessionTokenFrom,
   unauthorizedJson,
 } from "../../../lib/admin-scope";
+import { parsePermissionGrants, setPermissionGrants } from "../../../lib/permission-grants";
 
 export const prerender = false;
-
-async function readBody(request: Request) {
-  const form = await request.formData();
-  return {
-    intent: form.get("_intent"),
-    id: form.get("id"),
-    name: form.get("name"),
-    description: form.get("description"),
-    email: form.get("email"),
-    password: form.get("password"),
-    roleId: form.get("roleId"),
-    isActive: form.get("isActive"),
-  };
-}
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -36,7 +23,17 @@ function json(body: unknown, status = 200) {
 export const POST: APIRoute = async ({ request, cookies }) => {
   const actor = await getCurrentAdmin(env.DB, sessionTokenFrom(cookies));
   if (!actor) return unauthorizedJson();
-  const body = await readBody(request);
+  const form = await request.formData();
+  const body = {
+    intent: form.get("_intent"),
+    id: form.get("id"),
+    name: form.get("name"),
+    description: form.get("description"),
+    email: form.get("email"),
+    password: form.get("password"),
+    roleId: form.get("roleId"),
+    isActive: form.get("isActive"),
+  };
 
   if (body.intent === "delete_role" && typeof body.id === "string") {
     const id = Number(body.id);
@@ -51,8 +48,15 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     if (!name) return json({ ok: false, error: "name_required" }, 400);
     const existing = await env.DB.prepare("SELECT id FROM admin_roles WHERE name = ? LIMIT 1").bind(name).first<{ id: number }>();
     if (existing) return json({ ok: false, error: "name_taken" }, 409);
-    await env.DB.prepare("INSERT INTO admin_roles (name, description) VALUES (?, ?)").bind(name, description || null).run();
-    return json({ ok: true });
+    const created = await env.DB.prepare(
+      "INSERT INTO admin_roles (name, description) VALUES (?, ?) RETURNING id",
+    ).bind(name, description || null).first<{ id: number }>();
+    if (!created) return json({ ok: false, error: "insert_failed" }, 500);
+    const grants = parsePermissionGrants(form);
+    if (grants.length > 0) {
+      await setPermissionGrants(env.DB, "admin_role_permissions", "role_id", created.id, grants);
+    }
+    return json({ ok: true, roleId: created.id });
   }
 
   if (body.intent === "create_user") {
