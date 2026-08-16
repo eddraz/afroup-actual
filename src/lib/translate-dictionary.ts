@@ -70,3 +70,26 @@ export async function translateUiDictionary(
 export function dictionaryAsJson(dictionary: Record<string, string> | Dictionary): string {
   return JSON.stringify(dictionary);
 }
+
+export async function suggestNativeLanguageName(
+  ai: AiRunner,
+  code: string,
+  name: string,
+): Promise<string> {
+  const payload = await ai.run(TRANSLATION_MODEL, {
+    messages: [
+      {
+        role: "system",
+        content:
+          "Return only the native endonym of the language. No quotes, no punctuation, no extra words.",
+      },
+      {
+        role: "user",
+        content: `Language code: ${code}. English or Spanish name: ${name}. What is the native name?`,
+      },
+    ],
+  });
+  const content = extractContent(payload)?.trim();
+  if (!content) throw new Error("suggest_failed");
+  return content.replace(/^['"“”]+|['"“”]+$/g, "").trim();
+}

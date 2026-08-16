@@ -45,7 +45,11 @@ const languages = await listSiteLanguages(env.DB);
         </fieldset>
         <fieldset class="fieldset">
           <legend class="fieldset-legend">{copy.adminLanguageNative}</legend>
-          <input class="input w-full" name="nativeName" required maxlength="80" placeholder="Português" />
+          <div class="join w-full">
+            <input class="input join-item w-full" name="nativeName" maxlength="80" placeholder="Português" data-native-name />
+            <button class="btn join-item" type="button" data-suggest-native>{copy.adminLanguageSuggest}</button>
+          </div>
+          <p class="label">{copy.adminLanguageNativeHelp}</p>
         </fieldset>
       </div>
       <div class="alert alert-error mt-3 hidden" data-language-error><span data-language-error-text></span></div>
@@ -106,6 +110,46 @@ const languages = await listSiteLanguages(env.DB);
         var create = document.querySelector("[data-language-form]");
         if (create && create.dataset.bound !== "true") {
           create.dataset.bound = "true";
+          var nativeInput = create.querySelector("[data-native-name]");
+          var suggestBtn = create.querySelector("[data-suggest-native]");
+          var codeInput = create.querySelector('input[name="code"]');
+          var nameInput = create.querySelector('input[name="name"]');
+          var suggestNative = function () {
+            var code = codeInput && codeInput.value.trim();
+            var name = nameInput && nameInput.value.trim();
+            if (!code || !name || !nativeInput) return Promise.resolve();
+            if (suggestBtn) suggestBtn.disabled = true;
+            var data = new FormData();
+            data.set("_intent", "suggest");
+            data.set("code", code);
+            data.set("name", name);
+            return fetch(create.action, { method: "POST", body: data })
+              .then(function (res) { return res.json(); })
+              .then(function (result) {
+                if (result && result.ok && result.nativeName && !nativeInput.dataset.edited) {
+                  nativeInput.value = result.nativeName;
+                }
+              })
+              .finally(function () {
+                if (suggestBtn) suggestBtn.disabled = false;
+              });
+          };
+          if (nativeInput) {
+            nativeInput.addEventListener("input", function () {
+              nativeInput.dataset.edited = nativeInput.value.trim() ? "true" : "";
+            });
+          }
+          if (nameInput) {
+            nameInput.addEventListener("blur", function () {
+              if (nativeInput && !nativeInput.value.trim()) suggestNative();
+            });
+          }
+          if (suggestBtn) {
+            suggestBtn.addEventListener("click", function () {
+              if (nativeInput) nativeInput.dataset.edited = "";
+              suggestNative();
+            });
+          }
           create.addEventListener("submit", function (event) {
             event.preventDefault();
             var errorBox = create.querySelector("[data-language-error]");

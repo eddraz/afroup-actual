@@ -2,7 +2,11 @@ import type { APIRoute } from "astro";
 import { env } from "cloudflare:workers";
 import { getCurrentAdmin, sessionTokenFrom, unauthorizedJson } from "../../../lib/admin-scope";
 import { addSiteLanguage, setLanguageVisibility } from "../../../lib/site-languages";
-import { dictionaryAsJson, translateUiDictionary } from "../../../lib/translate-dictionary";
+import {
+  dictionaryAsJson,
+  suggestNativeLanguageName,
+  translateUiDictionary,
+} from "../../../lib/translate-dictionary";
 
 export const prerender = false;
 
@@ -26,6 +30,19 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const result = await setLanguageVisibility(env.DB, code, visible);
     if (!result.ok) return json({ ok: false, error: result.error }, 400);
     return json({ ok: true });
+  }
+
+  if (intent === "suggest") {
+    const code = String(form.get("code") ?? "").trim().toLowerCase();
+    const name = String(form.get("name") ?? "").trim();
+    if (!/^[a-z]{2}$/.test(code) || !name) return json({ ok: false, error: "missing_fields" }, 400);
+    try {
+      const nativeName = await suggestNativeLanguageName(env.AI, code, name);
+      return json({ ok: true, nativeName });
+    } catch (error) {
+      console.error("language native-name suggest failed", error);
+      return json({ ok: false, error: "suggest_failed" }, 502);
+    }
   }
 
   if (intent === "create") {
