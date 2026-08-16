@@ -28,9 +28,9 @@ function emptyGrant(permissionId: number): PermissionGrant {
 }
 
 export function parsePermissionGrants(form: FormData): PermissionGrant[] {
-  const parentIds = new Set(
+  const allowedIds = new Set(
     form
-      .getAll("parentIds")
+      .getAll("permissionIds")
       .map((value) => Number(value))
       .filter((value) => Number.isFinite(value) && value > 0),
   );
@@ -54,14 +54,19 @@ export function parsePermissionGrants(form: FormData): PermissionGrant[] {
     return current;
   };
 
-  for (const permissionId of parentIds) touch(permissionId).parent = true;
-  for (const permissionId of manualIds) touch(permissionId).translateManual = true;
-  for (const permissionId of aiIds) touch(permissionId).translateAi = true;
+  for (const permissionId of allowedIds) touch(permissionId);
+  for (const permissionId of manualIds) {
+    if (allowedIds.has(permissionId)) touch(permissionId).translateManual = true;
+  }
+  for (const permissionId of aiIds) {
+    if (allowedIds.has(permissionId)) touch(permissionId).translateAi = true;
+  }
 
   for (const [key, value] of form.entries()) {
     const quotaMatch = /^quota-(\d+)$/.exec(key);
     if (!quotaMatch) continue;
     const permissionId = Number(quotaMatch[1]);
+    if (!allowedIds.has(permissionId)) continue;
     const raw = String(value).trim();
     if (raw === "") continue;
     const quota = Number(raw);

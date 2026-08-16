@@ -2,7 +2,7 @@
 import AdminLayout from "../../../layouts/AdminLayout.astro";
 import { requireModuleAccess, sessionTokenFrom } from "../../../lib/admin-scope";
 import PermissionMatrix from "../../../components/PermissionMatrix.astro";
-import { localizedPath } from "../../../lib/i18n";
+import { localizedPath, t } from "../../../lib/i18n";
 import { resolveRequestCopy } from "../../../lib/request-locale";
 import { routeIds } from "../../../lib/paths";
 import { env } from "cloudflare:workers";
@@ -69,7 +69,7 @@ for (const perm of permissions) {
         modules={modules}
         permissions={permissions}
         actionLabels={actionLabels}
-        parentLabel={copy.adminPermissionParent}
+        allowLabel={copy.adminPermissionAllow}
         limitLabel={copy.adminPermissionLimit}
         translateLabel={copy.adminPermissionTranslate}
         translateNoneLabel={copy.adminPermissionTranslateNone}
@@ -83,7 +83,7 @@ for (const perm of permissions) {
         helpRead={copy.adminPermissionHelpRead}
         helpUpdate={copy.adminPermissionHelpUpdate}
         helpDelete={copy.adminPermissionHelpDelete}
-        helpParent={copy.adminPermissionHelpParent}
+        helpAllow={copy.adminPermissionHelpAllow}
         helpLimit={copy.adminPermissionHelpLimit}
         helpTranslate={copy.adminPermissionHelpTranslate}
         readonly

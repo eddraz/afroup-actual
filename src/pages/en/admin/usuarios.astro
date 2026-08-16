@@ -1,7 +1,7 @@
 ---
 import AdminLayout from "../../../layouts/AdminLayout.astro";
 import PermissionMatrix from "../../../components/PermissionMatrix.astro";
-import { localizedPath } from "../../../lib/i18n";
+import { localizedPath, t } from "../../../lib/i18n";
 import { resolveRequestCopy } from "../../../lib/request-locale";
 import { env } from "cloudflare:workers";
 import { routeIds } from "../../../lib/paths";
@@ -46,6 +46,11 @@ interface PermissionRow {
 }
 
 const users = await listVisibleAdminUsers(env.DB, actor.id);
+    const shareable = users.filter((user) => user.id !== actor.id && user.created_by === actor.id);
+    const sharedRows = (await env.DB.prepare(
+      `SELECT record_id FROM record_shares WHERE module_slug = 'users' AND shared_with_id = ?`,
+    ).bind(actor.id).all<{ record_id: number }>()).results ?? [];
+    const sharedWithMe = new Set(sharedRows.map((row) => row.record_id));
 const roles = (await env.DB.prepare("SELECT id, name, description FROM admin_roles ORDER BY name").all<RoleRow>()).results ?? [];
 const modules = (await env.DB.prepare("SELECT id, name, slug FROM admin_modules ORDER BY name").all<ModuleRow>()).results ?? [];
 const permissions = (await env.DB.prepare("SELECT id, module_id, action FROM admin_permissions ORDER BY module_id, action").all<PermissionRow>()).results ?? [];
@@ -110,7 +115,7 @@ const usuariosReadId = permissions.find((permission) => {
           modules={modules}
           permissions={permissions}
           actionLabels={actionLabels}
-          parentLabel={copy.adminPermissionParent}
+          allowLabel={copy.adminPermissionAllow}
           limitLabel={copy.adminPermissionLimit}
           translateLabel={copy.adminPermissionTranslate}
           translateNoneLabel={copy.adminPermissionTranslateNone}
@@ -124,7 +129,7 @@ const usuariosReadId = permissions.find((permission) => {
           helpRead={copy.adminPermissionHelpRead}
           helpUpdate={copy.adminPermissionHelpUpdate}
           helpDelete={copy.adminPermissionHelpDelete}
-          helpParent={copy.adminPermissionHelpParent}
+          helpAllow={copy.adminPermissionHelpAllow}
           helpLimit={copy.adminPermissionHelpLimit}
           helpTranslate={copy.adminPermissionHelpTranslate}
         />
@@ -144,7 +149,7 @@ const usuariosReadId = permissions.find((permission) => {
       const granted = grantedByUser.get(user.id) ?? new Map();
       const isSelf = user.id === actor.id;
       const isChild = user.created_by === actor.id;
-      const canSeeParent = Boolean(usuariosReadId && granted.get(usuariosReadId)?.parent);
+      const isShared = sharedWithMe.has(user.id);
       return (
         <article class="card bg-base-100 border border-base-300 shadow-sm">
           <div class="card-body gap-4">
@@ -158,7 +163,7 @@ const usuariosReadId = permissions.find((permission) => {
                   {user.role_name ? <span class="badge badge-sm badge-accent">{user.role_name}</span> : null}
                   {isSelf ? <span class="badge badge-sm">{copy.adminYou}</span> : null}
                   {isChild ? <span class="badge badge-sm badge-ghost">{copy.adminCreatedByYou}</span> : null}
-                  {canSeeParent ? <span class="badge badge-sm badge-info">{copy.adminParentVisible}</span> : null}
+                  {isShared ? <span class="badge badge-sm badge-info">{copy.adminSharedWithYou}</span> : null}
                 </div>
               </div>
               {!isSelf ? (
@@ -172,7 +177,24 @@ const usuariosReadId = permissions.find((permission) => {
               ) : null}
             </div>
 
-            {!isSelf ? (
+            {isChild ? (
+              <form method="post" action="/api/admin/shares" class="flex flex-wrap items-end gap-2" data-share-form>
+                <input type="hidden" name="module" value="users" />
+                <input type="hidden" name="recordId" value={user.id} />
+                <fieldset class="fieldset">
+                  <legend class="fieldset-legend">{copy.adminShareWith}</legend>
+                  <select class="select select-sm" name="sharedWithId" required>
+                    <option value="">{copy.adminShareNone}</option>
+                    {shareable.filter((candidate) => candidate.id !== user.id).map((candidate) => (
+                      <option value={candidate.id}>{candidate.name}</option>
+                    ))}
+                  </select>
+                </fieldset>
+                <button class="btn btn-dash btn-sm" type="submit">{copy.adminShare}</button>
+              </form>
+            ) : null}
+
+            {!isSelf && isChild ? (
               <form method="post" action="/api/admin/permissions" data-admin-permissions-form>
                 <input type="hidden" name="_intent" value="assign_user" />
                 <input type="hidden" name="userId" value={user.id} />
@@ -184,7 +206,7 @@ const usuariosReadId = permissions.find((permission) => {
                     permissions={permissions}
                     assignments={granted}
                     actionLabels={actionLabels}
-                    parentLabel={copy.adminPermissionParent}
+                    allowLabel={copy.adminPermissionAllow}
                     limitLabel={copy.adminPermissionLimit}
                     translateLabel={copy.adminPermissionTranslate}
                     translateNoneLabel={copy.adminPermissionTranslateNone}
@@ -198,7 +220,7 @@ const usuariosReadId = permissions.find((permission) => {
                     helpRead={copy.adminPermissionHelpRead}
                     helpUpdate={copy.adminPermissionHelpUpdate}
                     helpDelete={copy.adminPermissionHelpDelete}
-                    helpParent={copy.adminPermissionHelpParent}
+                    helpAllow={copy.adminPermissionHelpAllow}
                     helpLimit={copy.adminPermissionHelpLimit}
                     helpTranslate={copy.adminPermissionHelpTranslate}
                   />
@@ -228,9 +250,9 @@ const usuariosReadId = permissions.find((permission) => {
           function applyRole(value) {
             var grants = value && roleMap[value] ? roleMap[value] : {};
             if (!matrix) return;
-            matrix.querySelectorAll("[data-parent-box]").forEach(function (box) {
+            matrix.querySelectorAll("[data-allow-box]").forEach(function (box) {
               var grant = grants[box.value];
-              box.checked = Boolean(grant && grant.parent);
+              box.checked = Boolean(grant);
             });
             matrix.querySelectorAll("[data-quota-input]").forEach(function (input) {
               var grant = grants[input.getAttribute("data-permission-id")];
@@ -296,6 +318,29 @@ const usuariosReadId = permissions.find((permission) => {
               });
           });
         }
+
+
+        document.querySelectorAll("form[data-share-form]").forEach(function (f) {
+          if (f.dataset.boundShare === "true") return;
+          f.dataset.boundShare = "true";
+          f.addEventListener("submit", function (event) {
+            event.preventDefault();
+            var data = new FormData(f);
+            fetch(f.action, { method: "POST", body: data })
+              .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
+              .then(function (result) {
+                if (result.ok) {
+                  if (window.AfroUpFeedback) window.AfroUpFeedback.toast(lang === "en" ? "Record shared." : "Registro compartido.", "success");
+                  setTimeout(function () { window.location.reload(); }, 900);
+                  return;
+                }
+                if (window.AfroUpFeedback) window.AfroUpFeedback.toast(lang === "en" ? "Could not share." : "No pudimos compartir.", "error");
+              })
+              .catch(function () {
+                if (window.AfroUpFeedback) window.AfroUpFeedback.toast(lang === "en" ? "Network error." : "Error de red.", "error");
+              });
+          });
+        });
 
         document.querySelectorAll("form[data-admin-confirm]").forEach(function (f) {
           if (f.dataset.boundConfirm === "true") return;

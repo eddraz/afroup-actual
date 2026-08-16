@@ -18,7 +18,7 @@ interface Props {
   permissions: PermissionItem[];
   assignments?: Map<number, PermissionGrant>;
   actionLabels: Record<PermissionAction, string>;
-  parentLabel: string;
+  allowLabel: string;
   limitLabel: string;
   translateLabel: string;
   translateNoneLabel: string;
@@ -32,7 +32,7 @@ interface Props {
   helpRead?: string;
   helpUpdate?: string;
   helpDelete?: string;
-  helpParent?: string;
+  helpAllow?: string;
   helpLimit?: string;
   helpTranslate?: string;
   readonly?: boolean;
@@ -43,7 +43,7 @@ const {
   permissions,
   assignments = new Map<number, PermissionGrant>(),
   actionLabels,
-  parentLabel,
+  allowLabel,
   limitLabel,
   translateLabel,
   translateNoneLabel,
@@ -57,7 +57,7 @@ const {
   helpRead = "",
   helpUpdate = "",
   helpDelete = "",
-  helpParent = "",
+  helpAllow = "",
   helpLimit = "",
   helpTranslate = "",
   readonly = false,
@@ -78,9 +78,8 @@ for (const permission of permissions) {
 function chipParts(grant: PermissionGrant | undefined) {
   if (!grant) return [] as Array<{ text: string; tip: string; tone: "neutral" | "ai" }>;
   const parts: Array<{ text: string; tip: string; tone: "neutral" | "ai" }> = [];
-  if (grant.parent) parts.push({ text: parentLabel, tip: parentLabel, tone: "neutral" });
+  parts.push({ text: allowLabel, tip: allowLabel, tone: "neutral" });
   if (grant.quota !== null) parts.push({ text: String(grant.quota), tip: limitLabel, tone: "neutral" });
-  else if (grant.parent) parts.push({ text: unlimitedLabel, tip: limitLabel, tone: "neutral" });
   if (grant.translateManual) parts.push({ text: translateManualLabel, tip: translateLabel, tone: "neutral" });
   if (grant.translateAi) parts.push({ text: translateAiLabel, tip: translateLabel, tone: "ai" });
   return parts;
@@ -90,7 +89,7 @@ function chipParts(grant: PermissionGrant | undefined) {
 <div
   class="overflow-x-auto"
   data-permission-matrix
-  data-label-parent={parentLabel}
+  data-label-allow={allowLabel}
   data-label-all={unlimitedLabel}
   data-label-none={noneLabel}
   data-label-limit={limitLabel}
@@ -160,7 +159,7 @@ function chipParts(grant: PermissionGrant | undefined) {
               {actions.map((action) => (
                 <li><span class="font-semibold">{actionLabels[action]}:</span> {helpByAction[action]}</li>
               ))}
-              <li>{helpParent}</li>
+              <li>{helpAllow}</li>
               <li>{helpLimit}</li>
               <li>{helpTranslate}</li>
             </ul>
@@ -179,13 +178,13 @@ function chipParts(grant: PermissionGrant | undefined) {
                   <input
                     type="checkbox"
                     class="checkbox checkbox-sm"
-                    name="parentIds"
+                    name="permissionIds"
                     value={permissionId}
-                    checked={grant?.parent === true}
+                    checked={Boolean(grant)}
                     disabled={readonly}
-                    data-parent-box
+                    data-allow-box
                   />
-                  <span class="label-text">{parentLabel}</span>
+                  <span class="label-text">{allowLabel}</span>
                 </label>
                 <label class="label flex-col items-start gap-1">
                   <span class="label-text opacity-70">{limitLabel}</span>

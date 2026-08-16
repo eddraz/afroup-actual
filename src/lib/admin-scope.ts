@@ -1,6 +1,6 @@
 import type { D1Database } from "@cloudflare/workers-types";
 import { getPublicUser, PUBLIC_SESSION_COOKIE } from "./public-session";
-import { localizedPath, type Locale } from "./i18n";
+import { localizedPath } from "./i18n";
 import { routeIds } from "./paths";
 import { effectiveGrant } from "./permission-grants";
 import { hasPermission, type PermissionAction } from "./rbac";
@@ -57,7 +57,7 @@ export async function requireModuleAccess(
   db: D1Database,
   cookies: { get(name: string): { value: string } | undefined },
   url: URL,
-  locale: Locale,
+  locale: string,
   moduleSlug: string,
   action: PermissionAction = "read",
 ): Promise<CurrentUser | Response> {
@@ -90,7 +90,6 @@ export async function listVisibleAdminUsers(
   db: D1Database,
   actorId: number,
 ): Promise<VisibleAdminUser[]> {
-  const grant = await effectiveGrant(db, actorId, "users", "read");
   const result = await db
     .prepare(
       `SELECT u.id, u.name, u.email, u.role_id, u.is_active, u.invite_pending, u.created_by, r.name AS role_name
@@ -98,27 +97,32 @@ export async function listVisibleAdminUsers(
          LEFT JOIN admin_roles r ON r.id = u.role_id
         WHERE u.id = ?
            OR u.created_by = ?
-           OR (? = 1 AND u.id = (SELECT created_by FROM users WHERE id = ?))
+           OR u.id IN (
+             SELECT record_id FROM record_shares
+              WHERE module_slug = 'users' AND shared_with_id = ?
+           )
         ORDER BY CASE WHEN u.id = ? THEN 0 ELSE 1 END, u.created_at, u.id`,
     )
-    .bind(actorId, actorId, grant.parent ? 1 : 0, actorId, actorId)
+    .bind(actorId, actorId, actorId, actorId)
     .all<VisibleAdminUser>();
-  const rows = result.results ?? [];
-  const self = rows.filter((row) => row.id === actorId);
-  const parent = grant.parent ? rows.filter((row) => row.id !== actorId && row.created_by !== actorId) : [];
-  let owned = rows.filter((row) => row.created_by === actorId);
-  if (grant.quota !== null) owned = owned.slice(0, grant.quota);
-  return [...self, ...owned, ...parent];
+  return result.results ?? [];
 }
 
-export async function hasParentGrant(
+export async function hasSharedRecord(
   db: D1Database,
-  childId: number,
-  _parentId: number,
-  action: PermissionAction,
+  actorId: number,
+  moduleSlug: string,
+  recordId: number,
 ): Promise<boolean> {
-  const grant = await effectiveGrant(db, childId, "users", action);
-  return grant.parent;
+  const row = await db
+    .prepare(
+      `SELECT 1 FROM record_shares
+        WHERE module_slug = ? AND record_id = ? AND shared_with_id = ?
+        LIMIT 1`,
+    )
+    .bind(moduleSlug, recordId, actorId)
+    .first();
+  return row !== null;
 }
 
 export async function countOwnedAdminUsers(db: D1Database, actorId: number): Promise<number> {
@@ -154,31 +158,5 @@ export async function canManageAdminUser(
     .first<{ id: number; created_by: number | null }>();
   if (!target) return false;
   if (target.created_by === actorId) return true;
-  return hasParentGrant(db, actorId, targetId, action);
-}
-
-export async function setParentGrants(
-  db: D1Database,
-  parentId: number,
-  childId: number,
-  actions: PermissionAction[],
-): Promise<void> {
-  const child = await db
-    .prepare("SELECT id, created_by FROM users WHERE id = ? LIMIT 1")
-    .bind(childId)
-    .first<{ id: number; created_by: number | null }>();
-  if (!child || child.created_by !== parentId) {
-    throw new Error("not_child");
-  }
-
-  const unique = Array.from(new Set(actions));
-  await db
-    .prepare("DELETE FROM admin_parent_grants WHERE child_id = ? AND parent_id = ?")
-    .bind(childId, parentId)
-    .run();
-  if (unique.length === 0) return;
-  const stmt = db.prepare(
-    "INSERT INTO admin_parent_grants (child_id, parent_id, action) VALUES (?, ?, ?)",
-  );
-  await db.batch(unique.map((action) => stmt.bind(childId, parentId, action)));
+  return hasSharedRecord(db, actorId, "users", targetId);
 }

@@ -3,27 +3,25 @@
     var matrix = chip.closest("[data-permission-matrix]");
     if (!matrix) return;
     var permissionId = chip.getAttribute("data-perm-chip");
-    var parent = matrix.querySelector('[data-parent-box][value="' + permissionId + '"]');
+    var allow = matrix.querySelector('[data-allow-box][value="' + permissionId + '"]');
     var quota = matrix.querySelector('[data-quota-input][data-permission-id="' + permissionId + '"]');
     var manual = matrix.querySelector('[data-translate-manual][data-permission-id="' + permissionId + '"]');
     var ai = matrix.querySelector('[data-translate-ai][data-permission-id="' + permissionId + '"]');
-    var parentOn = Boolean(parent && parent.checked);
+    var allowOn = Boolean(allow && allow.checked);
     var quotaValue = quota && String(quota.value || "").trim();
     var manualOn = Boolean(manual && manual.checked);
     var aiOn = Boolean(ai && ai.checked);
-    var labelParent = matrix.getAttribute("data-label-parent") || "Parent";
-    var labelAll = matrix.getAttribute("data-label-all") || "All";
+    var labelAllow = matrix.getAttribute("data-label-allow") || "Allow";
     var labelNone = matrix.getAttribute("data-label-none") || "—";
     var labelLimit = matrix.getAttribute("data-label-limit") || "Limit";
     var labelTranslate = matrix.getAttribute("data-label-translate") || "Translation";
     var labelManual = matrix.getAttribute("data-label-manual") || "Manual";
     var labelAi = matrix.getAttribute("data-label-ai") || "AI";
     var parts = [];
-    if (parentOn) parts.push({ text: labelParent, tip: labelParent, tone: "neutral" });
-    if (quotaValue) parts.push({ text: quotaValue, tip: labelLimit, tone: "neutral" });
-    else if (parentOn) parts.push({ text: labelAll, tip: labelLimit, tone: "neutral" });
-    if (manualOn) parts.push({ text: labelManual, tip: labelTranslate, tone: "neutral" });
-    if (aiOn) parts.push({ text: labelAi, tip: labelTranslate, tone: "ai" });
+    if (allowOn) parts.push({ text: labelAllow, tip: labelAllow, tone: "neutral" });
+    if (allowOn && quotaValue) parts.push({ text: quotaValue, tip: labelLimit, tone: "neutral" });
+    if (allowOn && manualOn) parts.push({ text: labelManual, tip: labelTranslate, tone: "neutral" });
+    if (allowOn && aiOn) parts.push({ text: labelAi, tip: labelTranslate, tone: "ai" });
 
     chip.replaceChildren();
     if (!parts.length) {
@@ -70,7 +68,7 @@
       });
     });
 
-    matrix.querySelectorAll("[data-parent-box], [data-quota-input], [data-translate-manual], [data-translate-ai]").forEach(function (input) {
+    matrix.querySelectorAll("[data-allow-box], [data-quota-input], [data-translate-manual], [data-translate-ai]").forEach(function (input) {
       input.addEventListener("input", function () { paintMatrix(matrix); });
       input.addEventListener("change", function () { paintMatrix(matrix); });
     });
