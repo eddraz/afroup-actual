@@ -20,7 +20,7 @@
 - Keep account bios per locale in `afroup_user_bios` and the shared `components/AccountPage.astro` form. The `usuarios:update` translation checks stay independent: by hand writes translations, with AI unlocks Workers AI. Hide the page language select when the user has neither check. Never copy the primary bio into an empty locale field; show it as a non-invasive original guide. AI reviews the current locale in a modal before applying. AI-only fields stay locked, but an applied AI draft may persist.
 - Keep the page language select in `components/PageLocaleSwitch.astro`, at the top-right of the page title. Only nodes marked `data-i18n-panel` change when the selected language changes.
 - Keep site icons as official Tabler outline symbols in `layouts/BaseLayout.astro`.
-- Keep the sidebar logo and bottom language/donation controls outside the scroll region; only the menu item list may own vertical overflow.
+- Keep the sidebar logo and bottom language/donation/session controls outside the scroll region in public and admin; only the menu item list may own vertical overflow.
 - Keep the sidebar menu scrollbar thin and black-toned via the `sidebar-scroll` utility.
 - Keep branded light and dark themes in `styles/global.css` as `afroup` and `afroup-dark`; switch them with a daisyUI `theme-controller` in `layouts/BaseLayout.astro`.
 - Keep AI actions in purple via the `ai` theme token and `btn-ai` / `checkbox-ai` / `badge-ai`. Only elements that execute or grant AI use those classes.
