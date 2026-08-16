@@ -25,7 +25,7 @@ export interface EffectivePermissions {
 export async function loadAdminUser(db: D1Database, id: number): Promise<AdminUser | null> {
   return db
     .prepare(
-      "SELECT id, name, email, role_id, is_active FROM admin_users WHERE id = ? AND is_active = 1 LIMIT 1",
+      "SELECT id, name, email, role_id, is_active FROM users WHERE id = ? AND is_active = 1 LIMIT 1",
     )
     .bind(id)
     .first<AdminUser>();
@@ -97,7 +97,7 @@ export async function hasPermission(
          JOIN admin_modules m ON m.id = p.module_id
          LEFT JOIN admin_user_permissions up ON up.permission_id = p.id AND up.user_id = ?
          LEFT JOIN admin_role_permissions rp ON rp.permission_id = p.id
-         LEFT JOIN admin_users u ON u.id = ? AND u.role_id = rp.role_id
+         LEFT JOIN users u ON u.id = ? AND u.role_id = rp.role_id
         WHERE m.slug = ? AND p.action = ?
           AND (up.user_id IS NOT NULL OR u.id IS NOT NULL)
         LIMIT 1`,

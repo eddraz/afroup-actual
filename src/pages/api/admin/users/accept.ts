@@ -24,7 +24,7 @@ export const POST: APIRoute = async ({ request }) => {
   const row = await env.DB.prepare(
     `SELECT i.token, i.expires_at, i.consumed_at, u.id, u.email, u.name, u.invite_pending
        FROM admin_user_invitations i
-       JOIN admin_users u ON u.id = i.user_id
+       JOIN users u ON u.id = i.user_id
       WHERE i.token = ? LIMIT 1`,
   ).bind(token).first<{
     token: string;
@@ -45,8 +45,8 @@ export const POST: APIRoute = async ({ request }) => {
   const now = new Date().toISOString();
   await env.DB.batch([
     env.DB.prepare(
-      "UPDATE admin_users SET password_hash = ?, invite_pending = 0, updated_at = ? WHERE id = ?",
-    ).bind(hash, now, row.id),
+      "UPDATE users SET password_hash = ?, verified_at = ?, invite_pending = 0, updated_at = ? WHERE id = ?",
+    ).bind(hash, now, now, row.id),
     env.DB.prepare(
       "UPDATE admin_user_invitations SET consumed_at = ? WHERE token = ?",
     ).bind(now, token),

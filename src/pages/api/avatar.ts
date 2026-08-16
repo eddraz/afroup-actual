@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { env } from "cloudflare:workers";
 import { getPublicUser, PUBLIC_SESSION_COOKIE } from "../../lib/public-session";
+import { hasPermission } from "../../lib/rbac";
 
 export const prerender = false;
 
@@ -31,6 +32,9 @@ async function deleteStoredAvatar(userId: number, url: string | null | undefined
 export const POST: APIRoute = async ({ request, cookies }) => {
   const user = await getPublicUser(env.DB, cookies.get(PUBLIC_SESSION_COOKIE)?.value);
   if (!user) return json({ ok: false, error: "unauthorized" }, 401);
+  if (!(await hasPermission(env.DB, user.id, "users", "update"))) {
+    return json({ ok: false, error: "forbidden" }, 403);
+  }
 
   const form = await request.formData();
   const file = form.get("avatar");
@@ -47,7 +51,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   const url = `/api/avatar/${key}`;
   await deleteStoredAvatar(user.id, user.avatar_url);
   await env.DB.prepare(
-    "UPDATE afroup_users SET avatar_url = ?, updated_at = datetime('now') WHERE id = ?",
+    "UPDATE users SET avatar_url = ?, updated_at = datetime('now') WHERE id = ?",
   )
     .bind(url, user.id)
     .run();
@@ -58,9 +62,12 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 export const DELETE: APIRoute = async ({ cookies }) => {
   const user = await getPublicUser(env.DB, cookies.get(PUBLIC_SESSION_COOKIE)?.value);
   if (!user) return json({ ok: false, error: "unauthorized" }, 401);
+  if (!(await hasPermission(env.DB, user.id, "users", "update"))) {
+    return json({ ok: false, error: "forbidden" }, 403);
+  }
   await deleteStoredAvatar(user.id, user.avatar_url);
   await env.DB.prepare(
-    "UPDATE afroup_users SET avatar_url = NULL, updated_at = datetime('now') WHERE id = ?",
+    "UPDATE users SET avatar_url = NULL, updated_at = datetime('now') WHERE id = ?",
   )
     .bind(user.id)
     .run();

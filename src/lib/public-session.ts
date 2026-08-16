@@ -37,32 +37,13 @@ export async function createPublicSession(db: D1Database, userId: number) {
   return { token, expiresAt };
 }
 
-export async function getAdminUserByEmail(db: D1Database, email: string) {
-  return db
-    .prepare(
-      `SELECT id, name, email, is_active, invite_pending, role_id
-         FROM admin_users
-        WHERE email = ? AND is_active = 1 AND invite_pending = 0
-        LIMIT 1`,
-    )
-    .bind(email.trim().toLowerCase())
-    .first<{
-      id: number;
-      name: string;
-      email: string;
-      is_active: number;
-      invite_pending: number;
-      role_id: number | null;
-    }>();
-}
-
 export async function getPublicUser(db: D1Database, token: string | undefined): Promise<PublicUser | null> {
   if (!token) return null;
   return db
     .prepare(
       `SELECT u.id, u.name, u.email, u.bio, u.avatar_url, u.verified_at
          FROM afroup_sessions s
-         JOIN afroup_users u ON u.id = s.user_id
+         JOIN users u ON u.id = s.user_id
         WHERE s.token = ? AND datetime(s.expires_at) > datetime('now')
         LIMIT 1`,
     )

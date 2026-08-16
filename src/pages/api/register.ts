@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { env } from "cloudflare:workers";
 import { hashPassword } from "../../lib/crypto";
 import { sendVerificationEmail, type EmailLocale } from "../../lib/email";
+import { planRegister } from "../../lib/identity-auth";
 
 export const prerender = false;
 
@@ -52,16 +53,39 @@ export const POST: APIRoute = async ({ request }) => {
   if (password.length < 8) return json({ ok: false, error: "password_short" }, 400);
 
   const existing = await env.DB.prepare(
-    "SELECT id FROM afroup_users WHERE email = ? LIMIT 1",
+    "SELECT id FROM users WHERE email = ? LIMIT 1",
   ).bind(email).first<{ id: number }>();
   if (existing) return json({ ok: false, error: "email_taken" }, 409);
 
   const passwordHash = await hashPassword(password);
+  const plan = planRegister({ name, email, passwordHash });
 
   const insert = await env.DB.prepare(
-    "INSERT INTO afroup_users (name, email, password_hash) VALUES (?, ?, ?) RETURNING id",
-  ).bind(name, email, passwordHash).first<{ id: number }>();
+    `INSERT INTO users (
+       name, email, password_hash, verified_at, role_id, invite_pending, is_active, created_by
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
+  )
+    .bind(
+      plan.user.name,
+      plan.user.email,
+      plan.user.passwordHash,
+      plan.user.verifiedAt,
+      plan.user.roleId,
+      plan.user.invitePending,
+      plan.user.isActive,
+      plan.user.createdBy,
+    )
+    .first<{ id: number }>();
   if (!insert) return json({ ok: false, error: "insert_failed" }, 500);
+
+  await env.DB.prepare(
+    `INSERT OR IGNORE INTO admin_user_permissions (user_id, permission_id)
+     SELECT ?, p.id
+       FROM admin_permissions p
+      WHERE p.name IN (${plan.grants.map(() => "?").join(", ")})`,
+  )
+    .bind(insert.id, ...plan.grants)
+    .run();
 
   const token = crypto.randomUUID();
   const expiresAt = new Date(Date.now() + TOKEN_TTL_MS).toISOString();
@@ -77,7 +101,7 @@ export const POST: APIRoute = async ({ request }) => {
   } catch (error) {
     console.error("register: email send failed", error);
     await env.DB.prepare(
-      "UPDATE afroup_users SET updated_at = datetime('now') WHERE id = ?",
+      "UPDATE users SET updated_at = datetime('now') WHERE id = ?",
     ).bind(insert.id).run();
     return json({ ok: false, error: "email_failed" }, 502);
   }

@@ -25,7 +25,7 @@ export const POST: APIRoute = async ({ request }) => {
   if (!EMAIL_RE.test(email)) return json({ ok: false, error: "email_invalid" }, 400);
 
   const user = await env.DB.prepare(
-    "SELECT id, name, email FROM afroup_users WHERE email = ? LIMIT 1",
+    "SELECT id, name, email FROM users WHERE email = ? LIMIT 1",
   )
     .bind(email)
     .first<{ id: number; name: string; email: string }>();

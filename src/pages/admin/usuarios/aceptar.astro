@@ -24,7 +24,7 @@ if (!token) {
   const row = await env.DB.prepare(
     `SELECT i.token, i.expires_at, i.consumed_at, u.id, u.email, u.name, u.invite_pending
        FROM admin_user_invitations i
-       JOIN admin_users u ON u.id = i.user_id
+       JOIN users u ON u.id = i.user_id
       WHERE i.token = ? LIMIT 1`,
   ).bind(token).first<{
     token: string;

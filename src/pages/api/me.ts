@@ -1,6 +1,8 @@
 import type { APIRoute } from "astro";
 import { env } from "cloudflare:workers";
-import { getAdminUserByEmail, getPublicUser, PUBLIC_SESSION_COOKIE } from "../../lib/public-session";
+import { permissionsFromNamedRows } from "../../lib/identity-auth";
+import { getPublicUser, PUBLIC_SESSION_COOKIE } from "../../lib/public-session";
+import { effectivePermissions, mergePermissions } from "../../lib/rbac";
 
 export const prerender = false;
 
@@ -12,12 +14,14 @@ export const GET: APIRoute = async ({ cookies }) => {
       headers: { "content-type": "application/json; charset=utf-8" },
     });
   }
-  const admin = await getAdminUserByEmail(env.DB, user.email);
+  const permissions = permissionsFromNamedRows(
+    mergePermissions(await effectivePermissions(env.DB, user.id)),
+  );
   return new Response(
     JSON.stringify({
       ok: true,
       user,
-      admin: admin ? { id: admin.id, name: admin.name, email: admin.email } : null,
+      permissions,
     }),
     { status: 200, headers: { "content-type": "application/json; charset=utf-8" } },
   );

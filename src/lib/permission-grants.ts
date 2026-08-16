@@ -177,7 +177,7 @@ export async function effectiveGrant(
           END AS allowed
          FROM admin_permissions p
          JOIN admin_modules m ON m.id = p.module_id
-         JOIN admin_users u ON u.id = ?
+         JOIN users u ON u.id = ?
          LEFT JOIN admin_user_permissions up
            ON up.permission_id = p.id AND up.user_id = u.id
          LEFT JOIN admin_role_permissions rp

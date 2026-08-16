@@ -24,7 +24,7 @@ export const POST: APIRoute = async ({ request }) => {
   const row = await env.DB.prepare(
     `SELECT r.token, r.expires_at, r.consumed_at, u.id
        FROM afroup_password_resets r
-       JOIN afroup_users u ON u.id = r.user_id
+       JOIN users u ON u.id = r.user_id
       WHERE r.token = ? LIMIT 1`,
   )
     .bind(token)
@@ -37,7 +37,7 @@ export const POST: APIRoute = async ({ request }) => {
   const hash = await hashPassword(password);
   const now = new Date().toISOString();
   await env.DB.batch([
-    env.DB.prepare("UPDATE afroup_users SET password_hash = ?, updated_at = ? WHERE id = ?").bind(hash, now, row.id),
+    env.DB.prepare("UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?").bind(hash, now, row.id),
     env.DB.prepare("UPDATE afroup_password_resets SET consumed_at = ? WHERE token = ?").bind(now, token),
     env.DB.prepare("DELETE FROM afroup_sessions WHERE user_id = ?").bind(row.id),
   ]);

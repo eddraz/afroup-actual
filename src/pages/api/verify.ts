@@ -14,7 +14,7 @@ export const GET: APIRoute = async ({ url, request }) => {
   const row = await env.DB.prepare(
     `SELECT v.token, v.expires_at, v.consumed_at, u.email, u.verified_at
        FROM afroup_email_verifications v
-       JOIN afroup_users u ON u.id = v.user_id
+       JOIN users u ON u.id = v.user_id
       WHERE v.token = ? LIMIT 1`,
   ).bind(token).first<{
     token: string;
@@ -33,7 +33,7 @@ export const GET: APIRoute = async ({ url, request }) => {
   const now = new Date().toISOString();
   await env.DB.batch([
     env.DB.prepare(
-      "UPDATE afroup_users SET verified_at = ?, updated_at = ? WHERE email = ? AND verified_at IS NULL",
+      "UPDATE users SET verified_at = ?, updated_at = ? WHERE email = ? AND verified_at IS NULL",
     ).bind(now, now, row.email),
     env.DB.prepare(
       "UPDATE afroup_email_verifications SET consumed_at = ? WHERE token = ?",

@@ -1,7 +1,6 @@
 import type { D1Database } from "@cloudflare/workers-types";
 import { isBlankBio, plannedBioWrites } from "./bio-writes";
 import { defaultLocale } from "./i18n";
-import { getAdminUserByEmail } from "./public-session";
 import { effectiveGrant } from "./permission-grants";
 
 export const BIO_MAX = 280;
@@ -35,7 +34,7 @@ export async function saveUserBios(
   const spanish = planned[defaultLocale] ?? "";
 
   await db
-    .prepare("UPDATE afroup_users SET bio = ?, updated_at = datetime('now') WHERE id = ?")
+    .prepare("UPDATE users SET bio = ?, updated_at = datetime('now') WHERE id = ?")
     .bind(spanish || null, userId)
     .run();
 
@@ -52,9 +51,16 @@ export async function translationAccessForEmail(
   db: D1Database,
   email: string,
 ): Promise<TranslationAccess> {
-  const admin = await getAdminUserByEmail(db, email);
-  if (!admin) return { canWrite: false, canUseAi: false };
-  const grant = await effectiveGrant(db, admin.id, "usuarios", "update");
+  const user = await db
+    .prepare(
+      `SELECT id FROM users
+        WHERE email = ? AND is_active = 1 AND invite_pending = 0
+        LIMIT 1`,
+    )
+    .bind(email.trim().toLowerCase())
+    .first<{ id: number }>();
+  if (!user) return { canWrite: false, canUseAi: false };
+  const grant = await effectiveGrant(db, user.id, "users", "update");
   return {
     canUseAi: grant.translateAi,
     canWrite: grant.translateManual,

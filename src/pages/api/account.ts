@@ -5,6 +5,7 @@ import {
   getPublicUser,
   PUBLIC_SESSION_COOKIE,
 } from "../../lib/public-session";
+import { hasPermission } from "../../lib/rbac";
 
 export const prerender = false;
 
@@ -26,6 +27,9 @@ function avatarKeyFromUrl(url: string | null | undefined, userId: number) {
 export const DELETE: APIRoute = async ({ request, cookies }) => {
   const user = await getPublicUser(env.DB, cookies.get(PUBLIC_SESSION_COOKIE)?.value);
   if (!user) return json({ ok: false, error: "unauthorized" }, 401);
+  if (!(await hasPermission(env.DB, user.id, "users", "update"))) {
+    return json({ ok: false, error: "forbidden" }, 403);
+  }
 
   const form = await request.formData();
   const confirm = String(form.get("confirm") ?? "").trim().toLowerCase();
@@ -37,9 +41,8 @@ export const DELETE: APIRoute = async ({ request, cookies }) => {
   if (key) await env.AVATARS.delete(key);
 
   await env.DB.batch([
-    env.DB.prepare("DELETE FROM afroup_sessions WHERE user_id = ?").bind(user.id),
-    env.DB.prepare("DELETE FROM afroup_email_verifications WHERE user_id = ?").bind(user.id),
-    env.DB.prepare("DELETE FROM afroup_users WHERE id = ?").bind(user.id),
+    env.DB.prepare("UPDATE users SET created_by = NULL WHERE created_by = ?").bind(user.id),
+    env.DB.prepare("DELETE FROM users WHERE id = ?").bind(user.id),
   ]);
 
   await destroyPublicSession(env.DB, cookies.get(PUBLIC_SESSION_COOKIE)?.value);
