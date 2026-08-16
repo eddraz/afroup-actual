@@ -15,14 +15,15 @@
     var labelAll = matrix.getAttribute("data-label-all") || "All";
     var labelNone = matrix.getAttribute("data-label-none") || "—";
     var labelLimit = matrix.getAttribute("data-label-limit") || "Limit";
+    var labelTranslate = matrix.getAttribute("data-label-translate") || "Translation";
     var labelManual = matrix.getAttribute("data-label-manual") || "Manual";
     var labelAi = matrix.getAttribute("data-label-ai") || "AI";
     var parts = [];
     if (parentOn) parts.push({ text: labelParent, tip: labelParent, tone: "neutral" });
     if (quotaValue) parts.push({ text: quotaValue, tip: labelLimit, tone: "neutral" });
     else if (parentOn) parts.push({ text: labelAll, tip: labelLimit, tone: "neutral" });
-    if (manualOn) parts.push({ text: labelManual, tip: labelManual, tone: "neutral" });
-    if (aiOn) parts.push({ text: labelAi, tip: labelAi, tone: "ai" });
+    if (manualOn) parts.push({ text: labelManual, tip: labelTranslate, tone: "neutral" });
+    if (aiOn) parts.push({ text: labelAi, tip: labelTranslate, tone: "ai" });
 
     chip.replaceChildren();
     if (!parts.length) {

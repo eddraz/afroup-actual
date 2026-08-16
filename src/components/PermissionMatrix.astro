@@ -81,8 +81,8 @@ function chipParts(grant: PermissionGrant | undefined) {
   if (grant.parent) parts.push({ text: parentLabel, tip: parentLabel, tone: "neutral" });
   if (grant.quota !== null) parts.push({ text: String(grant.quota), tip: limitLabel, tone: "neutral" });
   else if (grant.parent) parts.push({ text: unlimitedLabel, tip: limitLabel, tone: "neutral" });
-  if (grant.translateManual) parts.push({ text: translateManualLabel, tip: translateManualLabel, tone: "neutral" });
-  if (grant.translateAi) parts.push({ text: translateAiLabel, tip: translateAiLabel, tone: "ai" });
+  if (grant.translateManual) parts.push({ text: translateManualLabel, tip: translateLabel, tone: "neutral" });
+  if (grant.translateAi) parts.push({ text: translateAiLabel, tip: translateLabel, tone: "ai" });
   return parts;
 }
 ---
@@ -94,6 +94,7 @@ function chipParts(grant: PermissionGrant | undefined) {
   data-label-all={unlimitedLabel}
   data-label-none={noneLabel}
   data-label-limit={limitLabel}
+  data-label-translate={translateLabel}
   data-label-manual={translateManualLabel}
   data-label-ai={translateAiLabel}
 >
