@@ -13,7 +13,7 @@ import { resolveRequestCopy } from "../lib/request-locale";
 
 interface Props {
   title?: string;
-  active?: "dashboard" | "articles" | "users" | "comments" | "projects" | "modules" | "permissions" | "roles" | "languages";
+  active?: "dashboard" | "articles" | "categories" | "users" | "comments" | "projects" | "modules" | "permissions" | "roles" | "languages";
 }
 
 const { locale, copy } = await resolveRequestCopy(env.DB, Astro.url);
@@ -24,6 +24,7 @@ const paths = {
   home: localizedPath(locale, routeIds.home),
   admin: adminBase,
   articles: joinPath(adminBase, "articulos"),
+      categories: joinPath(adminBase, "categorias"),
   users: joinPath(adminBase, "usuarios"),
   comments: joinPath(adminBase, "comentarios"),
   projects: joinPath(adminBase, "proyectos"),
@@ -36,6 +37,7 @@ const actor = await getCurrentUser(env.DB, sessionTokenFrom(Astro.cookies));
 const canRead = async (slug: string) => Boolean(actor && (await hasPermission(env.DB, actor.id, slug, "read")));
 const can = {
   articles: await canRead("articulos"),
+      categories: await canRead("categorias"),
   comments: await canRead("comentarios"),
   projects: await canRead("proyectos"),
   modules: await canRead("modulos"),
@@ -44,7 +46,7 @@ const can = {
   users: await canRead("users"),
   languages: await canRead("idiomas"),
 };
-const showContent = can.articles || can.comments || can.projects;
+const showContent = can.articles || can.categories || can.comments || can.projects;
 const showAccess = can.modules || can.permissions || can.roles || can.users || can.languages;
 
 function navClass(key: NonNullable<Props["active"]>) {
@@ -106,6 +108,7 @@ function navClass(key: NonNullable<Props["active"]>) {
         <symbol id="ic-stack" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 5l-9 5l-9 -5l9 -5"></path><path d="M3 12l9 5l9 -5"></path><path d="M3 17l9 5l9 -5"></path></symbol>
         <symbol id="ic-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"></path><path d="M3 12h1m8 -9v1m8 8h1m-9 8v1m-6.4 -15.4l.7 .7m12.1 -.7l-.7 .7m0 11.4l.7 .7m-12.1 -.7l-.7 .7"></path></symbol>
             <symbol id="ic-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454l0 .008"></path></symbol>
+            <symbol id="ic-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5l0 14"></path><path d="M5 12l14 0"></path></symbol>
             <symbol id="ic-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12.572l-7.5 7.428l-7.5 -7.428a5 5 0 1 1 7.5 -6.566a5 5 0 1 1 7.5 6.572"></path></symbol>
       </defs>
     </svg>
@@ -156,6 +159,14 @@ function navClass(key: NonNullable<Props["active"]>) {
                 <a class={navClass("articles")} href={paths.articles}>
                   <svg class="size-5"><use href="#ic-book2"></use></svg>
                   {copy.adminArticles}
+                </a>
+              </li>
+            ) : null}
+            {can.categories ? (
+              <li>
+                <a class={navClass("categories")} href={paths.categories}>
+                  <svg class="size-5"><use href="#ic-stack"></use></svg>
+                  {copy.adminCategories}
                 </a>
               </li>
             ) : null}
