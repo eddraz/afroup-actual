@@ -17,6 +17,7 @@
 - Keep permission assignment in `components/PermissionMatrix.astro`: show compact chips in the matrix and edit Parent, Limit, and Translation in one modal per module. Translation is two independent checks on every module action: by hand and with AI. An empty Limit means all matching records. Persist those values through `lib/permission-grants.ts`.
 - Keep public language visibility in `site_languages` and `components/LanguageSwitcher.astro`: 0/1 visible languages hide the switcher, 2 show a sigla toggle, 3+ show a select. Admin stays Spanish/English only.
 - Keep account bios per locale in `afroup_user_bios`. The `usuarios:update` translation checks gate that form: by hand writes translations, with AI unlocks Workers AI. They can be combined.
+- Keep the page language select in `components/PageLocaleSwitch.astro`, at the top-right of the page title. Only nodes marked `data-i18n-panel` change when the selected language changes.
 - Keep site icons as official Tabler outline symbols in `layouts/BaseLayout.astro`.
 - Keep the sidebar logo and bottom language/donation controls outside the scroll region; only the menu item list may own vertical overflow.
 - Keep the sidebar menu scrollbar thin and black-toned via the `sidebar-scroll` utility.

@@ -2,6 +2,7 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import SessionAvatar from "../../components/SessionAvatar.astro";
 import SessionUser from "../../components/SessionUser.astro";
+import PageLocaleSwitch from "../../components/PageLocaleSwitch.astro";
 import { env } from "cloudflare:workers";
 import { getLocaleFromUrl, localizedPath, t } from "../../lib/i18n";
 import { routeIds } from "../../lib/paths";
@@ -39,8 +40,13 @@ const translation = await translationAccessForEmail(env.DB, user.email);
 
   <section class="hero relative mt-6 overflow-hidden rounded-[24px] border border-base-300 bg-base-200 shadow-lg">
     <div class="hero-content relative w-full flex-col items-start gap-3 px-6 py-8 lg:px-11 lg:py-11">
-      <p class="text-primary text-xs font-extrabold tracking-[0.18em] uppercase">{copy.accountEyebrow}</p>
-      <h1 class="font-display max-w-[20ch] text-[31px] leading-[1.06] font-bold lg:text-[46px]">{copy.accountTitle}</h1>
+      <div class="flex w-full flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div class="flex flex-col gap-3">
+          <p class="text-primary text-xs font-extrabold tracking-[0.18em] uppercase">{copy.accountEyebrow}</p>
+          <h1 class="font-display max-w-[20ch] text-[31px] leading-[1.06] font-bold lg:text-[46px]">{copy.accountTitle}</h1>
+        </div>
+        <PageLocaleSwitch languages={languages} label={copy.accountBioLanguage} current="es" />
+      </div>
       <p class="max-w-[58ch] text-[17px] leading-[1.55] opacity-70">{copy.accountLead}</p>
     </div>
   </section>
@@ -101,23 +107,11 @@ const translation = await translationAccessForEmail(env.DB, user.email);
                   <button class="btn btn-dash btn-sm" type="button" data-bio-translate>{copy.accountBioTranslate}</button>
                 ) : null}
               </div>
-              {languages.length > 1 ? (
-                <fieldset class="fieldset">
-                  <legend class="fieldset-legend">{copy.accountBioLanguage}</legend>
-                  <select class="select w-full" data-bio-language>
-                    {languages.map((language) => (
-                      <option value={language.code} selected={language.code === "es"}>
-                        {language.code.toUpperCase()} — {language.native_name}
-                      </option>
-                    ))}
-                  </select>
-                </fieldset>
-              ) : null}
               {languages.map((language) => {
                 const locked = !translation.canWrite && language.code !== "es";
                 const active = language.code === "es";
                 return (
-                  <fieldset class:list={["fieldset", !active && "hidden"]} data-bio-panel={language.code}>
+                  <fieldset class:list={["fieldset", !active && "hidden"]} data-i18n-panel={language.code}>
                     <legend class="fieldset-legend">{copy.accountBioLabel} · {language.native_name}</legend>
                     <textarea
                       id={language.code === "es" ? "bio" : `bio-${language.code}`}
@@ -286,16 +280,6 @@ const translation = await translationAccessForEmail(env.DB, user.email);
         if (window.AfroUpRichEditor) {
           document.querySelectorAll("[data-bio-locale]").forEach(function (field) {
             if (field.id) window.AfroUpRichEditor.attach("#" + field.id);
-          });
-        }
-        var languageSelect = document.querySelector("[data-bio-language]");
-        if (languageSelect && languageSelect.dataset.bound !== "true") {
-          languageSelect.dataset.bound = "true";
-          languageSelect.addEventListener("change", function () {
-            var selected = languageSelect.value;
-            document.querySelectorAll("[data-bio-panel]").forEach(function (panel) {
-              panel.classList.toggle("hidden", panel.getAttribute("data-bio-panel") !== selected);
-            });
           });
         }
         var translateBtn = document.querySelector("[data-bio-translate]");

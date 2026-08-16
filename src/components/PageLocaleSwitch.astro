@@ -1,0 +1,52 @@
+---
+interface LanguageItem {
+  code: string;
+  native_name: string;
+}
+
+interface Props {
+  languages: LanguageItem[];
+  label: string;
+  current?: string;
+}
+
+const { languages, label, current = "es" } = Astro.props;
+---
+
+{languages.length > 1 ? (
+  <label class="flex items-center gap-2 self-start sm:self-center">
+    <span class="text-xs font-semibold tracking-[0.12em] uppercase opacity-60">{label}</span>
+    <select class="select select-sm w-[11rem]" data-page-locale aria-label={label}>
+      {languages.map((language) => (
+        <option value={language.code} selected={language.code === current}>
+          {language.code.toUpperCase()} — {language.native_name}
+        </option>
+      ))}
+    </select>
+  </label>
+) : null}
+
+<script is:inline>
+  (function () {
+    var bind = function () {
+      var select = document.querySelector("[data-page-locale]");
+      if (!select || select.dataset.bound === "true") return;
+      select.dataset.bound = "true";
+      var show = function (code) {
+        document.querySelectorAll("[data-i18n-panel]").forEach(function (panel) {
+          panel.classList.toggle("hidden", panel.getAttribute("data-i18n-panel") !== code);
+        });
+      };
+      show(select.value);
+      select.addEventListener("change", function () {
+        show(select.value);
+      });
+    };
+    bind();
+    document.addEventListener("astro:page-load", function () {
+      var select = document.querySelector("[data-page-locale]");
+      if (select) select.dataset.bound = "";
+      bind();
+    });
+  })();
+</script>
