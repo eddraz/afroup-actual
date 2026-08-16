@@ -1,9 +1,12 @@
 ---
 import { ClientRouter } from "astro:transitions";
+import { env } from "cloudflare:workers";
 import SessionUser from "../components/SessionUser.astro";
 import "../styles/global.css";
-import { getLocaleFromUrl, localizedPath, t } from "../lib/i18n";
+import { getCurrentUser, sessionTokenFrom } from "../lib/admin-scope";
+import { getLocaleFromUrl, joinPath, localizedPath, t } from "../lib/i18n";
 import { routeIds } from "../lib/paths";
+import { hasPermission } from "../lib/rbac";
 
 interface Props {
   title?: string;
@@ -14,18 +17,33 @@ const locale = getLocaleFromUrl(Astro.url);
 const copy = t(locale);
 const { title = copy.titleAdmin, active = "dashboard" } = Astro.props;
 
+const adminBase = localizedPath(locale, routeIds.admin);
 const paths = {
   home: localizedPath(locale, routeIds.home),
-  admin: localizedPath(locale, routeIds.admin),
-  articles: `${localizedPath(locale, routeIds.admin)}/articulos`,
-  users: `${localizedPath(locale, routeIds.admin)}/usuarios`,
-  comments: `${localizedPath(locale, routeIds.admin)}/comentarios`,
-  projects: `${localizedPath(locale, routeIds.admin)}/proyectos`,
-  modules: `${localizedPath(locale, routeIds.admin)}/modulos`,
-  permissions: `${localizedPath(locale, routeIds.admin)}/permisos`,
-  roles: `${localizedPath(locale, routeIds.admin)}/roles`,
-  languages: `${localizedPath(locale, routeIds.admin)}/idiomas`,
+  admin: adminBase,
+  articles: joinPath(adminBase, "articulos"),
+  users: joinPath(adminBase, "usuarios"),
+  comments: joinPath(adminBase, "comentarios"),
+  projects: joinPath(adminBase, "proyectos"),
+  modules: joinPath(adminBase, "modulos"),
+  permissions: joinPath(adminBase, "permisos"),
+  roles: joinPath(adminBase, "roles"),
+  languages: joinPath(adminBase, "idiomas"),
 };
+const actor = await getCurrentUser(env.DB, sessionTokenFrom(Astro.cookies));
+const canRead = async (slug: string) => Boolean(actor && (await hasPermission(env.DB, actor.id, slug, "read")));
+const can = {
+  articles: await canRead("articulos"),
+  comments: await canRead("comentarios"),
+  projects: await canRead("proyectos"),
+  modules: await canRead("modulos"),
+  permissions: await canRead("permisos"),
+  roles: await canRead("roles"),
+  users: await canRead("users"),
+  languages: await canRead("idiomas"),
+};
+const showContent = can.articles || can.comments || can.projects;
+const showAccess = can.modules || can.permissions || can.roles || can.users || can.languages;
 
 const esAdminHref = locale === "es" ? paths.admin : "/admin";
 const enAdminHref = locale === "en" ? paths.admin : "/en/admin";
@@ -109,56 +127,72 @@ const enAdminHref = locale === "en" ? paths.admin : "/en/admin";
                 {copy.adminDashboard}
               </a>
             </li>
-            <li class="menu-title mt-3">{copy.adminNavContent}</li>
-            <li>
-              <a class:list={[active === "articles" && "menu-active"]} href={paths.articles}>
-                <svg class="size-5"><use href="#ic-book2"></use></svg>
-                {copy.adminArticles}
-              </a>
-            </li>
-            <li>
-              <a class:list={[active === "comments" && "menu-active"]} href={paths.comments}>
-                <svg class="size-5"><use href="#ic-pin"></use></svg>
-                {copy.adminComments}
-              </a>
-            </li>
-            <li>
-              <a class:list={[active === "projects" && "menu-active"]} href={paths.projects}>
-                <svg class="size-5"><use href="#ic-share"></use></svg>
-                {copy.adminProjects}
-              </a>
-            </li>
-            <li class="menu-title mt-3">{copy.adminNavAccess}</li>
-            <li>
-              <a class:list={[active === "modules" && "menu-active"]} href={paths.modules}>
-                <svg class="size-5"><use href="#ic-stack"></use></svg>
-                {copy.adminModules}
-              </a>
-            </li>
-            <li>
-              <a class:list={[active === "permissions" && "menu-active"]} href={paths.permissions}>
-                <svg class="size-5"><use href="#ic-key"></use></svg>
-                {copy.adminPermissions}
-              </a>
-            </li>
-            <li>
-              <a class:list={[active === "roles" && "menu-active"]} href={paths.roles}>
-                <svg class="size-5"><use href="#ic-shield"></use></svg>
-                {copy.adminRoles}
-              </a>
-            </li>
-            <li>
-              <a class:list={[active === "users" && "menu-active"]} href={paths.users}>
-                <svg class="size-5"><use href="#ic-users"></use></svg>
-                {copy.adminUsers}
-              </a>
-            </li>
-            <li>
-              <a class:list={[active === "languages" && "menu-active"]} href={paths.languages}>
-                <svg class="size-5"><use href="#ic-book2"></use></svg>
-                {copy.adminLanguages}
-              </a>
-            </li>
+            {showContent ? <li class="menu-title mt-3">{copy.adminNavContent}</li> : null}
+            {can.articles ? (
+              <li>
+                <a class:list={[active === "articles" && "menu-active"]} href={paths.articles}>
+                  <svg class="size-5"><use href="#ic-book2"></use></svg>
+                  {copy.adminArticles}
+                </a>
+              </li>
+            ) : null}
+            {can.comments ? (
+              <li>
+                <a class:list={[active === "comments" && "menu-active"]} href={paths.comments}>
+                  <svg class="size-5"><use href="#ic-pin"></use></svg>
+                  {copy.adminComments}
+                </a>
+              </li>
+            ) : null}
+            {can.projects ? (
+              <li>
+                <a class:list={[active === "projects" && "menu-active"]} href={paths.projects}>
+                  <svg class="size-5"><use href="#ic-share"></use></svg>
+                  {copy.adminProjects}
+                </a>
+              </li>
+            ) : null}
+            {showAccess ? <li class="menu-title mt-3">{copy.adminNavAccess}</li> : null}
+            {can.modules ? (
+              <li>
+                <a class:list={[active === "modules" && "menu-active"]} href={paths.modules}>
+                  <svg class="size-5"><use href="#ic-stack"></use></svg>
+                  {copy.adminModules}
+                </a>
+              </li>
+            ) : null}
+            {can.permissions ? (
+              <li>
+                <a class:list={[active === "permissions" && "menu-active"]} href={paths.permissions}>
+                  <svg class="size-5"><use href="#ic-key"></use></svg>
+                  {copy.adminPermissions}
+                </a>
+              </li>
+            ) : null}
+            {can.roles ? (
+              <li>
+                <a class:list={[active === "roles" && "menu-active"]} href={paths.roles}>
+                  <svg class="size-5"><use href="#ic-shield"></use></svg>
+                  {copy.adminRoles}
+                </a>
+              </li>
+            ) : null}
+            {can.users ? (
+              <li>
+                <a class:list={[active === "users" && "menu-active"]} href={paths.users}>
+                  <svg class="size-5"><use href="#ic-users"></use></svg>
+                  {copy.adminUsers}
+                </a>
+              </li>
+            ) : null}
+            {can.languages ? (
+              <li>
+                <a class:list={[active === "languages" && "menu-active"]} href={paths.languages}>
+                  <svg class="size-5"><use href="#ic-book2"></use></svg>
+                  {copy.adminLanguages}
+                </a>
+              </li>
+            ) : null}
           </ul>
           <div class="border-t border-base-300 p-3">
             <a class="btn btn-ghost btn-sm btn-block justify-start" href={paths.home}>
@@ -187,7 +221,7 @@ const enAdminHref = locale === "en" ? paths.admin : "/en/admin";
           var path = window.location.pathname;
           if (isPublicPath(path)) return;
           var result = event.detail || {};
-          if (result.ok && result.admin) return;
+          if (result.ok && result.user) return;
           window.location.replace("/login?next=" + encodeURIComponent(path));
         });
 
@@ -203,6 +237,7 @@ const enAdminHref = locale === "en" ? paths.admin : "/en/admin";
         });
       })();
     </script>
+    <script is:inline src="/form-feedback.js"></script>
     <script is:inline src="/session-user.js"></script>
   </body>
 </html>

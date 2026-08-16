@@ -61,12 +61,6 @@
         document.dispatchEvent(new CustomEvent("afroup:session", { detail: result || { ok: false } }));
         if (!result || !result.ok || !result.user) return;
         paint(result.user);
-        if (result.admin) {
-          try {
-            localStorage.setItem("afroup-admin-user", JSON.stringify(result.admin));
-            localStorage.setItem("afroup-role", "admin");
-          } catch (error) {}
-        }
       })
       .catch(function () {
         document.dispatchEvent(new CustomEvent("afroup:session", { detail: { ok: false } }));

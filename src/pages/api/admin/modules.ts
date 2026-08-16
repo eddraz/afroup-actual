@@ -1,5 +1,7 @@
 import type { APIRoute } from "astro";
 import { env } from "cloudflare:workers";
+import { forbiddenJson, getCurrentAdmin, sessionTokenFrom, unauthorizedJson } from "../../../lib/admin-scope";
+import { hasPermission } from "../../../lib/rbac";
 
 export const prerender = false;
 
@@ -21,7 +23,10 @@ function json(body: unknown, status = 200) {
   });
 }
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, cookies }) => {
+  const actor = await getCurrentAdmin(env.DB, sessionTokenFrom(cookies));
+  if (!actor) return unauthorizedJson();
+  if (!(await hasPermission(env.DB, actor.id, "modulos", "update"))) return forbiddenJson();
   const body = await readBody(request);
   if (body.intent === "delete" && typeof body.id === "string") {
     const id = Number(body.id);

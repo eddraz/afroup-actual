@@ -8,6 +8,7 @@ import {
   unauthorizedJson,
 } from "../../../lib/admin-scope";
 import { parsePermissionGrants, setPermissionGrants } from "../../../lib/permission-grants";
+import { hasPermission } from "../../../lib/rbac";
 
 export const prerender = false;
 
@@ -21,6 +22,7 @@ function json(body: unknown, status = 200) {
 export const POST: APIRoute = async ({ request, cookies }) => {
   const actor = await getCurrentAdmin(env.DB, sessionTokenFrom(cookies));
   if (!actor) return unauthorizedJson();
+  if (!(await hasPermission(env.DB, actor.id, "permisos", "update"))) return forbiddenJson();
   const form = await request.formData();
   const intent = form.get("_intent");
   const grants = parsePermissionGrants(form);

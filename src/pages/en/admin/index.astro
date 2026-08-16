@@ -1,6 +1,6 @@
 ---
 import AdminLayout from "../../../layouts/AdminLayout.astro";
-import { getLocaleFromUrl, localizedPath, t } from "../../../lib/i18n";
+import { getLocaleFromUrl, joinPath, localizedPath, t } from "../../../lib/i18n";
 import { routeIds } from "../../../lib/paths";
 
 export const prerender = true;
@@ -8,10 +8,10 @@ export const prerender = true;
 const locale = getLocaleFromUrl(Astro.url);
 const copy = t(locale);
 const adminBase = localizedPath(locale, routeIds.admin);
-const articlesHref = `${adminBase}/articulos`;
-const commentsHref = `${adminBase}/comentarios`;
-const projectsHref = `${adminBase}/proyectos`;
-const usersHref = `${adminBase}/usuarios`;
+const articlesHref = joinPath(adminBase, "articulos");
+const commentsHref = joinPath(adminBase, "comentarios");
+const projectsHref = joinPath(adminBase, "proyectos");
+const usersHref = joinPath(adminBase, "usuarios");
 ---
 
 <AdminLayout title={copy.titleAdmin} active="dashboard">

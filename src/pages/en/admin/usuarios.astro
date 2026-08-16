@@ -5,27 +5,27 @@ import { getLocaleFromUrl, localizedPath, t } from "../../../lib/i18n";
 import { env } from "cloudflare:workers";
 import { routeIds } from "../../../lib/paths";
 import {
-  getCurrentAdmin,
   listVisibleAdminUsers,
-  sessionTokenFrom,
+  requireModuleAccess,
 } from "../../../lib/admin-scope";
 import {
   grantsToJson,
   loadAllRoleGrants,
   loadAllUserGrants,
 } from "../../../lib/permission-grants";
-import type { PermissionAction } from "../../../lib/rbac";
+import { hasPermission, type PermissionAction } from "../../../lib/rbac";
 
 export const prerender = false;
 
 const locale = getLocaleFromUrl(Astro.url);
+const access = await requireModuleAccess(env.DB, Astro.cookies, Astro.url, locale, "users");
+if (access instanceof Response) return access;
+const actor = access;
+
 const copy = t(locale);
 const loginHref = localizedPath(locale, routeIds.login);
 
-const actor = await getCurrentAdmin(env.DB, sessionTokenFrom(Astro.cookies));
-if (!actor) {
-  return Astro.redirect(`${loginHref}?next=${encodeURIComponent(Astro.url.pathname)}`, 303);
-}
+const canInvite = await hasPermission(env.DB, actor.id, "users", "create");
 
 interface RoleRow {
   id: number;
@@ -62,7 +62,7 @@ const actionLabels: Record<PermissionAction, string> = {
 
 const usuariosReadId = permissions.find((permission) => {
   if (permission.action !== "read") return false;
-  return modules.some((module) => module.id === permission.module_id && module.slug === "usuarios");
+  return modules.some((module) => module.id === permission.module_id && module.slug === "users");
 })?.id;
 ---
 
@@ -74,6 +74,7 @@ const usuariosReadId = permissions.find((permission) => {
     </div>
   </header>
 
+{canInvite ? (
   <details class="card bg-base-100 border border-base-300 shadow-sm mt-6" open>
     <summary class="card-body cursor-pointer list-none">
       <span class="flex items-center gap-2 font-bold">
@@ -130,14 +131,14 @@ const usuariosReadId = permissions.find((permission) => {
         />
       </div>
 
-      <div class="alert alert-error mt-3 hidden" data-invite-error><span data-invite-error-text></span></div>
-      <div class="alert alert-success mt-3 hidden" data-invite-success><span data-invite-success-text></span></div>
       <div class="flex justify-end gap-2">
         <button class="btn btn-ghost btn-sm" type="reset">{copy.adminCancel}</button>
         <button class="btn btn-primary btn-sm" type="submit">{copy.adminInviteSelectRole.includes("rol") ? "Enviar invitación" : copy.adminAdd}</button>
       </div>
     </form>
   </details>
+
+) : null}
 
   <div class="mt-6 flex flex-col gap-6">
     {users.map((user) => {
@@ -250,16 +251,13 @@ const usuariosReadId = permissions.find((permission) => {
             roleSelect.addEventListener("change", function (event) { applyRole(event.target.value); });
           }
 
-          var errorBox = form.querySelector("[data-invite-error]");
-          var errorText = form.querySelector("[data-invite-error-text]");
-          var successBox = form.querySelector("[data-invite-success]");
-          var successText = form.querySelector("[data-invite-success-text]");
           var submit = form.querySelector("button[type=submit]");
+          var toast = function (message, kind) {
+            if (window.AfroUpFeedback) window.AfroUpFeedback.toast(message, kind);
+          };
 
           form.addEventListener("submit", function (event) {
             event.preventDefault();
-            if (errorBox) errorBox.classList.add("hidden");
-            if (successBox) successBox.classList.add("hidden");
             submit.disabled = true;
             var data = new FormData(form);
             data.set("locale", lang);
@@ -282,22 +280,19 @@ const usuariosReadId = permissions.find((permission) => {
               .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
               .then(function (result) {
                 if (result.ok) {
-                  if (successText) successText.textContent = lang === "en"
-                    ? "✓ Invite sent to " + result.body.emailSentTo
-                    : "✓ Invitación enviada a " + result.body.emailSentTo;
-                  if (successBox) successBox.classList.remove("hidden");
+                  toast(lang === "en"
+                    ? "Invite sent to " + result.body.emailSentTo
+                    : "Invitación enviada a " + result.body.emailSentTo, "success");
                   form.reset();
                   applyRole("");
                   setTimeout(function () { window.location.reload(); }, 1400);
                   return;
                 }
-                if (errorText) errorText.textContent = messages[result.body && result.body.error] || (lang === "en" ? "Could not save." : "No pudimos guardar.");
-                if (errorBox) errorBox.classList.remove("hidden");
+                toast(messages[result.body && result.body.error] || (lang === "en" ? "Could not save." : "No pudimos guardar."), "error");
                 submit.disabled = false;
               })
               .catch(function () {
-                if (errorText) errorText.textContent = lang === "en" ? "Network error." : "Error de red.";
-                if (errorBox) errorBox.classList.remove("hidden");
+                toast(lang === "en" ? "Network error." : "Error de red.", "error");
                 submit.disabled = false;
               });
           });
@@ -323,11 +318,9 @@ const usuariosReadId = permissions.find((permission) => {
             fetch(f.action, { method: "POST", body: data })
               .then(function (res) { return res.json(); })
               .then(function () {
-                var banner = document.createElement("div");
-                banner.className = "toast toast-end";
-                banner.innerHTML = '<div class="alert alert-success"><span>' + (lang === "en" ? "Permissions saved." : "Permisos guardados.") + '</span></div>';
-                document.body.appendChild(banner);
-                setTimeout(function () { banner.remove(); }, 1800);
+                if (window.AfroUpFeedback) {
+                  window.AfroUpFeedback.toast(lang === "en" ? "Permissions saved." : "Permisos guardados.", "success");
+                }
               });
           });
         });

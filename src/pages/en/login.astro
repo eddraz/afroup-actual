@@ -14,13 +14,11 @@ const recoverHref = localizedPath(locale, routeIds.recover);
 ---
 
 <BaseLayout title={copy.titleLogin} active="login">
-  <script is:inline define:vars={{ copyVerifiedTitle: copy.verifiedTitle, copyVerifiedLead: copy.verifiedLead, copyVerifiedInvalid: copy.verifiedInvalid, copyVerifiedExpired: copy.verifiedExpired, copyVerifiedAlready: copy.verifiedAlready }}>
+  <script is:inline define:vars={{ copyVerifiedLead: copy.verifiedLead, copyVerifiedInvalid: copy.verifiedInvalid, copyVerifiedExpired: copy.verifiedExpired, copyVerifiedAlready: copy.verifiedAlready }}>
     (function () {
       var bind = function () {
-        var banner = document.querySelector("[data-verified-banner]");
-        if (!banner || banner.dataset.bound === "true") return;
-        banner.dataset.bound = "true";
-        var text = document.querySelector("[data-verified-text]");
+        if (document.documentElement.dataset.verifiedToast === "true") return;
+        document.documentElement.dataset.verifiedToast = "true";
         var params = new URLSearchParams(window.location.search);
         var v = params.get("verified");
         var messages = {
@@ -29,9 +27,8 @@ const recoverHref = localizedPath(locale, routeIds.recover);
           expired: copyVerifiedExpired,
           already: copyVerifiedAlready,
         };
-        if (v && messages[v]) {
-          text.textContent = (v === "1" ? "✓ " : "") + messages[v];
-          banner.classList.remove("hidden");
+        if (v && messages[v] && window.AfroUpFeedback) {
+          window.AfroUpFeedback.toast(messages[v], v === "1" || v === "already" ? "success" : "error");
         }
       };
       bind();
@@ -54,10 +51,6 @@ const recoverHref = localizedPath(locale, routeIds.recover);
   </section>
 
   <div class="mt-9 grid grid-cols-1 gap-7 lg:grid-cols-[1.15fr_0.85fr]">
-    <div id="verified-banner" class="alert alert-success mt-4 hidden" data-verified-banner>
-  <span data-verified-text></span>
-</div>
-
 <form class="card bg-base-200 shadow" onsubmit="return false" data-login-form>
       <div class="card-body gap-4">
         <h2 class="card-title font-display text-[22px] tracking-[-0.005em]">{copy.loginTitle}</h2>
@@ -81,8 +74,6 @@ const recoverHref = localizedPath(locale, routeIds.recover);
         </div>
 
 
-
-        <div class="alert alert-error mt-2 hidden" data-login-error><span data-login-error-text></span></div>
 
         <button class="btn btn-primary mt-2 h-[46px] min-h-[46px]" type="submit">
           {copy.loginSubmit}
@@ -161,9 +152,9 @@ const recoverHref = localizedPath(locale, routeIds.recover);
         form.addEventListener("submit", function (event) {
           event.preventDefault();
           var submit = form.querySelector("button[type=submit]");
-          var errorBox = form.querySelector("[data-login-error]");
-          var errorText = form.querySelector("[data-login-error-text]");
-          if (errorBox) errorBox.classList.add("hidden");
+          var toast = function (message, kind) {
+            if (window.AfroUpFeedback) window.AfroUpFeedback.toast(message, kind);
+          };
           if (submit) submit.disabled = true;
           var data = new FormData(form);
           var lang = document.documentElement.lang === "en" ? "en" : "es";
@@ -176,30 +167,26 @@ const recoverHref = localizedPath(locale, routeIds.recover);
             .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
             .then(function (result) {
               if (result.ok) {
-                if (result.body.admin) {
-                  localStorage.setItem("afroup-admin-user", JSON.stringify(result.body.admin));
-                  localStorage.setItem("afroup-role", "admin");
-                } else {
+                try {
                   localStorage.removeItem("afroup-admin-user");
                   localStorage.removeItem("afroup-role");
-                }
+                } catch (error) {}
                 var next = new URLSearchParams(window.location.search).get("next");
                 if (next) {
                   window.location.href = next;
                   return;
                 }
-                window.location.href = result.body.admin
-                  ? (lang === "en" ? "/en/admin" : "/admin")
-                  : (lang === "en" ? "/en/cuenta" : "/cuenta");
+                var canEditAccount = result.body.permissions && result.body.permissions.users && result.body.permissions.users.indexOf("update") !== -1;
+                window.location.href = canEditAccount
+                  ? (lang === "en" ? "/en/cuenta" : "/cuenta")
+                  : (lang === "en" ? "/en/admin" : "/admin");
                 return;
               }
-              if (errorText) errorText.textContent = messages[result.body && result.body.error] || (lang === "en" ? "Could not sign in." : "No pudimos iniciar sesión.");
-              if (errorBox) errorBox.classList.remove("hidden");
+              toast(messages[result.body && result.body.error] || (lang === "en" ? "Could not sign in." : "No pudimos iniciar sesión."), "error");
               if (submit) submit.disabled = false;
             })
             .catch(function () {
-              if (errorText) errorText.textContent = lang === "en" ? "Network error." : "Error de red.";
-              if (errorBox) errorBox.classList.remove("hidden");
+              toast(lang === "en" ? "Network error." : "Error de red.", "error");
               if (submit) submit.disabled = false;
             });
         });

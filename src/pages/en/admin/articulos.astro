@@ -1,10 +1,16 @@
 ---
+import { env } from "cloudflare:workers";
 import AdminLayout from "../../../layouts/AdminLayout.astro";
+import { requireModuleAccess, sessionTokenFrom } from "../../../lib/admin-scope";
 import { getLocaleFromUrl, t } from "../../../lib/i18n";
 
-export const prerender = true;
+export const prerender = false;
 
 const locale = getLocaleFromUrl(Astro.url);
+const access = await requireModuleAccess(env.DB, Astro.cookies, Astro.url, locale, "articulos");
+if (access instanceof Response) return access;
+const actor = access;
+
 const copy = t(locale);
 
 const items = [

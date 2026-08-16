@@ -1,5 +1,6 @@
 ---
 import AdminLayout from "../../layouts/AdminLayout.astro";
+import { requireModuleAccess, sessionTokenFrom } from "../../lib/admin-scope";
 import PermissionMatrix from "../../components/PermissionMatrix.astro";
 import { getLocaleFromUrl, localizedPath, t } from "../../lib/i18n";
 import { routeIds } from "../../lib/paths";
@@ -9,6 +10,10 @@ import { loadAllRoleGrants } from "../../lib/permission-grants";
 export const prerender = false;
 
 const locale = getLocaleFromUrl(Astro.url);
+const access = await requireModuleAccess(env.DB, Astro.cookies, Astro.url, locale, "roles");
+if (access instanceof Response) return access;
+const actor = access;
+
 const copy = t(locale);
 const adminHref = localizedPath(locale, routeIds.admin);
 
@@ -105,7 +110,6 @@ const actionLabels: Record<PermissionRow["action"], string> = {
           helpTranslate={copy.adminPermissionHelpTranslate}
         />
       </div>
-      <div class="alert alert-error mt-3 hidden" data-admin-error><span data-admin-error-text></span></div>
       <div class="flex justify-end gap-2">
         <button class="btn btn-ghost btn-sm" type="reset">{copy.adminCancel}</button>
         <button class="btn btn-primary btn-sm" type="submit">{copy.adminAdd}</button>
@@ -179,19 +183,15 @@ const actionLabels: Record<PermissionRow["action"], string> = {
         document.querySelectorAll("form[data-admin-form]").forEach(function (form) {
           if (form.dataset.bound === "true") return;
           form.dataset.bound = "true";
-          var errorBox = form.querySelector("[data-admin-error]");
-          var errorText = form.querySelector("[data-admin-error-text]");
           form.addEventListener("submit", function (event) {
             event.preventDefault();
-            if (errorBox) errorBox.classList.add("hidden");
             var data = new FormData(form);
             fetch(form.action, { method: "POST", body: data })
               .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
               .then(function (result) {
                 if (result.ok) { window.location.reload(); return; }
                 var lang = document.documentElement.lang === "en" ? "en" : "es";
-                if (errorText) errorText.textContent = lang === "en" ? "Could not save." : "No pudimos guardar.";
-                if (errorBox) errorBox.classList.remove("hidden");
+                if (window.AfroUpFeedback) window.AfroUpFeedback.toast(lang === "en" ? "Could not save." : "No pudimos guardar.", "error");
               });
           });
         });
@@ -218,11 +218,9 @@ const actionLabels: Record<PermissionRow["action"], string> = {
               .then(function (res) { return res.json(); })
               .then(function () {
                 var lang = document.documentElement.lang === "en" ? "en" : "es";
-                var banner = document.createElement("div");
-                banner.className = "toast toast-end";
-                banner.innerHTML = '<div class="alert alert-success"><span>' + (lang === "en" ? "Permissions saved." : "Permisos guardados.") + '</span></div>';
-                document.body.appendChild(banner);
-                setTimeout(function () { banner.remove(); }, 1800);
+                if (window.AfroUpFeedback) {
+                  window.AfroUpFeedback.toast(lang === "en" ? "Permissions saved." : "Permisos guardados.", "success");
+                }
               });
           });
         });

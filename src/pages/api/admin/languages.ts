@@ -1,12 +1,13 @@
 import type { APIRoute } from "astro";
 import { env } from "cloudflare:workers";
-import { getCurrentAdmin, sessionTokenFrom, unauthorizedJson } from "../../../lib/admin-scope";
+import { forbiddenJson, getCurrentAdmin, sessionTokenFrom, unauthorizedJson } from "../../../lib/admin-scope";
 import { addSiteLanguage, setLanguageVisibility } from "../../../lib/site-languages";
 import {
   dictionaryAsJson,
   suggestNativeLanguageName,
   translateUiDictionary,
 } from "../../../lib/translate-dictionary";
+import { hasPermission } from "../../../lib/rbac";
 
 export const prerender = false;
 
@@ -20,6 +21,7 @@ function json(body: unknown, status = 200) {
 export const POST: APIRoute = async ({ request, cookies }) => {
   const actor = await getCurrentAdmin(env.DB, sessionTokenFrom(cookies));
   if (!actor) return unauthorizedJson();
+  if (!(await hasPermission(env.DB, actor.id, "idiomas", "update"))) return forbiddenJson();
 
   const form = await request.formData();
   const intent = String(form.get("_intent") ?? "");

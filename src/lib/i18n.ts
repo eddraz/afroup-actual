@@ -1346,7 +1346,13 @@ export function t(locale: Locale): Dictionary {
 
 export function localizedPath(locale: Locale, path: string): string {
   const clean = path === "/" ? "/" : path.replace(/^\//, "");
-  return getRelativeLocaleUrl(locale, clean);
+  return getRelativeLocaleUrl(locale, clean).replace(/\/+$/, "") || "/";
+}
+
+export function joinPath(base: string, segment: string): string {
+  const left = base.replace(/\/+$/, "") || "";
+  const right = segment.replace(/^\/+/, "");
+  return `${left}/${right}`;
 }
 
 export function switchLocalePath(currentUrl: URL, nextLocale: Locale): string {

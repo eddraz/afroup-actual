@@ -1,7 +1,9 @@
 import type { D1Database } from "@cloudflare/workers-types";
 import { getPublicUser, PUBLIC_SESSION_COOKIE } from "./public-session";
+import { localizedPath, type Locale } from "./i18n";
+import { routeIds } from "./paths";
 import { effectiveGrant } from "./permission-grants";
-import type { PermissionAction } from "./rbac";
+import { hasPermission, type PermissionAction } from "./rbac";
 
 export interface AdminActor {
   id: number;
@@ -51,6 +53,25 @@ export function sessionTokenFrom(cookies: { get(name: string): { value: string }
   return cookies.get(PUBLIC_SESSION_COOKIE)?.value;
 }
 
+export async function requireModuleAccess(
+  db: D1Database,
+  cookies: { get(name: string): { value: string } | undefined },
+  url: URL,
+  locale: Locale,
+  moduleSlug: string,
+  action: PermissionAction = "read",
+): Promise<CurrentUser | Response> {
+  const actor = await getCurrentUser(db, sessionTokenFrom(cookies));
+  const loginHref = localizedPath(locale, routeIds.login);
+  if (!actor) {
+    return Response.redirect(`${loginHref}?next=${encodeURIComponent(url.pathname)}`, 303);
+  }
+  if (!(await hasPermission(db, actor.id, moduleSlug, action))) {
+    return Response.redirect(localizedPath(locale, routeIds.admin), 303);
+  }
+  return actor;
+}
+
 export function unauthorizedJson() {
   return new Response(JSON.stringify({ ok: false, error: "unauthorized" }), {
     status: 401,
@@ -69,7 +90,7 @@ export async function listVisibleAdminUsers(
   db: D1Database,
   actorId: number,
 ): Promise<VisibleAdminUser[]> {
-  const grant = await effectiveGrant(db, actorId, "usuarios", "read");
+  const grant = await effectiveGrant(db, actorId, "users", "read");
   const result = await db
     .prepare(
       `SELECT u.id, u.name, u.email, u.role_id, u.is_active, u.invite_pending, u.created_by, r.name AS role_name
@@ -96,7 +117,7 @@ export async function hasParentGrant(
   _parentId: number,
   action: PermissionAction,
 ): Promise<boolean> {
-  const grant = await effectiveGrant(db, childId, "usuarios", action);
+  const grant = await effectiveGrant(db, childId, "users", action);
   return grant.parent;
 }
 
@@ -113,7 +134,7 @@ export async function assertUserQuota(
   actorId: number,
   action: PermissionAction,
 ): Promise<boolean> {
-  const grant = await effectiveGrant(db, actorId, "usuarios", action);
+  const grant = await effectiveGrant(db, actorId, "users", action);
   if (!grant.allowed && action !== "read") return action === "create" ? true : false;
   if (grant.quota === null) return true;
   if (action === "create") return (await countOwnedAdminUsers(db, actorId)) < grant.quota;
