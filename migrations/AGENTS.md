@@ -49,6 +49,7 @@
 - `0017_bio_translations.sql` adds `afroup_user_bios` for per-locale public bios and registers the `traduccion` admin module (`create` = AI, `update` = manual).
 - `0018_permission_translate.sql` adds `translate` (`none|manual|ai`) to every user and role permission cell so translation is configured per module action.
 - `0019_permission_translate_flags.sql` splits that exclusive mode into independent `translate_manual` and `translate_ai` checks.
+- `0020_unified_users.sql` rebuilds public and admin identity into one `users` table, remaps admin foreign keys, renames slug `usuarios` to `users`, seeds default `users:read` / `users:update`, and drops `afroup_users` plus `admin_users`. Current table map: `docs/database.md`.
 
 ## Manual D1 apply notes
 
