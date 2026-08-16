@@ -1,6 +1,6 @@
 ---
 import type { PermissionAction } from "../lib/rbac";
-import type { PermissionGrant } from "../lib/permission-grants";
+import type { PermissionGrant, TranslateMode } from "../lib/permission-grants";
 
 interface ModuleItem {
   id: number;
@@ -20,6 +20,10 @@ interface Props {
   actionLabels: Record<PermissionAction, string>;
   parentLabel: string;
   limitLabel: string;
+  translateLabel: string;
+  translateNoneLabel: string;
+  translateManualLabel: string;
+  translateAiLabel: string;
   unlimitedLabel?: string;
   noneLabel?: string;
   helpToggleLabel?: string;
@@ -30,6 +34,7 @@ interface Props {
   helpDelete?: string;
   helpParent?: string;
   helpLimit?: string;
+  helpTranslate?: string;
   readonly?: boolean;
 }
 
@@ -40,6 +45,10 @@ const {
   actionLabels,
   parentLabel,
   limitLabel,
+  translateLabel,
+  translateNoneLabel,
+  translateManualLabel,
+  translateAiLabel,
   unlimitedLabel = "All",
   noneLabel = "—",
   helpToggleLabel = "What this means",
@@ -50,6 +59,7 @@ const {
   helpDelete = "",
   helpParent = "",
   helpLimit = "",
+  helpTranslate = "",
   readonly = false,
 } = Astro.props;
 
@@ -65,12 +75,21 @@ for (const permission of permissions) {
   byModuleAction.set(`${permission.module_id}:${permission.action}`, permission.id);
 }
 
+function translateText(mode: TranslateMode | undefined) {
+  if (mode === "ai") return translateAiLabel;
+  if (mode === "manual") return translateManualLabel;
+  return "";
+}
+
 function chipLabel(grant: PermissionGrant | undefined) {
   if (!grant) return noneLabel;
-  if (grant.parent && grant.quota !== null) return `${parentLabel} · ${grant.quota}`;
-  if (grant.parent) return `${parentLabel} · ${unlimitedLabel}`;
-  if (grant.quota !== null) return String(grant.quota);
-  return noneLabel;
+  const parts: string[] = [];
+  if (grant.parent) parts.push(parentLabel);
+  if (grant.quota !== null) parts.push(String(grant.quota));
+  else if (grant.parent) parts.push(unlimitedLabel);
+  const translation = translateText(grant.translate);
+  if (translation) parts.push(translation);
+  return parts.length ? parts.join(" · ") : noneLabel;
 }
 ---
 
@@ -80,6 +99,8 @@ function chipLabel(grant: PermissionGrant | undefined) {
   data-label-parent={parentLabel}
   data-label-all={unlimitedLabel}
   data-label-none={noneLabel}
+  data-label-manual={translateManualLabel}
+  data-label-ai={translateAiLabel}
 >
   <table class="table table-sm">
     <thead>
@@ -132,6 +153,7 @@ function chipLabel(grant: PermissionGrant | undefined) {
               ))}
               <li>{helpParent}</li>
               <li>{helpLimit}</li>
+              <li>{helpTranslate}</li>
             </ul>
           </div>
         </details>
@@ -170,6 +192,20 @@ function chipLabel(grant: PermissionGrant | undefined) {
                     data-quota-input
                     data-permission-id={permissionId}
                   />
+                </label>
+                <label class="label flex-col items-start gap-1">
+                  <span class="label-text opacity-70">{translateLabel}</span>
+                  <select
+                    class="select select-sm w-full"
+                    name={`translate-${permissionId}`}
+                    disabled={readonly}
+                    data-translate-select
+                    data-permission-id={permissionId}
+                  >
+                    <option value="none" selected={grant?.translate !== "manual" && grant?.translate !== "ai"}>{translateNoneLabel}</option>
+                    <option value="manual" selected={grant?.translate === "manual"}>{translateManualLabel}</option>
+                    <option value="ai" selected={grant?.translate === "ai"}>{translateAiLabel}</option>
+                  </select>
                 </label>
               </fieldset>
             );

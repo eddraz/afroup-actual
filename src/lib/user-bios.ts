@@ -52,14 +52,10 @@ export async function translationAccessForEmail(
 ): Promise<TranslationAccess> {
   const admin = await getAdminUserByEmail(db, email);
   if (!admin) return { canWrite: false, canUseAi: false };
-  const [create, update] = await Promise.all([
-    effectiveGrant(db, admin.id, "traduccion", "create"),
-    effectiveGrant(db, admin.id, "traduccion", "update"),
-  ]);
-  const canUseAi = create.allowed;
+  const grant = await effectiveGrant(db, admin.id, "usuarios", "update");
   return {
-    canUseAi,
-    canWrite: update.allowed || canUseAi,
+    canUseAi: grant.translate === "ai",
+    canWrite: grant.translate === "manual" || grant.translate === "ai",
   };
 }
 

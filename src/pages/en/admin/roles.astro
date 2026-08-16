@@ -88,6 +88,10 @@ const actionLabels: Record<PermissionRow["action"], string> = {
           actionLabels={actionLabels}
           parentLabel={copy.adminPermissionParent}
           limitLabel={copy.adminPermissionLimit}
+          translateLabel={copy.adminPermissionTranslate}
+          translateNoneLabel={copy.adminPermissionTranslateNone}
+          translateManualLabel={copy.adminPermissionTranslateManual}
+          translateAiLabel={copy.adminPermissionTranslateAi}
           unlimitedLabel={copy.adminPermissionUnlimited}
           noneLabel={copy.adminPermissionNone}
           helpToggleLabel={copy.adminPermissionHelpToggle}
@@ -98,6 +102,7 @@ const actionLabels: Record<PermissionRow["action"], string> = {
           helpDelete={copy.adminPermissionHelpDelete}
           helpParent={copy.adminPermissionHelpParent}
           helpLimit={copy.adminPermissionHelpLimit}
+          helpTranslate={copy.adminPermissionHelpTranslate}
         />
       </div>
       <div class="alert alert-error mt-3 hidden" data-admin-error><span data-admin-error-text></span></div>
@@ -141,6 +146,10 @@ const actionLabels: Record<PermissionRow["action"], string> = {
                       actionLabels={actionLabels}
                       parentLabel={copy.adminPermissionParent}
                       limitLabel={copy.adminPermissionLimit}
+                      translateLabel={copy.adminPermissionTranslate}
+                      translateNoneLabel={copy.adminPermissionTranslateNone}
+                      translateManualLabel={copy.adminPermissionTranslateManual}
+                      translateAiLabel={copy.adminPermissionTranslateAi}
                       unlimitedLabel={copy.adminPermissionUnlimited}
                       noneLabel={copy.adminPermissionNone}
                       helpToggleLabel={copy.adminPermissionHelpToggle}
@@ -151,6 +160,7 @@ const actionLabels: Record<PermissionRow["action"], string> = {
                       helpDelete={copy.adminPermissionHelpDelete}
                       helpParent={copy.adminPermissionHelpParent}
                       helpLimit={copy.adminPermissionHelpLimit}
+                      helpTranslate={copy.adminPermissionHelpTranslate}
                     />
                   </div>
                   <div class="mt-3 flex justify-end gap-2">

@@ -5,15 +5,22 @@
     var permissionId = chip.getAttribute("data-perm-chip");
     var parent = matrix.querySelector('[data-parent-box][value="' + permissionId + '"]');
     var quota = matrix.querySelector('[data-quota-input][data-permission-id="' + permissionId + '"]');
+    var translate = matrix.querySelector('[data-translate-select][data-permission-id="' + permissionId + '"]');
     var parentOn = Boolean(parent && parent.checked);
     var quotaValue = quota && String(quota.value || "").trim();
+    var translateValue = translate ? String(translate.value || "none") : "none";
     var labelParent = matrix.getAttribute("data-label-parent") || "Parent";
     var labelAll = matrix.getAttribute("data-label-all") || "All";
     var labelNone = matrix.getAttribute("data-label-none") || "—";
-    var text = labelNone;
-    if (parentOn && quotaValue) text = labelParent + " · " + quotaValue;
-    else if (parentOn) text = labelParent + " · " + labelAll;
-    else if (quotaValue) text = quotaValue;
+    var labelManual = matrix.getAttribute("data-label-manual") || "Manual";
+    var labelAi = matrix.getAttribute("data-label-ai") || "AI";
+    var parts = [];
+    if (parentOn) parts.push(labelParent);
+    if (quotaValue) parts.push(quotaValue);
+    else if (parentOn) parts.push(labelAll);
+    if (translateValue === "ai") parts.push(labelAi);
+    else if (translateValue === "manual") parts.push(labelManual);
+    var text = parts.length ? parts.join(" · ") : labelNone;
     chip.textContent = text;
     chip.classList.toggle("badge-ghost", text === labelNone);
     chip.classList.toggle("badge-soft", text !== labelNone);
@@ -43,7 +50,7 @@
       });
     });
 
-    matrix.querySelectorAll("[data-parent-box], [data-quota-input]").forEach(function (input) {
+    matrix.querySelectorAll("[data-parent-box], [data-quota-input], [data-translate-select]").forEach(function (input) {
       input.addEventListener("input", function () { paintMatrix(matrix); });
       input.addEventListener("change", function () { paintMatrix(matrix); });
     });

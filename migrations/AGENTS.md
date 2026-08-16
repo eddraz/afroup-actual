@@ -47,6 +47,7 @@
 - `0015_permission_quotas.sql` adds `parent` and `quota` to `admin_user_permissions` and `admin_role_permissions` so every module action can grant parent access and a numeric record limit.
 - `0016_site_languages.sql` adds `site_languages` plus `site_language_dictionaries`, seeds Spanish and English as visible pillars, and registers the `idiomas` admin module.
 - `0017_bio_translations.sql` adds `afroup_user_bios` for per-locale public bios and registers the `traduccion` admin module (`create` = AI, `update` = manual).
+- `0018_permission_translate.sql` adds `translate` (`none|manual|ai`) to every user and role permission cell so translation is configured per module action.
 
 ## Manual D1 apply notes
 
