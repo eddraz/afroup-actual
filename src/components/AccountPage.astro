@@ -72,7 +72,7 @@ const helpText = translation.canUseAi && translation.canWrite
     <div class="tabs tabs-lift w-full">
       <input type="radio" name="account-tabs" class="tab" aria-label={copy.accountProfileTitle} checked="checked" />
       <div class="tab-content bg-base-200 border-base-300 p-0">
-        <form class="card shadow-none" data-profile-form>
+        <form class="card shadow-none" data-profile-form data-success={copy.accountProfileSaved} data-error={copy.accountProfileSaveError} data-translate-error={copy.accountBioTranslateError}>
           <div class="card-body gap-5">
             <div>
               <h2 class="card-title font-display text-[20px] tracking-[-0.005em]">{copy.accountProfileTitle}</h2>
@@ -103,7 +103,7 @@ const helpText = translation.canUseAi && translation.canWrite
                   ) : null}
                 </div>
                 <p class="text-xs opacity-60">{copy.accountPhotoHelp}</p>
-                <div class="alert alert-error hidden" data-avatar-error><span data-avatar-error-text></span></div>
+                
               </div>
             </div>
 
@@ -161,11 +161,11 @@ const helpText = translation.canUseAi && translation.canWrite
               })}
               <p class="text-xs opacity-60">{helpText}</p>
               <p class="text-xs opacity-60">{copy.accountBioHelp}</p>
-              <div class="alert alert-error hidden" data-bio-translate-error><span data-default-error>{copy.accountBioTranslateError}</span></div>
+              
             </div>
 
-            <div class="alert alert-success hidden" data-profile-success><span>{copy.accountProfileSaved}</span></div>
-            <div class="alert alert-error hidden" data-profile-error><span>{copy.accountProfileSaveError}</span></div>
+            
+            
             <button class="btn btn-primary mt-2 h-[46px] min-h-[46px]" type="submit">
               {copy.accountProfileSave}
               <svg class="size-4"><use href="#ic-arrow"></use></svg>
@@ -176,7 +176,7 @@ const helpText = translation.canUseAi && translation.canWrite
 
       <input type="radio" name="account-tabs" class="tab" aria-label={copy.accountPasswordTab} />
       <div class="tab-content bg-base-200 border-base-300 p-0">
-        <form class="card shadow-none" data-password-form>
+        <form class="card shadow-none" data-password-form data-success={copy.accountPasswordSaved} data-error={copy.accountPasswordSaveError}>
           <div class="card-body gap-5">
             <div>
               <h2 class="card-title font-display text-[20px] tracking-[-0.005em]">{copy.accountPasswordTab}</h2>
@@ -198,8 +198,8 @@ const helpText = translation.canUseAi && translation.canWrite
               <input class="input w-full" type="password" name="confirm" autocomplete="new-password" placeholder={copy.accountConfirmPasswordPlaceholder} minlength="8" required />
             </fieldset>
 
-            <div class="alert alert-success hidden" data-password-success><span>{copy.accountPasswordSaved}</span></div>
-            <div class="alert alert-error hidden" data-password-error><span data-password-error-text>{copy.accountPasswordSaveError}</span></div>
+            
+            
             <button class="btn btn-primary mt-2 h-[46px] min-h-[46px]" type="submit">
               {copy.accountPasswordSubmit}
               <svg class="size-4"><use href="#ic-arrow"></use></svg>
@@ -253,12 +253,12 @@ const helpText = translation.canUseAi && translation.canWrite
       <p class="mt-2 text-sm opacity-70">{copy.accountDeleteConfirmLead}</p>
       <p class="mt-4 text-sm">{copy.accountDeletePhrase}</p>
       <input class="input mt-2 w-full" type="text" name="confirm" placeholder={copy.accountDeleteConfirmPlaceholder} data-confirm-delete />
-      <div class="alert alert-error mt-3 hidden" data-delete-error><span>{copy.accountDeleteError}</span></div>
+      
       <div class="modal-action mt-5 flex-wrap gap-2">
         <form method="dialog" class="contents">
           <button class="btn btn-ghost btn-sm" type="submit">{copy.accountDeleteCancel}</button>
         </form>
-        <button class="btn btn-error btn-sm" type="button" disabled data-confirm-delete-submit data-target={locale === "en" ? "delete" : "eliminar"}>
+        <button class="btn btn-error btn-sm" type="button" disabled data-confirm-delete-submit data-error={copy.accountDeleteError} data-target={locale === "en" ? "delete" : "eliminar"}>
           <svg class="size-4"><use href="#ic-trash"></use></svg>
           {copy.accountDeleteConfirm}
         </button>
@@ -366,16 +366,13 @@ const helpText = translation.canUseAi && translation.canWrite
         var draft = document.getElementById("bio-translate-draft");
         var applyBtn = document.querySelector("[data-bio-translate-apply]");
         var cancelBtn = document.querySelector("[data-bio-translate-cancel]");
-        var errorBox = document.querySelector("[data-bio-translate-error]");
-        var errorText = errorBox ? errorBox.querySelector("span") : null;
-
-        var defaultError = errorText
-          ? errorText.getAttribute("data-default-error") || errorText.textContent || ""
-          : "";
+        var profileForm = document.querySelector("[data-profile-form]");
+        var defaultError = profileForm ? profileForm.getAttribute("data-translate-error") || "" : "";
+        var toast = function (message, kind) {
+          if (window.AfroUpFeedback) window.AfroUpFeedback.toast(message, kind);
+        };
         var showError = function (message) {
-          if (!errorBox) return;
-          if (errorText) errorText.textContent = message || defaultError;
-          errorBox.classList.toggle("hidden", !message);
+          if (message) toast(message, "error");
         };
 
         document.querySelectorAll("[data-bio-translate]").forEach(function (translateBtn) {
@@ -406,7 +403,7 @@ const helpText = translation.canUseAi && translation.canWrite
                 if (dialog && dialog.showModal) dialog.showModal();
               })
               .catch(function () {
-                showError(errorText ? errorText.textContent : "");
+                showError(defaultError);
               })
               .finally(function () {
                 translateBtn.disabled = false;
@@ -439,7 +436,6 @@ const helpText = translation.canUseAi && translation.canWrite
           });
         }
 
-        var profileForm = document.querySelector("[data-profile-form]");
         if (profileForm && profileForm.dataset.bound !== "true") {
           profileForm.dataset.bound = "true";
           profileForm.addEventListener("submit", function (event) {
@@ -448,20 +444,16 @@ const helpText = translation.canUseAi && translation.canWrite
               if (editors[locale] && editors[locale].getHtml) editors[locale].getHtml();
             });
             var submit = profileForm.querySelector("button[type=submit]");
-            var success = profileForm.querySelector("[data-profile-success]");
-            var formError = profileForm.querySelector("[data-profile-error]");
-            if (success) success.classList.add("hidden");
-            if (formError) formError.classList.add("hidden");
             if (submit) submit.disabled = true;
             fetch("/api/profile", { method: "POST", body: new FormData(profileForm) })
               .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
               .then(function (result) {
                 if (!result.ok) throw new Error("save");
-                if (success) success.classList.remove("hidden");
+                toast(profileForm.getAttribute("data-success") || "", "success");
                 if (submit) submit.disabled = false;
               })
               .catch(function () {
-                if (formError) formError.classList.remove("hidden");
+                toast(profileForm.getAttribute("data-error") || "", "error");
                 if (submit) submit.disabled = false;
               });
           });
@@ -473,11 +465,7 @@ const helpText = translation.canUseAi && translation.canWrite
           passwordForm.addEventListener("submit", function (event) {
             event.preventDefault();
             var submit = passwordForm.querySelector("button[type=submit]");
-            var success = passwordForm.querySelector("[data-password-success]");
-            var formError = passwordForm.querySelector("[data-password-error]");
-            var errorMessage = passwordForm.querySelector("[data-password-error-text]");
-            if (success) success.classList.add("hidden");
-            if (formError) formError.classList.add("hidden");
+            var fallbackError = passwordForm.getAttribute("data-error") || "";
             if (submit) submit.disabled = true;
             var lang = document.documentElement.lang === "en" ? "en" : "es";
             var messages = {
@@ -489,15 +477,15 @@ const helpText = translation.canUseAi && translation.canWrite
               .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
               .then(function (result) {
                 if (!result.ok) {
-                  if (errorMessage) errorMessage.textContent = messages[result.body && result.body.error] || errorMessage.textContent;
+                  toast(messages[result.body && result.body.error] || fallbackError, "error");
                   throw new Error("save");
                 }
                 passwordForm.reset();
-                if (success) success.classList.remove("hidden");
+                toast(passwordForm.getAttribute("data-success") || "", "success");
                 if (submit) submit.disabled = false;
               })
-              .catch(function () {
-                if (formError) formError.classList.remove("hidden");
+              .catch(function (err) {
+                if (!err || err.message !== "save") toast(fallbackError, "error");
                 if (submit) submit.disabled = false;
               });
           });
@@ -508,7 +496,7 @@ const helpText = translation.canUseAi && translation.canWrite
         if (!input || !submit || submit.dataset.bound === "true") return;
         submit.dataset.bound = "true";
         var target = (submit.getAttribute("data-target") || "").toLowerCase();
-        var deleteError = document.querySelector("[data-delete-error]");
+        var deleteError = submit.getAttribute("data-error") || "";
         var update = function () {
           submit.disabled = input.value.trim().toLowerCase() !== target;
         };
@@ -516,7 +504,6 @@ const helpText = translation.canUseAi && translation.canWrite
         update();
         submit.addEventListener("click", function () {
           if (input.value.trim().toLowerCase() !== target) return;
-          if (deleteError) deleteError.classList.add("hidden");
           submit.disabled = true;
           var data = new FormData();
           data.append("confirm", input.value.trim());
@@ -527,7 +514,7 @@ const helpText = translation.canUseAi && translation.canWrite
               window.location.href = document.documentElement.lang === "en" ? "/en/login" : "/login";
             })
             .catch(function () {
-              if (deleteError) deleteError.classList.remove("hidden");
+              toast(deleteError, "error");
               submit.disabled = false;
             });
         });

@@ -53,6 +53,7 @@
 - Keep the login mockup at `/login` and `/en/login`, wired through `paths.login` in the sidebar and dock.
 - Use official Astro i18n only: Spanish default at unprefixed routes, English under `/en`, dictionaries in `lib/i18n.ts`.
 - Build UI with daisyUI first. If daisyUI cannot do it well, use daisyUI plus Tailwind. Use custom CSS only if that combination still cannot do it well.
+- Keep short form success and error messages in `AfroUpFeedback.toast` from `public/form-feedback.js`. Use `AfroUpFeedback.modal` when the user must confirm a next step. Keep existing input-collecting dialogs as page-owned modals.
 - Preserve Spanish UI and visual parity with the corresponding source screen under `design/`.
 - Keep runtime D1 access through the Cloudflare `DB` binding; `/api/health` currently exercises that binding.
 

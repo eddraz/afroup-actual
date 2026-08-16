@@ -79,11 +79,6 @@ if (!token) {
             <input class="input w-full" type="password" name="confirm" autocomplete="new-password" minlength="8" required />
           </fieldset>
 
-          <div class="alert alert-error mt-2 hidden" data-accept-error><span data-accept-error-text></span></div>
-          <div class="alert alert-success mt-2 hidden" data-accept-success>
-            <span data-accept-success-text></span>
-          </div>
-
           <button class="btn btn-primary mt-2 h-[46px] min-h-[46px]" type="submit">
             {copy.inviteSubmit}
             <svg class="size-4"><use href="#ic-arrow"></use></svg>
@@ -120,15 +115,12 @@ if (!token) {
         var form = document.querySelector("[data-accept-form]");
         if (!form || form.dataset.bound === "true") return;
         form.dataset.bound = "true";
-        var errorBox = form.querySelector("[data-accept-error]");
-        var errorText = form.querySelector("[data-accept-error-text]");
-        var successBox = form.querySelector("[data-accept-success]");
-        var successText = form.querySelector("[data-accept-success-text]");
         var submit = form.querySelector("button[type=submit]");
+        var toast = function (message, kind) {
+          if (window.AfroUpFeedback) window.AfroUpFeedback.toast(message, kind);
+        };
         form.addEventListener("submit", function (event) {
           event.preventDefault();
-          if (errorBox) errorBox.classList.add("hidden");
-          if (successBox) successBox.classList.add("hidden");
           submit.disabled = true;
           var data = new FormData(form);
           var lang = document.documentElement.lang === "en" ? "en" : "es";
@@ -151,21 +143,18 @@ if (!token) {
             .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
             .then(function (result) {
               if (result.ok) {
-                if (successText) successText.textContent = lang === "en"
-                  ? "✓ Account active. You can sign in from the panel."
-                  : "✓ Cuenta activa. Ya puedes iniciar sesión desde el panel.";
-                if (successBox) successBox.classList.remove("hidden");
+                toast(lang === "en"
+                  ? "Account active. You can sign in from the panel."
+                  : "Cuenta activa. Ya puedes iniciar sesión desde el panel.", "success");
                 form.querySelectorAll("input").forEach(function (input) { input.disabled = true; });
                 submit.disabled = true;
                 return;
               }
-              if (errorText) errorText.textContent = messages[result.body && result.body.error] || (lang === "en" ? "Could not save." : "No pudimos guardar.");
-              if (errorBox) errorBox.classList.remove("hidden");
+              toast(messages[result.body && result.body.error] || (lang === "en" ? "Could not save." : "No pudimos guardar."), "error");
               submit.disabled = false;
             })
             .catch(function () {
-              if (errorText) errorText.textContent = lang === "en" ? "Network error." : "Error de red.";
-              if (errorBox) errorBox.classList.remove("hidden");
+              toast(lang === "en" ? "Network error." : "Error de red.", "error");
               submit.disabled = false;
             });
         });

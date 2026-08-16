@@ -29,7 +29,7 @@ const loginHref = localizedPath(locale, routeIds.login);
   </section>
 
   <div class="mt-9 grid grid-cols-1 gap-7 lg:grid-cols-[1.15fr_0.85fr]">
-    <form class="card bg-base-200 shadow" data-register-form>
+    <form class="card bg-base-200 shadow" data-register-form data-success-title={copy.signupSuccessTitle} data-success-cta={copy.signupSuccessCta} data-login-href={loginHref}>
       <div class="card-body gap-4">
         <h2 class="card-title font-display text-[22px] tracking-[-0.005em]">{copy.signupTitle}</h2>
 
@@ -71,35 +71,18 @@ const loginHref = localizedPath(locale, routeIds.login);
       </div>
     </form>
 
-    <div class="card bg-success/10 border border-success/40 mt-6 hidden" data-register-success>
-      <div class="card-body gap-2">
-        <p class="text-xs font-extrabold tracking-[0.18em] text-success uppercase">{copy.signupSuccessEyebrow}</p>
-        <h2 class="font-display text-[22px] tracking-[-0.005em]">{copy.signupSuccessTitle}</h2>
-        <p class="text-sm opacity-80" data-register-success-text></p>
-        <a class="btn btn-ghost btn-sm mt-2 self-start" href={loginHref}>{copy.signupSuccessCta}</a>
-      </div>
-    </div>
-
-    <div class="alert alert-error mt-6 hidden" data-register-error>
-      <span data-register-error-text></span>
-    </div>
-
     <script is:inline>
       (function () {
         var bind = function () {
           var form = document.querySelector("[data-register-form]");
           if (!form || form.dataset.bound === "true") return;
           form.dataset.bound = "true";
-          var success = document.querySelector("[data-register-success]");
-          var successText = document.querySelector("[data-register-success-text]");
-          var errorBox = document.querySelector("[data-register-error]");
-          var errorText = document.querySelector("[data-register-error-text]");
           var submit = form.querySelector("button[type=submit]");
+          var toast = function (message, kind) {
+            if (window.AfroUpFeedback) window.AfroUpFeedback.toast(message, kind);
+          };
           form.addEventListener("submit", function (event) {
             event.preventDefault();
-            if (!success || !errorBox) return;
-            success.classList.add("hidden");
-            errorBox.classList.add("hidden");
             submit.disabled = true;
             var data = {
               name: form.querySelector("[name=name]").value.trim(),
@@ -109,10 +92,9 @@ const loginHref = localizedPath(locale, routeIds.login);
               locale: document.documentElement.lang || "es",
             };
             if (data.password !== data.confirm) {
-              errorText.textContent = (document.documentElement.lang === "en")
+              toast((document.documentElement.lang === "en")
                 ? "Passwords don't match."
-                : "Las contraseñas no coinciden.";
-              errorBox.classList.remove("hidden");
+                : "Las contraseñas no coinciden.", "error");
               submit.disabled = false;
               return;
             }
@@ -148,21 +130,28 @@ const loginHref = localizedPath(locale, routeIds.login);
                         email_failed: "No pudimos enviar el correo. Inténtalo de nuevo en un momento.",
                         insert_failed: "No pudimos guardar la cuenta. Inténtalo de nuevo.",
                       }[key] || "Algo salió mal. Inténtalo de nuevo.";
-                  errorText.textContent = msg;
-                  errorBox.classList.remove("hidden");
+                  toast(msg, "error");
                   submit.disabled = false;
                   return;
                 }
-                successText.textContent = result.body.emailSentTo;
-                success.classList.remove("hidden");
-                form.classList.add("hidden");
+                if (window.AfroUpFeedback) {
+                  window.AfroUpFeedback.modal({
+                    title: form.getAttribute("data-success-title") || "",
+                    message: result.body.emailSentTo || "",
+                    actionLabel: form.getAttribute("data-success-cta") || "",
+                    onAction: function () {
+                      window.location.href = form.getAttribute("data-login-href") || "/login";
+                    },
+                  });
+                }
+                form.reset();
+                submit.disabled = false;
               })
               .catch(function () {
                 var lang = document.documentElement.lang === "en" ? "en" : "es";
-                errorText.textContent = lang === "en"
+                toast(lang === "en"
                   ? "Network error. Try again."
-                  : "Error de red. Inténtalo de nuevo.";
-                errorBox.classList.remove("hidden");
+                  : "Error de red. Inténtalo de nuevo.", "error");
                 submit.disabled = false;
               });
           });

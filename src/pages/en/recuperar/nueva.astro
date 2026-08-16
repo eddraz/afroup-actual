@@ -47,7 +47,7 @@ if (!token) {
 
   <div class="mx-auto mt-8 max-w-[480px]">
     {!invalidReason ? (
-      <form class="card bg-base-200 shadow" data-reset-form>
+      <form class="card bg-base-200 shadow" data-reset-form data-success={copy.recoverResetSaved} data-error={copy.recoverResetError}>
         <div class="card-body gap-4">
           <fieldset class="fieldset">
             <legend class="fieldset-legend">{copy.accountNewPassword}</legend>
@@ -58,8 +58,6 @@ if (!token) {
             <input class="input w-full" type="password" name="confirm" autocomplete="new-password" minlength="8" required />
           </fieldset>
           <input type="hidden" name="token" value={token} />
-          <div class="alert alert-success hidden" data-reset-success><span>{copy.recoverResetSaved}</span></div>
-          <div class="alert alert-error hidden" data-reset-error><span data-reset-error-text>{copy.recoverResetError}</span></div>
           <button class="btn btn-primary mt-2 h-[46px] min-h-[46px]" type="submit">{copy.recoverResetSubmit}</button>
           <a class="btn btn-ghost btn-sm self-center" href={loginHref}>{copy.recoverBack}</a>
         </div>
@@ -84,11 +82,10 @@ if (!token) {
       form.addEventListener("submit", function (event) {
         event.preventDefault();
         var submit = form.querySelector("button[type=submit]");
-        var success = form.querySelector("[data-reset-success]");
-        var errorBox = form.querySelector("[data-reset-error]");
-        var errorText = form.querySelector("[data-reset-error-text]");
-        if (success) success.classList.add("hidden");
-        if (errorBox) errorBox.classList.add("hidden");
+        var toast = function (message, kind) {
+          if (window.AfroUpFeedback) window.AfroUpFeedback.toast(message, kind);
+        };
+        var fallbackError = form.getAttribute("data-error") || "";
         if (submit) submit.disabled = true;
         var lang = document.documentElement.lang === "en" ? "en" : "es";
         var messages = {
@@ -102,15 +99,15 @@ if (!token) {
           .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
           .then(function (result) {
             if (!result.ok) {
-              if (errorText) errorText.textContent = messages[result.body && result.body.error] || errorText.textContent;
+              toast(messages[result.body && result.body.error] || fallbackError, "error");
               throw new Error("reset");
             }
-            if (success) success.classList.remove("hidden");
+            toast(form.getAttribute("data-success") || "", "success");
             form.querySelectorAll("input").forEach(function (input) { input.disabled = true; });
             if (submit) submit.disabled = true;
           })
-          .catch(function () {
-            if (errorBox) errorBox.classList.remove("hidden");
+          .catch(function (err) {
+            if (!err || err.message !== "reset") toast(fallbackError, "error");
             if (submit) submit.disabled = false;
           });
       });

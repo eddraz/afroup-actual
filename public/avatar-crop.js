@@ -19,8 +19,6 @@
     var removeDialog = $("#avatar-remove-dialog");
     var removeConfirm = $("[data-avatar-remove-confirm]");
     var removeCancel = $("[data-avatar-remove-cancel]");
-    var errorBox = $("[data-avatar-error]");
-    var errorText = $("[data-avatar-error-text]");
     if (!dialog || !fileInput || !canvas || !zoom || !save || dialog.dataset.bound === "true") return;
     dialog.dataset.bound = "true";
 
@@ -38,14 +36,10 @@
     };
 
     function showError(message) {
-      if (!errorBox || !errorText) return;
-      errorText.textContent = message;
-      errorBox.classList.remove("hidden");
+      if (window.AfroUpFeedback) window.AfroUpFeedback.toast(message, "error");
     }
 
-    function hideError() {
-      if (errorBox) errorBox.classList.add("hidden");
-    }
+    function hideError() {}
 
     function draw() {
       if (!image || !ctx) return;
