@@ -32,12 +32,9 @@ const modules = (await env.DB.prepare(
 ---
 
 <AdminLayout title={copy.adminModules} active="modules">
-  <header class="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-end">
-    <div>
-      <h1 class="font-display text-[28px] leading-[1.06] font-bold tracking-[-0.005em] lg:text-[34px]">{copy.adminModules}</h1>
-    </div>
+  <div class="flex justify-end">
     <a class="btn btn-sm btn-ghost" href={adminHref}>{copy.adminBackSite.replace("sitio", "Panel") || "Panel"}</a>
-  </header>
+  </div>
 
   <details class="card bg-base-100 border border-base-300 shadow-sm mt-6" data-admin-create>
     <summary class="card-body cursor-pointer list-none">

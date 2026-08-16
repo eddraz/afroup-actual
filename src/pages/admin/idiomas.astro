@@ -21,9 +21,6 @@ const languages = await listSiteLanguages(env.DB);
 ---
 
 <AdminLayout title={copy.adminLanguages} active="languages">
-  <header class="flex flex-col gap-1">
-    <h1 class="font-display text-[28px] leading-[1.06] font-bold tracking-[-0.005em] lg:text-[34px]">{copy.adminLanguages}</h1>
-  </header>
 
   <details class="card card-border bg-base-100 mt-6">
     <summary class="card-body cursor-pointer list-none">

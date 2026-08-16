@@ -22,15 +22,12 @@ const items = [
 ---
 
 <AdminLayout title={copy.adminArticles} active="articles">
-  <header class="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-end">
-    <div>
-      <h1 class="font-display text-[28px] leading-[1.06] font-bold tracking-[-0.005em] lg:text-[34px]">{copy.adminArticles}</h1>
-    </div>
+  <div class="flex justify-end">
     <button class="btn btn-primary btn-sm" type="button">
       <svg class="size-4"><use href="#ic-book2"></use></svg>
       {copy.adminNewArticle}
     </button>
-  </header>
+  </div>
 
   <div class="card bg-base-100 border border-base-300 shadow-sm mt-6">
     <div class="card-body p-0">

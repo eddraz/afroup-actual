@@ -15,11 +15,8 @@ const projectsHref = joinPath(adminBase, "proyectos");
 const usersHref = joinPath(adminBase, "usuarios");
 ---
 
-<AdminLayout title={copy.titleAdmin} active="dashboard">
-  <header class="flex flex-col gap-1">
-    <h1 class="font-display text-[28px] leading-[1.06] font-bold tracking-[-0.005em] lg:text-[34px]">{copy.adminWelcome}</h1>
-    <p class="max-w-xl text-sm opacity-70">{copy.adminWelcomeLead}</p>
-  </header>
+<AdminLayout title={copy.adminWelcome} active="dashboard">
+  <p class="max-w-xl text-sm opacity-70">{copy.adminWelcomeLead}</p>
 
   <section class="stats stats-vertical bg-base-100 mt-6 w-full shadow-sm lg:stats-horizontal">
     <div class="stat">

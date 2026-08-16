@@ -11,7 +11,7 @@
 
 ## Local Contracts
 
-- Keep shared navigation, responsive dock/sidebar, top bar, and page chrome in `layouts/BaseLayout.astro` rather than copying them into pages.
+- Keep shared navigation, responsive dock/sidebar, top bar, and page chrome in `layouts/BaseLayout.astro` rather than copying them into pages. Admin puts the page title in `layouts/AdminLayout.astro` as the only `h1`; module pages do not repeat it.
 - Keep the AfroUp wordmark and AU mark as the SVG `components/AfroUpLogo.astro`. The wordmark paths in `lib/logo.ts` come from `public/assets/logo-black.svg`, mapped to the 1600x288 box. Use `variant="wordmark"` or `variant="mark"`, scale with `height`, and color through `currentColor` or the `color` prop. Do not swap PNG logo files for in-app chrome. Public chrome and the admin sidebar both use this wordmark.
 - Keep signed-in photo and name in `components/SessionAvatar.astro` and `components/SessionUser.astro`; hydrate them from `/api/me` via `public/session-user.js`. Admin puts `SessionUser` with `menu` at the bottom of the sidebar; a click opens a daisyUI dropdown to sign out.
 - Keep admin visibility scoped in `lib/admin-scope.ts`: a user sees themselves, records they created, and records shared with them via `record_shares`. Parent no longer opens the creator tree.
