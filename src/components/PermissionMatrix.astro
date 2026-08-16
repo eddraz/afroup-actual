@@ -21,6 +21,15 @@ interface Props {
   parentLabel: string;
   limitLabel: string;
   unlimitedLabel?: string;
+  noneLabel?: string;
+  helpToggleLabel?: string;
+  doneLabel?: string;
+  helpCreate?: string;
+  helpRead?: string;
+  helpUpdate?: string;
+  helpDelete?: string;
+  helpParent?: string;
+  helpLimit?: string;
   readonly?: boolean;
 }
 
@@ -32,17 +41,46 @@ const {
   parentLabel,
   limitLabel,
   unlimitedLabel = "All",
+  noneLabel = "—",
+  helpToggleLabel = "What this means",
+  doneLabel = "Done",
+  helpCreate = "",
+  helpRead = "",
+  helpUpdate = "",
+  helpDelete = "",
+  helpParent = "",
+  helpLimit = "",
   readonly = false,
 } = Astro.props;
 
 const actions: PermissionAction[] = ["create", "read", "update", "delete"];
+const helpByAction: Record<PermissionAction, string> = {
+  create: helpCreate,
+  read: helpRead,
+  update: helpUpdate,
+  delete: helpDelete,
+};
 const byModuleAction = new Map<string, number>();
 for (const permission of permissions) {
   byModuleAction.set(`${permission.module_id}:${permission.action}`, permission.id);
 }
+
+function chipLabel(grant: PermissionGrant | undefined) {
+  if (!grant) return noneLabel;
+  if (grant.parent && grant.quota !== null) return `${parentLabel} · ${grant.quota}`;
+  if (grant.parent) return `${parentLabel} · ${unlimitedLabel}`;
+  if (grant.quota !== null) return String(grant.quota);
+  return noneLabel;
+}
 ---
 
-<div class="overflow-x-auto" data-permission-matrix>
+<div
+  class="overflow-x-auto"
+  data-permission-matrix
+  data-label-parent={parentLabel}
+  data-label-all={unlimitedLabel}
+  data-label-none={noneLabel}
+>
   <table class="table table-sm">
     <thead>
       <tr>
@@ -53,42 +91,26 @@ for (const permission of permissions) {
     <tbody>
       {modules.map((module) => (
         <tr>
-          <th class="align-top whitespace-nowrap">{module.name}</th>
+          <th class="align-middle whitespace-nowrap">
+            <button type="button" class="btn btn-ghost btn-sm justify-start px-2" data-open-module={module.id}>
+              {module.name}
+            </button>
+          </th>
           {actions.map((action) => {
             const permissionId = byModuleAction.get(`${module.id}:${action}`);
             if (!permissionId) return <td class="text-center opacity-40">—</td>;
             const grant = assignments.get(permissionId);
+            const label = chipLabel(grant);
             return (
-              <td>
-                <div class="flex min-w-[7.5rem] flex-col gap-1">
-                  <label class="label cursor-pointer justify-start gap-2 p-0">
-                    <input
-                      type="checkbox"
-                      class="checkbox checkbox-xs"
-                      name="parentIds"
-                      value={permissionId}
-                      checked={grant?.parent === true}
-                      disabled={readonly}
-                      data-parent-box
-                    />
-                    <span class="label-text text-xs">{parentLabel}</span>
-                  </label>
-                  <label class="label flex-col items-start gap-1 p-0">
-                    <span class="label-text text-[11px] opacity-60">{limitLabel}</span>
-                    <input
-                      class="input input-xs w-20"
-                      type="number"
-                      min="0"
-                      step="1"
-                      name={`quota-${permissionId}`}
-                      value={grant?.quota ?? ""}
-                      placeholder={unlimitedLabel}
-                      disabled={readonly}
-                      data-quota-input
-                      data-permission-id={permissionId}
-                    />
-                  </label>
-                </div>
+              <td class="text-center">
+                <button
+                  type="button"
+                  class:list={["badge badge-sm", label === noneLabel ? "badge-ghost" : "badge-soft"]}
+                  data-perm-chip={permissionId}
+                  data-open-module={module.id}
+                >
+                  {label}
+                </button>
               </td>
             );
           })}
@@ -96,4 +118,70 @@ for (const permission of permissions) {
       ))}
     </tbody>
   </table>
+
+  {modules.map((module) => (
+    <dialog class="modal" data-module-modal={module.id}>
+      <div class="modal-box max-w-xl">
+        <h3 class="font-display text-lg font-bold">{module.name}</h3>
+        <details class="collapse collapse-arrow bg-base-200 mt-3">
+          <summary class="collapse-title text-sm font-semibold">{helpToggleLabel}</summary>
+          <div class="collapse-content text-sm opacity-80">
+            <ul class="list-disc space-y-1 pl-4">
+              {actions.map((action) => (
+                <li><span class="font-semibold">{actionLabels[action]}:</span> {helpByAction[action]}</li>
+              ))}
+              <li>{helpParent}</li>
+              <li>{helpLimit}</li>
+            </ul>
+          </div>
+        </details>
+
+        <div class="mt-4 flex flex-col gap-4">
+          {actions.map((action) => {
+            const permissionId = byModuleAction.get(`${module.id}:${action}`);
+            if (!permissionId) return null;
+            const grant = assignments.get(permissionId);
+            return (
+              <fieldset class="fieldset rounded-box border border-base-300 p-3">
+                <legend class="fieldset-legend">{actionLabels[action]}</legend>
+                <label class="label cursor-pointer justify-start gap-2">
+                  <input
+                    type="checkbox"
+                    class="checkbox checkbox-sm"
+                    name="parentIds"
+                    value={permissionId}
+                    checked={grant?.parent === true}
+                    disabled={readonly}
+                    data-parent-box
+                  />
+                  <span class="label-text">{parentLabel}</span>
+                </label>
+                <label class="label flex-col items-start gap-1">
+                  <span class="label-text opacity-70">{limitLabel}</span>
+                  <input
+                    class="input input-sm w-32"
+                    type="number"
+                    min="0"
+                    step="1"
+                    name={`quota-${permissionId}`}
+                    value={grant?.quota ?? ""}
+                    placeholder={unlimitedLabel}
+                    disabled={readonly}
+                    data-quota-input
+                    data-permission-id={permissionId}
+                  />
+                </label>
+              </fieldset>
+            );
+          })}
+        </div>
+
+        <div class="modal-action">
+          <button type="button" class="btn" data-close-modal>{doneLabel}</button>
+        </div>
+      </div>
+      <button type="button" class="modal-backdrop" data-close-modal>{doneLabel}</button>
+    </dialog>
+  ))}
 </div>
+<script is:inline src="/permission-matrix.js"></script>
