@@ -41,8 +41,6 @@ const paths = {
   account: localizedPath(locale, routeIds.account),
 };
 const { title = copy.titleHome, active = "inicio" } = Astro.props;
-const esHref = switchLocalePath(Astro.url, "es");
-const enHref = switchLocalePath(Astro.url, "en");
 const currentQuery = Astro.url.searchParams.get("q") ?? "";
 
 function navClass(key: NavKey) {
