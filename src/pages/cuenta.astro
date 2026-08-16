@@ -101,17 +101,23 @@ const translation = await translationAccessForEmail(env.DB, user.email);
                   <button class="btn btn-dash btn-sm" type="button" data-bio-translate>{copy.accountBioTranslate}</button>
                 ) : null}
               </div>
-              <p class="text-xs opacity-60">
-                {translation.canUseAi
-                  ? copy.accountBioTranslateHelp
-                  : translation.canWrite
-                    ? copy.accountBioManualOnly
-                    : copy.accountBioNoTranslate}
-              </p>
+              {languages.length > 1 ? (
+                <fieldset class="fieldset">
+                  <legend class="fieldset-legend">{copy.accountBioLanguage}</legend>
+                  <select class="select w-full" data-bio-language>
+                    {languages.map((language) => (
+                      <option value={language.code} selected={language.code === "es"}>
+                        {language.code.toUpperCase()} — {language.native_name}
+                      </option>
+                    ))}
+                  </select>
+                </fieldset>
+              ) : null}
               {languages.map((language) => {
                 const locked = !translation.canWrite && language.code !== "es";
+                const active = language.code === "es";
                 return (
-                  <fieldset class="fieldset">
+                  <fieldset class:list={["fieldset", !active && "hidden"]} data-bio-panel={language.code}>
                     <legend class="fieldset-legend">{copy.accountBioLabel} · {language.native_name}</legend>
                     <textarea
                       id={language.code === "es" ? "bio" : `bio-${language.code}`}
@@ -126,6 +132,13 @@ const translation = await translationAccessForEmail(env.DB, user.email);
                   </fieldset>
                 );
               })}
+              <p class="text-xs opacity-60">
+                {translation.canUseAi
+                  ? copy.accountBioTranslateHelp
+                  : translation.canWrite
+                    ? copy.accountBioManualOnly
+                    : copy.accountBioNoTranslate}
+              </p>
               <p class="text-xs opacity-60">{copy.accountBioHelp}</p>
               <div class="alert alert-error hidden" data-bio-translate-error><span>{copy.accountBioTranslateError}</span></div>
             </div>
@@ -273,6 +286,16 @@ const translation = await translationAccessForEmail(env.DB, user.email);
         if (window.AfroUpRichEditor) {
           document.querySelectorAll("[data-bio-locale]").forEach(function (field) {
             if (field.id) window.AfroUpRichEditor.attach("#" + field.id);
+          });
+        }
+        var languageSelect = document.querySelector("[data-bio-language]");
+        if (languageSelect && languageSelect.dataset.bound !== "true") {
+          languageSelect.dataset.bound = "true";
+          languageSelect.addEventListener("change", function () {
+            var selected = languageSelect.value;
+            document.querySelectorAll("[data-bio-panel]").forEach(function (panel) {
+              panel.classList.toggle("hidden", panel.getAttribute("data-bio-panel") !== selected);
+            });
           });
         }
         var translateBtn = document.querySelector("[data-bio-translate]");
