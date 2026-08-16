@@ -14,14 +14,15 @@
     var labelParent = matrix.getAttribute("data-label-parent") || "Parent";
     var labelAll = matrix.getAttribute("data-label-all") || "All";
     var labelNone = matrix.getAttribute("data-label-none") || "—";
+    var labelLimit = matrix.getAttribute("data-label-limit") || "Limit";
     var labelManual = matrix.getAttribute("data-label-manual") || "Manual";
     var labelAi = matrix.getAttribute("data-label-ai") || "AI";
     var parts = [];
-    if (parentOn) parts.push({ text: labelParent, tone: "neutral" });
-    if (quotaValue) parts.push({ text: quotaValue, tone: "neutral" });
-    else if (parentOn) parts.push({ text: labelAll, tone: "neutral" });
-    if (manualOn) parts.push({ text: labelManual, tone: "neutral" });
-    if (aiOn) parts.push({ text: labelAi, tone: "ai" });
+    if (parentOn) parts.push({ text: labelParent, tip: labelParent, tone: "neutral" });
+    if (quotaValue) parts.push({ text: quotaValue, tip: labelLimit, tone: "neutral" });
+    else if (parentOn) parts.push({ text: labelAll, tip: labelLimit, tone: "neutral" });
+    if (manualOn) parts.push({ text: labelManual, tip: labelManual, tone: "neutral" });
+    if (aiOn) parts.push({ text: labelAi, tip: labelAi, tone: "ai" });
 
     chip.replaceChildren();
     if (!parts.length) {
@@ -33,10 +34,14 @@
     }
 
     parts.forEach(function (part) {
+      var wrap = document.createElement("span");
+      wrap.className = part.tone === "ai" ? "tooltip tooltip-top tooltip-secondary" : "tooltip tooltip-top";
+      wrap.setAttribute("data-tip", part.tip);
       var badge = document.createElement("span");
       badge.className = part.tone === "ai" ? "badge badge-sm badge-soft badge-ai" : "badge badge-sm badge-soft";
       badge.textContent = part.text;
-      chip.appendChild(badge);
+      wrap.appendChild(badge);
+      chip.appendChild(wrap);
     });
   };
 

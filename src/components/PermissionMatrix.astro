@@ -76,13 +76,13 @@ for (const permission of permissions) {
 }
 
 function chipParts(grant: PermissionGrant | undefined) {
-  if (!grant) return [] as Array<{ text: string; tone: "neutral" | "ai" }>;
-  const parts: Array<{ text: string; tone: "neutral" | "ai" }> = [];
-  if (grant.parent) parts.push({ text: parentLabel, tone: "neutral" });
-  if (grant.quota !== null) parts.push({ text: String(grant.quota), tone: "neutral" });
-  else if (grant.parent) parts.push({ text: unlimitedLabel, tone: "neutral" });
-  if (grant.translateManual) parts.push({ text: translateManualLabel, tone: "neutral" });
-  if (grant.translateAi) parts.push({ text: translateAiLabel, tone: "ai" });
+  if (!grant) return [] as Array<{ text: string; tip: string; tone: "neutral" | "ai" }>;
+  const parts: Array<{ text: string; tip: string; tone: "neutral" | "ai" }> = [];
+  if (grant.parent) parts.push({ text: parentLabel, tip: parentLabel, tone: "neutral" });
+  if (grant.quota !== null) parts.push({ text: String(grant.quota), tip: limitLabel, tone: "neutral" });
+  else if (grant.parent) parts.push({ text: unlimitedLabel, tip: limitLabel, tone: "neutral" });
+  if (grant.translateManual) parts.push({ text: translateManualLabel, tip: translateManualLabel, tone: "neutral" });
+  if (grant.translateAi) parts.push({ text: translateAiLabel, tip: translateAiLabel, tone: "ai" });
   return parts;
 }
 ---
@@ -93,6 +93,7 @@ function chipParts(grant: PermissionGrant | undefined) {
   data-label-parent={parentLabel}
   data-label-all={unlimitedLabel}
   data-label-none={noneLabel}
+  data-label-limit={limitLabel}
   data-label-manual={translateManualLabel}
   data-label-ai={translateAiLabel}
 >
@@ -126,8 +127,13 @@ function chipParts(grant: PermissionGrant | undefined) {
                 >
                   {parts.length ? (
                     parts.map((part) => (
-                      <span class:list={["badge badge-sm badge-soft", part.tone === "ai" && "badge-ai"]}>
-                        {part.text}
+                      <span
+                        class:list={["tooltip tooltip-top", part.tone === "ai" && "tooltip-secondary"]}
+                        data-tip={part.tip}
+                      >
+                        <span class:list={["badge badge-sm badge-soft", part.tone === "ai" && "badge-ai"]}>
+                          {part.text}
+                        </span>
                       </span>
                     ))
                   ) : (
