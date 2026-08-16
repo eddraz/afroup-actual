@@ -26,7 +26,7 @@
 - Keep AI actions in purple via the `ai` theme token and `btn-ai` / `checkbox-ai` / `badge-ai`. Only elements that execute or grant AI use those classes.
 - Keep site-wide Astro view transitions via `ClientRouter` in `layouts/BaseLayout.astro` and reapply the theme on `astro:before-swap` / `astro:after-swap`.
 - Keep shared route targets in `lib/paths.ts` and the daisyUI theme and Tailwind entry in `styles/global.css`.
-- Keep the search mockup at `/buscar`, wired through `paths.search`.
+- Keep editorial content in `article_categories` / `articles` with per-locale title and description. Translation follows the bio rules: by hand writes locales, AI may persist an applied draft, the original is a guide. Saving a published locale upserts `search_documents`; drafts and deletes remove those rows. The `categorias` and `articulos` modules gate the admin pages.
 - Keep the Africa category mockup at `/africa` and `/en/africa`, wired through `paths.africa`.
 - Keep the Diaspora category mockup at `/diaspora` and `/en/diaspora`, wired through `paths.diaspora`.
 - Keep the Antiracism category mockup at `/antirracismo` and `/en/antirracismo`, wired through `paths.antirracismo`.
