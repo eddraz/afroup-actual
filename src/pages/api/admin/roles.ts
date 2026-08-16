@@ -1,6 +1,13 @@
 import type { APIRoute } from "astro";
 import { env } from "cloudflare:workers";
 import { hashPassword } from "../../../lib/crypto";
+import {
+  canManageAdminUser,
+  forbiddenJson,
+  getCurrentAdmin,
+  sessionTokenFrom,
+  unauthorizedJson,
+} from "../../../lib/admin-scope";
 
 export const prerender = false;
 
@@ -25,7 +32,9 @@ function json(body: unknown, status = 200) {
   });
 }
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, cookies }) => {
+  const actor = await getCurrentAdmin(env.DB, sessionTokenFrom(cookies));
+  if (!actor) return unauthorizedJson();
   const body = await readBody(request);
 
   if (body.intent === "delete_role" && typeof body.id === "string") {
@@ -58,14 +67,15 @@ export const POST: APIRoute = async ({ request }) => {
     if (existing) return json({ ok: false, error: "email_taken" }, 409);
     const hash = await hashPassword(password);
     await env.DB.prepare(
-      "INSERT INTO admin_users (name, email, password_hash, role_id, is_active) VALUES (?, ?, ?, ?, ?)",
-    ).bind(name, email, hash, roleId, isActive).run();
+      "INSERT INTO admin_users (name, email, password_hash, role_id, is_active, invite_pending, created_by) VALUES (?, ?, ?, ?, ?, 0, ?)",
+    ).bind(name, email, hash, roleId, isActive, actor.id).run();
     return json({ ok: true });
   }
 
   if (body.intent === "delete_user" && typeof body.id === "string") {
     const id = Number(body.id);
     if (!Number.isFinite(id)) return json({ ok: false, error: "bad_id" }, 400);
+    if (!(await canManageAdminUser(env.DB, actor.id, id, "delete"))) return forbiddenJson();
     await env.DB.prepare("DELETE FROM admin_users WHERE id = ?").bind(id).run();
     return json({ ok: true });
   }

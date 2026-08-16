@@ -1,6 +1,12 @@
 import type { APIRoute } from "astro";
 import { env } from "cloudflare:workers";
 import { sendInviteEmail, type EmailLocale } from "../../../../lib/email";
+import {
+  canManageAdminUser,
+  getCurrentAdmin,
+  sessionTokenFrom,
+  unauthorizedJson,
+} from "../../../../lib/admin-scope";
 
 export const prerender = false;
 
@@ -18,7 +24,10 @@ function isLocale(value: unknown): value is EmailLocale {
   return value === "es" || value === "en";
 }
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, cookies }) => {
+  const actor = await getCurrentAdmin(env.DB, sessionTokenFrom(cookies));
+  if (!actor) return unauthorizedJson();
+
   const form = await request.formData();
   const name = String(form.get("name") ?? "").trim();
   const email = String(form.get("email") ?? "").trim().toLowerCase();
@@ -28,6 +37,18 @@ export const POST: APIRoute = async ({ request }) => {
   const permissionIds = (form.getAll("permissionIds") as string[])
     .map((value) => Number(value))
     .filter((value) => Number.isFinite(value) && value > 0);
+  const parentIdRaw = form.get("parentId");
+  const requestedParentId =
+    parentIdRaw && typeof parentIdRaw === "string" && parentIdRaw !== ""
+      ? Number(parentIdRaw)
+      : actor.id;
+  const createdBy =
+    requestedParentId === actor.id
+      ? actor.id
+      : (await canManageAdminUser(env.DB, actor.id, requestedParentId, "create"))
+        ? requestedParentId
+        : null;
+  if (!createdBy) return json({ ok: false, error: "forbidden" }, 403);
 
   if (!name) return json({ ok: false, error: "name_required" }, 400);
   if (!EMAIL_RE.test(email)) return json({ ok: false, error: "email_invalid" }, 400);
@@ -38,10 +59,10 @@ export const POST: APIRoute = async ({ request }) => {
   if (existing) return json({ ok: false, error: "email_taken" }, 409);
 
   const insert = await env.DB.prepare(
-    `INSERT INTO admin_users (name, email, password_hash, role_id, is_active, invite_pending)
-     VALUES (?, ?, NULL, ?, 1, 1)
+    `INSERT INTO admin_users (name, email, password_hash, role_id, is_active, invite_pending, created_by)
+     VALUES (?, ?, NULL, ?, 1, 1, ?)
      RETURNING id`,
-  ).bind(name, email, roleId).first<{ id: number }>();
+  ).bind(name, email, roleId, createdBy).first<{ id: number }>();
   if (!insert) return json({ ok: false, error: "insert_failed" }, 500);
 
   if (permissionIds.length > 0) {

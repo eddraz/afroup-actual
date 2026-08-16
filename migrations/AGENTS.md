@@ -43,6 +43,7 @@
 - `0011_admin_invitations.sql` recreates `admin_users` with `password_hash` nullable and an `invite_pending` flag, then adds the `admin_user_invitations` token table for the email-link activation flow (24h TTL).
 - `0012_public_sessions.sql` adds `bio` and `avatar_url` to `afroup_users` plus `afroup_sessions` for the public-site cookie session used by `/cuenta`.
 - `0013_password_resets.sql` adds `afroup_password_resets` for one-hour public password-reset tokens.
+- `0014_admin_parent_scope.sql` adds `admin_users.created_by` and `admin_parent_grants` so an admin only sees users they created, unless they receive explicit parent CRUD grants.
 
 ## Manual D1 apply notes
 

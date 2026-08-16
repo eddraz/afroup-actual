@@ -1,5 +1,14 @@
 import type { APIRoute } from "astro";
 import { env } from "cloudflare:workers";
+import {
+  canManageAdminUser,
+  forbiddenJson,
+  getCurrentAdmin,
+  sessionTokenFrom,
+  setParentGrants,
+  unauthorizedJson,
+} from "../../../lib/admin-scope";
+import type { PermissionAction } from "../../../lib/rbac";
 
 export const prerender = false;
 
@@ -8,9 +17,11 @@ async function readBody(request: Request) {
   return {
     intent: form.get("_intent"),
     userId: form.get("userId"),
+    childId: form.get("childId"),
     roleId: form.get("roleId"),
     permissionId: form.get("permissionId"),
     permissionIds: form.getAll("permissionIds"),
+    parentActions: form.getAll("parentActions"),
     active: form.get("active"),
   };
 }
@@ -37,7 +48,9 @@ async function setAssignments(
   await env.DB.batch(batch);
 }
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, cookies }) => {
+  const actor = await getCurrentAdmin(env.DB, sessionTokenFrom(cookies));
+  if (!actor) return unauthorizedJson();
   const body = await readBody(request);
 
   if (body.intent === "assign_user") {
@@ -46,7 +59,24 @@ export const POST: APIRoute = async ({ request }) => {
       .map((value) => Number(value))
       .filter((value) => Number.isFinite(value) && value > 0);
     if (!Number.isFinite(userId)) return json({ ok: false, error: "bad_user" }, 400);
+    if (!(await canManageAdminUser(env.DB, actor.id, userId, "update"))) return forbiddenJson();
     await setAssignments("admin_user_permissions", "user_id", userId, permissionIds);
+    return json({ ok: true });
+  }
+
+  if (body.intent === "assign_parent") {
+    const childId = Number(body.childId);
+    const actions = (body.parentActions as unknown[] ?? [])
+      .map((value) => String(value))
+      .filter((value): value is PermissionAction =>
+        value === "create" || value === "read" || value === "update" || value === "delete",
+      );
+    if (!Number.isFinite(childId)) return json({ ok: false, error: "bad_user" }, 400);
+    try {
+      await setParentGrants(env.DB, actor.id, childId, actions);
+    } catch {
+      return forbiddenJson();
+    }
     return json({ ok: true });
   }
 
