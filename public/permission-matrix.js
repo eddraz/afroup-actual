@@ -17,15 +17,27 @@
     var labelManual = matrix.getAttribute("data-label-manual") || "Manual";
     var labelAi = matrix.getAttribute("data-label-ai") || "AI";
     var parts = [];
-    if (parentOn) parts.push(labelParent);
-    if (quotaValue) parts.push(quotaValue);
-    else if (parentOn) parts.push(labelAll);
-    if (manualOn) parts.push(labelManual);
-    if (aiOn) parts.push(labelAi);
-    var text = parts.length ? parts.join(" · ") : labelNone;
-    chip.textContent = text;
-    chip.classList.toggle("badge-ghost", text === labelNone);
-    chip.classList.toggle("badge-soft", text !== labelNone);
+    if (parentOn) parts.push({ text: labelParent, tone: "neutral" });
+    if (quotaValue) parts.push({ text: quotaValue, tone: "neutral" });
+    else if (parentOn) parts.push({ text: labelAll, tone: "neutral" });
+    if (manualOn) parts.push({ text: labelManual, tone: "neutral" });
+    if (aiOn) parts.push({ text: labelAi, tone: "ai" });
+
+    chip.replaceChildren();
+    if (!parts.length) {
+      var empty = document.createElement("span");
+      empty.className = "badge badge-ghost badge-sm";
+      empty.textContent = labelNone;
+      chip.appendChild(empty);
+      return;
+    }
+
+    parts.forEach(function (part) {
+      var badge = document.createElement("span");
+      badge.className = part.tone === "ai" ? "badge badge-sm badge-soft badge-ai" : "badge badge-sm badge-soft";
+      badge.textContent = part.text;
+      chip.appendChild(badge);
+    });
   };
 
   var paintMatrix = function (matrix) {

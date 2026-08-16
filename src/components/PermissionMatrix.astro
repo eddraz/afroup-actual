@@ -75,15 +75,15 @@ for (const permission of permissions) {
   byModuleAction.set(`${permission.module_id}:${permission.action}`, permission.id);
 }
 
-function chipLabel(grant: PermissionGrant | undefined) {
-  if (!grant) return noneLabel;
-  const parts: string[] = [];
-  if (grant.parent) parts.push(parentLabel);
-  if (grant.quota !== null) parts.push(String(grant.quota));
-  else if (grant.parent) parts.push(unlimitedLabel);
-  if (grant.translateManual) parts.push(translateManualLabel);
-  if (grant.translateAi) parts.push(translateAiLabel);
-  return parts.length ? parts.join(" · ") : noneLabel;
+function chipParts(grant: PermissionGrant | undefined) {
+  if (!grant) return [] as Array<{ text: string; tone: "neutral" | "ai" }>;
+  const parts: Array<{ text: string; tone: "neutral" | "ai" }> = [];
+  if (grant.parent) parts.push({ text: parentLabel, tone: "neutral" });
+  if (grant.quota !== null) parts.push({ text: String(grant.quota), tone: "neutral" });
+  else if (grant.parent) parts.push({ text: unlimitedLabel, tone: "neutral" });
+  if (grant.translateManual) parts.push({ text: translateManualLabel, tone: "neutral" });
+  if (grant.translateAi) parts.push({ text: translateAiLabel, tone: "ai" });
+  return parts;
 }
 ---
 
@@ -115,16 +115,24 @@ function chipLabel(grant: PermissionGrant | undefined) {
             const permissionId = byModuleAction.get(`${module.id}:${action}`);
             if (!permissionId) return <td class="text-center opacity-40">—</td>;
             const grant = assignments.get(permissionId);
-            const label = chipLabel(grant);
+            const parts = chipParts(grant);
             return (
               <td class="text-center">
                 <button
                   type="button"
-                  class:list={["badge badge-sm", label === noneLabel ? "badge-ghost" : "badge-soft"]}
+                  class="inline-flex max-w-[11rem] flex-wrap items-center justify-center gap-1"
                   data-perm-chip={permissionId}
                   data-open-module={module.id}
                 >
-                  {label}
+                  {parts.length ? (
+                    parts.map((part) => (
+                      <span class:list={["badge badge-sm badge-soft", part.tone === "ai" && "badge-ai"]}>
+                        {part.text}
+                      </span>
+                    ))
+                  ) : (
+                    <span class="badge badge-ghost badge-sm">{noneLabel}</span>
+                  )}
                 </button>
               </td>
             );
