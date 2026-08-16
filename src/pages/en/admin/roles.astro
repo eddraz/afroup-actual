@@ -1,8 +1,10 @@
 ---
 import AdminLayout from "../../../layouts/AdminLayout.astro";
+import PermissionMatrix from "../../../components/PermissionMatrix.astro";
 import { getLocaleFromUrl, localizedPath, t } from "../../../lib/i18n";
 import { routeIds } from "../../../lib/paths";
 import { env } from "cloudflare:workers";
+import { loadAllRoleGrants } from "../../../lib/permission-grants";
 
 export const prerender = false;
 
@@ -36,7 +38,7 @@ interface RolePermRow {
 const roles = (await env.DB.prepare("SELECT id, name, description FROM admin_roles ORDER BY name").all<RoleRow>()).results ?? [];
 const modules = (await env.DB.prepare("SELECT id, name, slug FROM admin_modules ORDER BY name").all<ModuleRow>()).results ?? [];
 const permissions = (await env.DB.prepare("SELECT id, module_id, action FROM admin_permissions ORDER BY module_id, action").all<PermissionRow>()).results ?? [];
-const rolePermissions = (await env.DB.prepare("SELECT role_id, permission_id FROM admin_role_permissions").all<RolePermRow>()).results ?? [];
+const grantedByRole = await loadAllRoleGrants(env.DB);
 
 const actions: PermissionRow["action"][] = ["create", "read", "update", "delete"];
 
@@ -47,14 +49,7 @@ const actionLabels: Record<PermissionRow["action"], string> = {
   delete: copy.adminActionDelete,
 };
 
-const permByModuleAction = new Map<string, number>();
-for (const p of permissions) permByModuleAction.set(`${p.module_id}:${p.action}`, p.id);
 
-const grantedByRole = new Map<number, Set<number>>();
-for (const rp of rolePermissions) {
-  if (!grantedByRole.has(rp.role_id)) grantedByRole.set(rp.role_id, new Set());
-  grantedByRole.get(rp.role_id)!.add(rp.permission_id);
-}
 ---
 
 <AdminLayout title={`${copy.titleAdmin} · ${copy.adminRoles}`} active="roles">
@@ -93,7 +88,7 @@ for (const rp of rolePermissions) {
 
   <div class="mt-6 flex flex-col gap-6">
     {roles.map((role) => {
-      const granted = grantedByRole.get(role.id) ?? new Set();
+      const granted = grantedByRole.get(role.id) ?? new Map();
       return (
         <article class="card bg-base-100 border border-base-300 shadow-sm">
           <div class="card-body gap-4">
@@ -115,27 +110,18 @@ for (const rp of rolePermissions) {
               <input type="hidden" name="_intent" value="assign_role" />
               <input type="hidden" name="roleId" value={role.id} />
               <p class="text-xs font-extrabold tracking-[0.16em] text-base-content/60 uppercase">{copy.adminRolePermissions}</p>
-              <div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-                {modules.map((m) => (
-                  <div class="rounded-box border border-base-300 p-3">
-                    <p class="text-xs font-bold opacity-70">{m.name}</p>
-                    <div class="mt-2 flex flex-wrap gap-2">
-                      {actions.map((action) => {
-                        const pid = permByModuleAction.get(`${m.id}:${action}`);
-                        if (!pid) return null;
-                        const checked = granted.has(pid);
-                        return (
-                          <label class="label cursor-pointer gap-2 p-0">
-                            <input type="checkbox" name="permissionIds" value={pid} checked={checked} class="checkbox checkbox-xs" />
-                            <span class="label-text text-xs">{actionLabels[action]}</span>
-                          </label>
-                        );
-                      })}
-                    </div>
+                  <p class="mt-1 text-sm opacity-70">{copy.adminPermissionMatrixHelp}</p>
+                  <div class="mt-3">
+                    <PermissionMatrix
+                      modules={modules}
+                      permissions={permissions}
+                      assignments={granted}
+                      actionLabels={actionLabels}
+                      parentLabel={copy.adminPermissionParent}
+                      limitLabel={copy.adminPermissionLimit}
+                    />
                   </div>
-                ))}
-              </div>
-              <div class="mt-3 flex justify-end gap-2">
+                  <div class="mt-3 flex justify-end gap-2">
                 <button class="btn btn-primary btn-sm" type="submit">{copy.adminSave}</button>
               </div>
             </form>

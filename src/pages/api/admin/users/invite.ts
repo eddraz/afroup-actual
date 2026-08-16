@@ -2,11 +2,13 @@ import type { APIRoute } from "astro";
 import { env } from "cloudflare:workers";
 import { sendInviteEmail, type EmailLocale } from "../../../../lib/email";
 import {
+  assertUserQuota,
   canManageAdminUser,
   getCurrentAdmin,
   sessionTokenFrom,
   unauthorizedJson,
 } from "../../../../lib/admin-scope";
+import { parsePermissionGrants, setPermissionGrants } from "../../../../lib/permission-grants";
 
 export const prerender = false;
 
@@ -27,6 +29,9 @@ function isLocale(value: unknown): value is EmailLocale {
 export const POST: APIRoute = async ({ request, cookies }) => {
   const actor = await getCurrentAdmin(env.DB, sessionTokenFrom(cookies));
   if (!actor) return unauthorizedJson();
+  if (!(await assertUserQuota(env.DB, actor.id, "create"))) {
+    return json({ ok: false, error: "quota_exceeded" }, 403);
+  }
 
   const form = await request.formData();
   const name = String(form.get("name") ?? "").trim();
@@ -34,9 +39,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   const locale = isLocale(form.get("locale")) ? (form.get("locale") as EmailLocale) : "es";
   const roleIdRaw = form.get("roleId");
   const roleId = roleIdRaw && typeof roleIdRaw === "string" && roleIdRaw !== "" ? Number(roleIdRaw) : null;
-  const permissionIds = (form.getAll("permissionIds") as string[])
-    .map((value) => Number(value))
-    .filter((value) => Number.isFinite(value) && value > 0);
+  const grants = parsePermissionGrants(form);
   const parentIdRaw = form.get("parentId");
   const requestedParentId =
     parentIdRaw && typeof parentIdRaw === "string" && parentIdRaw !== ""
@@ -65,11 +68,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   ).bind(name, email, roleId, createdBy).first<{ id: number }>();
   if (!insert) return json({ ok: false, error: "insert_failed" }, 500);
 
-  if (permissionIds.length > 0) {
-    const stmt = env.DB.prepare(
-      "INSERT INTO admin_user_permissions (user_id, permission_id) VALUES (?, ?)",
-    );
-    await env.DB.batch(permissionIds.map((permissionId) => stmt.bind(insert.id, permissionId)));
+  if (grants.length > 0) {
+    await setPermissionGrants(env.DB, "admin_user_permissions", "user_id", insert.id, grants);
   }
 
   const token = crypto.randomUUID();

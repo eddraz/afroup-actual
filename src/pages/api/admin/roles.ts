@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { env } from "cloudflare:workers";
 import { hashPassword } from "../../../lib/crypto";
 import {
+  assertUserQuota,
   canManageAdminUser,
   forbiddenJson,
   getCurrentAdmin,
@@ -55,6 +56,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   }
 
   if (body.intent === "create_user") {
+    if (!(await assertUserQuota(env.DB, actor.id, "create"))) return json({ ok: false, error: "quota_exceeded" }, 403);
     const name = typeof body.name === "string" ? body.name.trim() : "";
     const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
     const password = typeof body.password === "string" ? body.password : "";

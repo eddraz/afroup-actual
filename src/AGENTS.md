@@ -13,7 +13,8 @@
 
 - Keep shared navigation, responsive dock/sidebar, top bar, and page chrome in `layouts/BaseLayout.astro` rather than copying them into pages.
 - Keep signed-in photo and name in `components/SessionAvatar.astro` and `components/SessionUser.astro`; hydrate them from `/api/me` via `public/session-user.js`.
-- Keep admin user visibility scoped in `lib/admin-scope.ts`: an admin sees themselves and the users they created. Parent visibility and parent CRUD require explicit `admin_parent_grants`.
+- Keep admin user visibility scoped in `lib/admin-scope.ts`: an admin sees themselves and the users they created. Parent visibility and parent CRUD require the Parent flag on that module action.
+- Keep permission assignment in `components/PermissionMatrix.astro`: every module action has a Parent checkbox and a numeric Limit. Persist those values through `lib/permission-grants.ts`.
 - Keep site icons as official Tabler outline symbols in `layouts/BaseLayout.astro`.
 - Keep the sidebar logo and bottom language/donation controls outside the scroll region; only the menu item list may own vertical overflow.
 - Keep the sidebar menu scrollbar thin and black-toned via the `sidebar-scroll` utility.

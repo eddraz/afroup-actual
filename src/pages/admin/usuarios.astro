@@ -1,5 +1,6 @@
 ---
 import AdminLayout from "../../layouts/AdminLayout.astro";
+import PermissionMatrix from "../../components/PermissionMatrix.astro";
 import { getLocaleFromUrl, localizedPath, t } from "../../lib/i18n";
 import { env } from "cloudflare:workers";
 import { routeIds } from "../../lib/paths";
@@ -8,6 +9,11 @@ import {
   listVisibleAdminUsers,
   sessionTokenFrom,
 } from "../../lib/admin-scope";
+import {
+  grantsToJson,
+  loadAllRoleGrants,
+  loadAllUserGrants,
+} from "../../lib/permission-grants";
 import type { PermissionAction } from "../../lib/rbac";
 
 export const prerender = false;
@@ -19,17 +25,6 @@ const loginHref = localizedPath(locale, routeIds.login);
 const actor = await getCurrentAdmin(env.DB, sessionTokenFrom(Astro.cookies));
 if (!actor) {
   return Astro.redirect(`${loginHref}?next=${encodeURIComponent(Astro.url.pathname)}`, 303);
-}
-
-interface UserRow {
-  id: number;
-  name: string;
-  email: string;
-  role_id: number | null;
-  role_name: string | null;
-  is_active: number;
-  invite_pending: number;
-  created_by: number | null;
 }
 
 interface RoleRow {
@@ -47,62 +42,28 @@ interface ModuleRow {
 interface PermissionRow {
   id: number;
   module_id: number;
-  action: "create" | "read" | "update" | "delete";
-}
-
-interface UserPermRow {
-  user_id: number;
-  permission_id: number;
-}
-
-interface RolePermRow {
-  role_id: number;
-  permission_id: number;
+  action: PermissionAction;
 }
 
 const users = await listVisibleAdminUsers(env.DB, actor.id);
-const parentGrantRows = (await env.DB.prepare(
-  "SELECT child_id, action FROM admin_parent_grants WHERE parent_id = ?",
-).bind(actor.id).all<{ child_id: number; action: PermissionAction }>()).results ?? [];
-const parentGrantsByChild = new Map<number, Set<PermissionAction>>();
-for (const row of parentGrantRows) {
-  if (!parentGrantsByChild.has(row.child_id)) parentGrantsByChild.set(row.child_id, new Set());
-  parentGrantsByChild.get(row.child_id)!.add(row.action);
-}
-
 const roles = (await env.DB.prepare("SELECT id, name, description FROM admin_roles ORDER BY name").all<RoleRow>()).results ?? [];
 const modules = (await env.DB.prepare("SELECT id, name, slug FROM admin_modules ORDER BY name").all<ModuleRow>()).results ?? [];
 const permissions = (await env.DB.prepare("SELECT id, module_id, action FROM admin_permissions ORDER BY module_id, action").all<PermissionRow>()).results ?? [];
-const userPermissions = (await env.DB.prepare("SELECT user_id, permission_id FROM admin_user_permissions").all<UserPermRow>()).results ?? [];
-const rolePermissions = (await env.DB.prepare("SELECT role_id, permission_id FROM admin_role_permissions").all<RolePermRow>()).results ?? [];
+const grantedByUser = await loadAllUserGrants(env.DB);
+const grantedByRole = await loadAllRoleGrants(env.DB);
+const rolePermissionsJson = grantsToJson(grantedByRole);
 
-const actions: PermissionRow["action"][] = ["create", "read", "update", "delete"];
-
-const actionLabels: Record<PermissionRow["action"], string> = {
+const actionLabels: Record<PermissionAction, string> = {
   create: copy.adminActionCreate,
   read: copy.adminActionRead,
   update: copy.adminActionUpdate,
   delete: copy.adminActionDelete,
 };
 
-const permByModuleAction = new Map<string, number>();
-for (const p of permissions) permByModuleAction.set(`${p.module_id}:${p.action}`, p.id);
-
-const grantedByUser = new Map<number, Set<number>>();
-for (const up of userPermissions) {
-  if (!grantedByUser.has(up.user_id)) grantedByUser.set(up.user_id, new Set());
-  grantedByUser.get(up.user_id)!.add(up.permission_id);
-}
-
-const grantedByRole = new Map<number, number[]>();
-for (const rp of rolePermissions) {
-  if (!grantedByRole.has(rp.role_id)) grantedByRole.set(rp.role_id, []);
-  grantedByRole.get(rp.role_id)!.push(rp.permission_id);
-}
-
-const rolePermissionsJson = JSON.stringify(
-  Object.fromEntries(roles.map((r) => [r.id, grantedByRole.get(r.id) ?? []])),
-);
+const usuariosReadId = permissions.find((permission) => {
+  if (permission.action !== "read") return false;
+  return modules.some((module) => module.id === permission.module_id && module.slug === "usuarios");
+})?.id;
 ---
 
 <AdminLayout title={`${copy.titleAdmin} · ${copy.adminUsers}`} active="users">
@@ -143,24 +104,15 @@ const rolePermissionsJson = JSON.stringify(
       </div>
 
       <p class="mt-3 text-xs font-extrabold tracking-[0.16em] text-base-content/60 uppercase">{copy.adminUserPermissions}</p>
-      <div class="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4" data-permission-matrix>
-        {modules.map((m) => (
-          <div class="rounded-box border border-base-300 p-3">
-            <p class="text-xs font-bold opacity-70">{m.name}</p>
-            <div class="mt-2 flex flex-wrap gap-2">
-              {actions.map((action) => {
-                const pid = permByModuleAction.get(`${m.id}:${action}`);
-                if (!pid) return null;
-                return (
-                  <label class="label cursor-pointer gap-2 p-0">
-                    <input type="checkbox" name="permissionIds" value={pid} class="checkbox checkbox-xs" />
-                    <span class="label-text text-xs">{actionLabels[action]}</span>
-                  </label>
-                );
-              })}
-            </div>
-          </div>
-        ))}
+      <p class="mt-1 text-sm opacity-70">{copy.adminPermissionMatrixHelp}</p>
+      <div class="mt-2">
+        <PermissionMatrix
+          modules={modules}
+          permissions={permissions}
+          actionLabels={actionLabels}
+          parentLabel={copy.adminPermissionParent}
+          limitLabel={copy.adminPermissionLimit}
+        />
       </div>
 
       <div class="alert alert-error mt-3 hidden" data-invite-error><span data-invite-error-text></span></div>
@@ -174,10 +126,10 @@ const rolePermissionsJson = JSON.stringify(
 
   <div class="mt-6 flex flex-col gap-6">
     {users.map((user) => {
-      const granted = grantedByUser.get(user.id) ?? new Set();
+      const granted = grantedByUser.get(user.id) ?? new Map();
       const isSelf = user.id === actor.id;
       const isChild = user.created_by === actor.id;
-      const parentGranted = parentGrantsByChild.get(user.id) ?? new Set();
+      const canSeeParent = Boolean(usuariosReadId && granted.get(usuariosReadId)?.parent);
       return (
         <article class="card bg-base-100 border border-base-300 shadow-sm">
           <div class="card-body gap-4">
@@ -191,74 +143,40 @@ const rolePermissionsJson = JSON.stringify(
                   {user.role_name ? <span class="badge badge-sm badge-accent">{user.role_name}</span> : null}
                   {isSelf ? <span class="badge badge-sm">{copy.adminYou}</span> : null}
                   {isChild ? <span class="badge badge-sm badge-ghost">{copy.adminCreatedByYou}</span> : null}
-                  {parentGranted.has("read") ? <span class="badge badge-sm badge-info">{copy.adminParentVisible}</span> : null}
+                  {canSeeParent ? <span class="badge badge-sm badge-info">{copy.adminParentVisible}</span> : null}
                 </div>
               </div>
               {!isSelf ? (
-              <form method="post" action="/api/admin/roles" data-admin-confirm>
-                <input type="hidden" name="_intent" value="delete_user" />
-                <input type="hidden" name="id" value={user.id} />
-                <button class="btn btn-square btn-ghost btn-sm" type="submit" title={copy.adminRemove}>
-                  <svg class="size-4"><use href="#ic-trash"></use></svg>
-                </button>
-              </form>
+                <form method="post" action="/api/admin/roles" data-admin-confirm>
+                  <input type="hidden" name="_intent" value="delete_user" />
+                  <input type="hidden" name="id" value={user.id} />
+                  <button class="btn btn-square btn-ghost btn-sm" type="submit" title={copy.adminRemove}>
+                    <svg class="size-4"><use href="#ic-trash"></use></svg>
+                  </button>
+                </form>
               ) : null}
             </div>
 
-            {isChild ? (
+            {!isSelf ? (
               <form method="post" action="/api/admin/permissions" data-admin-permissions-form>
-                <input type="hidden" name="_intent" value="assign_parent" />
-                <input type="hidden" name="childId" value={user.id} />
-                <p class="text-xs font-extrabold tracking-[0.16em] text-base-content/60 uppercase">{copy.adminParentAccess}</p>
-                <p class="mt-1 text-sm opacity-70">{copy.adminParentAccessHelp}</p>
-                <div class="mt-3 flex flex-wrap gap-3">
-                  {actions.map((action) => (
-                    <label class="label cursor-pointer gap-2 p-0">
-                      <input type="checkbox" name="parentActions" value={action} checked={parentGranted.has(action)} class="checkbox checkbox-xs" />
-                      <span class="label-text text-xs">
-                        {action === "read" ? copy.adminParentRead :
-                         action === "create" ? copy.adminParentCreate :
-                         action === "update" ? copy.adminParentUpdate :
-                         copy.adminParentDelete}
-                      </span>
-                    </label>
-                  ))}
+                <input type="hidden" name="_intent" value="assign_user" />
+                <input type="hidden" name="userId" value={user.id} />
+                <p class="text-xs font-extrabold tracking-[0.16em] text-base-content/60 uppercase">{copy.adminUserPermissions}</p>
+                <p class="mt-1 text-sm opacity-70">{copy.adminPermissionMatrixHelp}</p>
+                <div class="mt-3">
+                  <PermissionMatrix
+                    modules={modules}
+                    permissions={permissions}
+                    assignments={granted}
+                    actionLabels={actionLabels}
+                    parentLabel={copy.adminPermissionParent}
+                    limitLabel={copy.adminPermissionLimit}
+                  />
                 </div>
-                <div class="mt-3 flex justify-end">
-                  <button class="btn btn-dash btn-sm" type="submit">{copy.adminSave}</button>
+                <div class="mt-3 flex justify-end gap-2">
+                  <button class="btn btn-primary btn-sm" type="submit">{copy.adminSave}</button>
                 </div>
               </form>
-            ) : null}
-
-            {!isSelf ? (
-            <form method="post" action="/api/admin/permissions" data-admin-permissions-form>
-              <input type="hidden" name="_intent" value="assign_user" />
-              <input type="hidden" name="userId" value={user.id} />
-              <p class="text-xs font-extrabold tracking-[0.16em] text-base-content/60 uppercase">{copy.adminUserPermissions}</p>
-              <div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-                {modules.map((m) => (
-                  <div class="rounded-box border border-base-300 p-3">
-                    <p class="text-xs font-bold opacity-70">{m.name}</p>
-                    <div class="mt-2 flex flex-wrap gap-2">
-                      {actions.map((action) => {
-                        const pid = permByModuleAction.get(`${m.id}:${action}`);
-                        if (!pid) return null;
-                        const checked = granted.has(pid);
-                        return (
-                          <label class="label cursor-pointer gap-2 p-0">
-                            <input type="checkbox" name="permissionIds" value={pid} checked={checked} class="checkbox checkbox-xs" />
-                            <span class="label-text text-xs">{actionLabels[action]}</span>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div class="mt-3 flex justify-end gap-2">
-                <button class="btn btn-primary btn-sm" type="submit">{copy.adminSave}</button>
-              </div>
-            </form>
             ) : null}
           </div>
         </article>
@@ -277,12 +195,16 @@ const rolePermissionsJson = JSON.stringify(
           form.dataset.boundRole = "true";
           var roleSelect = form.querySelector("[data-role-select]");
           var matrix = form.querySelector("[data-permission-matrix]");
-          var checkboxes = matrix ? matrix.querySelectorAll("input[type=checkbox]") : [];
           function applyRole(value) {
-            var ids = value && roleMap[value] ? roleMap[value] : [];
-            var set = new Set(ids.map(String));
-            checkboxes.forEach(function (box) {
-              box.checked = set.has(box.value);
+            var grants = value && roleMap[value] ? roleMap[value] : {};
+            if (!matrix) return;
+            matrix.querySelectorAll("[data-parent-box]").forEach(function (box) {
+              var grant = grants[box.value];
+              box.checked = Boolean(grant && grant.parent);
+            });
+            matrix.querySelectorAll("[data-quota-input]").forEach(function (input) {
+              var grant = grants[input.getAttribute("data-permission-id")];
+              input.value = grant && grant.quota != null ? grant.quota : "";
             });
           }
           if (roleSelect) {
@@ -308,12 +230,14 @@ const rolePermissionsJson = JSON.stringify(
               email_taken: "An admin already exists with that email.",
               email_failed: "We couldn't send the invite email.",
               insert_failed: "Could not save the user.",
+              quota_exceeded: "This account reached its user limit.",
             } : {
               name_required: "Ingresá un nombre.",
               email_invalid: "Ingresá un correo válido.",
               email_taken: "Ya existe un administrador con ese correo.",
               email_failed: "No pudimos enviar el correo de invitación.",
               insert_failed: "No pudimos guardar el usuario.",
+              quota_exceeded: "Esta cuenta llegó al límite de usuarios.",
             };
             fetch(form.action, { method: "POST", body: data })
               .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })

@@ -44,6 +44,7 @@
 - `0012_public_sessions.sql` adds `bio` and `avatar_url` to `afroup_users` plus `afroup_sessions` for the public-site cookie session used by `/cuenta`.
 - `0013_password_resets.sql` adds `afroup_password_resets` for one-hour public password-reset tokens.
 - `0014_admin_parent_scope.sql` adds `admin_users.created_by` and `admin_parent_grants` so an admin only sees users they created, unless they receive explicit parent CRUD grants.
+- `0015_permission_quotas.sql` adds `parent` and `quota` to `admin_user_permissions` and `admin_role_permissions` so every module action can grant parent access and a numeric record limit.
 
 ## Manual D1 apply notes
 

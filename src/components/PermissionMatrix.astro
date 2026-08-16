@@ -1,0 +1,96 @@
+---
+import type { PermissionAction } from "../lib/rbac";
+import type { PermissionGrant } from "../lib/permission-grants";
+
+interface ModuleItem {
+  id: number;
+  name: string;
+}
+
+interface PermissionItem {
+  id: number;
+  module_id: number;
+  action: PermissionAction;
+}
+
+interface Props {
+  modules: ModuleItem[];
+  permissions: PermissionItem[];
+  assignments?: Map<number, PermissionGrant>;
+  actionLabels: Record<PermissionAction, string>;
+  parentLabel: string;
+  limitLabel: string;
+  readonly?: boolean;
+}
+
+const {
+  modules,
+  permissions,
+  assignments = new Map<number, PermissionGrant>(),
+  actionLabels,
+  parentLabel,
+  limitLabel,
+  readonly = false,
+} = Astro.props;
+
+const actions: PermissionAction[] = ["create", "read", "update", "delete"];
+const byModuleAction = new Map<string, number>();
+for (const permission of permissions) {
+  byModuleAction.set(`${permission.module_id}:${permission.action}`, permission.id);
+}
+---
+
+<div class="overflow-x-auto" data-permission-matrix>
+  <table class="table table-sm">
+    <thead>
+      <tr>
+        <th></th>
+        {actions.map((action) => <th class="text-center">{actionLabels[action]}</th>)}
+      </tr>
+    </thead>
+    <tbody>
+      {modules.map((module) => (
+        <tr>
+          <th class="align-top whitespace-nowrap">{module.name}</th>
+          {actions.map((action) => {
+            const permissionId = byModuleAction.get(`${module.id}:${action}`);
+            if (!permissionId) return <td class="text-center opacity-40">—</td>;
+            const grant = assignments.get(permissionId);
+            return (
+              <td>
+                <div class="flex min-w-[7.5rem] flex-col gap-1">
+                  <label class="label cursor-pointer justify-start gap-2 p-0">
+                    <input
+                      type="checkbox"
+                      class="checkbox checkbox-xs"
+                      name="parentIds"
+                      value={permissionId}
+                      checked={grant?.parent === true}
+                      disabled={readonly}
+                      data-parent-box
+                    />
+                    <span class="label-text text-xs">{parentLabel}</span>
+                  </label>
+                  <label class="label flex-col items-start gap-1 p-0">
+                    <span class="label-text text-[11px] opacity-60">{limitLabel}</span>
+                    <input
+                      class="input input-xs w-20"
+                      type="number"
+                      min="0"
+                      step="1"
+                      name={`quota-${permissionId}`}
+                      value={grant?.quota ?? ""}
+                      disabled={readonly}
+                      data-quota-input
+                      data-permission-id={permissionId}
+                    />
+                  </label>
+                </div>
+              </td>
+            );
+          })}
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>

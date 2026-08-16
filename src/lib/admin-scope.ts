@@ -1,5 +1,6 @@
 import type { D1Database } from "@cloudflare/workers-types";
 import { getPublicUser, PUBLIC_SESSION_COOKIE } from "./public-session";
+import { effectiveGrant } from "./permission-grants";
 import type { PermissionAction } from "./rbac";
 
 export interface AdminActor {
@@ -59,6 +60,7 @@ export async function listVisibleAdminUsers(
   db: D1Database,
   actorId: number,
 ): Promise<VisibleAdminUser[]> {
+  const grant = await effectiveGrant(db, actorId, "usuarios", "read");
   const result = await db
     .prepare(
       `SELECT u.id, u.name, u.email, u.role_id, u.is_active, u.invite_pending, u.created_by, r.name AS role_name
@@ -66,47 +68,47 @@ export async function listVisibleAdminUsers(
          LEFT JOIN admin_roles r ON r.id = u.role_id
         WHERE u.id = ?
            OR u.created_by = ?
-           OR EXISTS (
-                SELECT 1 FROM admin_parent_grants g
-                 WHERE g.child_id = ? AND g.parent_id = u.id AND g.action = 'read'
-              )
-        ORDER BY u.name`,
+           OR (? = 1 AND u.id = (SELECT created_by FROM admin_users WHERE id = ?))
+        ORDER BY CASE WHEN u.id = ? THEN 0 ELSE 1 END, u.created_at, u.id`,
     )
-    .bind(actorId, actorId, actorId)
+    .bind(actorId, actorId, grant.parent ? 1 : 0, actorId, actorId)
     .all<VisibleAdminUser>();
-  return result.results ?? [];
+  const rows = result.results ?? [];
+  const self = rows.filter((row) => row.id === actorId);
+  const parent = grant.parent ? rows.filter((row) => row.id !== actorId && row.created_by !== actorId) : [];
+  let owned = rows.filter((row) => row.created_by === actorId);
+  if (grant.quota !== null) owned = owned.slice(0, grant.quota);
+  return [...self, ...owned, ...parent];
 }
 
 export async function hasParentGrant(
   db: D1Database,
   childId: number,
-  parentId: number,
+  _parentId: number,
   action: PermissionAction,
 ): Promise<boolean> {
-  const row = await db
-    .prepare(
-      `SELECT 1
-         FROM admin_parent_grants
-        WHERE child_id = ? AND parent_id = ? AND action = ?
-        LIMIT 1`,
-    )
-    .bind(childId, parentId, action)
-    .first();
-  return row !== null;
+  const grant = await effectiveGrant(db, childId, "usuarios", action);
+  return grant.parent;
 }
 
-export async function listParentGrants(
+export async function countOwnedAdminUsers(db: D1Database, actorId: number): Promise<number> {
+  const row = await db
+    .prepare("SELECT COUNT(*) AS total FROM admin_users WHERE created_by = ?")
+    .bind(actorId)
+    .first<{ total: number }>();
+  return row?.total ?? 0;
+}
+
+export async function assertUserQuota(
   db: D1Database,
-  childId: number,
-  parentId: number,
-): Promise<PermissionAction[]> {
-  const result = await db
-    .prepare(
-      `SELECT action FROM admin_parent_grants WHERE child_id = ? AND parent_id = ?`,
-    )
-    .bind(childId, parentId)
-    .all<{ action: PermissionAction }>();
-  return (result.results ?? []).map((row) => row.action);
+  actorId: number,
+  action: PermissionAction,
+): Promise<boolean> {
+  const grant = await effectiveGrant(db, actorId, "usuarios", action);
+  if (!grant.allowed && action !== "read") return action === "create" ? true : false;
+  if (grant.quota === null) return true;
+  if (action === "create") return (await countOwnedAdminUsers(db, actorId)) < grant.quota;
+  return true;
 }
 
 export async function canManageAdminUser(
