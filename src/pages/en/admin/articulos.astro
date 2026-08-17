@@ -53,16 +53,11 @@ const items = (await env.DB.prepare(
             WHERE l.article_id = a.id
             ORDER BY CASE WHEN l.locale = ? THEN 0 ELSE 1 END, l.locale
             LIMIT 1) AS title,
-          (SELECT GROUP_CONCAT(title, ', ')
-             FROM (
-               SELECT COALESCE(
-                 (SELECT title FROM article_category_locales WHERE category_id = m.category_id AND locale = ?),
-                 (SELECT title FROM article_category_locales WHERE category_id = m.category_id AND locale = ?)
-               ) AS title
-                 FROM article_category_map m
-                WHERE m.article_id = a.id
-                ORDER BY m.sort_order, m.category_id
-             )) AS category_titles,
+          (SELECT GROUP_CONCAT(COALESCE(loc.title, def.title), ', ')
+             FROM article_category_map m
+             LEFT JOIN article_category_locales loc ON loc.category_id = m.category_id AND loc.locale = ?
+             LEFT JOIN article_category_locales def ON def.category_id = m.category_id AND def.locale = ?
+            WHERE m.article_id = a.id) AS category_titles,
           (SELECT c.slug FROM article_categories c
              JOIN article_category_map m ON m.category_id = c.id
             WHERE m.article_id = a.id
