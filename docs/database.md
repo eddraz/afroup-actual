@@ -186,6 +186,18 @@ Los slugs de módulos inicializados (semilla) incluyen `articulos`, `comentarios
 
 Cero o un idioma visible oculta el selector público. Dos muestran un interruptor de siglas. Tres o más muestran un menú desplegable (`select`). La interfaz de administración se mantiene únicamente en español/inglés.
 
+## Editorial y búsqueda
+
+| Tabla | PK | Notas |
+|---|---|---|
+| `article_categories` | `id` | Categoría con `slug`, `created_by` y timestamps |
+| `article_category_locales` | `(category_id, locale)` | Título y descripción por idioma |
+| `articles` | `id` | `slug`, `created_by`, `status` (`draft\|published`), `published_at`, `cover_image_url`, `reading_time_minutes`, `created_at`, `updated_at` |
+| `article_locales` | `(article_id, locale)` | `title`, `description` (corta/dek) y `content_html` (rich text) por idioma |
+| `article_category_map` | `(article_id, category_id)` | Relación muchos a muchos con `sort_order` |
+| `article_tags` | `(article_id, tag)` | Etiquetas buscables por artículo |
+| `search_documents` | `id` | Índice unificado para `/buscar` con `(module_slug, record_id, locale)` único |
+
 ## Ayuda de emergencia heredada
 
 Estas tablas aún existen. Pertenecen al producto anterior de Worker/guía, no a la identidad actual de cuenta/administración en Astro.
