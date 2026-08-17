@@ -1,5 +1,5 @@
 (function (global) {
-  var BLOCK = { P: 1, DIV: 1, LI: 1, UL: 1, OL: 1, BR: 1, B: 1, STRONG: 1, I: 1, EM: 1, A: 1, SPAN: 1, FONT: 1 };
+  var BLOCK = { P: 1, DIV: 1, LI: 1, UL: 1, OL: 1, BR: 1, B: 1, STRONG: 1, I: 1, EM: 1, A: 1, SPAN: 1, FONT: 1, IMG: 1 };
   var SIZES = ["14px", "16px", "20px", "28px"];
   var NAMED_COLORS = {
     black: "#111111",
@@ -67,6 +67,68 @@
     return out.join(";");
   }
 
+  function compressImage(file, maxWidth, maxHeight, quality) {
+    maxWidth = maxWidth || 300;
+    maxHeight = maxHeight || 600;
+    quality = quality || 0.82;
+    return new Promise(function (resolve) {
+      if (!file || !file.type || !file.type.match(/^image\//i)) {
+        return resolve(file);
+      }
+      if (file.type === "image/gif" || file.type === "image/svg+xml") {
+        return resolve(file);
+      }
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        var img = new Image();
+        img.onload = function () {
+          var width = img.width;
+          var height = img.height;
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+          if (maxHeight && height > maxHeight) {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+          var canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          var ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+
+          var mime = "image/webp";
+          canvas.toBlob(
+            function (blob) {
+              if (blob) {
+                var ext = blob.type === "image/webp" ? ".webp" : ".jpg";
+                var baseName = (file.name || "imagen").replace(/\.[^.]+$/, "");
+                var compressedFile = new File([blob], baseName + ext, {
+                  type: blob.type,
+                  lastModified: Date.now(),
+                });
+                resolve(compressedFile);
+              } else {
+                resolve(file);
+              }
+            },
+            mime,
+            quality
+          );
+        };
+        img.onerror = function () {
+          resolve(file);
+        };
+        img.src = e.target.result;
+      };
+      reader.onerror = function () {
+        resolve(file);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
   function sanitize(html) {
     var host = document.createElement("div");
     host.innerHTML = String(html || "");
@@ -89,6 +151,20 @@
             while (child.firstChild) span.appendChild(child.firstChild);
             node.replaceChild(span, child);
             walk(span);
+          } else if (tag === "IMG") {
+            var src = child.getAttribute("src") || "";
+            var alt = child.getAttribute("alt") || "";
+            while (child.attributes.length) child.removeAttribute(child.attributes[0].name);
+            if (/^(\/api\/uploads\/[a-zA-Z0-9_.-]+|https?:\/\/|blob:)/i.test(src)) {
+              child.setAttribute("src", src);
+              child.setAttribute("alt", alt || "Imagen");
+              child.setAttribute("loading", "lazy");
+            } else {
+              node.removeChild(child);
+              child = next;
+              continue;
+            }
+            walk(child);
           } else {
             if (tag === "A") {
               var href = child.getAttribute("href") || "";
@@ -143,7 +219,11 @@
       '<label class="rich-color" title="Color de letra">' +
       '<span class="swatch" aria-hidden="true"></span>' +
       '<input type="color" data-color value="#111111" aria-label="Color de letra" />' +
-      "</label>";
+      "</label>" +
+      '<button type="button" data-upload-img title="Insertar imagen" style="display:inline-flex;align-items:center;gap:4px;padding:0 10px;font-size:13px;font-weight:700;">' +
+      '<span class="rich-img-label">🖼️ Imagen</span>' +
+      "</button>" +
+      '<input type="file" accept="image/*" class="rich-img-input" style="display:none;" />';
     var surface = document.createElement("div");
     surface.className = "rich-surface";
     surface.contentEditable = "true";
@@ -186,10 +266,67 @@
     toolbar.addEventListener("click", function (event) {
       var button = event.target.closest("button");
       if (!button) return;
+      if (button.hasAttribute("data-upload-img")) return;
+      var cmd = button.getAttribute("data-cmd");
+      if (!cmd) return;
       surface.focus();
-      document.execCommand(button.getAttribute("data-cmd"), false, null);
+      document.execCommand(cmd, false, null);
       sync();
     });
+
+    var imgBtn = toolbar.querySelector("[data-upload-img]");
+    var imgInput = toolbar.querySelector(".rich-img-input");
+    var imgLabel = toolbar.querySelector(".rich-img-label");
+
+    if (imgBtn && imgInput) {
+      imgBtn.addEventListener("click", function () {
+        imgInput.click();
+      });
+
+      imgInput.addEventListener("change", function () {
+        var file = imgInput.files && imgInput.files[0];
+        if (!file) return;
+
+        if (imgLabel) imgLabel.textContent = "⏳ Subiendo...";
+        imgBtn.disabled = true;
+
+        compressImage(file, 300, 600, 0.82)
+          .then(function (compressedFile) {
+            var formData = new FormData();
+            formData.append("file", compressedFile, compressedFile.name || "imagen.webp");
+            return fetch("/api/upload", {
+              method: "POST",
+              body: formData,
+            });
+          })
+          .then(function (res) {
+            return res.json().catch(function () { return {}; }).then(function (data) {
+              if (!res.ok) throw new Error(data.error || "Error al subir la imagen.");
+              return data;
+            });
+          })
+          .then(function (data) {
+            if (!data.url) throw new Error("No se recibió la URL de la imagen.");
+            surface.focus();
+            var imgHtml = '<p><img src="' + escapeHtml(data.url) + '" alt="' + escapeHtml(file.name || "Imagen") + '" loading="lazy" /></p>';
+            if (document.queryCommandSupported("insertHTML")) {
+              document.execCommand("insertHTML", false, imgHtml);
+            } else {
+              surface.insertAdjacentHTML("beforeend", imgHtml);
+            }
+            sync();
+          })
+          .catch(function (err) {
+            alert(err.message || "No se pudo subir la imagen.");
+          })
+          .finally(function () {
+            imgInput.value = "";
+            if (imgLabel) imgLabel.textContent = "🖼️ Imagen";
+            imgBtn.disabled = false;
+          });
+      });
+    }
+
     toolbar.addEventListener("change", function (event) {
       if (event.target.hasAttribute("data-size") && event.target.value) {
         applyFontSize(event.target.value);
@@ -216,10 +353,11 @@
       },
       setHtml: setHtml,
       isEmpty: function () {
+        if (surface.querySelector("img")) return false;
         return !surface.innerText.replace(/\u00a0/g, " ").trim();
       },
     };
   }
 
-  global.AfroUpRichEditor = { attach: attach, sanitize: sanitize, textToHtml: textToHtml };
+  global.AfroUpRichEditor = { attach: attach, sanitize: sanitize, textToHtml: textToHtml, compressImage: compressImage };
 })(window);

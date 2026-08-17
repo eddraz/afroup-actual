@@ -3,7 +3,18 @@ const CSRF_COOKIE = "afroup_csrf";
 const SESSION_HOURS = 12;
 const MAX_JSON_BYTES = 16_384;
 const MAX_FIELD = 500;
-const MAX_BODY = 4000;
+const MAX_BODY = 16000;
+const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+const UPLOAD_WINDOW_MIN = 10;
+const UPLOAD_MAX_ATTEMPTS = 30;
+const ALLOWED_IMAGE_TYPES = new Map([
+  ["image/webp", "webp"],
+  ["image/jpeg", "jpg"],
+  ["image/jpg", "jpg"],
+  ["image/png", "png"],
+  ["image/gif", "gif"],
+  ["image/avif", "avif"],
+]);
 const LOGIN_WINDOW_MIN = 15;
 const LOGIN_MAX_ATTEMPTS = 8;
 const SUBMIT_WINDOW_MIN = 60;
@@ -71,6 +82,15 @@ async function handleApi(request, env, url) {
 
   if (path === "/api/entries" && method === "POST") {
     return createPendingEntry(request, env);
+  }
+
+  if (path === "/api/upload" && method === "POST") {
+    return handleUpload(request, env);
+  }
+
+  const uploadMatch = path.match(/^\/api\/uploads\/([a-zA-Z0-9_.-]+)$/);
+  if (uploadMatch && method === "GET") {
+    return serveUpload(env, uploadMatch[1]);
   }
 
   if (path === "/api/admin/login" && method === "POST") {
@@ -205,6 +225,72 @@ async function createPendingEntry(request, env) {
     },
     201
   );
+}
+
+async function handleUpload(request, env) {
+  if (!env.UPLOADS) {
+    return json({ error: "El almacenamiento de imágenes (R2) no está configurado." }, 500);
+  }
+
+  const limited = await enforceRateLimit(env, clientIp(request), "upload", UPLOAD_WINDOW_MIN, UPLOAD_MAX_ATTEMPTS);
+  if (limited) return limited;
+
+  let formData;
+  try {
+    formData = await request.formData();
+  } catch {
+    return json({ error: "Formato de subida inválido." }, 400);
+  }
+
+  const file = formData.get("file") || formData.get("image");
+  if (!file || typeof file === "string") {
+    return json({ error: "No se seleccionó ningún archivo de imagen." }, 400);
+  }
+
+  if (file.size > MAX_UPLOAD_BYTES) {
+    return json({ error: "La imagen excede el tamaño máximo permitido (5 MB)." }, 400);
+  }
+
+  const contentType = (file.type || "").toLowerCase().trim();
+  const ext = ALLOWED_IMAGE_TYPES.get(contentType);
+  if (!ext) {
+    return json({ error: "Formato de imagen no permitido. Usa WebP, JPEG, PNG o GIF." }, 400);
+  }
+
+  const key = `${crypto.randomUUID()}.${ext}`;
+  const buffer = await file.arrayBuffer();
+
+  await env.UPLOADS.put(key, buffer, {
+    httpMetadata: {
+      contentType: contentType,
+      cacheControl: "public, max-age=31536000, immutable",
+    },
+  });
+
+  return json({ ok: true, url: `/api/uploads/${key}` }, 201);
+}
+
+async function serveUpload(env, key) {
+  if (!env.UPLOADS) {
+    return new Response("Almacenamiento no configurado.", { status: 500 });
+  }
+
+  if (!/^[a-zA-Z0-9_.-]+$/.test(key)) {
+    return new Response("Nombre de archivo inválido.", { status: 400 });
+  }
+
+  const object = await env.UPLOADS.get(key);
+  if (!object) {
+    return new Response("Imagen no encontrada.", { status: 404 });
+  }
+
+  const headers = new Headers();
+  object.writeHttpMetadata(headers);
+  headers.set("etag", object.httpEtag);
+  headers.set("cache-control", "public, max-age=31536000, immutable");
+  headers.set("x-content-type-options", "nosniff");
+
+  return new Response(object.body, { headers });
 }
 
 async function getStoredCredential(env, username) {
@@ -642,7 +728,7 @@ function sanitizeHtml(value, max = MAX_BODY) {
       .map((block) => `<p>${escapeHtmlText(block).replace(/\n/g, "<br>")}</p>`)
       .join("");
   }
-  const allowed = new Set(["P", "BR", "B", "STRONG", "I", "EM", "UL", "OL", "LI", "A", "DIV", "SPAN"]);
+  const allowed = new Set(["P", "BR", "B", "STRONG", "I", "EM", "UL", "OL", "LI", "A", "DIV", "SPAN", "IMG"]);
   let out = raw
     .replace(/<script[\s\S]*?<\/script>/gi, "")
     .replace(/on[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
@@ -659,6 +745,18 @@ function sanitizeHtml(value, max = MAX_BODY) {
         || "";
       if (!/^https?:\/\//i.test(href) && !/^mailto:/i.test(href)) return "<a>";
       return `<a href="${escapeHtmlText(href)}" rel="noopener noreferrer" target="_blank">`;
+    }
+    if (name === "IMG") {
+      const src = (attrs.match(/src\s*=\s*("([^"]*)"|'([^']*)'|([^\s>]+))/i) || [])[2]
+        || (attrs.match(/src\s*=\s*("([^"]*)"|'([^']*)'|([^\s>]+))/i) || [])[3]
+        || (attrs.match(/src\s*=\s*("([^"]*)"|'([^']*)'|([^\s>]+))/i) || [])[4]
+        || "";
+      const alt = (attrs.match(/alt\s*=\s*("([^"]*)"|'([^']*)'|([^\s>]+))/i) || [])[2]
+        || (attrs.match(/alt\s*=\s*("([^"]*)"|'([^']*)'|([^\s>]+))/i) || [])[3]
+        || (attrs.match(/alt\s*=\s*("([^"]*)"|'([^']*)'|([^\s>]+))/i) || [])[4]
+        || "";
+      if (!/^(\/api\/uploads\/[a-zA-Z0-9_.-]+|https:\/\/[^"'>\s]+)$/i.test(src)) return "";
+      return `<img src="${escapeHtmlText(src)}" alt="${escapeHtmlText(alt || "Imagen")}" loading="lazy">`;
     }
     if (name === "SPAN") {
       const styleMatch = attrs.match(/style\s*=\s*("([^"]*)"|'([^']*)')/i);

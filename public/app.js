@@ -169,7 +169,7 @@
   }
 
   function looksLikeRichHtml(value) {
-    return /<(span|strong|b|em|i|ul|ol|li)\b/i.test(String(value || ""));
+    return /<(span|strong|b|em|i|ul|ol|li|p|img|a)\b/i.test(String(value || ""));
   }
 
   function entryCard(entry) {

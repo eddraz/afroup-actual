@@ -21,6 +21,12 @@
       "migrations_dir": "migrations"
     }
   ],
+  "r2_buckets": [
+    {
+      "binding": "UPLOADS",
+      "bucket_name": "afroup-uploads"
+    }
+  ],
   "vars": {
     "APP_NAME": "AfroUp"
   }
