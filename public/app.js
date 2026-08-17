@@ -2,11 +2,13 @@
   function start() {
   var PAGE_SIZE = 4;
   var params = new URLSearchParams(window.location.search);
+  var rawQuery = (params.get("q") || "").trim();
+  var rawDepartment = (params.get("department") || "").trim();
   var state = {
     departments: [],
     entries: [],
-    department: params.get("department") || "",
-    query: (params.get("q") || "").trim(),
+    department: rawQuery ? "" : rawDepartment,
+    query: rawQuery,
     pages: { list: Math.max(1, parseInt(params.get("page") || "1", 10) || 1) },
   };
 
@@ -17,7 +19,7 @@
   var departmentSelect = document.getElementById("department");
   var searchForm = document.querySelector(".topbar form.search");
   var searchInput = searchForm ? searchForm.querySelector('input[name="q"]') : null;
-  if (searchInput && state.query) searchInput.value = state.query;
+  if (searchInput) searchInput.value = state.query;
 
   function escapeHtml(value) {
     return String(value == null ? "" : value)
@@ -210,8 +212,8 @@
 
   function syncUrl() {
     var next = new URLSearchParams();
-    if (state.department) next.set("department", state.department);
     if (state.query) next.set("q", state.query);
+    else if (state.department) next.set("department", state.department);
     var page = Number(state.pages.list || 1);
     if (page > 1) next.set("page", String(page));
     var qs = next.toString();
@@ -289,8 +291,8 @@
 
   function loadEntries() {
     var params = new URLSearchParams();
-    if (state.department) params.set("department", state.department);
     if (state.query) params.set("q", state.query);
+    else if (state.department) params.set("department", state.department);
     var qs = params.toString();
     return fetchJson("/api/entries" + (qs ? "?" + qs : "")).then(function (data) {
       state.entries = data.entries || [];
@@ -338,6 +340,8 @@
       var button = event.target.closest(".chip");
       if (!button) return;
       state.department = button.getAttribute("data-slug") || "";
+      state.query = "";
+      if (searchInput) searchInput.value = "";
       state.pages = { list: 1 };
       renderChips();
       loadEntries().catch(function (err) {
@@ -351,11 +355,32 @@
     searchForm.addEventListener("submit", function (event) {
       event.preventDefault();
       state.query = searchInput ? searchInput.value.trim() : "";
+      state.department = "";
       state.pages = { list: 1 };
-      loadEntries().catch(function (err) {
+      renderChips();
+      loadEntries().then(function () {
+        var aidsSection = document.getElementById("ayudas");
+        if (aidsSection) {
+          aidsSection.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }).catch(function (err) {
         entriesEl.innerHTML = '<p class="empty">' + escapeHtml(err.message) + "</p>";
       });
     });
+
+    if (searchInput) {
+      searchInput.addEventListener("search", function () {
+        if (!searchInput.value.trim() && state.query) {
+          state.query = "";
+          state.department = "";
+          state.pages = { list: 1 };
+          renderChips();
+          loadEntries().catch(function (err) {
+            entriesEl.innerHTML = '<p class="empty">' + escapeHtml(err.message) + "</p>";
+          });
+        }
+      });
+    }
   }
 
   var infoEditor = window.AfroUpRichEditor ? window.AfroUpRichEditor.attach("#information") : null;
@@ -426,8 +451,15 @@
 
   window.addEventListener("popstate", function () {
     var next = new URLSearchParams(window.location.search);
-    state.department = next.get("department") || "";
-    state.query = (next.get("q") || "").trim();
+    var nextQuery = (next.get("q") || "").trim();
+    var nextDept = (next.get("department") || "").trim();
+    if (nextQuery) {
+      state.query = nextQuery;
+      state.department = "";
+    } else {
+      state.query = "";
+      state.department = nextDept;
+    }
     state.pages = { list: Math.max(1, parseInt(next.get("page") || "1", 10) || 1) };
     if (searchInput) searchInput.value = state.query;
     renderChips();

@@ -135,11 +135,6 @@ async function listPublishedEntries(env, url) {
   const where = ["e.status = 'published'"];
   const binds = [];
 
-  if (department) {
-    where.push("d.slug = ?");
-    binds.push(department);
-  }
-
   if (q) {
     const like = `%${q}%`;
     where.push(
@@ -148,6 +143,9 @@ async function listPublishedEntries(env, url) {
         OR IFNULL(e.contact_phone, '') LIKE ? OR IFNULL(e.contact_email, '') LIKE ?)`
     );
     binds.push(like, like, like, like, like, like, like, like);
+  } else if (department) {
+    where.push("d.slug = ?");
+    binds.push(department);
   }
 
   const { results } = await env.DB.prepare(
