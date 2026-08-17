@@ -16,6 +16,8 @@ const access = await requireModuleAccess(env.DB, Astro.cookies, Astro.url, local
 if (access instanceof Response) return access;
 const actor = access;
 const canCreate = await hasPermission(env.DB, actor.id, "categorias", "create");
+const canUpdate = await hasPermission(env.DB, actor.id, "categorias", "update");
+const canDelete = await hasPermission(env.DB, actor.id, "categorias", "delete");
 const translation = await translationAccess(env.DB, actor.id, "categorias", canCreate ? "create" : "update");
 const languages = await listSiteLanguages(env.DB);
 
@@ -86,6 +88,7 @@ const categories = (await env.DB.prepare(
             <tr>
               <th>{copy.adminCategoryTitle}</th>
               <th>{copy.adminCategorySlug}</th>
+              {canUpdate || canDelete ? <th></th> : null}
             </tr>
           </thead>
           <tbody>
@@ -93,6 +96,33 @@ const categories = (await env.DB.prepare(
               <tr>
                 <td class="font-semibold">{category.title ?? "—"}</td>
                 <td class="font-mono text-sm">{category.slug}</td>
+                {canUpdate || canDelete ? (
+                  <td>
+                    <div class="flex justify-end gap-1">
+                      {canUpdate ? (
+                        <a class="btn btn-square btn-ghost btn-sm" href={`${Astro.url.pathname.replace(/\/$/, "")}/${category.id}`} title={copy.adminEdit}>
+                          <svg class="size-4"><use href="#ic-edit"></use></svg>
+                        </a>
+                      ) : null}
+                      {canDelete ? (
+                        <button
+                          class="btn btn-square btn-ghost btn-sm"
+                          type="button"
+                          data-delete-id={category.id}
+                          data-name={category.title ?? category.slug}
+                          data-confirm={copy.adminDeleteConfirm}
+                          data-success={copy.adminEditorialDeleted}
+                          data-title={copy.adminDeleteTitle}
+                          data-accept={copy.adminDeleteAccept}
+                          data-cancel={copy.adminDeleteCancel}
+                          title={copy.adminRemove}
+                        >
+                          <svg class="size-4"><use href="#ic-trash"></use></svg>
+                        </button>
+                      ) : null}
+                    </div>
+                  </td>
+                ) : null}
               </tr>
             ))}
           </tbody>
@@ -100,30 +130,100 @@ const categories = (await env.DB.prepare(
       </div>
     </div>
   </div>
-</AdminLayout>
+
+<dialog id="admin-delete-dialog" class="modal">
+  <div class="modal-box max-w-[480px]">
+    <h3 class="font-display text-[20px] tracking-[-0.005em]" data-delete-title></h3>
+    <p class="mt-3 text-sm opacity-80" data-delete-message></p>
+    <div class="modal-action">
+      <form method="dialog" class="contents">
+        <button class="btn btn-ghost btn-sm" type="submit" data-delete-cancel></button>
+      </form>
+      <button class="btn btn-error btn-sm" type="button" data-delete-confirm></button>
+    </div>
+  </div>
+  <form method="dialog" class="modal-backdrop"><button type="submit">close</button></form>
+</dialog>
 
 <script is:inline>
   (function () {
-    document.querySelectorAll("form[data-editorial-form]").forEach(function (form) {
-      if (form.dataset.bound === "true") return;
-      form.dataset.bound = "true";
-      form.addEventListener("submit", function (event) {
-        event.preventDefault();
-        var data = new FormData(form);
-        fetch(form.action, { method: "POST", body: data })
-          .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
-          .then(function (result) {
-            if (result.ok) {
-              if (window.AfroUpFeedback) window.AfroUpFeedback.toast(form.getAttribute("data-success") || "Guardado.", "success");
-              setTimeout(function () { window.location.reload(); }, 700);
-              return;
-            }
-            if (window.AfroUpFeedback) window.AfroUpFeedback.toast(form.getAttribute("data-error") || "No pudimos guardar.", "error");
-          })
-          .catch(function () {
-            if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Error de red.", "error");
-          });
+    if (window.__adminEditorialBound) return;
+    window.__adminEditorialBound = true;
+    var setup = function () {
+      document.querySelectorAll("form[data-editorial-form]").forEach(function (form) {
+        if (form.dataset.bound === "true") return;
+        form.dataset.bound = "true";
+        form.addEventListener("submit", function (event) {
+          event.preventDefault();
+          fetch(form.action, { method: "POST", body: new FormData(form) })
+            .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
+            .then(function (result) {
+              if (result.ok) {
+                if (window.AfroUpFeedback) window.AfroUpFeedback.toast(form.getAttribute("data-success") || "Guardado.", "success");
+                setTimeout(function () { window.location.reload(); }, 700);
+                return;
+              }
+              if (window.AfroUpFeedback) window.AfroUpFeedback.toast(form.getAttribute("data-error") || "No pudimos guardar.", "error");
+            })
+            .catch(function () {
+              if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Error de red.", "error");
+            });
+        });
       });
+      var dialog = document.getElementById("admin-delete-dialog");
+      if (!dialog) return;
+      if (dialog.dataset.bound !== "true") {
+        dialog.dataset.bound = "true";
+        var pending = null;
+        dialog.querySelector("[data-delete-confirm]").addEventListener("click", function () {
+          if (!pending) return;
+          var data = new FormData();
+          data.append("_intent", "delete");
+          data.append("id", pending.id);
+          fetch("/api/admin/categories", { method: "POST", body: data })
+            .then(function (res) { return res.json(); })
+            .then(function (body) {
+              if (body && body.ok) {
+                if (window.AfroUpFeedback) window.AfroUpFeedback.toast(pending.success || "Eliminado.", "success");
+                setTimeout(function () { window.location.reload(); }, 700);
+                return;
+              }
+              if (window.AfroUpFeedback) window.AfroUpFeedback.toast(pending.error || "No pudimos guardar.", "error");
+            })
+            .catch(function () {
+              if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Error de red.", "error");
+            });
+          dialog.close();
+        });
+      }
+      document.querySelectorAll("button[data-delete-id]").forEach(function (button) {
+        if (button.dataset.bound === "true") return;
+        button.dataset.bound = "true";
+        button.addEventListener("click", function () {
+          var name = button.getAttribute("data-name") || "";
+          var message = (button.getAttribute("data-confirm") || "").replace("{title}", name);
+          dialog.querySelector("[data-delete-title]").textContent = button.getAttribute("data-title") || "";
+          dialog.querySelector("[data-delete-message]").textContent = message;
+          dialog.querySelector("[data-delete-confirm]").textContent = button.getAttribute("data-accept") || "Eliminar";
+          dialog.querySelector("[data-delete-cancel]").textContent = button.getAttribute("data-cancel") || "Cancelar";
+          pending = {
+            id: button.getAttribute("data-delete-id"),
+            success: button.getAttribute("data-success") || "Eliminado.",
+            error: "No pudimos guardar.",
+          };
+          if (typeof dialog.showModal === "function") dialog.showModal();
+        });
+      });
+    };
+    setup();
+    document.addEventListener("astro:page-load", function () {
+      document.querySelectorAll("form[data-editorial-form]").forEach(function (form) { form.dataset.bound = ""; });
+      document.querySelectorAll("button[data-delete-id]").forEach(function (button) { button.dataset.bound = ""; });
+      setup();
     });
   })();
 </script>
+
+</AdminLayout>
+
+

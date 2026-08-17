@@ -14,6 +14,7 @@ import {
   slugify,
   translationAccess,
 } from "../../../lib/editorial";
+import { isReservedCategorySlug } from "../../../lib/category-routes";
 import { applySearchDocument, removeSearchDocuments, searchDocumentPath } from "../../../lib/search-documents";
 import { hasPermission } from "../../../lib/rbac";
 
@@ -97,7 +98,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
   const requestedSlug = String(form.get("slug") ?? "").trim().toLowerCase();
   const slug = requestedSlug || slugify(primary.title);
-  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) return json({ ok: false, error: "slug_invalid" }, 400);
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) || isReservedCategorySlug(slug)) {
+    return json({ ok: false, error: "slug_invalid" }, 400);
+  }
 
   const taken = await env.DB.prepare(
     "SELECT id FROM article_categories WHERE slug = ? AND id != ? LIMIT 1",

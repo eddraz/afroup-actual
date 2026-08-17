@@ -1,0 +1,104 @@
+---
+import { env } from "cloudflare:workers";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getCategoryTheme, isReservedCategorySlug } from "../../lib/category-routes";
+import { defaultLocale, localizedPath } from "../../lib/i18n";
+import { resolveRequestCopy } from "../../lib/request-locale";
+import { routeIds } from "../../lib/paths";
+
+export const prerender = false;
+
+const { locale, copy } = await resolveRequestCopy(env.DB, Astro.url);
+const slug = String(Astro.params.slug ?? "").trim().toLowerCase();
+if (!slug || isReservedCategorySlug(slug)) return new Response(null, { status: 404 });
+
+const categoryTheme = getCategoryTheme(slug);
+
+const category = await env.DB.prepare(
+  `SELECT c.id, c.slug,
+          COALESCE(
+            (SELECT title FROM article_category_locales WHERE category_id = c.id AND locale = ?),
+            (SELECT title FROM article_category_locales WHERE category_id = c.id AND locale = ?)
+          ) AS title,
+          COALESCE(
+            (SELECT description FROM article_category_locales WHERE category_id = c.id AND locale = ?),
+            (SELECT description FROM article_category_locales WHERE category_id = c.id AND locale = ?)
+          ) AS description
+     FROM article_categories c
+    WHERE c.slug = ?
+    LIMIT 1`,
+)
+  .bind(locale, defaultLocale, locale, defaultLocale, slug)
+  .first<{ id: number; slug: string; title: string | null; description: string | null }>();
+
+if (!category?.title) return new Response(null, { status: 404 });
+
+const homeHref = localizedPath(locale, routeIds.home);
+const articles = (await env.DB.prepare(
+  `SELECT a.slug,
+          COALESCE(
+            (SELECT title FROM article_locales WHERE article_id = a.id AND locale = ?),
+            (SELECT title FROM article_locales WHERE article_id = a.id AND locale = ?)
+          ) AS title,
+          COALESCE(
+            (SELECT description FROM article_locales WHERE article_id = a.id AND locale = ?),
+            (SELECT description FROM article_locales WHERE article_id = a.id AND locale = ?)
+          ) AS description
+     FROM articles a
+     JOIN article_category_map m ON m.article_id = a.id
+    WHERE m.category_id = ? AND a.status = 'published'
+    ORDER BY a.published_at DESC, a.id DESC`,
+)
+  .bind(locale, defaultLocale, locale, defaultLocale, category.id)
+  .all<{ slug: string; title: string | null; description: string | null }>()).results ?? [];
+---
+
+<BaseLayout title={`AfroUp — ${category.title}`} active={slug}>
+  <div class="breadcrumbs text-sm">
+    <ul>
+      <li><a href={homeHref}>{copy.navHome}</a></li>
+      <li>{category.title}</li>
+    </ul>
+  </div>
+
+  <section class="hero relative mt-6 overflow-hidden rounded-[24px] bg-primary text-primary-content shadow-lg">
+    <div class="absolute inset-y-0 right-0 w-[200px] bg-[url('/assets/pattern.png')] bg-cover bg-center max-md:w-[90px]"></div>
+    <div class="hero-content relative w-full flex-col items-start gap-3 px-6 py-8 lg:px-11 lg:py-11">
+      <p class="text-accent text-xs font-extrabold tracking-[0.18em] uppercase">{copy.categoryEyebrow}</p>
+      <h1 class="font-display text-[31px] font-bold lg:text-[44px]">{category.title}</h1>
+      {category.description ? (
+        <p class="max-w-[56ch] text-[17px] leading-[1.55] text-primary-content/80">{category.description}</p>
+      ) : null}
+    </div>
+  </section>
+
+  {articles.length ? (
+    <div class="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
+      {articles.map((article, index) => (
+        <a
+          class:list={["card bg-base-200 shadow", index === 0 && "sm:col-span-2 sm:card-side"]}
+          href={localizedPath(locale, `${category.slug}/${article.slug}`)}
+        >
+          <figure class:list={["relative bg-primary/20", index === 0 ? "min-h-64 sm:w-1/2" : "aspect-[16/10]"]}></figure>
+          <div class="card-body">
+            <span class:list={["inline-flex items-center gap-2 text-[11.5px] font-extrabold tracking-[0.1em] uppercase", categoryTheme.textClass]}>
+              <span class:list={["size-2.5 rounded-[3px]", categoryTheme.dotClass]}></span>
+              {category.title}
+            </span>
+            <h3 class="card-title font-display">{article.title}</h3>
+            {article.description ? <p>{article.description}</p> : null}
+          </div>
+        </a>
+      ))}
+    </div>
+  ) : (
+    <section class="mx-auto mt-12 flex max-w-[560px] flex-col items-center gap-3 text-center">
+      <span class:list={["inline-flex items-center gap-2 text-[11.5px] font-extrabold tracking-[0.1em] uppercase", categoryTheme.textClass]}>
+        <span class:list={["size-2.5 rounded-[3px]", categoryTheme.dotClass]}></span>
+        {category.title}
+      </span>
+      <h2 class="font-display text-[28px] leading-[1.1] font-bold lg:text-[34px]">{copy.categoryEmpty}</h2>
+      <p class="text-sm opacity-70">{copy.categoryEmptyLead}</p>
+    </section>
+  )}
+</BaseLayout>

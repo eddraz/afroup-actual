@@ -10,6 +10,7 @@ import { defaultLocale } from "../../../lib/i18n";
 import {
   canManageOwnedRecord,
   parseLocaleFields,
+  parseTagList,
   plannedLocales,
   slugify,
   translationAccess,
@@ -24,6 +25,14 @@ function json(body: unknown, status = 200) {
     status,
     headers: { "content-type": "application/json; charset=utf-8" },
   });
+}
+
+function parseCategoryIds(form: FormData): number[] {
+  const ids = form
+    .getAll("categoryIds")
+    .map((value) => Number(value))
+    .filter((value) => Number.isFinite(value) && value > 0);
+  return Array.from(new Set(ids));
 }
 
 async function loadLocales(articleId: number) {
@@ -41,21 +50,39 @@ async function loadLocales(articleId: number) {
   return { titles, descriptions };
 }
 
-async function categoryKind(categoryId: number | null, locale: string): Promise<string> {
-  if (!categoryId) return "Artículo";
-  const row = await env.DB.prepare(
-    `SELECT COALESCE(
-       (SELECT title FROM article_category_locales WHERE category_id = ? AND locale = ?),
-       (SELECT title FROM article_category_locales WHERE category_id = ? AND locale = ?)
-     ) AS title`,
-  )
-    .bind(categoryId, locale, categoryId, defaultLocale)
-    .first<{ title: string | null }>();
-  return row?.title ? `Artículo · ${row.title}` : "Artículo";
+async function loadMappedCategories(articleId: number) {
+  return (
+    (
+      await env.DB.prepare(
+        `SELECT c.slug,
+                COALESCE(
+                  (SELECT title FROM article_category_locales WHERE category_id = c.id AND locale = ?),
+                  (SELECT title FROM article_category_locales WHERE category_id = c.id AND locale = ?)
+                ) AS title
+           FROM article_category_map m
+           JOIN article_categories c ON c.id = m.category_id
+          WHERE m.article_id = ?
+          ORDER BY m.sort_order, c.id`,
+      )
+        .bind(defaultLocale, defaultLocale, articleId)
+        .all<{ slug: string; title: string | null }>()
+    ).results ?? []
+  );
 }
 
-async function syncIndex(articleId: number, slug: string, categoryId: number | null, published: boolean) {
+async function loadTags(articleId: number) {
+  return (
+    (await env.DB.prepare("SELECT tag FROM article_tags WHERE article_id = ? ORDER BY tag").bind(articleId).all<{ tag: string }>())
+      .results ?? []
+  ).map((row) => row.tag);
+}
+
+async function syncIndex(articleId: number, slug: string, published: boolean) {
   const { titles, descriptions } = await loadLocales(articleId);
+  const categories = await loadMappedCategories(articleId);
+  const tags = await loadTags(articleId);
+  const primarySlug = categories[0]?.slug;
+  const kind = categories[0]?.title ? `Artículo · ${categories[0].title}` : "Artículo";
   const locales = new Set([...Object.keys(titles), ...Object.keys(descriptions), defaultLocale]);
   for (const locale of locales) {
     await applySearchDocument(env.DB, {
@@ -64,9 +91,10 @@ async function syncIndex(articleId: number, slug: string, categoryId: number | n
       locale,
       title: titles[locale] ?? "",
       description: descriptions[locale] ?? "",
-      kind: await categoryKind(categoryId, locale),
-      path: searchDocumentPath(locale, `articulo/${slug}`),
-      published,
+      kind,
+      path: searchDocumentPath(locale, primarySlug ? `${primarySlug}/${slug}` : slug),
+      published: published && Boolean(primarySlug),
+      tags,
     });
   }
 }
@@ -110,8 +138,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   const slug = requestedSlug || slugify(primary.title);
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) return json({ ok: false, error: "slug_invalid" }, 400);
   const status = form.get("status") === "published" ? "published" : "draft";
-  const categoryRaw = Number(form.get("categoryId"));
-  const categoryId = Number.isFinite(categoryRaw) && categoryRaw > 0 ? categoryRaw : null;
+  const categoryIds = parseCategoryIds(form);
+  const tags = parseTagList(String(form.get("tags") ?? ""));
+  if (status === "published" && categoryIds.length === 0) {
+    return json({ ok: false, error: "category_required" }, 400);
+  }
 
   const taken = await env.DB.prepare("SELECT id FROM articles WHERE slug = ? AND id != ? LIMIT 1")
     .bind(slug, action === "update" ? id : 0)
@@ -121,18 +152,18 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   let articleId = id;
   if (action === "create") {
     const created = await env.DB.prepare(
-      `INSERT INTO articles (slug, category_id, created_by, status, published_at)
-       VALUES (?, ?, ?, ?, CASE WHEN ? = 'published' THEN datetime('now') ELSE NULL END)
+      `INSERT INTO articles (slug, created_by, status, published_at)
+       VALUES (?, ?, ?, CASE WHEN ? = 'published' THEN datetime('now') ELSE NULL END)
        RETURNING id`,
     )
-      .bind(slug, categoryId, actor.id, status, status)
+      .bind(slug, actor.id, status, status)
       .first<{ id: number }>();
     if (!created) return json({ ok: false, error: "insert_failed" }, 500);
     articleId = created.id;
   } else {
     await env.DB.prepare(
       `UPDATE articles
-          SET slug = ?, category_id = ?, status = ?,
+          SET slug = ?, status = ?,
               published_at = CASE
                 WHEN ? = 'published' THEN COALESCE(published_at, datetime('now'))
                 ELSE NULL
@@ -140,15 +171,27 @@ export const POST: APIRoute = async ({ request, cookies }) => {
               updated_at = datetime('now')
         WHERE id = ?`,
     )
-      .bind(slug, categoryId, status, status, articleId)
+      .bind(slug, status, status, articleId)
       .run();
     await env.DB.prepare("DELETE FROM article_locales WHERE article_id = ?").bind(articleId).run();
+    await env.DB.prepare("DELETE FROM article_category_map WHERE article_id = ?").bind(articleId).run();
+    await env.DB.prepare("DELETE FROM article_tags WHERE article_id = ?").bind(articleId).run();
   }
 
-  const stmt = env.DB.prepare(
+  const localeStmt = env.DB.prepare(
     "INSERT INTO article_locales (article_id, locale, title, description) VALUES (?, ?, ?, ?)",
   );
-  await env.DB.batch(locales.map((row) => stmt.bind(articleId, row.locale, row.title, row.description)));
-  await syncIndex(articleId, slug, categoryId, status === "published");
+  await env.DB.batch(locales.map((row) => localeStmt.bind(articleId, row.locale, row.title, row.description)));
+  if (categoryIds.length) {
+    const mapStmt = env.DB.prepare(
+      "INSERT INTO article_category_map (article_id, category_id, sort_order) VALUES (?, ?, ?)",
+    );
+    await env.DB.batch(categoryIds.map((categoryId, index) => mapStmt.bind(articleId, categoryId, index)));
+  }
+  if (tags.length) {
+    const tagStmt = env.DB.prepare("INSERT INTO article_tags (article_id, tag) VALUES (?, ?)");
+    await env.DB.batch(tags.map((tag) => tagStmt.bind(articleId, tag)));
+  }
+  await syncIndex(articleId, slug, status === "published");
   return json({ ok: true, id: articleId });
 };

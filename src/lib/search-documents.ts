@@ -13,6 +13,7 @@ export interface SearchDocumentInput {
   kind: string;
   path: string;
   published: boolean;
+  tags?: string[];
   extra?: string | null;
 }
 
@@ -45,6 +46,7 @@ export function searchDocumentPath(locale: string, rest: string): string {
 export function planSearchDocument(input: SearchDocumentInput): SearchDocumentPlan {
   const title = clean(input.title);
   const summary = clean(input.description);
+  const labelTags = (input.tags ?? []).map(clean).filter(Boolean);
   if (!input.published || !title) {
     return {
       action: "delete",
@@ -61,7 +63,7 @@ export function planSearchDocument(input: SearchDocumentInput): SearchDocumentPl
       locale: input.locale,
       title,
       summary,
-      tags: [title, summary].filter(Boolean).join(" "),
+      tags: [title, summary, ...labelTags].filter(Boolean).join(" "),
       kind: clean(input.kind),
       path: input.path,
       extra: input.extra ?? null,

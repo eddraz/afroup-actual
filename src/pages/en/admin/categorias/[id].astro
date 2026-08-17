@@ -1,0 +1,99 @@
+---
+import { env } from "cloudflare:workers";
+import AdminLayout from "../../../../layouts/AdminLayout.astro";
+import PageLocaleSwitch from "../../../../components/PageLocaleSwitch.astro";
+import { joinPath, localizedPath } from "../../../../lib/i18n";
+import { requireModuleAccess } from "../../../../lib/admin-scope";
+import { defaultLocale } from "../../../../lib/i18n";
+import { resolveRequestCopy } from "../../../../lib/request-locale";
+import { canManageOwnedRecord, translationAccess } from "../../../../lib/editorial";
+import { routeIds } from "../../../../lib/paths";
+import { listSiteLanguages } from "../../../../lib/site-languages";
+
+export const prerender = false;
+
+const { locale, copy } = await resolveRequestCopy(env.DB, Astro.url);
+const access = await requireModuleAccess(env.DB, Astro.cookies, Astro.url, locale, "categorias", "update");
+if (access instanceof Response) return access;
+const actor = access;
+
+const id = Number(Astro.params.id);
+if (!Number.isFinite(id)) return new Response(null, { status: 404 });
+if (!(await canManageOwnedRecord(env.DB, actor.id, "article_categories", id, "categorias"))) {
+  return Response.redirect(localizedPath(locale, joinPath(routeIds.admin, "categorias")), 303);
+}
+
+const category = await env.DB.prepare("SELECT id, slug FROM article_categories WHERE id = ? LIMIT 1")
+  .bind(id)
+  .first<{ id: number; slug: string }>();
+if (!category) return new Response(null, { status: 404 });
+
+const localeRows = (await env.DB.prepare(
+  "SELECT locale, title, description FROM article_category_locales WHERE category_id = ?",
+)
+  .bind(id)
+  .all<{ locale: string; title: string; description: string }>()).results ?? [];
+const titles = Object.fromEntries(localeRows.map((row) => [row.locale, row.title]));
+const descriptions = Object.fromEntries(localeRows.map((row) => [row.locale, row.description]));
+const translation = await translationAccess(env.DB, actor.id, "categorias", "update");
+const languages = await listSiteLanguages(env.DB);
+const listHref = localizedPath(locale, joinPath(routeIds.admin, "categorias"));
+---
+
+<AdminLayout title={copy.adminEdit} active="categories">
+  <a class="btn btn-ghost btn-sm mb-4" href={listHref}>{copy.adminCategories}</a>
+  <form method="post" action="/api/admin/categories" class="card bg-base-100 border border-base-300 shadow-sm" data-editorial-form data-success={copy.adminEditorialSaved} data-error={copy.adminEditorialSaveError}>
+    <div class="card-body">
+      <input type="hidden" name="id" value={category.id} />
+      <div class="flex justify-end">
+        <PageLocaleSwitch languages={languages} label={copy.adminLanguages} current={defaultLocale} />
+      </div>
+      {languages.map((language) => {
+        const locked = language.code !== defaultLocale && !translation.canWrite && !translation.canUseAi;
+        return (
+          <div class:list={["grid grid-cols-1 gap-3", language.code !== defaultLocale && "hidden"]} data-i18n-panel={language.code}>
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend">{copy.adminCategoryTitle} · {language.native_name}</legend>
+              <input class="input w-full" name={`title[${language.code}]`} maxlength="160" required={language.code === defaultLocale} disabled={locked} value={titles[language.code] ?? ""} />
+            </fieldset>
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend">{copy.adminCategoryDescription} · {language.native_name}</legend>
+              <textarea class="textarea w-full" name={`description[${language.code}]`} rows="3" maxlength="400" disabled={locked}>{descriptions[language.code] ?? ""}</textarea>
+            </fieldset>
+          </div>
+        );
+      })}
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">{copy.adminCategorySlug}</legend>
+        <input class="input w-full" name="slug" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" maxlength="80" value={category.slug} />
+      </fieldset>
+      <div class="flex justify-end">
+        <button class="btn btn-primary btn-sm" type="submit">{copy.adminSave}</button>
+      </div>
+    </div>
+  </form>
+</AdminLayout>
+
+<script is:inline>
+  (function () {
+    document.querySelectorAll("form[data-editorial-form]").forEach(function (form) {
+      if (form.dataset.bound === "true") return;
+      form.dataset.bound = "true";
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+        fetch(form.action, { method: "POST", body: new FormData(form) })
+          .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
+          .then(function (result) {
+            if (result.ok) {
+              if (window.AfroUpFeedback) window.AfroUpFeedback.toast(form.getAttribute("data-success") || "Guardado.", "success");
+              return;
+            }
+            if (window.AfroUpFeedback) window.AfroUpFeedback.toast(form.getAttribute("data-error") || "No pudimos guardar.", "error");
+          })
+          .catch(function () {
+            if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Error de red.", "error");
+          });
+      });
+    });
+  })();
+</script>

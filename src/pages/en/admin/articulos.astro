@@ -38,15 +38,21 @@ const items = (await env.DB.prepare(
             WHERE l.article_id = a.id
             ORDER BY CASE WHEN l.locale = ? THEN 0 ELSE 1 END, l.locale
             LIMIT 1) AS title,
-          (SELECT title FROM article_category_locales cl
-            WHERE cl.category_id = a.category_id
-            ORDER BY CASE WHEN cl.locale = ? THEN 0 ELSE 1 END, cl.locale
-            LIMIT 1) AS category_title
+          (SELECT GROUP_CONCAT(title, ', ')
+             FROM (
+               SELECT COALESCE(
+                 (SELECT title FROM article_category_locales WHERE category_id = m.category_id AND locale = ?),
+                 (SELECT title FROM article_category_locales WHERE category_id = m.category_id AND locale = ?)
+               ) AS title
+                 FROM article_category_map m
+                WHERE m.article_id = a.id
+                ORDER BY m.sort_order, m.category_id
+             )) AS category_title
      FROM articles a
     WHERE ${visibleOwnerClause("a.created_by")}
     ORDER BY a.updated_at DESC, a.id DESC`,
 )
-  .bind(locale, locale, actor.id, "articulos", actor.id)
+  .bind(locale, locale, defaultLocale, actor.id, "articulos", actor.id)
   .all<ArticleRow>()).results ?? [];
 
 const categories = (await env.DB.prepare(
@@ -97,10 +103,18 @@ const categories = (await env.DB.prepare(
           </fieldset>
           <fieldset class="fieldset">
             <legend class="fieldset-legend">{copy.adminArticleCategory}</legend>
-            <select class="select w-full" name="categoryId">
-              <option value="">{copy.adminArticleNoCategory}</option>
-              {categories.map((category) => <option value={category.id}>{category.title}</option>)}
-            </select>
+            <div class="flex flex-col gap-2">
+              {categories.map((category) => (
+                <label class="label cursor-pointer justify-start gap-2">
+                  <input class="checkbox checkbox-sm" type="checkbox" name="categoryIds" value={category.id} />
+                  <span class="label-text">{category.title}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend">{copy.adminArticleTags}</legend>
+            <input class="input w-full" name="tags" maxlength="240" placeholder={copy.adminArticleTagsHelp} />
           </fieldset>
           <fieldset class="fieldset">
             <legend class="fieldset-legend">{copy.adminArticleStatus}</legend>

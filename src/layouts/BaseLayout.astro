@@ -10,7 +10,7 @@ import { routeIds, socials, type NavKey } from "../lib/paths";
 
 interface Props {
   title?: string;
-  active?: NavKey;
+  active?: NavKey | string;
 }
 
 const locale = getLocaleFromUrl(Astro.url);

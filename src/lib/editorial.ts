@@ -5,15 +5,7 @@ import { defaultLocale } from "./i18n";
 import { effectiveGrant } from "./permission-grants";
 import type { PermissionAction } from "./rbac";
 
-export function slugify(value: string): string {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 80);
-}
+export { parseTagList, slugify } from "./slugs";
 
 export function parseLocaleFields(form: FormData, field: "title" | "description"): Record<string, string> {
   const values: Record<string, string> = {};
@@ -71,10 +63,11 @@ export async function canManageOwnedRecord(
     .bind(recordId)
     .first<{ created_by: number | null }>();
   if (!row) return false;
+  if (row.created_by === null) return true;
   if (row.created_by === actorId) return true;
   return hasSharedRecord(db, actorId, moduleSlug, recordId);
 }
 
 export function visibleOwnerClause(ownerColumn = "created_by", idColumn = "id"): string {
-  return `(${ownerColumn} = ? OR ${idColumn} IN (SELECT record_id FROM record_shares WHERE module_slug = ? AND shared_with_id = ?))`;
+  return `(${ownerColumn} = ? OR ${ownerColumn} IS NULL OR ${idColumn} IN (SELECT record_id FROM record_shares WHERE module_slug = ? AND shared_with_id = ?))`;
 }

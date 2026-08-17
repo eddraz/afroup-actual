@@ -1,8 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import { planSearchDocument, searchDocumentPath } from "./search-documents";
+import { parseTagList } from "./slugs";
 
 describe("planSearchDocument", () => {
-  test("upserts a published locale with title", () => {
+  test("upserts a published locale with title and tags", () => {
     expect(
       planSearchDocument({
         moduleSlug: "articulos",
@@ -11,8 +12,9 @@ describe("planSearchDocument", () => {
         title: "Palenques",
         description: "Freedom territories",
         kind: "Article · History",
-        path: "/en/articulo/palenques",
+        path: "/en/africa/palenques",
         published: true,
+        tags: ["palenque", "cimarronaje"],
       }),
     ).toEqual({
       action: "upsert",
@@ -22,9 +24,9 @@ describe("planSearchDocument", () => {
         locale: "en",
         title: "Palenques",
         summary: "Freedom territories",
-        tags: "Palenques Freedom territories",
+        tags: "Palenques Freedom territories palenque cimarronaje",
         kind: "Article · History",
-        path: "/en/articulo/palenques",
+        path: "/en/africa/palenques",
         extra: null,
       },
     });
@@ -63,7 +65,17 @@ describe("searchDocumentPath", () => {
   test("prefixes non-default locales", () => {
     expect(searchDocumentPath("es", "africa")).toBe("/africa");
     expect(searchDocumentPath("en", "africa")).toBe("/en/africa");
-    expect(searchDocumentPath("es", "articulo/palenques")).toBe("/articulo/palenques");
-    expect(searchDocumentPath("pt", "articulo/palenques")).toBe("/pt/articulo/palenques");
+    expect(searchDocumentPath("es", "africa/palenques")).toBe("/africa/palenques");
+    expect(searchDocumentPath("pt", "africa/palenques")).toBe("/pt/africa/palenques");
+  });
+});
+
+describe("parseTagList", () => {
+  test("splits, slugs, and dedupes tags", () => {
+    expect(parseTagList("Palenque, cimarronaje, palenque, #Historia viva")).toEqual([
+      "palenque",
+      "cimarronaje",
+      "historia-viva",
+    ]);
   });
 });

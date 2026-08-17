@@ -26,13 +26,8 @@
 - Keep AI actions in purple via the `ai` theme token and `btn-ai` / `checkbox-ai` / `badge-ai`. Only elements that execute or grant AI use those classes.
 - Keep site-wide Astro view transitions via `ClientRouter` in `layouts/BaseLayout.astro` and reapply the theme on `astro:before-swap` / `astro:after-swap`.
 - Keep shared route targets in `lib/paths.ts` and the daisyUI theme and Tailwind entry in `styles/global.css`.
-- Keep editorial content in `article_categories` / `articles` with per-locale title and description. Translation follows the bio rules: by hand writes locales, AI may persist an applied draft, the original is a guide. Saving a published locale upserts `search_documents`; drafts and deletes remove those rows. The `categorias` and `articulos` modules gate the admin pages.
-- Keep the Africa category mockup at `/africa` and `/en/africa`, wired through `paths.africa`.
-- Keep the Diaspora category mockup at `/diaspora` and `/en/diaspora`, wired through `paths.diaspora`.
-- Keep the Antiracism category mockup at `/antirracismo` and `/en/antirracismo`, wired through `paths.antirracismo`.
-- Keep the History category mockup at `/historia` and `/en/historia`, wired through `paths.historia`.
-- Keep the Aesthetics category mockup at `/estetica` and `/en/estetica`, wired through `paths.estetica`.
-- Keep the News category mockup at `/actualidad` and `/en/actualidad`, wired through `paths.actualidad`.
+- Keep editorial content in `article_categories` / `articles` with per-locale title and description. Rows with `created_by` null are site catalog and stay visible to anyone with module read. An article can belong to many categories via `article_category_map` and carry tags in `article_tags`. Public URLs are `/{category}/{article}`. The first mapped category is the canonical search path. Translation follows the bio rules. Saving a published locale upserts `search_documents`; drafts and deletes remove those rows.
+- Keep category color themes aligned with the sidebar navigation dot tokens (`africa`/`actualidad` → `primary`, `diaspora`/`estetica` → `accent`, `antirracismo`/`historia` → `secondary`) via `lib/category-routes.ts` `getCategoryTheme`.
 - Keep the article mockup at `/articulo` and `/en/articulo`, wired through `paths.article`.
 - Keep the donation mockup at `/donacion` and `/en/donacion`, wired through `paths.donate`.
 - Keep the support mockup at `/apoyanos` and `/en/apoyanos`, wired through `paths.support`.
