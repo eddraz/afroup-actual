@@ -4,6 +4,7 @@ import {
   parseLocaleFields,
   plannedArticleLocales,
   plannedLocales,
+  visibleOwnerClause,
 } from "./editorial";
 
 describe("calculateReadingTimeMinutes", () => {
@@ -58,5 +59,22 @@ describe("plannedArticleLocales", () => {
       { locale: "es", title: "Título", description: "Resumen", content_html: "<p>Hola</p>" },
       { locale: "en", title: "Title", description: "Summary", content_html: "<p>Hello</p>" },
     ]);
+  });
+});
+
+describe("visibleOwnerClause", () => {
+  test("resolves default created_by and id", () => {
+    expect(visibleOwnerClause()).toBe(
+      "(created_by = ? OR created_by IS NULL OR id IN (SELECT record_id FROM record_shares WHERE module_slug = ? AND shared_with_id = ?))",
+    );
+  });
+
+  test("auto-resolves table alias for idColumn when ownerColumn is qualified", () => {
+    expect(visibleOwnerClause("a.created_by")).toBe(
+      "(a.created_by = ? OR a.created_by IS NULL OR a.id IN (SELECT record_id FROM record_shares WHERE module_slug = ? AND shared_with_id = ?))",
+    );
+    expect(visibleOwnerClause("c.created_by")).toBe(
+      "(c.created_by = ? OR c.created_by IS NULL OR c.id IN (SELECT record_id FROM record_shares WHERE module_slug = ? AND shared_with_id = ?))",
+    );
   });
 });

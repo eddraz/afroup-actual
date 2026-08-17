@@ -108,6 +108,8 @@ export async function canManageOwnedRecord(
   return hasSharedRecord(db, actorId, moduleSlug, recordId);
 }
 
-export function visibleOwnerClause(ownerColumn = "created_by", idColumn = "id"): string {
-  return `(${ownerColumn} = ? OR ${ownerColumn} IS NULL OR ${idColumn} IN (SELECT record_id FROM record_shares WHERE module_slug = ? AND shared_with_id = ?))`;
+export function visibleOwnerClause(ownerColumn = "created_by", idColumn?: string): string {
+  const tableAlias = ownerColumn.includes(".") ? ownerColumn.split(".")[0] : "";
+  const resolvedId = idColumn ?? (tableAlias ? `${tableAlias}.id` : "id");
+  return `(${ownerColumn} = ? OR ${ownerColumn} IS NULL OR ${resolvedId} IN (SELECT record_id FROM record_shares WHERE module_slug = ? AND shared_with_id = ?))`;
 }
