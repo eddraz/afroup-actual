@@ -21,6 +21,13 @@
   var departmentSelect = document.getElementById("edit-department");
   var searchForm = document.getElementById("admin-search");
   var searchInput = document.getElementById("admin-q");
+  var alertForm = document.getElementById("alert-form");
+  var alertActive = document.getElementById("alert-active");
+  var alertMessage = document.getElementById("alert-message");
+  var alertLinkUrl = document.getElementById("alert-link-url");
+  var alertLinkText = document.getElementById("alert-link-text");
+  var alertClearBtn = document.getElementById("alert-clear-btn");
+  var alertMsg = document.getElementById("alert-msg");
   var infoEditor = window.AfroUpRichEditor ? window.AfroUpRichEditor.attach("#edit-information") : null;
 
   function escapeHtml(value) {
@@ -238,6 +245,64 @@
       });
   }
 
+  function loadAlert() {
+    if (!alertForm) return Promise.resolve();
+    return fetchJson("/api/admin/alert").then(function (data) {
+      var alert = data && data.alert;
+      if (alert) {
+        if (alertActive) alertActive.checked = !!alert.is_active;
+        if (alertMessage) alertMessage.value = alert.message || "";
+        if (alertLinkUrl) alertLinkUrl.value = alert.link_url || "";
+        if (alertLinkText) alertLinkText.value = alert.link_text || "";
+      }
+    });
+  }
+
+  function saveAlert() {
+    setMsg(alertMsg, "Guardando…", true);
+    var payload = {
+      is_active: alertActive ? alertActive.checked : false,
+      message: alertMessage ? alertMessage.value.trim() : "",
+      link_url: alertLinkUrl ? alertLinkUrl.value.trim() : "",
+      link_text: alertLinkText ? alertLinkText.value.trim() : "",
+    };
+    return fetchJson("/api/admin/alert", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+      .then(function (res) {
+        setMsg(alertMsg, res.message || "Alerta guardada correctamente.", true);
+        setTimeout(function () {
+          setMsg(alertMsg, "");
+        }, 4000);
+      })
+      .catch(function (err) {
+        setMsg(alertMsg, err.message, false);
+      });
+  }
+
+  function clearAlert() {
+    if (alertActive) alertActive.checked = false;
+    if (alertMessage) alertMessage.value = "";
+    if (alertLinkUrl) alertLinkUrl.value = "";
+    if (alertLinkText) alertLinkText.value = "";
+    saveAlert();
+  }
+
+  if (alertForm) {
+    alertForm.addEventListener("submit", function (event) {
+      event.preventDefault();
+      saveAlert();
+    });
+  }
+
+  if (alertClearBtn) {
+    alertClearBtn.addEventListener("click", function () {
+      clearAlert();
+    });
+  }
+
   loginForm.addEventListener("submit", function (event) {
     event.preventDefault();
     fetchJson("/api/admin/login", {
@@ -250,7 +315,7 @@
     })
       .then(function () {
         setMsg(loginMsg, "", true);
-        return Promise.all([loadDepartments(), loadCategories(), loadEntries()]);
+        return Promise.all([loadDepartments(), loadCategories(), loadEntries(), loadAlert()]);
       })
       .catch(function (err) {
         setMsg(loginMsg, err.message, false);
@@ -340,7 +405,7 @@
     saveEntry("rejected");
   });
 
-  Promise.all([loadDepartments(), loadCategories(), loadEntries()]).catch(function (err) {
+  Promise.all([loadDepartments(), loadCategories(), loadEntries(), loadAlert()]).catch(function (err) {
     if (err.status === 401) {
       showDashboard(false);
       return;

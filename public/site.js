@@ -76,6 +76,46 @@
       '</nav>';
   }
 
+  function alertHTML() {
+    return '<div class="site-alert-bar" id="site-alert-bar" hidden>' +
+      '<div class="wrap">' +
+      '<div class="site-alert-inner">' +
+      '<span class="site-alert-tag"><span class="pulse-dot"></span> ÚLTIMA HORA</span> ' +
+      '<span class="site-alert-msg" id="site-alert-msg"></span>' +
+      '<a class="site-alert-link" id="site-alert-link" href="#" target="_blank" rel="noopener noreferrer" hidden></a>' +
+      '</div></div></div>';
+  }
+
+  function initAlert() {
+    var bar = document.getElementById('site-alert-bar');
+    if (!bar) return;
+    fetch('/api/alert')
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        var alert = data && data.alert;
+        if (alert && alert.is_active && alert.message && alert.message.trim()) {
+          var msgEl = document.getElementById('site-alert-msg');
+          var linkEl = document.getElementById('site-alert-link');
+          if (msgEl) msgEl.textContent = alert.message.trim();
+          if (linkEl) {
+            if (alert.link_url && alert.link_url.trim()) {
+              linkEl.href = alert.link_url.trim();
+              linkEl.textContent = (alert.link_text && alert.link_text.trim()) || 'Más información →';
+              linkEl.hidden = false;
+            } else {
+              linkEl.hidden = true;
+            }
+          }
+          bar.hidden = false;
+        } else {
+          bar.hidden = true;
+        }
+      })
+      .catch(function () {
+        bar.hidden = true;
+      });
+  }
+
   function init() {
     var act = document.body.getAttribute('data-active') || '';
     var main = document.querySelector('main.content');
@@ -83,10 +123,11 @@
     document.body.insertAdjacentHTML('afterbegin', ICONS);
     var app = document.createElement('div');
     app.className = 'app';
-    app.innerHTML = sideHTML(act) + '<div class="main">' + topbarHTML() + '<div class="page-slot"></div>' + footHTML() + '</div>';
+    app.innerHTML = sideHTML(act) + '<div class="main">' + alertHTML() + topbarHTML() + '<div class="page-slot"></div>' + footHTML() + '</div>';
     app.querySelector('.page-slot').replaceWith(main);
     document.body.appendChild(app);
     document.body.insertAdjacentHTML('beforeend', mtabHTML(act));
+    initAlert();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

@@ -139,3 +139,18 @@ h1,h2,h3,h4{ font-family:var(--disp); font-weight:700; line-height:1.04; margin:
   .foot .top{ flex-direction:column; align-items:flex-start; gap:16px; }
   .foot .top .btn{ width:100%; justify-content:center; }
 }
+
+/* site alert banner (breaking news / emergency) */
+.site-alert-bar{ background:#b91c1c; color:#fff; padding:10px 0; font-size:14.5px; font-weight:600; line-height:1.45; position:relative; z-index:50; box-shadow:0 2px 10px rgba(185,28,28,.28); }
+.site-alert-inner{ display:flex; align-items:center; justify-content:center; gap:12px; flex-wrap:wrap; text-align:center; }
+.site-alert-tag{ display:inline-flex; align-items:center; gap:6px; background:rgba(0,0,0,.25); color:#fff; font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; padding:3px 9px; border-radius:999px; flex:none; }
+.pulse-dot{ width:7px; height:7px; border-radius:50%; background:#fca5a5; animation:pulse-red 1.5s infinite; }
+@keyframes pulse-red{
+  0%{ transform:scale(.95); box-shadow:0 0 0 0 rgba(252,165,165,.7); }
+  70%{ transform:scale(1.2); box-shadow:0 0 0 6px rgba(252,165,165,0); }
+  100%{ transform:scale(.95); box-shadow:0 0 0 0 rgba(252,165,165,0); }
+}
+.site-alert-msg{ color:#fff; font-weight:700; }
+.site-alert-link{ display:inline-flex; align-items:center; gap:4px; color:#fef08a; font-weight:800; text-decoration:underline; text-underline-offset:3px; transition:color .15s; white-space:nowrap; }
+.site-alert-link:hover{ color:#fff; }
+

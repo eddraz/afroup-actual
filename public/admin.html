@@ -73,11 +73,51 @@
     <section class="hidden" id="dashboard">
       <div class="sec-head">
         <h2>Envíos</h2>
-            <div class="actions">
-              <a class="btn btn-ghost btn-sm" href="/admin/password">Cambiar contraseña</a>
-        <button class="btn btn-ghost btn-sm" id="logout-btn" type="button">Cerrar sesión</button>
-            </div>
+        <div class="actions">
+          <a class="btn btn-ghost btn-sm" href="/admin/password">Cambiar contraseña</a>
+          <button class="btn btn-ghost btn-sm" id="logout-btn" type="button">Cerrar sesión</button>
+        </div>
       </div>
+
+      <div class="panel" style="margin:20px 0 28px;border:1.5px solid rgba(185,28,28,0.35);background:rgba(185,28,28,0.03);">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+          <div>
+            <h4 style="margin:0;display:flex;align-items:center;gap:8px;color:#b91c1c;">
+              <span class="pulse-dot" style="display:inline-block;"></span>
+              Banner de última hora / Alerta urgente
+            </h4>
+            <p class="notice" style="margin:4px 0 0;">Muestra una barra roja destacada en la parte superior del sitio para noticias de emergencia o ayuda urgente.</p>
+          </div>
+        </div>
+        <form id="alert-form" style="margin-top:16px;">
+          <div class="field" style="margin-bottom:14px;">
+            <label style="display:inline-flex;align-items:center;gap:8px;font-weight:700;cursor:pointer;">
+              <input type="checkbox" id="alert-active" style="width:18px;height:18px;accent-color:#b91c1c;" />
+              Activar banner en la parte superior del sitio
+            </label>
+          </div>
+          <div class="fgrid">
+            <div class="field">
+              <label for="alert-message">Mensaje corto de la noticia / ayuda urgente</label>
+              <input id="alert-message" type="text" placeholder="Ej: Se necesita ayuda urgente en Chocó: puntos de acopio habilitados." maxlength="250" />
+            </div>
+            <div class="field">
+              <label for="alert-link-url">Enlace opcional (URL o sección)</label>
+              <input id="alert-link-url" type="text" placeholder="Ej: #ayudas o https://..." />
+            </div>
+            <div class="field">
+              <label for="alert-link-text">Texto del enlace (opcional)</label>
+              <input id="alert-link-text" type="text" placeholder="Ej: Ver información →" maxlength="60" />
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:14px;align-items:center;flex-wrap:wrap;">
+            <button class="btn btn-primary btn-sm" type="submit">Guardar alerta</button>
+            <button class="btn btn-ghost btn-sm" type="button" id="alert-clear-btn">Desactivar y limpiar</button>
+          </div>
+          <p class="msg" id="alert-msg" hidden></p>
+        </form>
+      </div>
+
       <form class="admin-search" id="admin-search" style="margin:16px 0 0;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
         <input id="admin-q" type="search" placeholder="Buscar título, lugar, contacto o departamento…" style="flex:1;min-width:220px;border:1.5px solid var(--line);border-radius:999px;padding:11px 16px;font:inherit;" />
         <button class="btn btn-primary btn-sm" type="submit">Buscar</button>

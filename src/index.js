@@ -76,6 +76,10 @@ async function handleApi(request, env, url) {
     return listDepartments(env);
   }
 
+  if (path === "/api/alert" && method === "GET") {
+    return getPublicAlert(env);
+  }
+
   if (path === "/api/entries" && method === "GET") {
     return listPublishedEntries(env, url);
   }
@@ -115,6 +119,14 @@ async function handleApi(request, env, url) {
 
   if (path === "/api/admin/categories" && method === "GET") {
     return listAdminCategories(request, env);
+  }
+
+  if (path === "/api/admin/alert" && method === "GET") {
+    return getAdminAlert(request, env);
+  }
+
+  if (path === "/api/admin/alert" && method === "POST") {
+    return updateAdminAlert(request, env);
   }
 
   const entryMatch = path.match(/^\/api\/admin\/entries\/(\d+)$/);
@@ -581,6 +593,122 @@ async function updateAdminEntry(request, env, id) {
     .first();
 
   return json({ ok: true, entry: updated });
+}
+
+async function getPublicAlert(env) {
+  try {
+    const row = await env.DB.prepare(
+      "SELECT is_active, message, link_url, link_text FROM site_alerts WHERE id = 1 AND is_active = 1"
+    ).first();
+
+    if (!row || !row.is_active || !row.message || !row.message.trim()) {
+      return json({ alert: null });
+    }
+
+    return json({
+      alert: {
+        is_active: true,
+        message: row.message.trim(),
+        link_url: (row.link_url || "").trim(),
+        link_text: (row.link_text || "").trim(),
+      },
+    });
+  } catch (err) {
+    console.error("Error fetching site alert:", err);
+    return json({ alert: null });
+  }
+}
+
+async function getAdminAlert(request, env) {
+  const session = await requireAdmin(request, env);
+  if (session instanceof Response) return session;
+
+  const csrf = csrfCookies(request);
+  try {
+    const row = await env.DB.prepare(
+      "SELECT is_active, message, link_url, link_text, updated_at FROM site_alerts WHERE id = 1"
+    ).first();
+
+    return jsonResponse(
+      {
+        alert: row
+          ? {
+              is_active: Boolean(row.is_active),
+              message: row.message || "",
+              link_url: row.link_url || "",
+              link_text: row.link_text || "",
+              updated_at: row.updated_at || "",
+            }
+          : { is_active: false, message: "", link_url: "", link_text: "", updated_at: "" },
+        csrf: csrf.token,
+      },
+      200,
+      request,
+      csrf.cookies
+    );
+  } catch (err) {
+    console.error("Error reading admin site alert:", err);
+    return jsonResponse(
+      {
+        alert: { is_active: false, message: "", link_url: "", link_text: "", updated_at: "" },
+        csrf: csrf.token,
+      },
+      200,
+      request,
+      csrf.cookies
+    );
+  }
+}
+
+async function updateAdminAlert(request, env) {
+  const session = await requireAdmin(request, env);
+  if (session instanceof Response) return session;
+
+  const csrf = requireCsrf(request);
+  if (csrf) return csrf;
+
+  const body = await readJson(request);
+  if (!body) return json({ error: "JSON inválido." }, 400);
+
+  const isActive = Boolean(body.is_active) ? 1 : 0;
+  const message = text(body.message, 300);
+  const linkUrl = text(body.link_url, 500);
+  const linkText = text(body.link_text, 80);
+
+  if (isActive && !message) {
+    return json({ error: "El mensaje de la noticia o alerta es obligatorio cuando el banner está activo." }, 400);
+  }
+
+  await env.DB.prepare(
+    `INSERT INTO site_alerts (id, is_active, message, link_url, link_text, updated_at)
+     VALUES (1, ?, ?, ?, ?, datetime('now'))
+     ON CONFLICT(id) DO UPDATE SET
+       is_active = excluded.is_active,
+       message = excluded.message,
+       link_url = excluded.link_url,
+       link_text = excluded.link_text,
+       updated_at = excluded.updated_at`
+  )
+    .bind(isActive, message, linkUrl, linkText)
+    .run();
+
+  const csrfUpdated = csrfCookies(request);
+  return jsonResponse(
+    {
+      ok: true,
+      alert: {
+        is_active: Boolean(isActive),
+        message,
+        link_url: linkUrl,
+        link_text: linkText,
+      },
+      message: isActive ? "Alerta de última hora activada y guardada." : "Alerta desactivada y guardada.",
+      csrf: csrfUpdated.token,
+    },
+    200,
+    request,
+    csrfUpdated.cookies
+  );
 }
 
 async function requireAdmin(request, env) {
