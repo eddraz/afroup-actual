@@ -107,23 +107,7 @@ export async function listVisibleAdminUsers(
     .all<VisibleAdminUser>();
   return result.results ?? [];
 }
-
-export async function hasSharedRecord(
-  db: D1Database,
-  actorId: number,
-  moduleSlug: string,
-  recordId: number,
-): Promise<boolean> {
-  const row = await db
-    .prepare(
-      `SELECT 1 FROM record_shares
-        WHERE module_slug = ? AND record_id = ? AND shared_with_id = ?
-        LIMIT 1`,
-    )
-    .bind(moduleSlug, recordId, actorId)
-    .first();
-  return row !== null;
-}
+export { hasSharedRecord } from "./record-scope";
 
 export async function countOwnedAdminUsers(db: D1Database, actorId: number): Promise<number> {
   const row = await db

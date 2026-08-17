@@ -1,6 +1,5 @@
 import type { D1Database } from "@cloudflare/workers-types";
-import { isBlankBio, plannedBioWrites } from "./bio-writes";
-import { defaultLocale } from "./i18n";
+import { isBlankBio, plannedBioWrites, PRIMARY_BIO_LOCALE as defaultLocale } from "./bio-writes";
 import { effectiveGrant } from "./permission-grants";
 
 export const BIO_MAX = 280;

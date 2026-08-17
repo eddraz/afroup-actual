@@ -1,0 +1,115 @@
+---
+import { env } from "cloudflare:workers";
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import ArticleEditor from "../../../components/ArticleEditor.astro";
+import { joinPath, localizedPath } from "../../../lib/i18n";
+import { requireModuleAccess } from "../../../lib/admin-scope";
+import { defaultLocale } from "../../../lib/i18n";
+import { resolveRequestCopy } from "../../../lib/request-locale";
+import { canManageOwnedRecord, translationAccess } from "../../../lib/editorial";
+import { hasPermission } from "../../../lib/rbac";
+import { routeIds } from "../../../lib/paths";
+import { listSiteLanguages } from "../../../lib/site-languages";
+
+export const prerender = false;
+
+const { locale, copy } = await resolveRequestCopy(env.DB, Astro.url);
+const access = await requireModuleAccess(env.DB, Astro.cookies, Astro.url, locale, "articulos", "update");
+if (access instanceof Response) return access;
+const actor = access;
+
+const id = Number(Astro.params.id);
+if (!Number.isFinite(id)) return new Response(null, { status: 404 });
+if (!(await canManageOwnedRecord(env.DB, actor.id, "articles", id, "articulos"))) {
+  return Response.redirect(localizedPath(locale, joinPath(routeIds.admin, "articulos")), 303);
+}
+
+const article = await env.DB.prepare(
+  `SELECT a.id, a.slug, a.status, a.cover_image_url, a.reading_time_minutes,
+          a.created_by, u.name AS created_by_name,
+          a.created_at, a.updated_at, a.published_at
+     FROM articles a
+LEFT JOIN users u ON u.id = a.created_by
+    WHERE a.id = ?
+    LIMIT 1`,
+)
+  .bind(id)
+  .first<{
+    id: number;
+    slug: string;
+    status: string;
+    cover_image_url: string | null;
+    reading_time_minutes: number | null;
+    created_by: number | null;
+    created_by_name: string | null;
+    created_at: string;
+    updated_at: string;
+    published_at: string | null;
+  }>();
+
+if (!article) return new Response(null, { status: 404 });
+
+const localeRows = (await env.DB.prepare(
+  "SELECT locale, title, description, content_html FROM article_locales WHERE article_id = ?",
+)
+  .bind(id)
+  .all<{ locale: string; title: string; description: string; content_html: string }>()).results ?? [];
+
+const titles: Record<string, string> = {};
+const descriptions: Record<string, string> = {};
+const contents: Record<string, string> = {};
+for (const row of localeRows) {
+  titles[row.locale] = row.title;
+  descriptions[row.locale] = row.description;
+  contents[row.locale] = row.content_html ?? "";
+}
+
+const categoryMapRows = (await env.DB.prepare(
+  "SELECT category_id FROM article_category_map WHERE article_id = ? ORDER BY sort_order",
+)
+  .bind(id)
+  .all<{ category_id: number }>()).results ?? [];
+const categoryIds = categoryMapRows.map((r) => r.category_id);
+
+const tagRows = (await env.DB.prepare(
+  "SELECT tag FROM article_tags WHERE article_id = ? ORDER BY tag",
+)
+  .bind(id)
+  .all<{ tag: string }>()).results ?? [];
+const tags = tagRows.map((r) => r.tag);
+
+const categories = (await env.DB.prepare(
+  `SELECT c.id, c.slug,
+          COALESCE(
+            (SELECT title FROM article_category_locales WHERE category_id = c.id AND locale = ?),
+            (SELECT title FROM article_category_locales WHERE category_id = c.id AND locale = ?)
+          ) AS title
+     FROM article_categories c
+    ORDER BY title`,
+)
+  .bind(locale, defaultLocale)
+  .all<{ id: number; slug: string; title: string }>()).results ?? [];
+
+const translation = await translationAccess(env.DB, actor.id, "articulos", "update");
+const canDelete = await hasPermission(env.DB, actor.id, "articulos", "delete");
+const languages = await listSiteLanguages(env.DB);
+const backHref = localizedPath(locale, joinPath(routeIds.admin, "articulos"));
+---
+
+<AdminLayout title={`${copy.adminEdit}: ${titles[defaultLocale] || article.slug}`} active="articles">
+  <ArticleEditor
+    article={article}
+    titles={titles}
+    descriptions={descriptions}
+    contents={contents}
+    categoryIds={categoryIds}
+    tags={tags}
+    categories={categories}
+    languages={languages}
+    translation={translation}
+    canDelete={canDelete}
+    locale={locale}
+    copy={copy}
+    backHref={backHref}
+  />
+</AdminLayout>

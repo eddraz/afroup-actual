@@ -1,0 +1,615 @@
+---
+import PageLocaleSwitch from "./PageLocaleSwitch.astro";
+import { defaultLocale, localizedPath } from "../lib/i18n";
+import type { BioTranslationAccess } from "../lib/bio-writes";
+import { getCategoryTheme } from "../lib/category-routes";
+
+export interface Props {
+  article?: {
+    id?: number;
+    slug?: string;
+    status?: string;
+    cover_image_url?: string | null;
+    reading_time_minutes?: number | null;
+    created_by?: number | null;
+    created_by_name?: string | null;
+    created_at?: string;
+    updated_at?: string;
+    published_at?: string | null;
+  } | null;
+  titles?: Record<string, string>;
+  descriptions?: Record<string, string>;
+  contents?: Record<string, string>;
+  categoryIds?: number[];
+  tags?: string[];
+  categories: Array<{ id: number; title: string; slug: string }>;
+  languages: Array<{ code: string; name: string; native_name: string }>;
+  translation: BioTranslationAccess;
+  canDelete?: boolean;
+  locale: string;
+  copy: Record<string, string>;
+  backHref: string;
+  action?: string;
+}
+
+const {
+  article,
+  titles = {},
+  descriptions = {},
+  contents = {},
+  categoryIds = [],
+  tags = [],
+  categories = [],
+  languages = [],
+  translation,
+  canDelete = false,
+  locale,
+  copy,
+  backHref,
+  action = "/api/admin/articles",
+} = Astro.props;
+
+const isEdit = Boolean(article?.id);
+const selectedCategoryIds = new Set(categoryIds);
+const tagsString = tags.join(", ");
+const primaryCategorySlug = categories.find((c) => selectedCategoryIds.has(c.id))?.slug;
+const publicPath = article?.slug && primaryCategorySlug
+  ? localizedPath(locale, `${primaryCategorySlug}/${article.slug}`)
+  : null;
+---
+
+<div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+  <div class="flex items-center gap-3">
+    <a class="btn btn-ghost btn-sm" href={backHref}>
+      <svg class="size-4"><use href="#ic-arrow"></use></svg>
+      {copy.adminArticles}
+    </a>
+    {publicPath && article?.status === "published" ? (
+      <a class="btn btn-outline btn-sm gap-1.5" href={publicPath} target="_blank" rel="noopener noreferrer">
+        <svg class="size-4"><use href="#ic-link"></use></svg>
+        {copy.adminArticleViewPublic}
+      </a>
+    ) : null}
+  </div>
+  {isEdit && canDelete ? (
+    <button
+      class="btn btn-error btn-outline btn-sm"
+      type="button"
+      data-article-delete-btn
+      data-article-id={article?.id}
+      data-article-title={titles[defaultLocale] || article?.slug}
+    >
+      <svg class="size-4"><use href="#ic-trash"></use></svg>
+      {copy.adminDeleteAccept}
+    </button>
+  ) : null}
+</div>
+
+<form
+  method="post"
+  action={action}
+  class="card bg-base-100 border border-base-300 shadow-sm"
+  data-article-form
+  data-success={copy.adminEditorialSaved}
+  data-error={copy.adminEditorialSaveError}
+>
+  <div class="card-body gap-6">
+    {isEdit ? <input type="hidden" name="id" value={article?.id} /> : null}
+
+    <!-- Header / Language switch -->
+    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-base-300 pb-4">
+      <div>
+        <h2 class="font-display text-xl font-bold">
+          {isEdit ? `${copy.adminEdit}: ${titles[defaultLocale] || article?.slug}` : copy.adminNewArticle}
+        </h2>
+        {isEdit && article?.created_by_name ? (
+          <p class="text-xs text-base-content/70 mt-0.5">
+            {copy.adminArticleAuthor}: <span class="font-semibold text-base-content">{article.created_by_name}</span>
+            {article.created_at ? ` · ${copy.adminArticleCreatedAt}: ${article.created_at.slice(0, 10)}` : ""}
+            {article.updated_at ? ` · ${copy.adminArticleUpdatedAt}: ${article.updated_at.slice(0, 10)}` : ""}
+          </p>
+        ) : null}
+      </div>
+      <PageLocaleSwitch languages={languages} label={copy.adminLanguages} current={defaultLocale} />
+    </div>
+
+    <!-- Multilingual fields -->
+    {languages.map((language) => {
+      const isPrimary = language.code === defaultLocale;
+      const locked = !isPrimary && !translation.canWrite && !translation.canUseAi;
+      const titleVal = titles[language.code] ?? "";
+      const descVal = descriptions[language.code] ?? "";
+      const contentVal = contents[language.code] ?? "";
+
+      return (
+        <div
+          class:list={["flex flex-col gap-4", !isPrimary && "hidden"]}
+          data-i18n-panel={language.code}
+          data-locale={language.code}
+        >
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <span class="badge badge-outline font-semibold gap-1">
+              <span class="size-2 rounded-full bg-primary"></span>
+              {language.native_name} ({language.code.toUpperCase()})
+            </span>
+            {!isPrimary && translation.canUseAi ? (
+              <button
+                class="btn btn-ai btn-sm gap-1.5"
+                type="button"
+                data-translate-all-btn={language.code}
+              >
+                <svg class="size-4"><use href="#ic-sparkles"></use></svg>
+                {copy.adminTranslateWithAi}
+              </button>
+            ) : null}
+          </div>
+
+          <!-- Title -->
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend font-bold">
+              {copy.adminCategoryTitle} · {language.native_name}
+            </legend>
+            <input
+              class="input input-bordered w-full font-semibold"
+              name={`title[${language.code}]`}
+              data-title-input={language.code}
+              maxlength="180"
+              required={isPrimary}
+              disabled={locked}
+              value={titleVal}
+              placeholder={isPrimary ? "Título del artículo..." : `Traducción al ${language.native_name}...`}
+            />
+          </fieldset>
+
+          <!-- Short description / Dek -->
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend font-bold">
+              {copy.adminCategoryDescription} · {language.native_name}
+            </legend>
+            <textarea
+              class="textarea textarea-bordered w-full leading-relaxed"
+              name={`description[${language.code}]`}
+              data-desc-input={language.code}
+              rows="3"
+              maxlength="500"
+              disabled={locked}
+              placeholder="Descripción corta o bajada (dek) del artículo..."
+            >{descVal}</textarea>
+          </fieldset>
+
+          <!-- Rich Content HTML -->
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend font-bold flex items-center justify-between">
+              <span>{copy.adminArticleContent} · {language.native_name}</span>
+              <span class="text-xs font-normal text-base-content/60">{copy.adminArticleContentHelp}</span>
+            </legend>
+
+            <div class="rounded-xl border border-base-300 bg-base-200/50 p-2 flex flex-col gap-2">
+              <!-- Toolbar -->
+              <div class="flex flex-wrap items-center gap-1.5 border-b border-base-300 pb-2">
+                <button class="btn btn-ghost btn-xs font-bold" type="button" data-rte-cmd="bold" data-target-locale={language.code} title="Negrita"><strong>B</strong></button>
+                <button class="btn btn-ghost btn-xs italic font-serif" type="button" data-rte-cmd="italic" data-target-locale={language.code} title="Cursiva"><em>I</em></button>
+                <div class="divider divider-horizontal my-0 mx-1"></div>
+                <button class="btn btn-ghost btn-xs font-display font-bold" type="button" data-rte-cmd="h2" data-target-locale={language.code} title="Subtítulo H2">H2</button>
+                <button class="btn btn-ghost btn-xs font-display font-bold" type="button" data-rte-cmd="h3" data-target-locale={language.code} title="Subtítulo H3">H3</button>
+                <button class="btn btn-ghost btn-xs" type="button" data-rte-cmd="p" data-target-locale={language.code} title="Párrafo">&lt;p&gt;</button>
+                <div class="divider divider-horizontal my-0 mx-1"></div>
+                <button class="btn btn-ghost btn-xs" type="button" data-rte-cmd="pull" data-target-locale={language.code} title="Cita destacada">“Cita”</button>
+                <button class="btn btn-ghost btn-xs" type="button" data-rte-cmd="figure" data-target-locale={language.code} title="Figura / Imagen">📷 Figura</button>
+                <button class="btn btn-ghost btn-xs" type="button" data-rte-cmd="cta" data-target-locale={language.code} title="Llamada CTA">📢 CTA</button>
+                <button class="btn btn-ghost btn-xs" type="button" data-rte-cmd="ul" data-target-locale={language.code} title="Lista">☰ Lista</button>
+                <button class="btn btn-ghost btn-xs" type="button" data-rte-cmd="a" data-target-locale={language.code} title="Enlace">🔗 Link</button>
+                <div class="ml-auto flex items-center gap-1.5">
+                  <button class="btn btn-ghost btn-xs" type="button" data-preview-toggle={language.code}>
+                    👁️ {copy.adminLanguageShow || "Vista previa"}
+                  </button>
+                </div>
+              </div>
+
+              <!-- Editor Textarea -->
+              <textarea
+                class="textarea textarea-bordered w-full font-mono text-sm leading-relaxed"
+                name={`content_html[${language.code}]`}
+                data-content-input={language.code}
+                rows="12"
+                disabled={locked}
+                placeholder="<p>Escribe aquí el contenido del artículo en HTML...</p>"
+              >{contentVal}</textarea>
+
+              <!-- Live Preview box (hidden by default) -->
+              <div
+                class="hidden rounded-lg bg-base-100 p-4 border border-base-300 article-prose"
+                data-preview-box={language.code}
+              >
+                <div class="text-xs uppercase tracking-wider text-base-content/50 font-bold mb-2 pb-1 border-b border-base-300">
+                  {copy.adminLanguageShow || "Vista previa en tiempo real"}
+                </div>
+                <div data-preview-content={language.code}></div>
+              </div>
+            </div>
+          </fieldset>
+        </div>
+      );
+    })}
+
+    <!-- Global Article Metadata -->
+    <div class="border-t border-base-300 pt-4">
+      <h3 class="font-display font-bold text-lg mb-3">Configuración y Metadatos</h3>
+
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <!-- Slug -->
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend font-semibold">{copy.adminCategorySlug}</legend>
+          <input
+            class="input input-bordered w-full"
+            name="slug"
+            pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
+            maxlength="80"
+            value={article?.slug ?? ""}
+            placeholder="ejemplo-slug-articulo"
+          />
+        </fieldset>
+
+        <!-- Status -->
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend font-semibold">{copy.adminArticleStatus}</legend>
+          <select class="select select-bordered w-full" name="status">
+            <option value="draft" selected={article?.status !== "published"}>{copy.adminArticleDraft}</option>
+            <option value="published" selected={article?.status === "published"}>{copy.adminArticlePublished}</option>
+          </select>
+        </fieldset>
+
+        <!-- Reading Time -->
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend font-semibold">{copy.adminArticleReadingTime}</legend>
+          <input
+            class="input input-bordered w-full"
+            type="number"
+            name="reading_time_minutes"
+            min="1"
+            max="120"
+            value={article?.reading_time_minutes ?? ""}
+            placeholder="Auto (según palabras)"
+          />
+        </fieldset>
+      </div>
+
+      <!-- Cover Image URL -->
+      <fieldset class="fieldset mt-4">
+        <legend class="fieldset-legend font-semibold">{copy.adminArticleCoverImage}</legend>
+        <div class="flex flex-col sm:flex-row gap-3 items-start">
+          <input
+            class="input input-bordered flex-1 w-full"
+            name="cover_image_url"
+            data-cover-input
+            type="text"
+            maxlength="500"
+            value={article?.cover_image_url ?? ""}
+            placeholder={copy.adminArticleCoverImageHelp}
+          />
+          <div
+            class="size-14 rounded-lg bg-base-200 border border-base-300 flex-none overflow-hidden flex items-center justify-center text-xs text-base-content/50"
+            data-cover-preview
+          >
+            {article?.cover_image_url ? (
+              <img src={article.cover_image_url} alt="Cover preview" class="size-full object-cover" />
+            ) : (
+              <span>Sin foto</span>
+            )}
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- Categories & Tags -->
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 mt-4">
+        <!-- Categories Multi-check -->
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend font-semibold">{copy.adminArticleCategory}</legend>
+          <div class="grid grid-cols-2 gap-2 rounded-xl border border-base-300 p-3 bg-base-200/40">
+            {categories.map((category) => {
+              const theme = getCategoryTheme(category.slug);
+              return (
+                <label class="label cursor-pointer justify-start gap-2.5 rounded-lg p-1 hover:bg-base-100">
+                  <input
+                    class="checkbox checkbox-sm checkbox-primary"
+                    type="checkbox"
+                    name="categoryIds"
+                    value={category.id}
+                    checked={selectedCategoryIds.has(category.id)}
+                  />
+                  <span class="flex items-center gap-1.5 text-sm font-semibold">
+                    <span class:list={["size-2 rounded-full", theme.dotClass]}></span>
+                    {category.title}
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        </fieldset>
+
+        <!-- Tags -->
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend font-semibold">{copy.adminArticleTags}</legend>
+          <textarea
+            class="textarea textarea-bordered w-full"
+            name="tags"
+            rows="3"
+            maxlength="240"
+            placeholder={copy.adminArticleTagsHelp}
+          >{tagsString}</textarea>
+        </fieldset>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex items-center justify-end gap-3 border-t border-base-300 pt-4">
+      <a class="btn btn-ghost btn-sm" href={backHref}>{copy.adminDeleteCancel}</a>
+      <button class="btn btn-primary btn-sm px-6" type="submit">
+        <svg class="size-4"><use href="#ic-check"></use></svg>
+        {copy.adminSave}
+      </button>
+    </div>
+  </div>
+</form>
+
+<script is:inline>
+  (function () {
+    // Rich Text Editor Commands
+    document.querySelectorAll("[data-rte-cmd]").forEach(function (btn) {
+      if (btn.dataset.bound === "true") return;
+      btn.dataset.bound = "true";
+      btn.addEventListener("click", function () {
+        var cmd = btn.getAttribute("data-rte-cmd");
+        var locale = btn.getAttribute("data-target-locale");
+        var textarea = document.querySelector("[data-content-input='" + locale + "']");
+        if (!textarea) return;
+
+        var start = textarea.selectionStart;
+        var end = textarea.selectionEnd;
+        var selected = textarea.value.substring(start, end);
+        var replacement = "";
+
+        switch (cmd) {
+          case "bold":
+            replacement = "<strong>" + (selected || "texto en negrita") + "</strong>";
+            break;
+          case "italic":
+            replacement = "<em>" + (selected || "texto en cursiva") + "</em>";
+            break;
+          case "h2":
+            replacement = "<h2>" + (selected || "Subtítulo de sección") + "</h2>\n";
+            break;
+          case "h3":
+            replacement = "<h3>" + (selected || "Subtítulo secundario") + "</h3>\n";
+            break;
+          case "p":
+            replacement = "<p>" + (selected || "Párrafo del artículo...") + "</p>\n";
+            break;
+          case "pull":
+            replacement = '<div class="pull">“' + (selected || "Cita destacada relevante...") + '”</div>\n';
+            break;
+          case "figure":
+            replacement = '<figure class="figure">\n  <img src="https://images.unsplash.com/photo-1544717305-2782549b5136?w=1200&auto=format&fit=crop&q=80" alt="Descripción de la imagen" />\n  <figcaption>' + (selected || "Pie de foto explicativo.") + '</figcaption>\n</figure>\n';
+            break;
+          case "cta":
+            replacement = '<div class="cta">\n  <div>\n    <h3>' + (selected || "Sé parte de la comunidad AfroUp") + '</h3>\n    <p>Con tu apoyo seguimos educando sobre el legado afro.</p>\n  </div>\n  <a class="btn btn-primary" href="/donacion">Haz tu Donación</a>\n</div>\n';
+            break;
+          case "ul":
+            replacement = "<ul>\n  <li>" + (selected || "Elemento 1") + "</li>\n  <li>Elemento 2</li>\n</ul>\n";
+            break;
+          case "a":
+            var url = prompt("Introduce la URL:", "https://");
+            if (url) {
+              replacement = '<a href="' + url + '">' + (selected || "enlace") + "</a>";
+            } else {
+              return;
+            }
+            break;
+        }
+
+        textarea.setRangeText(replacement, start, end, "end");
+        textarea.dispatchEvent(new Event("input", { bubbles: true }));
+        textarea.focus();
+      });
+    });
+
+    // Preview Toggle & Auto-update
+    document.querySelectorAll("[data-preview-toggle]").forEach(function (btn) {
+      if (btn.dataset.bound === "true") return;
+      btn.dataset.bound = "true";
+      btn.addEventListener("click", function () {
+        var locale = btn.getAttribute("data-preview-toggle");
+        var box = document.querySelector("[data-preview-box='" + locale + "']");
+        var textarea = document.querySelector("[data-content-input='" + locale + "']");
+        var content = document.querySelector("[data-preview-content='" + locale + "']");
+        if (!box || !textarea || !content) return;
+
+        if (box.classList.contains("hidden")) {
+          content.innerHTML = textarea.value || "<p class='italic opacity-50'>Sin contenido aún.</p>";
+          box.classList.remove("hidden");
+        } else {
+          box.classList.add("hidden");
+        }
+      });
+    });
+
+    // Live Cover Image Preview
+    var coverInput = document.querySelector("[data-cover-input]");
+    var coverPreview = document.querySelector("[data-cover-preview]");
+    if (coverInput && coverPreview) {
+      coverInput.addEventListener("input", function () {
+        var val = coverInput.value.trim();
+        if (val) {
+          coverPreview.innerHTML = '<img src="' + val + '" alt="Cover preview" class="size-full object-cover" onerror="this.parentElement.innerHTML=\'Error\'" />';
+        } else {
+          coverPreview.innerHTML = "<span>Sin foto</span>";
+        }
+      });
+    }
+
+    // AI Translation Buttons
+    document.querySelectorAll("[data-translate-all-btn]").forEach(function (btn) {
+      if (btn.dataset.bound === "true") return;
+      btn.dataset.bound = "true";
+      btn.addEventListener("click", function () {
+        var targetLocale = btn.getAttribute("data-translate-all-btn");
+        var sourceTitle = document.querySelector("[data-title-input='es']")?.value || "";
+        var sourceDesc = document.querySelector("[data-desc-input='es']")?.value || "";
+        var sourceContent = document.querySelector("[data-content-input='es']")?.value || "";
+
+        if (!sourceTitle && !sourceDesc && !sourceContent) {
+          if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Primero escribe el contenido en español.", "error");
+          return;
+        }
+
+        btn.disabled = true;
+        var originalHtml = btn.innerHTML;
+        btn.innerHTML = '<span class="loading loading-spinner loading-xs"></span> Traduciendo...';
+
+        var tasks = [];
+
+        if (sourceTitle) {
+          var formTitle = new FormData();
+          formTitle.append("module", "articulos");
+          formTitle.append("source", sourceTitle);
+          formTitle.append("target", targetLocale);
+          tasks.push(
+            fetch("/api/admin/translate", { method: "POST", body: formTitle })
+              .then(function (r) { return r.json(); })
+              .then(function (res) {
+                if (res.ok && res.text) {
+                  var inp = document.querySelector("[data-title-input='" + targetLocale + "']");
+                  if (inp) inp.value = res.text;
+                }
+              })
+          );
+        }
+
+        if (sourceDesc) {
+          var formDesc = new FormData();
+          formDesc.append("module", "articulos");
+          formDesc.append("source", sourceDesc);
+          formDesc.append("target", targetLocale);
+          tasks.push(
+            fetch("/api/admin/translate", { method: "POST", body: formDesc })
+              .then(function (r) { return r.json(); })
+              .then(function (res) {
+                if (res.ok && res.text) {
+                  var inp = document.querySelector("[data-desc-input='" + targetLocale + "']");
+                  if (inp) inp.value = res.text;
+                }
+              })
+          );
+        }
+
+        if (sourceContent) {
+          var formContent = new FormData();
+          formContent.append("module", "articulos");
+          formContent.append("source", sourceContent);
+          formContent.append("target", targetLocale);
+          formContent.append("is_html", "1");
+          tasks.push(
+            fetch("/api/admin/translate", { method: "POST", body: formContent })
+              .then(function (r) { return r.json(); })
+              .then(function (res) {
+                if (res.ok && res.text) {
+                  var inp = document.querySelector("[data-content-input='" + targetLocale + "']");
+                  if (inp) inp.value = res.text;
+                }
+              })
+          );
+        }
+
+        Promise.all(tasks)
+          .then(function () {
+            if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Traducción completada.", "success");
+          })
+          .catch(function () {
+            if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Error al traducir con IA.", "error");
+          })
+          .finally(function () {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+          });
+      });
+    });
+
+    // Form submit
+    var form = document.querySelector("form[data-article-form]");
+    if (form && form.dataset.bound !== "true") {
+      form.dataset.bound = "true";
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+        var submitBtn = form.querySelector("button[type='submit']");
+        if (submitBtn) submitBtn.disabled = true;
+
+        var data = new FormData(form);
+        fetch(form.action, { method: "POST", body: data })
+          .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
+          .then(function (result) {
+            if (result.ok) {
+              if (window.AfroUpFeedback) window.AfroUpFeedback.toast(form.getAttribute("data-success") || "Guardado.", "success");
+              setTimeout(function () {
+                if (result.body && result.body.id && !form.querySelector("input[name='id']")) {
+                  window.location.href = window.location.pathname.replace(/\/articulos\/?$/, "/articulos/" + result.body.id);
+                } else {
+                  window.location.reload();
+                }
+              }, 600);
+              return;
+            }
+            if (window.AfroUpFeedback) window.AfroUpFeedback.toast(result.body?.error || form.getAttribute("data-error") || "Error al guardar.", "error");
+            if (submitBtn) submitBtn.disabled = false;
+          })
+          .catch(function () {
+            if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Error de red.", "error");
+            if (submitBtn) submitBtn.disabled = false;
+          });
+      });
+    }
+
+    // Delete confirmation
+    document.querySelectorAll("[data-article-delete-btn]").forEach(function (btn) {
+      if (btn.dataset.bound === "true") return;
+      btn.dataset.bound = "true";
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-article-id");
+        var title = btn.getAttribute("data-article-title") || "este artículo";
+        
+        var proceed = function () {
+          var data = new FormData();
+          data.append("id", id);
+          data.append("_intent", "delete");
+
+          fetch("/api/admin/articles", { method: "POST", body: data })
+            .then(function (res) { return res.json(); })
+            .then(function (res) {
+              if (res.ok) {
+                if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Artículo eliminado.", "success");
+                setTimeout(function () {
+                  window.location.href = window.location.pathname.replace(/\/articulos\/[0-9]+\/?$/, "/articulos");
+                }, 600);
+              } else {
+                if (window.AfroUpFeedback) window.AfroUpFeedback.toast("No se pudo eliminar el artículo.", "error");
+              }
+            })
+            .catch(function () {
+              if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Error de red.", "error");
+            });
+        };
+
+        if (window.AfroUpFeedback && window.AfroUpFeedback.modal) {
+          window.AfroUpFeedback.modal({
+            title: "Eliminar artículo",
+            message: "¿Seguro que quieres eliminar el artículo «" + title + "»? No podrás recuperarlo.",
+            acceptText: "Eliminar",
+            cancelText: "Cancelar",
+            onAccept: proceed,
+          });
+        } else if (confirm("¿Seguro que quieres eliminar el artículo «" + title + "»?")) {
+          proceed();
+        }
+      });
+    });
+  })();
+</script>

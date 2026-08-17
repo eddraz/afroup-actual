@@ -1,13 +1,12 @@
 import type { D1Database } from "@cloudflare/workers-types";
-import { hasSharedRecord } from "./admin-scope";
-import { plannedBioWrites, type BioTranslationAccess } from "./bio-writes";
-import { defaultLocale } from "./i18n";
+import { hasSharedRecord } from "./record-scope";
+import { plannedBioWrites, PRIMARY_BIO_LOCALE as defaultLocale, type BioTranslationAccess } from "./bio-writes";
 import { effectiveGrant } from "./permission-grants";
 import type { PermissionAction } from "./rbac";
 
 export { parseTagList, slugify } from "./slugs";
 
-export function parseLocaleFields(form: FormData, field: "title" | "description"): Record<string, string> {
+export function parseLocaleFields(form: FormData, field: string): Record<string, string> {
   const values: Record<string, string> = {};
   const prefix = `${field}[`;
   for (const [key, value] of form.entries()) {
@@ -16,6 +15,16 @@ export function parseLocaleFields(form: FormData, field: "title" | "description"
     if (/^[a-z]{2}$/.test(locale)) values[locale] = String(value ?? "");
   }
   return values;
+}
+
+export function calculateReadingTimeMinutes(textOrHtml: string, wordsPerMinute = 200): number {
+  const cleanText = String(textOrHtml ?? "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!cleanText) return 1;
+  const words = cleanText.split(" ").length;
+  return Math.max(1, Math.ceil(words / wordsPerMinute));
 }
 
 export function plannedLocales(
@@ -36,6 +45,37 @@ export function plannedLocales(
       locale,
       title,
       description: plannedDescriptions[locale] ?? "",
+    });
+  }
+  return rows;
+}
+
+export function plannedArticleLocales(
+  titles: Record<string, string>,
+  descriptions: Record<string, string>,
+  contents: Record<string, string>,
+  existingTitles: Record<string, string>,
+  existingDescriptions: Record<string, string>,
+  existingContents: Record<string, string>,
+  access: BioTranslationAccess,
+): Array<{ locale: string; title: string; description: string; content_html: string }> {
+  const plannedTitles = plannedBioWrites(titles, existingTitles, access, defaultLocale);
+  const plannedDescriptions = plannedBioWrites(descriptions, existingDescriptions, access, defaultLocale);
+  const plannedContents = plannedBioWrites(contents, existingContents, access, defaultLocale);
+  const locales = new Set([
+    ...Object.keys(plannedTitles),
+    ...Object.keys(plannedDescriptions),
+    ...Object.keys(plannedContents),
+  ]);
+  const rows: Array<{ locale: string; title: string; description: string; content_html: string }> = [];
+  for (const locale of locales) {
+    const title = plannedTitles[locale] ?? "";
+    if (!title) continue;
+    rows.push({
+      locale,
+      title,
+      description: plannedDescriptions[locale] ?? "",
+      content_html: plannedContents[locale] ?? "",
     });
   }
   return rows;

@@ -15,8 +15,34 @@ if (!categorySlug || !articleSlug || isReservedCategorySlug(categorySlug)) {
   return new Response(null, { status: 404 });
 }
 
+interface ArticleDetailRow {
+  id: number;
+  slug: string;
+  cover_image_url: string | null;
+  reading_time_minutes: number | null;
+  published_at: string | null;
+  created_at: string;
+  updated_at: string;
+  created_by: number | null;
+  author_name: string | null;
+  author_avatar: string | null;
+  author_bio: string | null;
+  title: string | null;
+  description: string | null;
+  content_html: string | null;
+  category_id: number;
+  category_slug: string;
+  category_title: string | null;
+}
+
 const row = await env.DB.prepare(
-  `SELECT a.id, a.slug,
+  `SELECT a.id, a.slug, a.cover_image_url, a.reading_time_minutes,
+          a.published_at, a.created_at, a.updated_at,
+          a.created_by, u.name AS author_name, u.avatar_url AS author_avatar,
+          COALESCE(
+            (SELECT body FROM afroup_user_bios WHERE user_id = u.id AND locale = ?),
+            (SELECT body FROM afroup_user_bios WHERE user_id = u.id AND locale = ?)
+          ) AS author_bio,
           COALESCE(
             (SELECT title FROM article_locales WHERE article_id = a.id AND locale = ?),
             (SELECT title FROM article_locales WHERE article_id = a.id AND locale = ?)
@@ -25,6 +51,11 @@ const row = await env.DB.prepare(
             (SELECT description FROM article_locales WHERE article_id = a.id AND locale = ?),
             (SELECT description FROM article_locales WHERE article_id = a.id AND locale = ?)
           ) AS description,
+          COALESCE(
+            (SELECT content_html FROM article_locales WHERE article_id = a.id AND locale = ?),
+            (SELECT content_html FROM article_locales WHERE article_id = a.id AND locale = ?)
+          ) AS content_html,
+          c.id AS category_id,
           c.slug AS category_slug,
           COALESCE(
             (SELECT title FROM article_category_locales WHERE category_id = c.id AND locale = ?),
@@ -33,23 +64,26 @@ const row = await env.DB.prepare(
      FROM articles a
      JOIN article_category_map m ON m.article_id = a.id
      JOIN article_categories c ON c.id = m.category_id
+LEFT JOIN users u ON u.id = a.created_by
     WHERE a.slug = ? AND c.slug = ? AND a.status = 'published'
     LIMIT 1`,
 )
-  .bind(locale, defaultLocale, locale, defaultLocale, locale, defaultLocale, articleSlug, categorySlug)
-  .first<{
-    id: number;
-    slug: string;
-    title: string | null;
-    description: string | null;
-    category_slug: string;
-    category_title: string | null;
-  }>();
+  .bind(
+    locale, defaultLocale,
+    locale, defaultLocale,
+    locale, defaultLocale,
+    locale, defaultLocale,
+    locale, defaultLocale,
+    articleSlug,
+    categorySlug,
+  )
+  .first<ArticleDetailRow>();
 
 if (!row?.title || !row.category_title) return new Response(null, { status: 404 });
 
 const tags = (await env.DB.prepare("SELECT tag FROM article_tags WHERE article_id = ? ORDER BY tag").bind(row.id).all<{ tag: string }>())
   .results ?? [];
+
 const categories = (await env.DB.prepare(
   `SELECT c.slug,
           COALESCE(
@@ -64,40 +98,315 @@ const categories = (await env.DB.prepare(
   .bind(locale, defaultLocale, row.id)
   .all<{ slug: string; title: string | null }>()).results ?? [];
 
+interface RelatedArticleRow {
+  id: number;
+  slug: string;
+  cover_image_url: string | null;
+  reading_time_minutes: number | null;
+  title: string | null;
+  category_slug: string;
+  category_title: string | null;
+}
+
+const relatedArticles = (await env.DB.prepare(
+  `SELECT a.id, a.slug, a.cover_image_url, a.reading_time_minutes,
+          COALESCE(
+            (SELECT title FROM article_locales WHERE article_id = a.id AND locale = ?),
+            (SELECT title FROM article_locales WHERE article_id = a.id AND locale = ?)
+          ) AS title,
+          c.slug AS category_slug,
+          COALESCE(
+            (SELECT title FROM article_category_locales WHERE category_id = c.id AND locale = ?),
+            (SELECT title FROM article_category_locales WHERE category_id = c.id AND locale = ?)
+          ) AS category_title
+     FROM articles a
+     JOIN article_category_map m ON m.article_id = a.id
+     JOIN article_categories c ON c.id = m.category_id
+    WHERE a.status = 'published' AND a.id != ?
+    GROUP BY a.id
+    ORDER BY (m.category_id = ?) DESC, a.published_at DESC, a.id DESC
+    LIMIT 3`,
+)
+  .bind(locale, defaultLocale, locale, defaultLocale, row.id, row.category_id)
+  .all<RelatedArticleRow>()).results ?? [];
+
+function formatArticleDate(dateStr: string | null | undefined, loc: string): string {
+  if (!dateStr) return "";
+  try {
+    const d = new Date(dateStr.endsWith("Z") ? dateStr : `${dateStr}Z`);
+    if (isNaN(d.getTime())) return dateStr.slice(0, 10);
+    return new Intl.DateTimeFormat(loc === "en" ? "en-US" : "es-ES", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }).format(d);
+  } catch {
+    return dateStr.slice(0, 10);
+  }
+}
+
+const formattedDate = formatArticleDate(row.published_at || row.created_at, locale);
+const readingTime = row.reading_time_minutes ?? 5;
 const homeHref = localizedPath(locale, routeIds.home);
 const categoryHref = localizedPath(locale, categorySlug);
+const donateHref = localizedPath(locale, routeIds.donate);
+const authorDisplayName = row.author_name || "Equipo AfroUp";
+const authorRole = copy.articleDefaultRole;
+const authorBioText = row.author_bio || copy.articleDefaultBio;
 ---
 
 <BaseLayout title={`AfroUp — ${row.title}`} active={categorySlug}>
-  <div class="breadcrumbs text-sm">
+  <!-- Breadcrumbs -->
+  <div class="breadcrumbs text-sm pt-4 pb-2">
     <ul>
-      <li><a href={homeHref}>{copy.navHome}</a></li>
-      <li><a href={categoryHref}>{row.category_title}</a></li>
-      <li>{row.title}</li>
+      <li><a href={homeHref} class="hover:text-primary font-semibold">{copy.navHome}</a></li>
+      <li><a href={categoryHref} class="hover:text-primary font-semibold">{row.category_title}</a></li>
+      <li class="opacity-70">{row.title}</li>
     </ul>
   </div>
 
-  <header class="mx-auto mt-2 max-w-[780px]">
+  <!-- Article Header (Ahead) -->
+  <header class="mx-auto mt-3 max-w-[780px]">
+    <!-- Category badges -->
     <div class="flex flex-wrap gap-2">
       {categories.map((item) => {
         const itemTheme = getCategoryTheme(item.slug);
         return (
-          <a class:list={["inline-flex items-center gap-2 text-[11.5px] font-extrabold tracking-[0.1em] uppercase", itemTheme.textClass]} href={localizedPath(locale, item.slug)}>
+          <a
+            class:list={["inline-flex items-center gap-2 text-[12px] font-extrabold tracking-[0.08em] uppercase transition-opacity hover:opacity-80", itemTheme.textClass]}
+            href={localizedPath(locale, item.slug)}
+          >
             <span class:list={["size-2.5 rounded-[3px]", itemTheme.dotClass]}></span>
             {item.title}
           </a>
         );
       })}
     </div>
-    <h1 class="font-display mt-3 text-[32px] leading-[1.04] font-bold lg:text-[46px]">{row.title}</h1>
+
+    <!-- H1 Title -->
+    <h1 class="font-display mt-3 text-[32px] leading-[1.06] font-bold sm:text-[42px] lg:text-[48px] text-base-content">
+      {row.title}
+    </h1>
+
+    <!-- Short description (Dek) -->
     {row.description ? (
-      <p class="mt-3.5 max-w-[64ch] text-[17px] leading-[1.45] text-base-content/70 lg:text-[20px]">{row.description}</p>
+      <p class="mt-3.5 max-w-[64ch] text-[18px] leading-[1.45] text-base-content/80 lg:text-[21px] font-medium">
+        {row.description}
+      </p>
     ) : null}
+
+    <!-- Byline with Author, Date, Reading time, and Share buttons -->
+    <div class="mt-6 flex flex-wrap items-center gap-3.5 border-b border-base-300 pb-6">
+      {row.author_avatar ? (
+        <img src={row.author_avatar} alt={authorDisplayName} class="size-12 rounded-full object-cover border-2 border-secondary flex-none" />
+      ) : (
+        <div class="size-12 rounded-full bg-secondary/20 border-2 border-secondary flex-none flex items-center justify-center font-bold text-secondary-content font-display text-lg">
+          {authorDisplayName.charAt(0).toUpperCase()}
+        </div>
+      )}
+      <div class="leading-tight">
+        <div class="font-extrabold text-[15px] text-base-content">{authorDisplayName}</div>
+        <small class="text-xs text-base-content/70 font-semibold">{authorRole}</small>
+      </div>
+
+      <div class="text-sm font-semibold text-base-content/70 flex items-center gap-1.5 ml-2">
+        <span>{formattedDate}</span>
+        {formattedDate ? <span>·</span> : null}
+        <span>{readingTime} {locale === "en" ? "min read" : "min de lectura"}</span>
+      </div>
+
+      <!-- Share buttons -->
+      <div class="ml-auto flex items-center gap-2">
+        <button
+          class="btn btn-circle btn-sm btn-ghost border border-base-300 hover:bg-base-200"
+          type="button"
+          data-share-btn
+          data-title={row.title}
+          data-text={row.description}
+          title={copy.articleShare}
+        >
+          <svg class="size-4"><use href="#ic-share"></use></svg>
+        </button>
+        <button
+          class="btn btn-circle btn-sm btn-ghost border border-base-300 hover:bg-base-200"
+          type="button"
+          data-bookmark-btn
+          data-article-id={row.id}
+          data-article-title={row.title}
+          title={copy.articleBookmark}
+        >
+          <svg class="size-4"><use href="#ic-bookmark"></use></svg>
+        </button>
+        <button
+          class="btn btn-circle btn-sm btn-ghost border border-base-300 hover:bg-base-200"
+          type="button"
+          data-copy-link-btn
+          title={copy.articleCopyLink}
+        >
+          <svg class="size-4"><use href="#ic-link"></use></svg>
+        </button>
+      </div>
+    </div>
   </header>
 
+  <!-- Hero Cover Image -->
+  <figure class="mx-auto mt-6 max-w-[980px]">
+    {row.cover_image_url ? (
+      <img
+        src={row.cover_image_url}
+        alt={row.title}
+        class="aspect-[21/9] w-full rounded-[22px] object-cover shadow-lg border border-base-300"
+      />
+    ) : (
+      <div class="aspect-[21/9] w-full rounded-[22px] bg-gradient-to-tr from-primary/20 via-base-200 to-accent/20 border border-base-300 shadow-lg flex items-center justify-center p-6 text-center">
+        <span class="font-display font-bold text-2xl sm:text-3xl opacity-30 tracking-wider">AFROUP</span>
+      </div>
+    )}
+  </figure>
+
+  <!-- Article Rich Text HTML Content -->
+  <article class="article-prose">
+    {row.content_html ? (
+      <Fragment set:html={row.content_html} />
+    ) : (
+      <p>{row.description}</p>
+    )}
+  </article>
+
+  <!-- CTA Community & Donation Banner -->
+  <div class="article-cta">
+    <div>
+      <h3 class="font-display text-2xl font-bold">{copy.articleCtaTitle}</h3>
+      <p class="text-sm opacity-90 mt-1">{copy.articleCtaDek}</p>
+    </div>
+    <a class="btn btn-primary btn-md gap-2 shadow-md hover:scale-[1.02] transition-transform" href={donateHref}>
+      <svg class="size-5"><use href="#ic-heart"></use></svg>
+      {copy.navDonate}
+    </a>
+  </div>
+
+  <!-- Tags Row -->
   {tags.length ? (
-    <div class="mx-auto mt-8 flex max-w-[720px] flex-wrap gap-2">
-      {tags.map((item) => <span class="badge badge-ghost">#{item.tag}</span>)}
+    <div class="tagrow">
+      {tags.map((item) => (
+        <span class="badge badge-outline badge-md font-semibold text-base-content/80 hover:badge-primary transition-colors cursor-default">
+          #{item.tag}
+        </span>
+      ))}
     </div>
   ) : null}
+
+  <!-- Author Bio Card -->
+  <div class="bio">
+    {row.author_avatar ? (
+      <img src={row.author_avatar} alt={authorDisplayName} class="size-16 rounded-full object-cover border-2 border-secondary flex-none" />
+    ) : (
+      <div class="size-16 rounded-full bg-secondary/20 border-2 border-secondary flex-none flex items-center justify-center font-bold text-secondary-content font-display text-2xl">
+        {authorDisplayName.charAt(0).toUpperCase()}
+      </div>
+    )}
+    <div>
+      <h4 class="font-display font-bold text-lg text-base-content">{authorDisplayName}</h4>
+      <p class="mt-1 text-sm text-base-content/70 leading-relaxed">{authorBioText}</p>
+    </div>
+  </div>
+
+  <!-- Related Articles Section -->
+  {relatedArticles.length ? (
+    <section class="related">
+      <div class="pt-8 pb-12">
+        <div class="flex items-end justify-between mb-6">
+          <h2 class="font-display text-2xl font-bold text-base-content">{copy.articleReadMore}</h2>
+          <a class="btn btn-ghost btn-sm gap-1.5 font-bold" href={categoryHref}>
+            {copy.articleViewAll}
+            <svg class="size-4"><use href="#ic-arrow"></use></svg>
+          </a>
+        </div>
+
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {relatedArticles.map((rel) => {
+            const relHref = localizedPath(locale, `${rel.category_slug}/${rel.slug}`);
+            const relTheme = getCategoryTheme(rel.category_slug);
+            return (
+              <a
+                href={relHref}
+                class="card bg-base-200 border border-base-300 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all overflow-hidden group"
+              >
+                {rel.cover_image_url ? (
+                  <figure class="aspect-[16/10] overflow-hidden bg-base-300">
+                    <img src={rel.cover_image_url} alt="" class="size-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  </figure>
+                ) : (
+                  <div class="aspect-[16/10] bg-base-300/40 flex items-center justify-center text-xs font-mono opacity-40">
+                    AU
+                  </div>
+                )}
+                <div class="card-body p-4 gap-2">
+                  <span class:list={["inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase", relTheme.textClass]}>
+                    <span class:list={["size-2 rounded-full", relTheme.dotClass]}></span>
+                    {rel.category_title}
+                  </span>
+                  <h3 class="font-display font-bold text-base line-clamp-2 text-base-content group-hover:text-primary transition-colors">
+                    {rel.title ?? rel.slug}
+                  </h3>
+                  <div class="text-xs text-base-content/60 font-semibold mt-auto pt-2">
+                    {rel.reading_time_minutes ?? 5} {copy.adminArticleMinutes}
+                  </div>
+                </div>
+              </a>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  ) : null}
 </BaseLayout>
+
+<script is:inline>
+  (function () {
+    // Copy link action
+    document.querySelectorAll("[data-copy-link-btn]").forEach(function (btn) {
+      if (btn.dataset.bound === "true") return;
+      btn.dataset.bound = "true";
+      btn.addEventListener("click", function () {
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(window.location.href).then(function () {
+            if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Enlace copiado al portapapeles.", "success");
+          });
+        }
+      });
+    });
+
+    // Share action
+    document.querySelectorAll("[data-share-btn]").forEach(function (btn) {
+      if (btn.dataset.bound === "true") return;
+      btn.dataset.bound = "true";
+      btn.addEventListener("click", function () {
+        var title = btn.getAttribute("data-title") || document.title;
+        var text = btn.getAttribute("data-text") || "";
+        if (navigator.share) {
+          navigator.share({ title: title, text: text, url: window.location.href }).catch(function () {});
+        } else if (navigator.clipboard) {
+          navigator.clipboard.writeText(window.location.href).then(function () {
+            if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Enlace copiado al portapapeles.", "success");
+          });
+        }
+      });
+    });
+
+    // Bookmark action
+    document.querySelectorAll("[data-bookmark-btn]").forEach(function (btn) {
+      if (btn.dataset.bound === "true") return;
+      btn.dataset.bound = "true";
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-article-id");
+        var saved = JSON.parse(localStorage.getItem("afroup_saved_articles") || "[]");
+        if (!saved.includes(id)) {
+          saved.push(id);
+          localStorage.setItem("afroup_saved_articles", JSON.stringify(saved));
+        }
+        if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Artículo guardado en tus favoritos.", "success");
+      });
+    });
+  })();
+</script>

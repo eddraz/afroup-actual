@@ -37,17 +37,19 @@ function parseCategoryIds(form: FormData): number[] {
 
 async function loadLocales(articleId: number) {
   const rows = (await env.DB.prepare(
-    "SELECT locale, title, description FROM article_locales WHERE article_id = ?",
+    "SELECT locale, title, description, content_html FROM article_locales WHERE article_id = ?",
   )
     .bind(articleId)
-    .all<{ locale: string; title: string; description: string }>()).results ?? [];
+    .all<{ locale: string; title: string; description: string; content_html: string }>()).results ?? [];
   const titles: Record<string, string> = {};
   const descriptions: Record<string, string> = {};
+  const contents: Record<string, string> = {};
   for (const row of rows) {
     titles[row.locale] = row.title;
     descriptions[row.locale] = row.description;
+    contents[row.locale] = row.content_html ?? "";
   }
-  return { titles, descriptions };
+  return { titles, descriptions, contents };
 }
 
 async function loadMappedCategories(articleId: number) {
@@ -123,12 +125,14 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   }
 
   const access = await translationAccess(env.DB, actor.id, "articulos", action);
-  const existing = action === "update" ? await loadLocales(id) : { titles: {}, descriptions: {} };
-  const locales = plannedLocales(
+  const existing = action === "update" ? await loadLocales(id) : { titles: {}, descriptions: {}, contents: {} };
+  const locales = plannedArticleLocales(
     parseLocaleFields(form, "title"),
     parseLocaleFields(form, "description"),
+    parseLocaleFields(form, "content_html"),
     existing.titles,
     existing.descriptions,
+    existing.contents,
     access,
   );
   const primary = locales.find((row) => row.locale === defaultLocale);
@@ -144,6 +148,13 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     return json({ ok: false, error: "category_required" }, 400);
   }
 
+  const coverImageUrl = String(form.get("cover_image_url") ?? "").trim() || null;
+  const rawReadingTime = Number(form.get("reading_time_minutes"));
+  const readingTimeMinutes =
+    Number.isFinite(rawReadingTime) && rawReadingTime > 0
+      ? Math.round(rawReadingTime)
+      : Math.max(1, Math.ceil((primary.content_html || primary.description).replace(/<[^>]*>/g, " ").trim().split(/\s+/).filter(Boolean).length / 200));
+
   const taken = await env.DB.prepare("SELECT id FROM articles WHERE slug = ? AND id != ? LIMIT 1")
     .bind(slug, action === "update" ? id : 0)
     .first<{ id: number }>();
@@ -152,11 +163,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   let articleId = id;
   if (action === "create") {
     const created = await env.DB.prepare(
-      `INSERT INTO articles (slug, created_by, status, published_at)
-       VALUES (?, ?, ?, CASE WHEN ? = 'published' THEN datetime('now') ELSE NULL END)
+      `INSERT INTO articles (slug, created_by, status, published_at, cover_image_url, reading_time_minutes)
+       VALUES (?, ?, ?, CASE WHEN ? = 'published' THEN datetime('now') ELSE NULL END, ?, ?)
        RETURNING id`,
     )
-      .bind(slug, actor.id, status, status)
+      .bind(slug, actor.id, status, status, coverImageUrl, readingTimeMinutes)
       .first<{ id: number }>();
     if (!created) return json({ ok: false, error: "insert_failed" }, 500);
     articleId = created.id;
@@ -168,10 +179,12 @@ export const POST: APIRoute = async ({ request, cookies }) => {
                 WHEN ? = 'published' THEN COALESCE(published_at, datetime('now'))
                 ELSE NULL
               END,
+              cover_image_url = ?,
+              reading_time_minutes = ?,
               updated_at = datetime('now')
         WHERE id = ?`,
     )
-      .bind(slug, status, status, articleId)
+      .bind(slug, status, status, coverImageUrl, readingTimeMinutes, articleId)
       .run();
     await env.DB.prepare("DELETE FROM article_locales WHERE article_id = ?").bind(articleId).run();
     await env.DB.prepare("DELETE FROM article_category_map WHERE article_id = ?").bind(articleId).run();
@@ -179,9 +192,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   }
 
   const localeStmt = env.DB.prepare(
-    "INSERT INTO article_locales (article_id, locale, title, description) VALUES (?, ?, ?, ?)",
+    "INSERT INTO article_locales (article_id, locale, title, description, content_html) VALUES (?, ?, ?, ?, ?)",
   );
-  await env.DB.batch(locales.map((row) => localeStmt.bind(articleId, row.locale, row.title, row.description)));
+  await env.DB.batch(
+    locales.map((row) => localeStmt.bind(articleId, row.locale, row.title, row.description, row.content_html)),
+  );
   if (categoryIds.length) {
     const mapStmt = env.DB.prepare(
       "INSERT INTO article_category_map (article_id, category_id, sort_order) VALUES (?, ?, ?)",
