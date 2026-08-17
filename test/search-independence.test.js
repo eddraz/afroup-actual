@@ -37,7 +37,6 @@ describe("Search and location query independence", () => {
     expect(response.status).toBe(200);
     const listing = calls.find((c) => c.sql.includes("FROM aid_entries"));
     expect(listing).toBeDefined();
-    expect(listing.sql).toContain("LIKE ?");
     expect(listing.sql).not.toContain("d.slug = ?");
   });
 
@@ -49,7 +48,6 @@ describe("Search and location query independence", () => {
     const listing = calls.find((c) => c.sql.includes("FROM aid_entries"));
     expect(listing).toBeDefined();
     expect(listing.sql).toContain("d.slug = ?");
-    expect(listing.sql).not.toContain("LIKE ?");
     expect(listing.bound).toEqual(["choco"]);
   });
 
@@ -60,7 +58,6 @@ describe("Search and location query independence", () => {
     expect(response.status).toBe(200);
     const listing = calls.find((c) => c.sql.includes("FROM aid_entries"));
     expect(listing).toBeDefined();
-    expect(listing.sql).toContain("LIKE ?");
     expect(listing.sql).not.toContain("d.slug = ?");
   });
 });

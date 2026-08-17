@@ -135,15 +135,7 @@ async function listPublishedEntries(env, url) {
   const where = ["e.status = 'published'"];
   const binds = [];
 
-  if (q) {
-    const like = `%${q}%`;
-    where.push(
-      `(e.title LIKE ? OR IFNULL(e.information, '') LIKE ? OR IFNULL(e.summary, '') LIKE ? OR IFNULL(e.body, '') LIKE ?
-        OR IFNULL(e.location, '') LIKE ? OR IFNULL(e.contact_name, '') LIKE ?
-        OR IFNULL(e.contact_phone, '') LIKE ? OR IFNULL(e.contact_email, '') LIKE ?)`
-    );
-    binds.push(like, like, like, like, like, like, like, like);
-  } else if (department) {
+  if (!q && department) {
     where.push("d.slug = ?");
     binds.push(department);
   }
@@ -160,7 +152,10 @@ async function listPublishedEntries(env, url) {
     .bind(...binds)
     .all();
 
-  return json({ entries: (results || []).map(pickPublicEntry) });
+  const entries = (results || []).map(pickPublicEntry);
+  const filtered = q ? entries.filter((entry) => matchesSearch(entry, q)) : entries;
+
+  return json({ entries: filtered });
 }
 
 async function createPendingEntry(request, env) {
@@ -382,16 +377,6 @@ async function listAdminEntries(request, env, url) {
     where.push("e.status = ?");
     binds.push(status);
   }
-  if (q) {
-    const like = `%${q}%`;
-    where.push(
-      `(e.title LIKE ? OR IFNULL(e.summary, '') LIKE ? OR IFNULL(e.body, '') LIKE ?
-        OR IFNULL(e.location, '') LIKE ? OR IFNULL(e.category, '') LIKE ?
-        OR IFNULL(e.contact_name, '') LIKE ? OR IFNULL(e.contact_phone, '') LIKE ?
-        OR IFNULL(e.contact_email, '') LIKE ? OR d.name LIKE ? OR d.slug LIKE ?)`
-    );
-    binds.push(like, like, like, like, like, like, like, like, like, like);
-  }
 
   const { results } = await env.DB.prepare(
     `SELECT e.*, d.slug AS department_slug, d.name AS department_name
@@ -403,8 +388,11 @@ async function listAdminEntries(request, env, url) {
     .bind(...binds)
     .all();
 
+  const entries = results || [];
+  const filtered = q ? entries.filter((entry) => matchesSearch(entry, q)) : entries;
+
   const csrf = csrfCookies(request);
-  return jsonResponse({ entries: results || [], csrf: csrf.token }, 200, request, csrf.cookies);
+  return jsonResponse({ entries: filtered, csrf: csrf.token }, 200, request, csrf.cookies);
 }
 
 async function deleteAdminEntry(request, env, id) {
@@ -567,6 +555,40 @@ function htmlToPlain(value) {
     .replace(/&gt;/g, ">")
     .replace(/\s+\n/g, "\n")
     .trim();
+}
+
+function normalizeForSearch(value) {
+  return htmlToPlain(String(value || ""))
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function matchesSearch(entry, query) {
+  const normQuery = normalizeForSearch(query);
+  if (!normQuery) return true;
+  const tokens = normQuery.split(" ").filter(Boolean);
+  if (!tokens.length) return true;
+  const target = normalizeForSearch(
+    [
+      entry.title,
+      entry.information,
+      entry.summary,
+      entry.body,
+      entry.location,
+      entry.category,
+      entry.contact_name,
+      entry.contact_phone,
+      entry.contact_email,
+      entry.department_name,
+      entry.department_slug,
+      entry.source,
+    ].join(" ")
+  );
+  return tokens.every((token) => target.includes(token));
 }
 
 function safeColor(value) {
