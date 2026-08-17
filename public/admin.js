@@ -88,6 +88,7 @@
     "Banco de sangre",
     "Albergue",
     "Alimentos / insumos",
+    "Voluntariado",
     "Otro",
   ];
   var categorySelect = document.getElementById("edit-category");
