@@ -81,6 +81,8 @@ Default section order:
 - Support branded light (`afroup`) and dark (`afroup-dark`) themes with a daisyUI theme-controller toggle.
 - Use official Astro i18n for Spanish (default, unprefixed) and English (`/en`). Do not add a third-party i18n library.
 - Keep all Spanish product copy in neutral/professional Spanish. Do not use Rioplatense voseo or regional slang in UI, emails, or public comments.
+- Keep all administrative creation forms, invitation forms, object detail inspectors, and editorial canvases in right-to-left slide-in daisyUI drawers (`drawer drawer-end`) with accessible backdrop closing, escape-key handling, and body scroll lock.
+- Maintain visual and architectural uniformity across all admin Studio pages with standardized header metrics, live search/filter toolbars, and rounded data tables.
 
 When the user requests a durable behavior change, record it here or in the relevant child AGENTS.md
 

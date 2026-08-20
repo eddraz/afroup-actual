@@ -15,6 +15,8 @@ La base de datos Cloudflare D1 `afroup-db` (binding `DB`) almacena identidad, pe
 |---|---|---|
 | `DB` | `afroup-db` | Esquema de la aplicación documentado aquí |
 | `AVATARS` | `afroup-avatars` | Objetos R2, no SQL. Las URLs de avatares residen en `users.avatar_url` |
+| `MEDIA` | `afroup-media` | Objetos R2. Portadas de artículos, ilustraciones y recursos multimedia |
+| `DOCUMENTS` | `afroup-documents` | Objetos R2. Documentos PDF, investigaciones y recursos descargables |
 
 ID local: `7b41bfc3-d3f0-4eb0-a89f-c3111dbb4ecb`. Beta utiliza `afroup-db-beta`. Aplique los archivos numerados en `migrations/` en orden.
 
@@ -175,7 +177,7 @@ El acceso efectivo es **concesión directa O concesión por rol**. Cada celda de
 | `admin_user_permissions` | `(user_id, permission_id)` | Sobrescrituras por persona |
 | `admin_parent_grants` | `(child_id, parent_id, action)` | Relaciones jerárquicas adicionales. `child_id != parent_id` |
 
-Los slugs de módulos inicializados (semilla) incluyen `articulos`, `comentarios`, `proyectos`, `users` (anteriormente `usuarios`), `modulos`, `permisos`, `roles`, `idiomas`, `traduccion`. Las acciones son `create`, `read`, `update`, `delete`.
+Los slugs de módulos inicializados (semilla) incluyen `articulos`, `comentarios`, `proyectos`, `almacenamiento`, `users` (anteriormente `usuarios`), `modulos`, `permisos`, `roles`, `idiomas`, `traduccion`. Las acciones son `create`, `read`, `update`, `delete`.
 
 ## Idiomas públicos
 
