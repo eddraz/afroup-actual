@@ -134,6 +134,74 @@ export function blocksToHtml(data: EditorOutputData | null | undefined): string 
         if (html) htmlChunks.push(html);
         break;
       }
+      case "carousel": {
+        const rawSlides = Array.isArray(block.data.slides) ? block.data.slides : [];
+        const slides = rawSlides.filter((s: any) => s && (s.url || typeof s === "string"));
+        const caption = String(block.data.caption || "").trim();
+        if (slides.length) {
+          const carouselId = "carousel-" + Math.random().toString(36).slice(2, 8);
+          let carouselHtml = `<figure class="article-carousel my-8 space-y-2" data-carousel="${carouselId}">`;
+          carouselHtml += `<div class="carousel w-full rounded-2xl bg-base-300 shadow-md aspect-video overflow-hidden">`;
+          slides.forEach((slide: any, idx: number) => {
+            const url = typeof slide === "string" ? slide : slide.url;
+            const slideCaption = typeof slide === "object" ? slide.caption || "" : "";
+            carouselHtml += `<div id="${carouselId}-item${idx + 1}" class="carousel-item relative w-full flex items-center justify-center bg-black">`;
+            carouselHtml += `<img src="${url}" class="w-full h-full object-contain" alt="${slideCaption}" />`;
+            if (slideCaption) {
+              carouselHtml += `<div class="absolute bottom-2 left-3 right-3 bg-black/60 backdrop-blur-xs text-white text-xs px-3 py-1 rounded-md truncate">${slideCaption}</div>`;
+            }
+            carouselHtml += `</div>`;
+          });
+          carouselHtml += `</div>`;
+          if (slides.length > 1) {
+            carouselHtml += `<div class="flex w-full justify-center gap-2 py-1">`;
+            slides.forEach((_: any, idx: number) => {
+              carouselHtml += `<a href="#${carouselId}-item${idx + 1}" class="btn btn-xs btn-circle">${idx + 1}</a>`;
+            });
+            carouselHtml += `</div>`;
+          }
+          if (caption) {
+            carouselHtml += `<figcaption class="text-xs text-center opacity-70 italic mt-1 font-medium">${caption}</figcaption>`;
+          }
+          carouselHtml += `</figure>`;
+          htmlChunks.push(carouselHtml);
+        }
+        break;
+      }
+      case "video": {
+        const url = String(block.data.url || "").trim();
+        const caption = String(block.data.caption || "").trim();
+        const controls = block.data.controls !== false;
+        const autoplay = Boolean(block.data.autoplay);
+        const loop = Boolean(block.data.loop);
+        const muted = Boolean(block.data.muted);
+
+        if (url) {
+          const isDirect = url.match(/\.(mp4|webm|ogg|mov)$/i) || url.includes("/api/r2/stream/");
+          let videoHtml = `<figure class="article-video my-8 space-y-2">`;
+          videoHtml += `<div class="aspect-video w-full rounded-2xl overflow-hidden bg-black shadow-lg">`;
+          if (isDirect) {
+            const attrs = [
+              controls ? "controls" : "",
+              autoplay ? "autoplay" : "",
+              loop ? "loop" : "",
+              muted ? "muted" : "",
+              'preload="metadata"',
+              'class="size-full object-contain"',
+            ].filter(Boolean).join(" ");
+            videoHtml += `<video src="${url}" ${attrs}></video>`;
+          } else {
+            videoHtml += `<iframe src="${url}" class="size-full" frameborder="0" allowfullscreen allow="autoplay; encrypted-media"></iframe>`;
+          }
+          videoHtml += `</div>`;
+          if (caption) {
+            videoHtml += `<figcaption class="text-xs text-center opacity-70 italic font-medium">${caption}</figcaption>`;
+          }
+          videoHtml += `</figure>`;
+          htmlChunks.push(videoHtml);
+        }
+        break;
+      }
       default: {
         if (block.data && typeof block.data.text === "string") {
           htmlChunks.push(`<p>${block.data.text}</p>`);
@@ -227,6 +295,38 @@ export function htmlToBlocks(html: string | null | undefined): EditorOutputData 
             items,
           },
         });
+      } else if (el.classList.contains("article-carousel") || el.querySelector(".carousel")) {
+        const slideImgs = Array.from(el.querySelectorAll(".carousel-item img"));
+        const slides = slideImgs.map((img) => ({
+          url: img.getAttribute("src") || "",
+          caption: img.getAttribute("alt") || "",
+        })).filter((s) => s.url);
+        const figcaption = el.querySelector("figcaption");
+        blocks.push({
+          type: "carousel",
+          data: {
+            slides,
+            caption: figcaption ? figcaption.innerHTML.trim() : "",
+          },
+        });
+      } else if (el.classList.contains("article-video") || tag === "VIDEO" || el.querySelector("video, iframe")) {
+        const videoEl = tag === "VIDEO" ? (el as HTMLVideoElement) : el.querySelector("video");
+        const iframeEl = el.querySelector("iframe");
+        const figcaption = el.querySelector("figcaption");
+        const url = videoEl ? videoEl.getAttribute("src") || "" : iframeEl ? iframeEl.getAttribute("src") || "" : "";
+        if (url) {
+          blocks.push({
+            type: "video",
+            data: {
+              url,
+              caption: figcaption ? figcaption.innerHTML.trim() : "",
+              controls: videoEl ? videoEl.hasAttribute("controls") : true,
+              autoplay: videoEl ? videoEl.hasAttribute("autoplay") : false,
+              loop: videoEl ? videoEl.hasAttribute("loop") : false,
+              muted: videoEl ? videoEl.hasAttribute("muted") : false,
+            },
+          });
+        }
       } else if (tag === "FIGURE" || tag === "IMG") {
         const img = tag === "IMG" ? (el as HTMLImageElement) : el.querySelector("img");
         const figcaption = el.querySelector("figcaption");

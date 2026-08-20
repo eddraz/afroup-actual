@@ -6,6 +6,7 @@ import ImageTool from "@editorjs/image";
 import Delimiter from "@editorjs/delimiter";
 import Table from "@editorjs/table";
 import Embed from "@editorjs/embed";
+import { CarouselTool, VideoTool } from "./editorjs-tools";
 import { blocksToHtml, htmlToBlocks, type EditorOutputData } from "./editorjs";
 
 declare global {
@@ -237,6 +238,8 @@ export function initArticleEditors(): Record<string, EditorJS> {
             },
           },
           delimiter: Delimiter as any,
+          carousel: CarouselTool as any,
+          video: VideoTool as any,
           table: {
             class: Table as any,
             inlineToolbar: true,

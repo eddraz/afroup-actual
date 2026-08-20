@@ -68,6 +68,49 @@ describe("blocksToHtml", () => {
     };
     expect(blocksToHtml(data)).toBe("<hr />");
   });
+
+  test("converts carousel blocks to daisyUI interactive carousel HTML", () => {
+    const data = {
+      blocks: [
+        {
+          type: "carousel",
+          data: {
+            slides: [
+              { url: "https://example.com/img1.webp", caption: "Foto 1" },
+              { url: "https://example.com/img2.webp", caption: "Foto 2" },
+            ],
+            caption: "Galería del evento",
+          },
+        },
+      ],
+    };
+    const html = blocksToHtml(data);
+    expect(html).toContain("article-carousel");
+    expect(html).toContain("https://example.com/img1.webp");
+    expect(html).toContain("https://example.com/img2.webp");
+    expect(html).toContain("Galería del evento");
+  });
+
+  test("converts video blocks to HTML5 responsive video player", () => {
+    const data = {
+      blocks: [
+        {
+          type: "video",
+          data: {
+            url: "https://example.com/video.mp4",
+            caption: "Entrevista en video",
+            controls: true,
+            autoplay: false,
+          },
+        },
+      ],
+    };
+    const html = blocksToHtml(data);
+    expect(html).toContain("article-video");
+    expect(html).toContain("<video");
+    expect(html).toContain("https://example.com/video.mp4");
+    expect(html).toContain("Entrevista en video");
+  });
 });
 
 describe("htmlToBlocks", () => {
