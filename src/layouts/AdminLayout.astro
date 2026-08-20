@@ -196,9 +196,9 @@ function navClass(key: NonNullable<Props["active"]>) {
       </div>
 
       <!-- Sidebar -->
-      <div class="drawer-side z-30 lg:overflow-visible">
+      <div class="drawer-side z-30">
         <label for="admin-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
-        <aside id="admin-sidebar" class="flex h-dvh max-h-dvh w-[264px] flex-col border-r border-base-300 bg-base-200/95 backdrop-blur-sm shadow-xs">
+        <aside id="admin-sidebar" class="flex min-h-full w-[264px] flex-col border-r border-base-300 bg-base-200 text-base-content backdrop-blur-sm shadow-xs">
           <!-- Logo Brand Header -->
           <a href={paths.admin} class="admin-logo-link block shrink-0 px-6 py-5 border-b border-base-300/60 text-base-content transition-opacity hover:opacity-90" aria-label="AfroUp Studio">
             <div class="admin-logo-full flex items-center justify-between">
@@ -314,7 +314,7 @@ function navClass(key: NonNullable<Props["active"]>) {
           </ul>
 
           <!-- Sidebar Footer with Language Switcher and Session User -->
-          <div class="admin-sidebar-footer flex shrink-0 flex-col gap-3 border-t border-base-300/80 p-3 bg-base-200">
+          <div class="admin-sidebar-footer mt-auto flex shrink-0 flex-col gap-3 border-t border-base-300/80 p-3 bg-base-200">
             <div class="admin-lang-expanded w-full">
               <LanguageSwitcher scope="all" />
             </div>

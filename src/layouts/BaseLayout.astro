@@ -258,9 +258,9 @@ function tabClass(key: NavKey) {
         </nav>
       </div>
 
-      <div class="drawer-side z-30 overflow-hidden">
+      <div class="drawer-side z-30">
         <label for="site-drawer" aria-label={copy.closeMenuAria} class="drawer-overlay"></label>
-        <div class="flex h-dvh max-h-dvh w-[264px] flex-col border-r border-base-300 bg-base-200">
+        <aside class="flex min-h-full w-[264px] flex-col border-r border-base-300 bg-base-200 text-base-content">
           <div class="shrink-0 px-[30px] pt-[30px] pb-[21px]">
             <a href={paths.home} class="text-base-content">
               <AfroUpLogo height={30} />
@@ -349,7 +349,7 @@ function tabClass(key: NavKey) {
               {copy.donateCta}
             </a>
           </div>
-        </div>
+        </aside>
       </div>
     </div>
         <script is:inline>

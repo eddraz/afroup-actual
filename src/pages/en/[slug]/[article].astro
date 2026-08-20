@@ -297,14 +297,18 @@ const authorBioText = row.author_bio || copy.articleDefaultBio;
   ) : null}
 
   <!-- Author Bio Card -->
-  <div class="bio">
-    {row.author_avatar ? (
-      <img src={row.author_avatar} alt={authorDisplayName} class="size-16 rounded-full object-cover border-2 border-secondary flex-none" />
-    ) : (
-      <div class="size-16 rounded-full bg-secondary/20 border-2 border-secondary flex-none flex items-center justify-center font-bold text-secondary-content font-display text-2xl">
-        {authorDisplayName.charAt(0).toUpperCase()}
-      </div>
-    )}
+  <div class="bio flex items-center gap-4 p-5 rounded-2xl bg-base-200 border border-base-300">
+    <div class="avatar placeholder flex-none">
+      {row.author_avatar ? (
+        <div class="size-16 rounded-full ring ring-secondary ring-offset-base-100 ring-offset-2">
+          <img src={row.author_avatar} alt={authorDisplayName} class="size-full object-cover" />
+        </div>
+      ) : (
+        <div class="size-16 rounded-full bg-secondary/20 text-secondary-content font-bold font-display text-2xl ring ring-secondary ring-offset-base-100 ring-offset-2 flex items-center justify-center">
+          <span>{authorDisplayName.charAt(0).toUpperCase()}</span>
+        </div>
+      )}
+    </div>
     <div>
       <h4 class="font-display font-bold text-lg text-base-content">{authorDisplayName}</h4>
       <p class="mt-1 text-sm text-base-content/70 leading-relaxed">{authorBioText}</p>
