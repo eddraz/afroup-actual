@@ -1,5 +1,6 @@
 ---
 import PageLocaleSwitch from "./PageLocaleSwitch.astro";
+import R2Uploader from "./R2Uploader.astro";
 import { defaultLocale, localizedPath } from "../lib/i18n";
 import type { BioTranslationAccess } from "../lib/bio-writes";
 import { getCategoryTheme } from "../lib/category-routes";
@@ -295,24 +296,20 @@ const publicPath = article?.slug && primaryCategorySlug
 
       <!-- Card: Imagen de Portada -->
       <div class="rounded-3xl border border-base-300 bg-base-100 p-5 shadow-xs space-y-4">
-        <h3 class="font-display font-bold text-sm text-base-content flex items-center gap-2 border-b border-base-300/80 pb-3">
-          <svg class="size-4 text-accent"><use href="#ic-share"></use></svg>
-          <span>{copy.adminArticleCoverImage || "Imagen de Portada"}</span>
+        <h3 class="font-display font-bold text-sm text-base-content flex items-center justify-between border-b border-base-300/80 pb-3">
+          <span class="flex items-center gap-2">
+            <svg class="size-4 text-accent"><use href="#ic-share"></use></svg>
+            <span>{copy.adminArticleCoverImage || "Imagen de Portada"}</span>
+          </span>
+          {article?.cover_image_url ? (
+            <span class="badge badge-success badge-xs py-0.5 font-bold">Asignada</span>
+          ) : null}
         </h3>
 
         <div class="space-y-3">
-          <input
-            class="input input-bordered input-sm w-full text-xs font-mono"
-            name="cover_image_url"
-            data-cover-input
-            type="url"
-            maxlength="500"
-            value={article?.cover_image_url ?? ""}
-            placeholder="https://images.unsplash.com/..."
-          />
-
+          <!-- Cover Preview -->
           <div
-            class="aspect-video w-full rounded-2xl bg-base-200 border border-base-300 overflow-hidden flex items-center justify-center text-xs text-base-content/50 shadow-2xs"
+            class="aspect-video w-full rounded-2xl bg-base-200 border border-base-300 overflow-hidden flex items-center justify-center text-xs text-base-content/50 shadow-2xs relative group"
             data-cover-preview
           >
             {article?.cover_image_url ? (
@@ -320,11 +317,78 @@ const publicPath = article?.slug && primaryCategorySlug
             ) : (
               <div class="flex flex-col items-center gap-1.5 text-base-content/40">
                 <svg class="size-7 opacity-40"><use href="#ic-book2"></use></svg>
-                <span class="font-semibold text-xs">Sin imagen</span>
+                <span class="font-semibold text-xs">Sin imagen de portada</span>
               </div>
             )}
           </div>
+
+          <!-- Upload / Optimize Trigger Button -->
+          <button
+            type="button"
+            class="btn btn-sm btn-primary w-full gap-2 font-bold shadow-xs hover:scale-[1.01] transition-transform"
+            data-open-cover-modal
+          >
+            <svg class="size-4"><use href="#ic-cloud"></use></svg>
+            <span>{article?.cover_image_url ? "Cambiar / Optimizar Portada" : "Subir y Optimizar Portada"}</span>
+          </button>
+
+          {article?.cover_image_url ? (
+            <button
+              type="button"
+              class="btn btn-ghost btn-xs w-full text-error font-semibold"
+              data-remove-cover-btn
+            >
+              Quitar portada actual
+            </button>
+          ) : (
+            <button
+              type="button"
+              class="btn btn-ghost btn-xs w-full text-error font-semibold hidden"
+              data-remove-cover-btn
+            >
+              Quitar portada actual
+            </button>
+          )}
+
+          <!-- Manual URL input fallback -->
+          <div class="space-y-1 pt-1 border-t border-base-300/60">
+            <span class="text-[10px] font-bold text-base-content/50 uppercase tracking-wider block">O URL directa</span>
+            <input
+              class="input input-bordered input-xs w-full text-xs font-mono"
+              name="cover_image_url"
+              id="article-cover-image-input"
+              data-cover-input
+              type="url"
+              maxlength="500"
+              value={article?.cover_image_url ?? ""}
+              placeholder="https://..."
+            />
+          </div>
         </div>
+
+        <!-- Cover Image Uploader Modal -->
+        <dialog class="modal z-50" data-cover-modal>
+          <div class="modal-box max-w-2xl p-6 bg-base-100 rounded-3xl border border-base-300 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-base-300 pb-3">
+              <div class="flex items-center gap-2">
+                <span class="size-2.5 rounded-full bg-accent animate-pulse"></span>
+                <h3 class="font-display font-bold text-base text-base-content">
+                  Subir y Optimizar Portada del Artículo
+                </h3>
+              </div>
+              <button type="button" class="btn btn-circle btn-ghost btn-xs" data-close-cover-modal>✕</button>
+            </div>
+
+            <R2Uploader
+              bucket="media"
+              prefix="covers"
+              allowedTypes="image/*"
+              targetInputId="article-cover-image-input"
+              locale={locale}
+              flat={true}
+            />
+          </div>
+        </dialog>
       </div>
 
       <!-- Card: Categorías -->
@@ -439,20 +503,60 @@ const publicPath = article?.slug && primaryCategorySlug
       });
     });
 
-    // Live Cover Image Preview
+    // Live Cover Image Modal & Preview
     const coverInput = document.querySelector<HTMLInputElement>("[data-cover-input]");
     const coverPreview = document.querySelector<HTMLElement>("[data-cover-preview]");
+    const coverModal = document.querySelector<HTMLDialogElement>("[data-cover-modal]");
+    const openCoverBtn = document.querySelector<HTMLButtonElement>("[data-open-cover-modal]");
+    const closeCoverBtn = document.querySelector<HTMLButtonElement>("[data-close-cover-modal]");
+    const removeCoverBtn = document.querySelector<HTMLButtonElement>("[data-remove-cover-btn]");
+
+    if (openCoverBtn && coverModal && openCoverBtn.dataset.bound !== "true") {
+      openCoverBtn.dataset.bound = "true";
+      openCoverBtn.addEventListener("click", () => {
+        coverModal.showModal();
+      });
+    }
+
+    if (closeCoverBtn && coverModal && closeCoverBtn.dataset.bound !== "true") {
+      closeCoverBtn.dataset.bound = "true";
+      closeCoverBtn.addEventListener("click", () => {
+        coverModal.close();
+      });
+    }
+
+    if (removeCoverBtn && coverInput && removeCoverBtn.dataset.bound !== "true") {
+      removeCoverBtn.dataset.bound = "true";
+      removeCoverBtn.addEventListener("click", () => {
+        coverInput.value = "";
+        coverInput.dispatchEvent(new Event("input", { bubbles: true }));
+        removeCoverBtn.classList.add("hidden");
+      });
+    }
+
     if (coverInput && coverPreview && coverInput.dataset.bound !== "true") {
       coverInput.dataset.bound = "true";
       coverInput.addEventListener("input", () => {
         const val = coverInput.value.trim();
         if (val) {
           coverPreview.innerHTML = `<img src="${val}" alt="Cover preview" class="size-full object-cover" onerror="this.parentElement.innerHTML='<span class=\\'text-error font-semibold\\'>Error al cargar URL</span>'" />`;
+          if (removeCoverBtn) removeCoverBtn.classList.remove("hidden");
         } else {
-          coverPreview.innerHTML = `<div class="flex flex-col items-center gap-1.5 text-base-content/40"><span class="font-semibold text-xs">Sin imagen</span></div>`;
+          coverPreview.innerHTML = `<div class="flex flex-col items-center gap-1.5 text-base-content/40"><span class="font-semibold text-xs">Sin imagen de portada</span></div>`;
+          if (removeCoverBtn) removeCoverBtn.classList.add("hidden");
         }
       });
     }
+
+    // Auto-close cover modal on successful upload
+    document.addEventListener("r2-upload-success", (e: any) => {
+      if (e.detail?.files?.length && coverModal && coverModal.open) {
+        setTimeout(() => {
+          coverModal.close();
+          if ((window as any).AfroUpFeedback) (window as any).AfroUpFeedback.toast("Portada asignada y optimizada.", "success");
+        }, 800);
+      }
+    });
 
     // AI Translation Buttons
     document.querySelectorAll<HTMLButtonElement>("[data-translate-all-btn]").forEach((btn) => {

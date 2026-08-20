@@ -1082,6 +1082,16 @@ const text = {
                 });
               }
 
+              var targetInputAttr = root.getAttribute("data-target-input");
+              if (targetInputAttr && uploadedResults.length > 0) {
+                var targetInput = document.getElementById(targetInputAttr);
+                if (targetInput) {
+                  targetInput.value = uploadedResults[0].streamUrl;
+                  targetInput.dispatchEvent(new Event("input", { bubbles: true }));
+                  targetInput.dispatchEvent(new Event("change", { bubbles: true }));
+                }
+              }
+
               // Event dispatch
               document.dispatchEvent(new CustomEvent("r2-upload-success", {
                 detail: {
