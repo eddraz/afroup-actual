@@ -21,7 +21,7 @@ const actor = access;
 const id = Number(Astro.params.id);
 if (!Number.isFinite(id)) return new Response(null, { status: 404 });
 if (!(await canManageOwnedRecord(env.DB, actor.id, "articles", id, "articulos"))) {
-  return Response.redirect(localizedPath(locale, joinPath(routeIds.admin, "articulos")), 303);
+  return Response.redirect(new URL(localizedPath(locale, joinPath(routeIds.admin, "articulos")), Astro.url).toString(), 303);
 }
 
 const article = await env.DB.prepare(

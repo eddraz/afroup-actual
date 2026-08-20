@@ -64,10 +64,10 @@ export async function requireModuleAccess(
   const actor = await getCurrentUser(db, sessionTokenFrom(cookies));
   const loginHref = localizedPath(locale, routeIds.login);
   if (!actor) {
-    return Response.redirect(`${loginHref}?next=${encodeURIComponent(url.pathname)}`, 303);
+    return Response.redirect(new URL(`${loginHref}?next=${encodeURIComponent(url.pathname)}`, url).toString(), 303);
   }
   if (!(await hasPermission(db, actor.id, moduleSlug, action))) {
-    return Response.redirect(localizedPath(locale, routeIds.admin), 303);
+    return Response.redirect(new URL(localizedPath(locale, routeIds.admin), url).toString(), 303);
   }
   return actor;
 }

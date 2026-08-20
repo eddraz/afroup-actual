@@ -84,12 +84,20 @@ export function mergePermissions(parts: EffectivePermissions): PermissionRow[] {
   );
 }
 
+export function normalizeModuleSlug(slug: string): string {
+  const s = (slug || "").toLowerCase().trim();
+  if (s === "usuarios") return "users";
+  if (s === "r2" || s === "storage") return "almacenamiento";
+  return s;
+}
+
 export async function hasPermission(
   db: D1Database,
   userId: number,
   moduleSlug: string,
   action: PermissionAction,
 ): Promise<boolean> {
+  const normalizedSlug = normalizeModuleSlug(moduleSlug);
   const row = await db
     .prepare(
       `SELECT 1
@@ -98,11 +106,11 @@ export async function hasPermission(
          LEFT JOIN admin_user_permissions up ON up.permission_id = p.id AND up.user_id = ?
          LEFT JOIN admin_role_permissions rp ON rp.permission_id = p.id
          LEFT JOIN users u ON u.id = ? AND u.role_id = rp.role_id
-        WHERE m.slug = ? AND p.action = ?
+        WHERE (m.slug = ? OR m.slug = ?) AND p.action = ?
           AND (up.user_id IS NOT NULL OR u.id IS NOT NULL)
         LIMIT 1`,
     )
-    .bind(userId, userId, moduleSlug, action)
+    .bind(userId, userId, normalizedSlug, moduleSlug, action)
     .first();
   return row !== null;
 }

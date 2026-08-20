@@ -20,7 +20,7 @@ const actor = access;
 const id = Number(Astro.params.id);
 if (!Number.isFinite(id)) return new Response(null, { status: 404 });
 if (!(await canManageOwnedRecord(env.DB, actor.id, "article_categories", id, "categorias"))) {
-  return Response.redirect(localizedPath(locale, joinPath(routeIds.admin, "categorias")), 303);
+  return Response.redirect(new URL(localizedPath(locale, joinPath(routeIds.admin, "categorias")), Astro.url).toString(), 303);
 }
 
 const category = await env.DB.prepare("SELECT id, slug FROM article_categories WHERE id = ? LIMIT 1")

@@ -12,7 +12,7 @@ import { env } from "cloudflare:workers";
 export const prerender = false;
 
 const { locale, copy } = await resolveRequestCopy(env.DB, Astro.url);
-const access = await requireModuleAccess(env.DB, Astro.cookies, Astro.url, locale, "usuarios");
+const access = await requireModuleAccess(env.DB, Astro.cookies, Astro.url, locale, "users");
 if (access instanceof Response) return access;
 const actor = access;
 
