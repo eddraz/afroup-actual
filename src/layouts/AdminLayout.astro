@@ -129,6 +129,7 @@ function navClass(key: NonNullable<Props["active"]>) {
         <symbol id="ic-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5l0 14"></path><path d="M5 12l14 0"></path></symbol>
         <symbol id="ic-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12.572l-7.5 7.428l-7.5 -7.428a5 5 0 1 1 7.5 -6.566a5 5 0 1 1 7.5 6.572"></path></symbol>
         <symbol id="ic-world" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"></path><path d="M3.6 9h16.8"></path><path d="M3.6 15h16.8"></path><path d="M11.5 3a17 17 0 0 0 0 18"></path><path d="M12.5 3a17 17 0 0 1 0 18"></path></symbol>
+        <symbol id="ic-language" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h7"></path><path d="M9 3v2c0 4.418 -2.239 8 -5 8"></path><path d="M5 9c0 2.144 2.952 3.908 6.7 4"></path><path d="M12 20l4 -9l4 9"></path><path d="M19.1 18h-6.2"></path></symbol>
       </defs>
     </svg>
 
@@ -306,7 +307,7 @@ function navClass(key: NonNullable<Props["active"]>) {
             {can.languages ? (
               <li class="admin-nav-tooltip tooltip tooltip-right" data-tip={copy.adminLanguages}>
                 <a class={navClass("languages")} href={paths.languages}>
-                  <svg class="size-4.5 shrink-0"><use href="#ic-world"></use></svg>
+                  <svg class="size-4.5 shrink-0"><use href="#ic-language"></use></svg>
                   <span class="admin-nav-label truncate">{copy.adminLanguages}</span>
                 </a>
               </li>
@@ -327,7 +328,7 @@ function navClass(key: NonNullable<Props["active"]>) {
                   style="anchor-name:--admin-lang"
                   aria-label={copy.adminLanguages || "Idiomas"}
                 >
-                  <svg class="size-5"><use href="#ic-world"></use></svg>
+                  <svg class="size-5"><use href="#ic-language"></use></svg>
                 </button>
               </div>
               <div
@@ -337,7 +338,7 @@ function navClass(key: NonNullable<Props["active"]>) {
                 style="position-anchor:--admin-lang"
               >
                 <div class="mb-2 flex items-center gap-1.5 text-xs font-bold text-base-content/70">
-                  <svg class="size-4"><use href="#ic-world"></use></svg>
+                  <svg class="size-4"><use href="#ic-language"></use></svg>
                   <span>{copy.adminLanguages || "Idiomas"}</span>
                 </div>
                 <LanguageSwitcher scope="all" />
