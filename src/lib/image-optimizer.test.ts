@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { calculateScaledDimensions, getOptimizedFileName, calculateReduction } from "./image-optimizer";
+import { calculateScaledDimensions, getOptimizedFileName, calculateReduction, clampCropRect, getPresetCropRect } from "./image-optimizer";
 
 describe("image-optimizer helper", () => {
   test("calculateScaledDimensions maintains aspect ratio correctly", () => {
@@ -40,5 +40,29 @@ describe("image-optimizer helper", () => {
     expect(calculateReduction(5000000, 500000)).toBe(90);
     expect(calculateReduction(100, 150)).toBe(0);
     expect(calculateReduction(0, 0)).toBe(0);
+  });
+
+  test("clampCropRect restricts coordinates to image bounds", () => {
+    const clamped = clampCropRect({ x: -20, y: -10, width: 2500, height: 1500 }, 1920, 1080);
+    expect(clamped.x).toBe(0);
+    expect(clamped.y).toBe(0);
+    expect(clamped.width).toBe(1920);
+    expect(clamped.height).toBe(1080);
+  });
+
+  test("getPresetCropRect calculates correct 1:1 and 16:9 crops", () => {
+    // 1920x1080 image with 1:1 crop -> 1080x1080 centered
+    const squareCrop = getPresetCropRect(1920, 1080, "1:1");
+    expect(squareCrop.width).toBe(1080);
+    expect(squareCrop.height).toBe(1080);
+    expect(squareCrop.x).toBe(420);
+    expect(squareCrop.y).toBe(0);
+
+    // 1000x1000 image with 16:9 crop -> 1000x563 centered
+    const wideCrop = getPresetCropRect(1000, 1000, "16:9");
+    expect(wideCrop.width).toBe(1000);
+    expect(wideCrop.height).toBe(563);
+    expect(wideCrop.x).toBe(0);
+    expect(wideCrop.y).toBe(219);
   });
 });
