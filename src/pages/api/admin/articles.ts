@@ -208,5 +208,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     await env.DB.batch(tags.map((tag) => tagStmt.bind(articleId, tag)));
   }
   await syncIndex(articleId, slug, status === "published");
-  return json({ ok: true, id: articleId });
+  let categorySlug = "cultura";
+  if (categoryIds.length) {
+    const cat = await env.DB.prepare("SELECT slug FROM article_categories WHERE id = ?").bind(categoryIds[0]).first<{ slug: string }>();
+    if (cat?.slug) categorySlug = cat.slug;
+  }
+  return json({ ok: true, id: articleId, slug, category_slug: categorySlug });
 };
