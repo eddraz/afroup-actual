@@ -88,10 +88,17 @@ const publicPath = article?.slug && primaryCategorySlug
     </div>
 
     <div class="flex items-center gap-2">
-      {publicPath && article?.status === "published" ? (
-        <a class="btn btn-ghost btn-sm gap-1.5 text-xs border border-base-300 hover:bg-base-200" href={publicPath} target="_blank" rel="noopener noreferrer">
-          <svg class="size-3.5"><use href="#ic-link"></use></svg>
-          <span class="hidden md:inline">{copy.adminArticleViewPublic || "Ver público"}</span>
+      {publicPath ? (
+        <a
+          class="btn btn-ghost btn-sm gap-1.5 text-xs border border-base-300 hover:bg-base-200"
+          href={article?.status === "published" ? publicPath : `${publicPath}?preview=true`}
+          target="_blank"
+          rel="noopener noreferrer"
+          data-article-preview-btn
+          title={article?.status === "published" ? (copy.adminArticleViewPublic || "Ver público") : "Ver vista previa del borrador"}
+        >
+          <svg class="size-3.5"><use href={article?.status === "published" ? "#ic-link" : "#ic-eye"}></use></svg>
+          <span class="hidden sm:inline">{article?.status === "published" ? (copy.adminArticleViewPublic || "Ver público") : "Vista Previa"}</span>
         </a>
       ) : null}
 
@@ -516,6 +523,26 @@ const publicPath = article?.slug && primaryCategorySlug
         }
       });
     });
+
+    // Live Article Preview Button Action (Auto-sync before opening)
+    const previewBtn = document.querySelector<HTMLAnchorElement>("[data-article-preview-btn]");
+    if (previewBtn && previewBtn.dataset.bound !== "true") {
+      previewBtn.dataset.bound = "true";
+      previewBtn.addEventListener("click", async () => {
+        for (const [locale, editor] of Object.entries(editors)) {
+          try {
+            const data = await editor.save();
+            const html = blocksToHtml(data);
+            const input = document.querySelector<HTMLTextAreaElement>(`[data-content-input='${locale}']`);
+            if (input) input.value = html;
+          } catch {}
+        }
+        const formData = new FormData(form);
+        try {
+          await fetch(form.action, { method: "POST", body: formData });
+        } catch {}
+      });
+    }
 
     // Live Cover Image Modal & Preview
     const coverInput = document.querySelector<HTMLInputElement>("[data-cover-input]");

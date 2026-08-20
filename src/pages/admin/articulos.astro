@@ -287,15 +287,15 @@ function formatDate(dateStr?: string | null) {
                     <!-- Actions -->
                     <td class="text-right pr-6">
                       <div class="inline-flex items-center gap-1.5">
-                        {publicHref && isPublished ? (
+                        {publicHref ? (
                           <a
                             class="btn btn-square btn-ghost btn-xs border border-base-300 hover:bg-base-200 text-base-content/70 hover:text-base-content"
-                            href={publicHref}
+                            href={isPublished ? publicHref : `${publicHref}?preview=true`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            title={copy.adminArticleViewPublic || "Ver en sitio público"}
+                            title={isPublished ? (copy.adminArticleViewPublic || "Ver en sitio público") : "Vista Previa de Borrador"}
                           >
-                            <svg class="size-3.5"><use href="#ic-link"></use></svg>
+                            <svg class="size-3.5"><use href={isPublished ? "#ic-link" : "#ic-eye"}></use></svg>
                           </a>
                         ) : null}
 

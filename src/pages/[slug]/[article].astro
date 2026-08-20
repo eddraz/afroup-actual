@@ -2,8 +2,9 @@
 import { env } from "cloudflare:workers";
 import { Image } from "astro:assets";
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getCurrentUser, sessionTokenFrom } from "../../lib/admin-scope";
 import { getCategoryTheme, isReservedCategorySlug } from "../../lib/category-routes";
-import { defaultLocale, localizedPath } from "../../lib/i18n";
+import { defaultLocale, joinPath, localizedPath } from "../../lib/i18n";
 import { resolveRequestCopy } from "../../lib/request-locale";
 import { routeIds } from "../../lib/paths";
 
@@ -19,6 +20,7 @@ if (!categorySlug || !articleSlug || isReservedCategorySlug(categorySlug)) {
 interface ArticleDetailRow {
   id: number;
   slug: string;
+  status: "draft" | "published";
   cover_image_url: string | null;
   reading_time_minutes: number | null;
   published_at: string | null;
@@ -36,8 +38,12 @@ interface ArticleDetailRow {
   category_title: string | null;
 }
 
+const isPreviewRequested = Astro.url.searchParams.get("preview") === "true";
+const currentUser = await getCurrentUser(env.DB, sessionTokenFrom(Astro.cookies));
+const canPreview = Boolean(currentUser);
+
 const row = await env.DB.prepare(
-  `SELECT a.id, a.slug, a.cover_image_url, a.reading_time_minutes,
+  `SELECT a.id, a.slug, a.status, a.cover_image_url, a.reading_time_minutes,
           a.published_at, a.created_at, a.updated_at,
           a.created_by, u.name AS author_name, u.avatar_url AS author_avatar,
           COALESCE(
@@ -66,7 +72,7 @@ const row = await env.DB.prepare(
      JOIN article_category_map m ON m.article_id = a.id
      JOIN article_categories c ON c.id = m.category_id
 LEFT JOIN users u ON u.id = a.created_by
-    WHERE a.slug = ? AND c.slug = ? AND a.status = 'published'
+    WHERE a.slug = ? AND c.slug = ?
     LIMIT 1`,
 )
   .bind(
@@ -81,6 +87,12 @@ LEFT JOIN users u ON u.id = a.created_by
   .first<ArticleDetailRow>();
 
 if (!row?.title || !row.category_title) return new Response(null, { status: 404 });
+
+if (row.status !== "published" && !canPreview) {
+  return new Response(null, { status: 404 });
+}
+
+const isPreviewMode = Boolean(currentUser) && (row.status !== "published" || isPreviewRequested);
 
 const tags = (await env.DB.prepare("SELECT tag FROM article_tags WHERE article_id = ? ORDER BY tag").bind(row.id).all<{ tag: string }>())
   .results ?? [];
@@ -157,6 +169,32 @@ const authorBioText = row.author_bio || copy.articleDefaultBio;
 ---
 
 <BaseLayout title={`AfroUp — ${row.title}`} active={categorySlug}>
+  {isPreviewMode ? (
+    <aside class="sticky top-0 z-50 bg-amber-500 text-neutral-950 px-4 py-2.5 shadow-md border-b border-amber-600/50 backdrop-blur-md">
+      <div class="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-3 text-xs font-semibold">
+        <div class="flex items-center gap-2">
+          <span class="badge badge-neutral badge-xs font-bold uppercase tracking-wider">
+            {row.status === "published" ? "Modo Vista Previa" : "Borrador No Publicado"}
+          </span>
+          <span>
+            {row.status === "published"
+              ? "Estás viendo la vista previa de un artículo publicado."
+              : "Este artículo está en borrador y no es visible públicamente."}
+          </span>
+        </div>
+        <div class="flex items-center gap-2">
+          <a
+            href={localizedPath(locale, joinPath(routeIds.admin, `articulos/${row.id}`))}
+            class="btn btn-xs btn-neutral font-bold gap-1 shadow-xs"
+          >
+            <svg class="size-3"><use href="#ic-edit"></use></svg>
+            <span>Volver al Editor</span>
+          </a>
+        </div>
+      </div>
+    </aside>
+  ) : null}
+
   <!-- Breadcrumbs -->
   <div class="breadcrumbs text-sm pt-4 pb-2">
     <ul>
