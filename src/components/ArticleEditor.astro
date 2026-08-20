@@ -68,15 +68,15 @@ const publicPath = article?.slug && primaryCategorySlug
 >
   {isEdit ? <input type="hidden" name="id" value={article?.id} /> : null}
 
-  <!-- Sticky Top Action Bar -->
-  <div class="sticky top-[64px] z-10 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300 bg-base-100/95 p-3.5 backdrop-blur-md shadow-xs">
+  <!-- Sticky Top Action Bar inside 90% Workspace -->
+  <div class="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300 bg-base-100/95 p-3.5 backdrop-blur-md shadow-xs">
     <div class="flex items-center gap-3 min-w-0">
       <a class="btn btn-ghost btn-sm gap-1.5 text-xs font-bold" href={backHref}>
         <svg class="size-4"><use href="#ic-arrow"></use></svg>
         <span>{copy.adminArticles}</span>
       </a>
       <span class="text-base-content/30 hidden sm:inline">/</span>
-      <span class="font-display font-bold text-sm text-base-content truncate hidden sm:inline max-w-[280px]">
+      <span class="font-display font-bold text-sm text-base-content truncate hidden sm:inline max-w-[320px]">
         {isEdit ? (titles[defaultLocale] || article?.slug) : copy.adminNewArticle}
       </span>
       {isEdit && article?.status === "published" ? (
@@ -107,17 +107,17 @@ const publicPath = article?.slug && primaryCategorySlug
         </button>
       ) : null}
 
-      <button class="btn btn-primary btn-sm px-5 font-bold shadow-sm hover:scale-[1.02] transition-transform" type="submit">
+      <button class="btn btn-primary btn-sm px-6 font-bold shadow-sm hover:scale-[1.02] transition-transform" type="submit">
         <svg class="size-4"><use href="#ic-check"></use></svg>
         <span>{copy.adminSave || "Guardar Artículo"}</span>
       </button>
     </div>
   </div>
 
-  <!-- Studio 2-Column Grid -->
+  <!-- Expansive 2-Column Grid (90vw workspace) -->
   <div class="grid grid-cols-1 gap-6 lg:grid-cols-12 items-start">
-    <!-- Left Column: Editorial Canvas (Col 8) -->
-    <div class="space-y-6 lg:col-span-8">
+    <!-- Left Column: Primary Editorial Canvas (Col 8 on lg, Col 9 on xl) -->
+    <div class="space-y-6 lg:col-span-8 xl:col-span-9">
       <!-- Language Selector Header -->
       <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300 bg-base-100 p-4 shadow-xs">
         <div class="flex items-center gap-2">
@@ -150,7 +150,7 @@ const publicPath = article?.slug && primaryCategorySlug
 
         return (
           <div
-            class:list={["space-y-5 rounded-3xl border border-base-300 bg-base-100 p-6 sm:p-8 shadow-xs", !isPrimary && "hidden"]}
+            class:list={["space-y-6 rounded-3xl border border-base-300 bg-base-100 p-6 sm:p-8 shadow-xs", !isPrimary && "hidden"]}
             data-i18n-panel={language.code}
             data-locale={language.code}
           >
@@ -165,13 +165,13 @@ const publicPath = article?.slug && primaryCategorySlug
               </span>
             </div>
 
-            <!-- Title Input (Editorial Heading) -->
+            <!-- Title Input (Large Editorial Heading) -->
             <fieldset class="fieldset">
               <legend class="fieldset-legend font-bold text-xs uppercase tracking-wider text-base-content/60">
                 {copy.adminCategoryTitle || "Título del Artículo"} · {language.native_name}
               </legend>
               <input
-                class="input input-bordered w-full font-display text-xl sm:text-2xl font-extrabold h-auto py-3.5 px-4 focus:border-primary"
+                class="input input-bordered w-full font-display text-2xl sm:text-3xl font-extrabold h-auto py-4 px-5 focus:border-primary placeholder:opacity-40"
                 name={`title[${language.code}]`}
                 data-title-input={language.code}
                 maxlength="180"
@@ -188,7 +188,7 @@ const publicPath = article?.slug && primaryCategorySlug
                 {copy.adminCategoryDescription || "Bajada o Resumen (Dek)"} · {language.native_name}
               </legend>
               <textarea
-                class="textarea textarea-bordered w-full text-base leading-relaxed p-4 focus:border-primary"
+                class="textarea textarea-bordered w-full text-base leading-relaxed p-4 focus:border-primary placeholder:opacity-40"
                 name={`description[${language.code}]`}
                 data-desc-input={language.code}
                 rows="2"
@@ -201,7 +201,7 @@ const publicPath = article?.slug && primaryCategorySlug
             <!-- Editor.js Canvas -->
             <fieldset class="fieldset">
               <legend class="fieldset-legend font-bold text-xs uppercase tracking-wider text-base-content/60 flex items-center justify-between">
-                <span>{copy.adminArticleContent || "Cuerpo del Artículo"} (Editor.js)</span>
+                <span>{copy.adminArticleContent || "Cuerpo del Artículo"} (Editor en Bloques)</span>
                 <button
                   class="btn btn-ghost btn-xs gap-1.5 text-xs text-base-content/70 hover:text-base-content"
                   type="button"
@@ -214,10 +214,10 @@ const publicPath = article?.slug && primaryCategorySlug
 
               <div class="space-y-3">
                 <!-- Editor.js Container Box -->
-                <div class="min-h-[380px] w-full rounded-2xl border border-base-300 bg-base-100 p-6 shadow-inner focus-within:border-primary/60 transition-colors">
+                <div class="min-h-[480px] w-full rounded-2xl border border-base-300 bg-base-100 p-6 sm:p-8 shadow-inner focus-within:border-primary/60 transition-colors">
                   <div
                     id={`editorjs-${language.code}`}
-                    class="editorjs-holder min-h-[320px] article-prose max-w-none"
+                    class="editorjs-holder min-h-[400px] article-prose max-w-none"
                     data-editorjs-locale={language.code}
                     data-disabled={locked ? "true" : "false"}
                   ></div>
@@ -232,7 +232,7 @@ const publicPath = article?.slug && primaryCategorySlug
 
                 <!-- Live Preview Box -->
                 <div
-                  class="hidden rounded-2xl bg-base-200/50 p-6 border border-base-300 article-prose max-w-none shadow-xs"
+                  class="hidden rounded-2xl bg-base-200/50 p-6 sm:p-8 border border-base-300 article-prose max-w-none shadow-xs"
                   data-preview-box={language.code}
                 >
                   <div class="text-xs uppercase tracking-wider text-base-content/50 font-extrabold mb-4 pb-2 border-b border-base-300">
@@ -247,18 +247,18 @@ const publicPath = article?.slug && primaryCategorySlug
       })}
     </div>
 
-    <!-- Right Column: Metadata & Publication Settings (Col 4) -->
-    <div class="space-y-6 lg:col-span-4">
+    <!-- Right Column: Metadata & Publication Settings (Col 4 on lg, Col 3 on xl) -->
+    <div class="space-y-6 lg:col-span-4 xl:col-span-3">
       <!-- Card: Estado y Publicación -->
-      <div class="rounded-3xl border border-base-300 bg-base-100 p-6 shadow-xs space-y-4">
-        <h3 class="font-display font-bold text-base text-base-content flex items-center gap-2 border-b border-base-300/80 pb-3">
-          <svg class="size-4.5 text-primary"><use href="#ic-pin"></use></svg>
-          <span>Configuración de Publicación</span>
+      <div class="rounded-3xl border border-base-300 bg-base-100 p-5 shadow-xs space-y-4">
+        <h3 class="font-display font-bold text-sm text-base-content flex items-center gap-2 border-b border-base-300/80 pb-3">
+          <svg class="size-4 text-primary"><use href="#ic-pin"></use></svg>
+          <span>Publicación & Estado</span>
         </h3>
 
         <!-- Status Selector -->
         <fieldset class="fieldset">
-          <legend class="fieldset-legend font-semibold text-xs text-base-content/70">{copy.adminArticleStatus || "Estado del Artículo"}</legend>
+          <legend class="fieldset-legend font-semibold text-xs text-base-content/70">{copy.adminArticleStatus || "Estado"}</legend>
           <select class="select select-bordered select-sm w-full font-bold" name="status">
             <option value="draft" selected={article?.status !== "published"}>📝 {copy.adminArticleDraft || "Borrador"}</option>
             <option value="published" selected={article?.status === "published"}>🌐 {copy.adminArticlePublished || "Publicado en vivo"}</option>
@@ -267,7 +267,7 @@ const publicPath = article?.slug && primaryCategorySlug
 
         <!-- Slug Input -->
         <fieldset class="fieldset">
-          <legend class="fieldset-legend font-semibold text-xs text-base-content/70">{copy.adminCategorySlug || "Identificador URL (Slug)"}</legend>
+          <legend class="fieldset-legend font-semibold text-xs text-base-content/70">{copy.adminCategorySlug || "Slug URL"}</legend>
           <input
             class="input input-bordered input-sm w-full font-mono text-xs"
             name="slug"
@@ -276,12 +276,11 @@ const publicPath = article?.slug && primaryCategorySlug
             value={article?.slug ?? ""}
             placeholder="ejemplo-slug-articulo"
           />
-          <span class="text-[11px] text-base-content/50 mt-1">Generado automáticamente si se deja vacío.</span>
         </fieldset>
 
         <!-- Reading Time -->
         <fieldset class="fieldset">
-          <legend class="fieldset-legend font-semibold text-xs text-base-content/70">{copy.adminArticleReadingTime || "Tiempo de Lectura (minutos)"}</legend>
+          <legend class="fieldset-legend font-semibold text-xs text-base-content/70">{copy.adminArticleReadingTime || "Lectura (min)"}</legend>
           <input
             class="input input-bordered input-sm w-full"
             type="number"
@@ -289,15 +288,15 @@ const publicPath = article?.slug && primaryCategorySlug
             min="1"
             max="120"
             value={article?.reading_time_minutes ?? ""}
-            placeholder="Automático según recuento de palabras"
+            placeholder="Automático según texto"
           />
         </fieldset>
       </div>
 
       <!-- Card: Imagen de Portada -->
-      <div class="rounded-3xl border border-base-300 bg-base-100 p-6 shadow-xs space-y-4">
-        <h3 class="font-display font-bold text-base text-base-content flex items-center gap-2 border-b border-base-300/80 pb-3">
-          <svg class="size-4.5 text-accent"><use href="#ic-share"></use></svg>
+      <div class="rounded-3xl border border-base-300 bg-base-100 p-5 shadow-xs space-y-4">
+        <h3 class="font-display font-bold text-sm text-base-content flex items-center gap-2 border-b border-base-300/80 pb-3">
+          <svg class="size-4 text-accent"><use href="#ic-share"></use></svg>
           <span>{copy.adminArticleCoverImage || "Imagen de Portada"}</span>
         </h3>
 
@@ -320,8 +319,8 @@ const publicPath = article?.slug && primaryCategorySlug
               <img src={article.cover_image_url} alt="Cover preview" class="size-full object-cover" />
             ) : (
               <div class="flex flex-col items-center gap-1.5 text-base-content/40">
-                <svg class="size-8 opacity-40"><use href="#ic-book2"></use></svg>
-                <span class="font-semibold text-xs">Sin imagen asignada</span>
+                <svg class="size-7 opacity-40"><use href="#ic-book2"></use></svg>
+                <span class="font-semibold text-xs">Sin imagen</span>
               </div>
             )}
           </div>
@@ -329,17 +328,17 @@ const publicPath = article?.slug && primaryCategorySlug
       </div>
 
       <!-- Card: Categorías -->
-      <div class="rounded-3xl border border-base-300 bg-base-100 p-6 shadow-xs space-y-4">
-        <h3 class="font-display font-bold text-base text-base-content flex items-center gap-2 border-b border-base-300/80 pb-3">
-          <svg class="size-4.5 text-secondary"><use href="#ic-stack"></use></svg>
+      <div class="rounded-3xl border border-base-300 bg-base-100 p-5 shadow-xs space-y-4">
+        <h3 class="font-display font-bold text-sm text-base-content flex items-center gap-2 border-b border-base-300/80 pb-3">
+          <svg class="size-4 text-secondary"><use href="#ic-stack"></use></svg>
           <span>{copy.adminArticleCategory || "Categorías"}</span>
         </h3>
 
-        <div class="grid grid-cols-1 gap-1.5 rounded-2xl border border-base-300/80 p-3 bg-base-200/40 max-h-60 overflow-y-auto">
+        <div class="grid grid-cols-1 gap-1.5 rounded-2xl border border-base-300/80 p-2.5 bg-base-200/40 max-h-56 overflow-y-auto">
           {categories.map((category) => {
             const theme = getCategoryTheme(category.slug);
             return (
-              <label class="label cursor-pointer justify-start gap-2.5 rounded-xl p-2 hover:bg-base-100 transition-colors">
+              <label class="label cursor-pointer justify-start gap-2.5 rounded-xl p-1.5 hover:bg-base-100 transition-colors">
                 <input
                   class="checkbox checkbox-xs checkbox-primary rounded-md"
                   type="checkbox"
@@ -358,9 +357,9 @@ const publicPath = article?.slug && primaryCategorySlug
       </div>
 
       <!-- Card: Etiquetas (Tags) -->
-      <div class="rounded-3xl border border-base-300 bg-base-100 p-6 shadow-xs space-y-4">
-        <h3 class="font-display font-bold text-base text-base-content flex items-center gap-2 border-b border-base-300/80 pb-3">
-          <svg class="size-4.5 text-warning"><use href="#ic-pin"></use></svg>
+      <div class="rounded-3xl border border-base-300 bg-base-100 p-5 shadow-xs space-y-4">
+        <h3 class="font-display font-bold text-sm text-base-content flex items-center gap-2 border-b border-base-300/80 pb-3">
+          <svg class="size-4 text-warning"><use href="#ic-pin"></use></svg>
           <span>{copy.adminArticleTags || "Etiquetas"}</span>
         </h3>
 
@@ -376,7 +375,7 @@ const publicPath = article?.slug && primaryCategorySlug
 
       <!-- Card: Metadatos de Autoría (si es edición) -->
       {isEdit && article ? (
-        <div class="rounded-3xl border border-base-300 bg-base-200/40 p-5 text-xs space-y-2 text-base-content/70">
+        <div class="rounded-3xl border border-base-300 bg-base-200/40 p-4 text-xs space-y-2 text-base-content/70">
           <div class="flex items-center justify-between border-b border-base-300/60 pb-1.5">
             <span>Autor</span>
             <span class="font-bold text-base-content">{article.created_by_name || "Equipo AfroUp"}</span>
@@ -450,7 +449,7 @@ const publicPath = article?.slug && primaryCategorySlug
         if (val) {
           coverPreview.innerHTML = `<img src="${val}" alt="Cover preview" class="size-full object-cover" onerror="this.parentElement.innerHTML='<span class=\\'text-error font-semibold\\'>Error al cargar URL</span>'" />`;
         } else {
-          coverPreview.innerHTML = `<div class="flex flex-col items-center gap-1.5 text-base-content/40"><span class="font-semibold text-xs">Sin imagen asignada</span></div>`;
+          coverPreview.innerHTML = `<div class="flex flex-col items-center gap-1.5 text-base-content/40"><span class="font-semibold text-xs">Sin imagen</span></div>`;
         }
       });
     }
@@ -472,7 +471,7 @@ const publicPath = article?.slug && primaryCategorySlug
           try {
             const saved = await sourceEditor.save();
             sourceContent = blocksToHtml(saved);
-            const esInp = document.querySelector<HTMLTextAreaElement>("[data-content-input='es']");
+            const esInp = document.querySelector<HTMLTextAreaElement>(`[data-content-input='es']`);
             if (esInp) esInp.value = sourceContent;
           } catch {}
         } else {
