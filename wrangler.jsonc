@@ -25,6 +25,14 @@
     {
       "binding": "AVATARS",
       "bucket_name": "afroup-avatars"
+    },
+    {
+      "binding": "MEDIA",
+      "bucket_name": "afroup-media"
+    },
+    {
+      "binding": "DOCUMENTS",
+      "bucket_name": "afroup-documents"
     }
   ],
   "send_email": [

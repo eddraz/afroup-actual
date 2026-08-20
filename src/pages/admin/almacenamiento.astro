@@ -1,0 +1,780 @@
+---
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { requireModuleAccess } from "../../lib/admin-scope";
+import { localizedPath } from "../../lib/i18n";
+import { resolveRequestCopy } from "../../lib/request-locale";
+import { routeIds } from "../../lib/paths";
+import { KNOWN_BUCKETS, resolveR2Bucket, mapR2Object, formatBytes, type R2ItemSummary } from "../../lib/r2-storage";
+import { env } from "cloudflare:workers";
+
+export const prerender = false;
+
+const { locale, copy } = await resolveRequestCopy(env.DB, Astro.url);
+const access = await requireModuleAccess(env.DB, Astro.cookies, Astro.url, locale, "almacenamiento");
+if (access instanceof Response) return access;
+const actor = access;
+
+const requestedBucketId = Astro.url.searchParams.get("bucket") || "media";
+const currentPrefix = Astro.url.searchParams.get("prefix") || "";
+const searchQuery = (Astro.url.searchParams.get("q") || "").trim().toLowerCase();
+
+// Discover available buckets
+const bucketList = KNOWN_BUCKETS.map((def) => {
+  const isAvailable = Boolean((env as any)[def.bindingName] || (env as any)[def.id] || (env as any)[def.bucketName]);
+  return {
+    ...def,
+    isAvailable,
+  };
+});
+
+// Resolve current bucket
+const activeBucketDef = bucketList.find((b) => b.id === requestedBucketId) || bucketList[0] || KNOWN_BUCKETS[0];
+const resolved = resolveR2Bucket(env as any, activeBucketDef.id);
+
+let objects: R2ItemSummary[] = [];
+let totalCount = 0;
+let totalBytes = 0;
+let prefixes: string[] = [];
+let fetchError: string | null = null;
+
+if (resolved) {
+  try {
+    const listResult = await resolved.bucket.list({
+      prefix: currentPrefix || undefined,
+      include: ["httpMetadata", "customMetadata"],
+      limit: 300,
+    });
+    const rawObjects = listResult.objects || [];
+    objects = rawObjects.map((obj: any) => mapR2Object(obj, resolved.definition.id, locale));
+    prefixes = listResult.delimitedPrefixes || [];
+    totalCount = objects.length;
+    totalBytes = objects.reduce((acc, o) => acc + o.size, 0);
+
+    if (searchQuery) {
+      objects = objects.filter((o) => o.key.toLowerCase().includes(searchQuery) || o.name.toLowerCase().includes(searchQuery));
+    }
+  } catch (err: any) {
+    fetchError = err?.message || "No se pudieron listar los objetos del bucket.";
+  }
+} else {
+  fetchError = `El bucket «${activeBucketDef.bucketName}» no está configurado en las variables de entorno de Cloudflare.`;
+}
+---
+
+<AdminLayout title={copy.adminStorage || "Almacenamiento R2"} active="storage">
+  <!-- Right-to-Left Drawers for Storage: Upload & Item Details -->
+  <div class="drawer drawer-end">
+    <input id="storage-drawer" type="checkbox" class="drawer-toggle" />
+    <input id="detail-drawer" type="checkbox" class="drawer-toggle" />
+
+    <div class="drawer-content">
+      <!-- Page Header -->
+      <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2.5">
+            <h2 class="font-display text-2xl font-bold text-base-content">{copy.adminStorage || "Almacenamiento R2"}</h2>
+            <span class="badge badge-neutral badge-sm font-semibold">{totalCount} objetos</span>
+            <span class="badge badge-accent badge-sm font-semibold font-mono">{formatBytes(totalBytes)}</span>
+          </div>
+          <p class="text-xs sm:text-sm text-base-content/60 mt-1">
+            {copy.adminStorageLead || "Explora y administra los buckets de Cloudflare R2, archivos y recursos multimedia."}
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <label
+            for="storage-drawer"
+            class="drawer-button btn btn-primary btn-sm gap-2 shadow-sm hover:scale-[1.02] transition-transform cursor-pointer"
+          >
+            <svg class="size-4"><use href="#ic-plus"></use></svg>
+            <span>Subir Archivo</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Buckets Overview Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        {bucketList.map((b) => {
+          const isActive = b.id === activeBucketDef.id;
+          return (
+            <a
+              href={`?bucket=${b.id}`}
+              class={`rounded-3xl border p-5 transition-all flex flex-col justify-between group ${
+                isActive
+                  ? "bg-primary/10 border-primary shadow-sm"
+                  : "bg-base-100 border-base-300 hover:border-base-content/30 hover:bg-base-200/50 shadow-xs"
+              }`}
+            >
+              <div class="flex items-start justify-between gap-3">
+                <div class="flex items-center gap-3">
+                  <div class={`size-11 rounded-2xl flex items-center justify-center font-bold ${
+                    isActive ? "bg-primary text-primary-content shadow-xs" : "bg-base-200 text-base-content/70 group-hover:text-primary"
+                  }`}>
+                    <svg class="size-5.5"><use href={`#${b.icon}`}></use></svg>
+                  </div>
+                  <div>
+                    <h3 class="font-display font-bold text-sm text-base-content group-hover:text-primary transition-colors">{b.label}</h3>
+                    <p class="font-mono text-xs text-base-content/60">{b.bucketName}</p>
+                  </div>
+                </div>
+                {isActive ? (
+                  <span class="badge badge-primary badge-xs font-bold py-1 px-2 uppercase">Activo</span>
+                ) : (
+                  <span class="badge badge-ghost badge-xs py-1 px-2 text-base-content/50">{b.badge}</span>
+                )}
+              </div>
+              <p class="text-xs text-base-content/60 mt-3 line-clamp-2">{b.description}</p>
+            </a>
+          );
+        })}
+      </div>
+
+      <!-- Filter & Search Toolbar -->
+      <div class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300 bg-base-100 p-3 shadow-xs">
+        <div class="relative flex-1 min-w-[240px] max-w-md">
+          <svg class="size-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none">
+            <use href="#ic-cloud"></use>
+          </svg>
+          <input
+            type="search"
+            id="storage-search"
+            value={searchQuery}
+            placeholder="Buscar por nombre, clave o extensión..."
+            class="input input-sm input-bordered w-full pl-9 bg-base-200/40 text-xs sm:text-sm font-medium"
+          />
+        </div>
+
+        <div class="flex items-center gap-2">
+          <!-- Type Filter Tabs -->
+          <div class="join border border-base-300 rounded-xl overflow-hidden bg-base-200/40 p-0.5" id="category-filter-join">
+            <button type="button" class="btn btn-xs join-item btn-primary filter-btn font-bold" data-category="all">Todos</button>
+            <button type="button" class="btn btn-xs join-item btn-ghost filter-btn font-medium" data-category="image">Imágenes</button>
+            <button type="button" class="btn btn-xs join-item btn-ghost filter-btn font-medium" data-category="pdf">PDFs</button>
+            <button type="button" class="btn btn-xs join-item btn-ghost filter-btn font-medium" data-category="audio">Audio</button>
+            <button type="button" class="btn btn-xs join-item btn-ghost filter-btn font-medium" data-category="video">Video</button>
+            <button type="button" class="btn btn-xs join-item btn-ghost filter-btn font-medium" data-category="other">Otros</button>
+          </div>
+
+          <!-- View Mode Toggle -->
+          <div class="join border border-base-300 rounded-xl overflow-hidden bg-base-200/40 p-0.5">
+            <button type="button" id="btn-view-grid" class="btn btn-xs join-item btn-ghost font-bold" title="Vista Cuadrícula">
+              <svg class="size-3.5"><use href="#ic-stack"></use></svg>
+            </button>
+            <button type="button" id="btn-view-list" class="btn btn-xs join-item btn-primary font-bold" title="Vista Lista">
+              <svg class="size-3.5"><use href="#ic-menu"></use></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {fetchError ? (
+        <div class="alert alert-warning mb-6 rounded-2xl shadow-xs">
+          <svg class="size-5"><use href="#ic-shield"></use></svg>
+          <span class="text-sm font-medium">{fetchError}</span>
+        </div>
+      ) : null}
+
+      <!-- Objects Grid View (Hidden by default, toggled via JS) -->
+      <div id="storage-grid" class="hidden grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {objects.map((obj) => (
+          <div
+            class="storage-item-card rounded-3xl border border-base-300 bg-base-100 p-4 shadow-xs hover:border-primary/50 hover:shadow-md transition-all flex flex-col justify-between group cursor-pointer"
+            data-key={obj.key}
+            data-name={obj.name.toLowerCase()}
+            data-category={obj.category}
+            data-size={obj.formattedSize}
+            data-uploaded={obj.formattedDate}
+            data-type={obj.contentType}
+            data-etag={obj.etag}
+            data-url={obj.streamUrl}
+            data-is-image={obj.isImage ? "true" : "false"}
+          >
+            <div>
+              <div class="aspect-video w-full rounded-2xl bg-base-200/70 border border-base-300/60 overflow-hidden flex items-center justify-center relative mb-3 group-hover:border-primary/30 transition-colors">
+                {obj.isImage ? (
+                  <img
+                    src={obj.streamUrl}
+                    alt={obj.name}
+                    loading="lazy"
+                    class="size-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                ) : obj.isPdf ? (
+                  <div class="flex flex-col items-center gap-1 text-error">
+                    <svg class="size-8"><use href="#ic-book2"></use></svg>
+                    <span class="text-[10px] font-bold uppercase tracking-wider">PDF</span>
+                  </div>
+                ) : (
+                  <div class="flex flex-col items-center gap-1 text-base-content/40">
+                    <svg class="size-8"><use href="#ic-stack"></use></svg>
+                    <span class="text-[10px] font-bold uppercase tracking-wider">{obj.category}</span>
+                  </div>
+                )}
+                <span class="absolute bottom-2 right-2 badge badge-xs badge-neutral bg-base-300/90 text-base-content font-mono font-bold">
+                  {obj.formattedSize}
+                </span>
+              </div>
+
+              <h4 class="font-bold text-xs text-base-content line-clamp-1 group-hover:text-primary transition-colors" title={obj.name}>
+                {obj.name}
+              </h4>
+              <p class="text-[11px] font-mono text-base-content/50 truncate mt-0.5" title={obj.key}>
+                {obj.key}
+              </p>
+            </div>
+
+            <div class="flex items-center justify-between mt-3 pt-2.5 border-t border-base-300/60 text-[11px] text-base-content/60">
+              <span>{obj.formattedDate}</span>
+              <button type="button" class="btn btn-ghost btn-xs text-primary font-bold hover:underline open-detail-btn">
+                Detalle
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <!-- Objects Table View (Active by default) -->
+      <div id="storage-table-container" class="rounded-3xl border border-base-300 bg-base-100 shadow-xs overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="table table-zebra w-full" id="storage-table">
+            <thead>
+              <tr class="border-b border-base-300 bg-base-200/60 text-xs font-extrabold uppercase tracking-wider text-base-content/60">
+                <th class="py-4 pl-6">Archivo / Clave</th>
+                <th>Tipo</th>
+                <th>Tamaño</th>
+                <th>Fecha Subida</th>
+                <th class="text-right pr-6">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-base-300/60 font-medium text-sm">
+              {objects.length === 0 ? (
+                <tr>
+                  <td colspan="5" class="text-center py-12 text-base-content/60">
+                    <div class="flex flex-col items-center gap-2">
+                      <div class="size-12 rounded-2xl bg-base-200 flex items-center justify-center text-base-content/40">
+                        <svg class="size-6"><use href="#ic-cloud"></use></svg>
+                      </div>
+                      <span class="font-bold text-base">No hay objetos en este bucket</span>
+                      <p class="text-xs text-base-content/50">Usa el botón «Subir Archivo» para comenzar.</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : null}
+
+              {objects.map((obj) => (
+                <tr
+                  class="hover:bg-base-200/50 transition-colors storage-row"
+                  data-key={obj.key}
+                  data-name={obj.name.toLowerCase()}
+                  data-category={obj.category}
+                  data-size={obj.formattedSize}
+                  data-uploaded={obj.formattedDate}
+                  data-type={obj.contentType}
+                  data-etag={obj.etag}
+                  data-url={obj.streamUrl}
+                  data-is-image={obj.isImage ? "true" : "false"}
+                >
+                  <td class="py-3 pl-6">
+                    <div class="flex items-center gap-3">
+                      <div class="size-10 rounded-xl bg-base-200 border border-base-300 shrink-0 overflow-hidden flex items-center justify-center">
+                        {obj.isImage ? (
+                          <img src={obj.streamUrl} alt="" class="size-full object-cover" loading="lazy" />
+                        ) : obj.isPdf ? (
+                          <svg class="size-5 text-error"><use href="#ic-book2"></use></svg>
+                        ) : (
+                          <svg class="size-5 text-base-content/50"><use href="#ic-stack"></use></svg>
+                        )}
+                      </div>
+                      <div class="min-w-0">
+                        <span class="font-bold text-base-content block truncate text-xs sm:text-sm" title={obj.name}>
+                          {obj.name}
+                        </span>
+                        <span class="font-mono text-[11px] text-base-content/50 block truncate max-w-xs sm:max-w-md" title={obj.key}>
+                          {obj.key}
+                        </span>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="badge badge-xs badge-neutral font-mono py-1 px-2 text-[10px] font-bold">
+                      {obj.contentType.split("/")[1] || obj.category}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="font-mono text-xs font-semibold text-base-content/80">{obj.formattedSize}</span>
+                  </td>
+                  <td class="text-xs text-base-content/70">{obj.formattedDate}</td>
+                  <td class="text-right pr-6">
+                    <div class="flex items-center justify-end gap-1.5">
+                      <button
+                        type="button"
+                        class="btn btn-square btn-ghost btn-xs border border-base-300 hover:bg-base-200 open-detail-btn"
+                        title="Ver detalle completo"
+                      >
+                        <svg class="size-3.5"><use href="#ic-edit"></use></svg>
+                      </button>
+                      <a
+                        href={`${obj.streamUrl}&download=1`}
+                        class="btn btn-square btn-ghost btn-xs border border-base-300 hover:bg-base-200"
+                        title="Descargar archivo"
+                        download={obj.name}
+                      >
+                        <svg class="size-3.5"><use href="#ic-arrow"></use></svg>
+                      </a>
+                      <button
+                        type="button"
+                        class="btn btn-square btn-ghost btn-xs border border-base-300 hover:bg-error/10 hover:text-error delete-object-btn"
+                        data-bucket={activeBucketDef.id}
+                        data-key={obj.key}
+                        title={copy.adminRemove}
+                      >
+                        <svg class="size-3.5"><use href="#ic-trash"></use></svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Drawer 1: Upload File Side Panel -->
+    <div class="drawer-side z-50">
+      <label for="storage-drawer" aria-label="close drawer" class="drawer-overlay"></label>
+      <aside class="w-full max-w-xl sm:max-w-2xl bg-base-100 min-h-dvh h-dvh max-h-dvh flex flex-col p-6 sm:p-8 shadow-2xl border-l border-base-300 overflow-y-auto overscroll-contain">
+        <div class="flex items-center justify-between border-b border-base-300 pb-4 mb-6 shrink-0">
+          <div class="flex items-center gap-2.5">
+            <span class="size-3 rounded-full bg-primary animate-pulse"></span>
+            <div>
+              <h3 class="font-display font-bold text-lg text-base-content">Subir Archivo a R2</h3>
+              <p class="text-xs text-base-content/60">Sube imágenes, documentos o recursos directamente a Cloudflare R2.</p>
+            </div>
+          </div>
+          <label for="storage-drawer" class="btn btn-circle btn-ghost btn-xs">✕</label>
+        </div>
+
+        <form method="post" action="/api/admin/r2" class="space-y-6 flex-1 flex flex-col justify-between" id="r2-upload-form" enctype="multipart/form-data">
+          <input type="hidden" name="_intent" value="upload" />
+          <div class="space-y-5">
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">Bucket de Destino</legend>
+              <select name="bucket" class="select select-bordered w-full font-semibold" required>
+                {bucketList.map((b) => (
+                  <option value={b.id} selected={b.id === activeBucketDef.id}>
+                    {b.label} ({b.bucketName})
+                  </option>
+                ))}
+              </select>
+            </fieldset>
+
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">Ruta de Carpeta / Prefijo (Opcional)</legend>
+              <input class="input input-bordered w-full font-mono text-xs" name="prefix" placeholder="articulos/2026 o portadas" />
+              <p class="text-[11px] text-base-content/50 mt-1">Escribe la carpeta donde deseas organizar el archivo.</p>
+            </fieldset>
+
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">Nombre Personalizado (Opcional)</legend>
+              <input class="input input-bordered w-full font-mono text-xs" name="customName" placeholder="portada-principal.webp" />
+              <p class="text-[11px] text-base-content/50 mt-1">Si se deja vacío, se usará el nombre original del archivo sanitizado.</p>
+            </fieldset>
+
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">Seleccionar Archivo</legend>
+              <div class="border-2 border-dashed border-base-300 rounded-3xl p-6 text-center hover:border-primary transition-colors bg-base-200/30 flex flex-col items-center gap-2">
+                <svg class="size-8 text-base-content/40"><use href="#ic-cloud"></use></svg>
+                <span class="text-xs font-bold text-base-content">Arrastra un archivo aquí o haz clic para explorar</span>
+                <input type="file" name="file" class="file-input file-input-bordered file-input-sm w-full max-w-xs mt-2" required />
+              </div>
+            </fieldset>
+          </div>
+
+          <div class="flex justify-end gap-2 pt-4 border-t border-base-300 mt-6 shrink-0">
+            <label for="storage-drawer" class="btn btn-ghost btn-sm cursor-pointer">{copy.adminCancel}</label>
+            <button class="btn btn-primary btn-sm px-6 font-bold" type="submit" id="upload-submit-btn">Subir Archivo</button>
+          </div>
+        </form>
+      </aside>
+    </div>
+
+    <!-- Drawer 2: Item Detail Side Panel -->
+    <div class="drawer-side z-50">
+      <label for="detail-drawer" aria-label="close drawer" class="drawer-overlay"></label>
+      <aside class="w-full max-w-xl sm:max-w-2xl bg-base-100 min-h-dvh h-dvh max-h-dvh flex flex-col p-6 sm:p-8 shadow-2xl border-l border-base-300 overflow-y-auto overscroll-contain" id="item-detail-panel">
+        <div class="flex items-center justify-between border-b border-base-300 pb-4 mb-6 shrink-0">
+          <div class="flex items-center gap-2.5">
+            <span class="size-3 rounded-full bg-accent animate-pulse"></span>
+            <div>
+              <h3 class="font-display font-bold text-lg text-base-content" id="detail-title">Detalle del Objeto R2</h3>
+              <p class="text-xs text-base-content/60">Metadatos, vista previa y opciones de distribución.</p>
+            </div>
+          </div>
+          <label for="detail-drawer" class="btn btn-circle btn-ghost btn-xs">✕</label>
+        </div>
+
+        <div class="space-y-6 flex-1">
+          <!-- Preview Container -->
+          <div class="rounded-3xl border border-base-300 bg-base-200/50 p-4 overflow-hidden flex items-center justify-center min-h-[220px] max-h-[340px]" id="detail-preview-container">
+            <img id="detail-preview-img" src="" alt="Vista previa" class="max-h-[300px] w-auto max-w-full rounded-2xl object-contain shadow-xs hidden" />
+            <div id="detail-preview-fallback" class="flex flex-col items-center gap-2 text-base-content/50 py-8">
+              <svg class="size-12"><use href="#ic-stack"></use></svg>
+              <span class="text-xs font-semibold">Sin vista previa visual directa</span>
+            </div>
+          </div>
+
+          <!-- Metadata Fields -->
+          <div class="space-y-3 rounded-2xl border border-base-300 bg-base-100 p-4 shadow-xs">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div>
+                <span class="font-bold text-base-content/50 uppercase text-[10px] block">Nombre</span>
+                <span class="font-bold text-base-content break-all" id="detail-name">—</span>
+              </div>
+              <div>
+                <span class="font-bold text-base-content/50 uppercase text-[10px] block">Tamaño</span>
+                <span class="font-mono font-semibold text-base-content" id="detail-size">—</span>
+              </div>
+              <div>
+                <span class="font-bold text-base-content/50 uppercase text-[10px] block">MIME Type</span>
+                <span class="font-mono text-base-content/80" id="detail-type">—</span>
+              </div>
+              <div>
+                <span class="font-bold text-base-content/50 uppercase text-[10px] block">Fecha de Subida</span>
+                <span class="text-base-content" id="detail-uploaded">—</span>
+              </div>
+              <div class="sm:col-span-2">
+                <span class="font-bold text-base-content/50 uppercase text-[10px] block">Clave Completa (Key)</span>
+                <span class="font-mono text-xs text-base-content/80 break-all" id="detail-key">—</span>
+              </div>
+              <div class="sm:col-span-2">
+                <span class="font-bold text-base-content/50 uppercase text-[10px] block">ETag (Hash)</span>
+                <span class="font-mono text-xs text-base-content/60 break-all" id="detail-etag">—</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Public Streaming URL & Copy -->
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">Enlace de Acceso / Transmisión</legend>
+            <div class="join w-full">
+              <input class="input input-bordered input-sm join-item w-full font-mono text-xs" id="detail-url-input" readonly />
+              <button type="button" class="btn btn-sm btn-primary join-item font-bold" id="btn-copy-url">
+                Copiar
+              </button>
+            </div>
+          </fieldset>
+        </div>
+
+        <div class="flex items-center justify-between gap-2 pt-4 border-t border-base-300 mt-6 shrink-0">
+          <button type="button" class="btn btn-error btn-sm btn-outline font-bold" id="btn-delete-from-detail">
+            <svg class="size-4"><use href="#ic-trash"></use></svg>
+            <span>Eliminar Objeto</span>
+          </button>
+          <div class="flex items-center gap-2">
+            <label for="detail-drawer" class="btn btn-ghost btn-sm cursor-pointer">Cerrar</label>
+            <a href="#" id="detail-download-link" class="btn btn-primary btn-sm font-bold" download>
+              <svg class="size-4"><use href="#ic-arrow"></use></svg>
+              <span>Descargar</span>
+            </a>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script is:inline>
+    (function () {
+      var bind = function () {
+        var uploadDrawer = document.getElementById("storage-drawer");
+        var detailDrawer = document.getElementById("detail-drawer");
+
+        var bindScrollLock = function (toggle) {
+          if (toggle && toggle.dataset.boundScroll !== "true") {
+            toggle.dataset.boundScroll = "true";
+            toggle.addEventListener("change", function () {
+              if (toggle.checked) {
+                document.body.style.overflow = "hidden";
+              } else if (!uploadDrawer.checked && !detailDrawer.checked) {
+                document.body.style.overflow = "";
+              }
+            });
+          }
+        };
+
+        bindScrollLock(uploadDrawer);
+        bindScrollLock(detailDrawer);
+
+        document.addEventListener("keydown", function (e) {
+          if (e.key === "Escape") {
+            if (uploadDrawer && uploadDrawer.checked) {
+              uploadDrawer.checked = false;
+            }
+            if (detailDrawer && detailDrawer.checked) {
+              detailDrawer.checked = false;
+            }
+            document.body.style.overflow = "";
+          }
+        });
+
+        // Search & Category Filtering
+        var searchInput = document.getElementById("storage-search");
+        var filterBtns = document.querySelectorAll(".filter-btn");
+        var activeCategory = "all";
+
+        var applyFilters = function () {
+          var q = searchInput ? searchInput.value.trim().toLowerCase() : "";
+          var items = document.querySelectorAll(".storage-row, .storage-item-card");
+
+          items.forEach(function (el) {
+            var name = (el.getAttribute("data-name") || "").toLowerCase();
+            var key = (el.getAttribute("data-key") || "").toLowerCase();
+            var cat = el.getAttribute("data-category") || "other";
+
+            var matchSearch = !q || name.indexOf(q) !== -1 || key.indexOf(q) !== -1;
+            var matchCategory = activeCategory === "all" || cat === activeCategory;
+
+            if (matchSearch && matchCategory) {
+              el.style.display = "";
+            } else {
+              el.style.display = "none";
+            }
+          });
+        };
+
+        if (searchInput && searchInput.dataset.bound !== "true") {
+          searchInput.dataset.bound = "true";
+          searchInput.addEventListener("input", applyFilters);
+        }
+
+        filterBtns.forEach(function (btn) {
+          if (btn.dataset.bound !== "true") {
+            btn.dataset.bound = "true";
+            btn.addEventListener("click", function () {
+              filterBtns.forEach(function (b) {
+                b.classList.remove("btn-primary");
+                b.classList.add("btn-ghost");
+              });
+              btn.classList.add("btn-primary");
+              btn.classList.remove("btn-ghost");
+              activeCategory = btn.getAttribute("data-category") || "all";
+              applyFilters();
+            });
+          }
+        });
+
+        // View Mode Toggling (Grid vs List)
+        var btnGrid = document.getElementById("btn-view-grid");
+        var btnList = document.getElementById("btn-view-list");
+        var gridContainer = document.getElementById("storage-grid");
+        var tableContainer = document.getElementById("storage-table-container");
+
+        if (btnGrid && btnList && gridContainer && tableContainer && !btnGrid.dataset.bound) {
+          btnGrid.dataset.bound = "true";
+          btnList.dataset.bound = "true";
+
+          btnGrid.addEventListener("click", function () {
+            btnGrid.classList.add("btn-primary");
+            btnGrid.classList.remove("btn-ghost");
+            btnList.classList.remove("btn-primary");
+            btnList.classList.add("btn-ghost");
+            gridContainer.classList.remove("hidden");
+            gridContainer.classList.add("grid");
+            tableContainer.classList.add("hidden");
+          });
+
+          btnList.addEventListener("click", function () {
+            btnList.classList.add("btn-primary");
+            btnList.classList.remove("btn-ghost");
+            btnGrid.classList.remove("btn-primary");
+            btnGrid.classList.add("btn-ghost");
+            tableContainer.classList.remove("hidden");
+            gridContainer.classList.add("hidden");
+            gridContainer.classList.remove("grid");
+          });
+        }
+
+        // Open Detail Drawer
+        var detailTitle = document.getElementById("detail-title");
+        var detailName = document.getElementById("detail-name");
+        var detailSize = document.getElementById("detail-size");
+        var detailType = document.getElementById("detail-type");
+        var detailUploaded = document.getElementById("detail-uploaded");
+        var detailKey = document.getElementById("detail-key");
+        var detailEtag = document.getElementById("detail-etag");
+        var detailUrlInput = document.getElementById("detail-url-input");
+        var detailPreviewImg = document.getElementById("detail-preview-img");
+        var detailPreviewFallback = document.getElementById("detail-preview-fallback");
+        var detailDownloadLink = document.getElementById("detail-download-link");
+        var btnDeleteFromDetail = document.getElementById("btn-delete-from-detail");
+
+        var currentSelectedKey = "";
+
+        var openDetail = function (itemEl) {
+          var key = itemEl.getAttribute("data-key") || "";
+          var name = itemEl.getAttribute("data-name") || key;
+          var size = itemEl.getAttribute("data-size") || "";
+          var type = itemEl.getAttribute("data-type") || "";
+          var uploaded = itemEl.getAttribute("data-uploaded") || "";
+          var etag = itemEl.getAttribute("data-etag") || "";
+          var url = itemEl.getAttribute("data-url") || "";
+          var isImage = itemEl.getAttribute("data-is-image") === "true";
+
+          currentSelectedKey = key;
+
+          if (detailName) detailName.textContent = key.split("/").pop() || key;
+          if (detailSize) detailSize.textContent = size;
+          if (detailType) detailType.textContent = type;
+          if (detailUploaded) detailUploaded.textContent = uploaded;
+          if (detailKey) detailKey.textContent = key;
+          if (detailEtag) detailEtag.textContent = etag || "—";
+          if (detailUrlInput) detailUrlInput.value = window.location.origin + url;
+          if (detailDownloadLink) {
+            detailDownloadLink.href = url + "&download=1";
+            detailDownloadLink.setAttribute("download", key.split("/").pop() || "download");
+          }
+
+          if (isImage && detailPreviewImg && detailPreviewFallback) {
+            detailPreviewImg.src = url;
+            detailPreviewImg.classList.remove("hidden");
+            detailPreviewFallback.classList.add("hidden");
+          } else if (detailPreviewImg && detailPreviewFallback) {
+            detailPreviewImg.classList.add("hidden");
+            detailPreviewFallback.classList.remove("hidden");
+          }
+
+          if (detailDrawer) {
+            detailDrawer.checked = true;
+            document.body.style.overflow = "hidden";
+          }
+        };
+
+        document.querySelectorAll(".open-detail-btn").forEach(function (btn) {
+          if (btn.dataset.bound !== "true") {
+            btn.dataset.bound = "true";
+            btn.addEventListener("click", function (e) {
+              e.stopPropagation();
+              var item = btn.closest(".storage-row, .storage-item-card");
+              if (item) openDetail(item);
+            });
+          }
+        });
+
+        document.querySelectorAll(".storage-item-card").forEach(function (card) {
+          if (card.dataset.boundCard !== "true") {
+            card.dataset.boundCard = "true";
+            card.addEventListener("click", function () {
+              openDetail(card);
+            });
+          }
+        });
+
+        // Copy URL
+        var btnCopyUrl = document.getElementById("btn-copy-url");
+        if (btnCopyUrl && !btnCopyUrl.dataset.bound) {
+          btnCopyUrl.dataset.bound = "true";
+          btnCopyUrl.addEventListener("click", function () {
+            if (detailUrlInput) {
+              navigator.clipboard.writeText(detailUrlInput.value).then(function () {
+                if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Enlace copiado al portapapeles.", "success");
+              });
+            }
+          });
+        }
+
+        // Delete Object functionality
+        var deleteObject = function (bucket, key) {
+          if (!confirm("¿Seguro que deseas eliminar el objeto «" + key + "» de R2? Esta acción no se puede deshacer.")) {
+            return;
+          }
+
+          var formData = new FormData();
+          formData.append("_intent", "delete");
+          formData.append("bucket", bucket);
+          formData.append("key", key);
+
+          fetch("/api/admin/r2", { method: "POST", body: formData })
+            .then(function (res) { return res.json(); })
+            .then(function (result) {
+              if (result.ok) {
+                if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Objeto eliminado.", "success");
+                if (detailDrawer) detailDrawer.checked = false;
+                document.body.style.overflow = "";
+                setTimeout(function () { window.location.reload(); }, 500);
+                return;
+              }
+              if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Error al eliminar objeto: " + (result.error || ""), "error");
+            })
+            .catch(function () {
+              if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Error de red.", "error");
+            });
+        };
+
+        document.querySelectorAll(".delete-object-btn").forEach(function (btn) {
+          if (btn.dataset.bound !== "true") {
+            btn.dataset.bound = "true";
+            btn.addEventListener("click", function (e) {
+              e.stopPropagation();
+              var bucket = btn.getAttribute("data-bucket") || "";
+              var key = btn.getAttribute("data-key") || "";
+              deleteObject(bucket, key);
+            });
+          }
+        });
+
+        if (btnDeleteFromDetail && !btnDeleteFromDetail.dataset.bound) {
+          btnDeleteFromDetail.dataset.bound = "true";
+          btnDeleteFromDetail.addEventListener("click", function () {
+            var activeBucket = new URLSearchParams(window.location.search).get("bucket") || "media";
+            if (currentSelectedKey) {
+              deleteObject(activeBucket, currentSelectedKey);
+            }
+          });
+        }
+
+        // Upload Form Submission
+        var uploadForm = document.getElementById("r2-upload-form");
+        var uploadSubmitBtn = document.getElementById("upload-submit-btn");
+
+        if (uploadForm && !uploadForm.dataset.boundSubmit) {
+          uploadForm.dataset.boundSubmit = "true";
+          uploadForm.addEventListener("submit", function (e) {
+            e.preventDefault();
+            if (uploadSubmitBtn) {
+              uploadSubmitBtn.disabled = true;
+              uploadSubmitBtn.textContent = "Subiendo archivo...";
+            }
+
+            var formData = new FormData(uploadForm);
+            fetch(uploadForm.action, { method: "POST", body: formData })
+              .then(function (res) { return res.json(); })
+              .then(function (result) {
+                if (result.ok) {
+                  if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Archivo subido con éxito.", "success");
+                  if (uploadDrawer) uploadDrawer.checked = false;
+                  document.body.style.overflow = "";
+                  setTimeout(function () { window.location.reload(); }, 600);
+                  return;
+                }
+                if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Error al subir archivo: " + (result.error || ""), "error");
+              })
+              .catch(function () {
+                if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Error de red al subir archivo.", "error");
+              })
+              .finally(function () {
+                if (uploadSubmitBtn) {
+                  uploadSubmitBtn.disabled = false;
+                  uploadSubmitBtn.textContent = "Subir Archivo";
+                }
+              });
+          });
+        }
+      };
+
+      bind();
+      document.addEventListener("astro:page-load", bind);
+      document.addEventListener("astro:before-swap", function () {
+        document.body.style.overflow = "";
+      });
+    })();
+  </script>
+</AdminLayout>

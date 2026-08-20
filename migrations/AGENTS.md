@@ -56,6 +56,7 @@
 - `0024_seed_article_categories.sql` seeds the six former mock categories (`africa`, `diaspora`, `antirracismo`, `historia`, `estetica`, `actualidad`) in Spanish and English, plus their `search_documents` rows.
 - `0025_own_seed_categories.sql` assigns those seeded categories to `tantaroth@gmail.com`.
 - `0026_article_content_and_metadata.sql` adds `articles.cover_image_url`, `articles.reading_time_minutes`, and `article_locales.content_html`.
+- `0027_storage_module.sql` registers the `almacenamiento` admin module and grants its permissions to the `Administrador` role.
 
 ## Manual D1 apply notes
 
