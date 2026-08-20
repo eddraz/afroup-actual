@@ -69,7 +69,7 @@ const users = (await env.DB.prepare(
 LEFT JOIN admin_roles r ON r.id = u.role_id
     WHERE u.id = ?
        OR u.created_by = ?
-       OR u.id IN (SELECT record_id FROM record_shares WHERE user_id = ? AND module = 'users')
+       OR u.id IN (SELECT record_id FROM record_shares WHERE shared_with_id = ? AND module_slug = 'users')
     ORDER BY u.id = ? DESC, u.name`,
 )
   .bind(actor.id, actor.id, actor.id, actor.id)
@@ -119,7 +119,7 @@ for (const row of grantRows) {
 }
 
 const sharedWithMeRows = (await env.DB.prepare(
-  "SELECT record_id FROM record_shares WHERE user_id = ? AND module = 'users'",
+  "SELECT record_id FROM record_shares WHERE shared_with_id = ? AND module_slug = 'users'",
 )
   .bind(actor.id)
   .all<{ record_id: number }>()).results ?? [];
