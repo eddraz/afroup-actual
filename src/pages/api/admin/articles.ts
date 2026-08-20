@@ -11,7 +11,7 @@ import {
   canManageOwnedRecord,
   parseLocaleFields,
   parseTagList,
-  plannedLocales,
+  plannedArticleLocales,
   slugify,
   translationAccess,
 } from "../../../lib/editorial";
