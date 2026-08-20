@@ -58,6 +58,15 @@
     });
   };
 
+  var showGuest = function () {
+    document.querySelectorAll("[data-session-guest-nav]").forEach(function (node) {
+      node.classList.remove("hidden");
+    });
+    document.querySelectorAll("[data-session-user-nav]").forEach(function (node) {
+      node.classList.add("hidden");
+    });
+  };
+
   var bind = function () {
     if (document.documentElement.dataset.sessionUserBound === "true") return;
     document.documentElement.dataset.sessionUserBound = "true";
@@ -65,11 +74,15 @@
       .then(function (res) { return res.json(); })
       .then(function (result) {
         document.dispatchEvent(new CustomEvent("afroup:session", { detail: result || { ok: false } }));
-        if (!result || !result.ok || !result.user) return;
+        if (!result || !result.ok || !result.user) {
+          showGuest();
+          return;
+        }
         paint(result.user);
       })
       .catch(function () {
         document.dispatchEvent(new CustomEvent("afroup:session", { detail: { ok: false } }));
+        showGuest();
       });
   };
 
