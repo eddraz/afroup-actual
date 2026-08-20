@@ -2,11 +2,11 @@
 import AdminLayout from "../../layouts/AdminLayout.astro";
 import { requireModuleAccess } from "../../lib/admin-scope";
 import PermissionMatrix from "../../components/PermissionMatrix.astro";
-import { localizedPath } from "../../lib/i18n";
+import { defaultLocale, localizedPath } from "../../lib/i18n";
 import { resolveRequestCopy } from "../../lib/request-locale";
 import { routeIds } from "../../lib/paths";
+import { parsePermissionGrants, type PermissionGrant } from "../../lib/permission-grants";
 import { env } from "cloudflare:workers";
-import { loadAllRoleGrants } from "../../lib/permission-grants";
 
 export const prerender = false;
 
@@ -19,6 +19,7 @@ interface RoleRow {
   id: number;
   name: string;
   description: string | null;
+  user_count: number;
 }
 
 interface ModuleRow {
@@ -33,10 +34,46 @@ interface PermissionRow {
   action: "create" | "read" | "update" | "delete";
 }
 
-const roles = (await env.DB.prepare("SELECT id, name, description FROM admin_roles ORDER BY name").all<RoleRow>()).results ?? [];
-const modules = (await env.DB.prepare("SELECT id, name, slug FROM admin_modules ORDER BY name").all<ModuleRow>()).results ?? [];
-const permissions = (await env.DB.prepare("SELECT id, module_id, action FROM admin_permissions ORDER BY module_id, action").all<PermissionRow>()).results ?? [];
-const grantedByRole = await loadAllRoleGrants(env.DB);
+interface GrantRow {
+  role_id: number;
+  permission_id: number;
+  quota: number | null;
+  translate_manual: number | null;
+  translate_ai: number | null;
+}
+
+const roles = (await env.DB.prepare(
+  `SELECT r.id, r.name, r.description,
+          (SELECT COUNT(*) FROM users u WHERE u.role_id = r.id) AS user_count
+     FROM admin_roles r
+     ORDER BY r.name`,
+).all<RoleRow>()).results ?? [];
+
+const modules = (await env.DB.prepare(
+  "SELECT id, name, slug FROM admin_modules ORDER BY name",
+).all<ModuleRow>()).results ?? [];
+
+const permissions = (await env.DB.prepare(
+  "SELECT id, module_id, action FROM admin_permissions ORDER BY module_id, action",
+).all<PermissionRow>()).results ?? [];
+
+const grantRows = (await env.DB.prepare(
+  "SELECT role_id, permission_id, quota, translate_manual, translate_ai FROM admin_role_permissions",
+).all<GrantRow>()).results ?? [];
+
+const grantedByRole = new Map<number, Map<number, PermissionGrant>>();
+for (const row of grantRows) {
+  let map = grantedByRole.get(row.role_id);
+  if (!map) {
+    map = new Map<number, PermissionGrant>();
+    grantedByRole.set(row.role_id, map);
+  }
+  map.set(row.permission_id, {
+    quota: row.quota,
+    translateManual: Boolean(row.translate_manual),
+    translateAi: Boolean(row.translate_ai),
+  });
+}
 
 const actionLabels: Record<PermissionRow["action"], string> = {
   create: copy.adminActionCreate,
@@ -55,7 +92,7 @@ const actionLabels: Record<PermissionRow["action"], string> = {
         <span class="badge badge-neutral badge-sm font-semibold">{roles.length} perfiles</span>
       </div>
       <p class="text-xs sm:text-sm text-base-content/60 mt-1">
-        Define perfiles de acceso con permisos predefinidos para asignar a miembros del equipo.
+        Define conjuntos de permisos y capacidades asignables a los miembros del equipo.
       </p>
     </div>
 
@@ -65,12 +102,12 @@ const actionLabels: Record<PermissionRow["action"], string> = {
       class="btn btn-primary btn-sm gap-2 shadow-sm hover:scale-[1.02] transition-transform"
     >
       <svg class="size-4"><use href="#ic-plus"></use></svg>
-      <span>{copy.adminNewRole || "Crear Rol"}</span>
+      <span>{copy.adminNewRole || "Nuevo Rol"}</span>
     </button>
   </div>
 
   <!-- Collapsible New Role Form -->
-  <div id="new-role-box" class="hidden mb-8">
+  <div id="new-role-box" class="hidden mb-8 transition-all duration-300">
     <div class="rounded-3xl border border-primary/30 bg-base-100 p-6 sm:p-8 shadow-md ring-1 ring-primary/20">
       <div class="flex items-center justify-between border-b border-base-300 pb-3 mb-6">
         <div class="flex items-center gap-2">
@@ -130,20 +167,49 @@ const actionLabels: Record<PermissionRow["action"], string> = {
     </div>
   </div>
 
+  <!-- Filter & Search Toolbar -->
+  <div class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300 bg-base-100 p-3 shadow-xs">
+    <div class="relative flex-1 min-w-[240px] max-w-md">
+      <svg class="size-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none">
+        <use href="#ic-shield"></use>
+      </svg>
+      <input
+        type="search"
+        id="roles-search"
+        placeholder="Buscar roles por nombre o descripción..."
+        class="input input-sm input-bordered w-full pl-9 bg-base-200/40 text-xs sm:text-sm font-medium"
+      />
+    </div>
+  </div>
+
   <!-- Roles Grid -->
-  <div class="grid grid-cols-1 gap-4">
+  <div class="grid grid-cols-1 gap-4" id="roles-container">
+    {roles.length === 0 ? (
+      <div class="rounded-3xl border border-base-300 bg-base-100 p-12 shadow-xs text-center">
+        <div class="flex flex-col items-center gap-2">
+          <div class="size-12 rounded-2xl bg-base-200 flex items-center justify-center text-base-content/40">
+            <svg class="size-6"><use href="#ic-shield"></use></svg>
+          </div>
+          <span class="font-bold text-base">No hay roles registrados</span>
+        </div>
+      </div>
+    ) : null}
+
     {roles.map((role) => {
       const granted = grantedByRole.get(role.id) ?? new Map();
       return (
-        <article class="rounded-3xl border border-base-300 bg-base-100 p-6 shadow-xs space-y-4 hover:border-base-300/80 transition-all">
+        <article class="rounded-3xl border border-base-300 bg-base-100 p-6 shadow-xs space-y-4 hover:border-base-300/80 transition-all role-card" data-name={(role.name || "").toLowerCase()} data-desc={(role.description || "").toLowerCase()}>
           <div class="flex flex-wrap items-start justify-between gap-4">
             <div class="flex items-center gap-3.5">
-              <div class="size-12 rounded-2xl bg-secondary/10 text-secondary border border-secondary/20 flex items-center justify-center flex-none">
-                <svg class="size-6"><use href="#ic-shield"></use></svg>
+              <div class="size-11 rounded-2xl bg-secondary/15 text-secondary border border-secondary/20 flex items-center justify-center font-bold">
+                <svg class="size-5.5"><use href="#ic-shield"></use></svg>
               </div>
               <div>
-                <h3 class="font-display text-lg font-bold text-base-content">{role.name}</h3>
-                <p class="text-xs text-base-content/60">{role.description || "Sin descripción asignada."}</p>
+                <div class="flex items-center gap-2">
+                  <h3 class="font-display text-lg font-bold text-base-content">{role.name}</h3>
+                  <span class="badge badge-xs badge-neutral font-mono py-1 px-2 font-bold">{role.user_count} miembros</span>
+                </div>
+                <p class="text-xs text-base-content/60 mt-0.5">{role.description ?? "Sin descripción"}</p>
               </div>
             </div>
 
@@ -159,41 +225,55 @@ const actionLabels: Record<PermissionRow["action"], string> = {
           <details class="border-t border-base-300/60 pt-3 group">
             <summary class="cursor-pointer text-xs font-bold text-base-content/70 hover:text-primary flex items-center justify-between list-none py-1">
               <span class="flex items-center gap-1.5">
-                <svg class="size-3.5"><use href="#ic-key"></use></svg>
-                <span>Permisos asignados al rol</span>
+                <svg class="size-4"><use href="#ic-key"></use></svg>
+                <span>Editar Matriz de Permisos</span>
               </span>
-              <span class="text-xs group-open:rotate-180 transition-transform">▼</span>
+              <span class="text-base-content/40 group-open:rotate-180 transition-transform">▼</span>
             </summary>
-            <form method="post" action="/api/admin/roles" class="mt-3 space-y-3" data-admin-form data-intent="update_role">
+
+            <form method="post" action="/api/admin/roles" class="mt-3 space-y-4" data-admin-form data-intent="update_role">
               <input type="hidden" name="_intent" value="update_role" />
               <input type="hidden" name="id" value={role.id} />
-              <input type="hidden" name="name" value={role.name} />
-              <input type="hidden" name="description" value={role.description ?? ""} />
-              <PermissionMatrix
-                modules={modules}
-                permissions={permissions}
-                assignments={granted}
-                actionLabels={actionLabels}
-                allowLabel={copy.adminPermissionAllow}
-                limitLabel={copy.adminPermissionLimit}
-                translateLabel={copy.adminPermissionTranslate}
-                translateNoneLabel={copy.adminPermissionTranslateNone}
-                translateManualLabel={copy.adminPermissionTranslateManual}
-                translateAiLabel={copy.adminPermissionTranslateAi}
-                unlimitedLabel={copy.adminPermissionUnlimited}
-                noneLabel={copy.adminPermissionNone}
-                helpToggleLabel={copy.adminPermissionHelpToggle}
-                doneLabel={copy.adminPermissionDone}
-                helpCreate={copy.adminPermissionHelpCreate}
-                helpRead={copy.adminPermissionHelpRead}
-                helpUpdate={copy.adminPermissionHelpUpdate}
-                helpDelete={copy.adminPermissionHelpDelete}
-                helpAllow={copy.adminPermissionHelpAllow}
-                helpLimit={copy.adminPermissionHelpLimit}
-                helpTranslate={copy.adminPermissionHelpTranslate}
-              />
-              <div class="flex justify-end pt-2">
-                <button class="btn btn-primary btn-xs px-4 font-bold" type="submit">{copy.adminSave}</button>
+
+              <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <fieldset class="fieldset">
+                  <legend class="fieldset-legend font-semibold text-xs text-base-content/70">{copy.adminRoleName}</legend>
+                  <input class="input input-bordered input-sm w-full font-semibold" name="name" value={role.name} required maxlength="80" />
+                </fieldset>
+                <fieldset class="fieldset">
+                  <legend class="fieldset-legend font-semibold text-xs text-base-content/70">{copy.adminRoleDescription}</legend>
+                  <input class="input input-bordered input-sm w-full" name="description" value={role.description ?? ""} maxlength="240" />
+                </fieldset>
+              </div>
+
+              <div class="mt-2">
+                <PermissionMatrix
+                  modules={modules}
+                  permissions={permissions}
+                  assignments={granted}
+                  actionLabels={actionLabels}
+                  allowLabel={copy.adminPermissionAllow}
+                  limitLabel={copy.adminPermissionLimit}
+                  translateLabel={copy.adminPermissionTranslate}
+                  translateNoneLabel={copy.adminPermissionTranslateNone}
+                  translateManualLabel={copy.adminPermissionTranslateManual}
+                  translateAiLabel={copy.adminPermissionTranslateAi}
+                  unlimitedLabel={copy.adminPermissionUnlimited}
+                  noneLabel={copy.adminPermissionNone}
+                  helpToggleLabel={copy.adminPermissionHelpToggle}
+                  doneLabel={copy.adminPermissionDone}
+                  helpCreate={copy.adminPermissionHelpCreate}
+                  helpRead={copy.adminPermissionHelpRead}
+                  helpUpdate={copy.adminPermissionHelpUpdate}
+                  helpDelete={copy.adminPermissionHelpDelete}
+                  helpAllow={copy.adminPermissionHelpAllow}
+                  helpLimit={copy.adminPermissionHelpLimit}
+                  helpTranslate={copy.adminPermissionHelpTranslate}
+                />
+              </div>
+
+              <div class="flex justify-end gap-2 pt-2 border-t border-base-300/60">
+                <button class="btn btn-primary btn-sm px-5 font-bold" type="submit">{copy.adminSave}</button>
               </div>
             </form>
           </details>
@@ -212,20 +292,43 @@ const actionLabels: Record<PermissionRow["action"], string> = {
 
         if (toggleBtn && box && toggleBtn.dataset.bound !== "true") {
           toggleBtn.dataset.bound = "true";
-          toggleBtn.addEventListener("click", function () { box.classList.toggle("hidden"); });
-        }
-        if (closeBtn && box && closeBtn.dataset.bound !== "true") {
-          closeBtn.dataset.bound = "true";
-          closeBtn.addEventListener("click", function () { box.classList.add("hidden"); });
-        }
-        if (cancelBtn && box && cancelBtn.dataset.bound !== "true") {
-          cancelBtn.dataset.bound = "true";
-          cancelBtn.addEventListener("click", function () { box.classList.add("hidden"); });
+          toggleBtn.addEventListener("click", function () {
+            box.classList.toggle("hidden");
+            if (!box.classList.contains("hidden")) {
+              var input = box.querySelector("input[name='name']");
+              if (input) input.focus();
+            }
+          });
         }
 
-        document.querySelectorAll("form[data-admin-form]").forEach(function (form) {
-          if (form.dataset.bound === "true") return;
-          form.dataset.bound = "true";
+        var hide = function () { if (box) box.classList.add("hidden"); };
+        if (closeBtn && closeBtn.dataset.bound !== "true") { closeBtn.dataset.bound = "true"; closeBtn.addEventListener("click", hide); }
+        if (cancelBtn && cancelBtn.dataset.bound !== "true") { cancelBtn.dataset.bound = "true"; cancelBtn.addEventListener("click", hide); }
+
+        // Live search filter
+        var searchInput = document.getElementById("roles-search");
+        var cards = document.querySelectorAll(".role-card");
+
+        if (searchInput && searchInput.dataset.bound !== "true") {
+          searchInput.dataset.bound = "true";
+          searchInput.addEventListener("input", function () {
+            var q = searchInput.value.trim().toLowerCase();
+            cards.forEach(function (c) {
+              var name = c.getAttribute("data-name") || "";
+              var desc = c.getAttribute("data-desc") || "";
+              if (!q || name.indexOf(q) !== -1 || desc.indexOf(q) !== -1) {
+                c.style.display = "";
+              } else {
+                c.style.display = "none";
+              }
+            });
+          });
+        }
+
+        var forms = document.querySelectorAll("form[data-admin-form]");
+        forms.forEach(function (form) {
+          if (form.dataset.boundSubmit) return;
+          form.dataset.boundSubmit = "true";
           form.addEventListener("submit", function (event) {
             event.preventDefault();
             fetch(form.action, { method: "POST", body: new FormData(form) })
@@ -233,10 +336,10 @@ const actionLabels: Record<PermissionRow["action"], string> = {
               .then(function (result) {
                 if (result.ok) {
                   if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Rol guardado.", "success");
-                  setTimeout(function () { window.location.reload(); }, 700);
+                  setTimeout(function () { window.location.reload(); }, 600);
                   return;
                 }
-                if (window.AfroUpFeedback) window.AfroUpFeedback.toast("No pudimos guardar el rol.", "error");
+                if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Error al guardar rol.", "error");
               })
               .catch(function () {
                 if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Error de red.", "error");

@@ -12,9 +12,9 @@ if (access instanceof Response) return access;
 const actor = access;
 
 const projects = [
-  { name: "Afro-Colombian Oral Archive", org: "Memory House", stage: "In Review", budget: "USD 8,500", date: "Jun 10" },
-  { name: "Afro-Latin American Atlas", org: "AfroLatam Network", stage: "Approved", budget: "USD 12,000", date: "Jun 02" },
-  { name: "Podcast: Pacific Knowledge", org: "Tambo Collective", stage: "Draft", budget: "USD 3,200", date: "May 28" },
+  { id: 1, name: "Afro-Colombian Oral Archive", org: "Casa de la Memoria", stage: "Under Review", budget: "USD 8,500", date: "Jun 10" },
+  { id: 2, name: "Afro-Latin American Atlas", org: "Red AfroLatam", stage: "Approved", budget: "USD 12,000", date: "Jun 02" },
+  { id: 3, name: "Podcast: Pacific Knowledge", org: "Colectivo Tambó", stage: "Draft", budget: "USD 3,200", date: "May 28" },
 ];
 ---
 
@@ -27,15 +27,45 @@ const projects = [
         <span class="badge badge-neutral badge-sm font-semibold">{projects.length} initiatives</span>
       </div>
       <p class="text-xs sm:text-sm text-base-content/60 mt-1">
-        Track cultural grants, community initiatives, and funded heritage projects.
+        Tracking grants, community initiatives, and funded cultural projects.
       </p>
+    </div>
+  </div>
+
+  <!-- Filter & Search Toolbar -->
+  <div class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300 bg-base-100 p-3 shadow-xs">
+    <div class="relative flex-1 min-w-[240px] max-w-md">
+      <svg class="size-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none">
+        <use href="#ic-world"></use>
+      </svg>
+      <input
+        type="search"
+        id="projects-search"
+        placeholder="Search initiatives by title or organization..."
+        class="input input-sm input-bordered w-full pl-9 bg-base-200/40 text-xs sm:text-sm font-medium"
+      />
+    </div>
+
+    <div class="join border border-base-300 bg-base-200/50 p-0.5 rounded-xl">
+      <button class="btn btn-xs join-item btn-ghost font-bold text-[11px] project-filter-btn active-filter" data-filter="all">
+        All ({projects.length})
+      </button>
+      <button class="btn btn-xs join-item btn-ghost font-bold text-[11px] project-filter-btn" data-filter="Approved">
+        Approved ({projects.filter(p => p.stage === "Approved").length})
+      </button>
+      <button class="btn btn-xs join-item btn-ghost font-bold text-[11px] project-filter-btn" data-filter="Under Review">
+        Under Review ({projects.filter(p => p.stage === "Under Review").length})
+      </button>
+      <button class="btn btn-xs join-item btn-ghost font-bold text-[11px] project-filter-btn" data-filter="Draft">
+        Drafts ({projects.filter(p => p.stage === "Draft").length})
+      </button>
     </div>
   </div>
 
   <!-- Projects Table -->
   <div class="rounded-3xl border border-base-300 bg-base-100 shadow-xs overflow-hidden">
     <div class="overflow-x-auto">
-      <table class="table table-zebra w-full">
+      <table class="table table-zebra w-full" id="projects-table">
         <thead>
           <tr class="border-b border-base-300 bg-base-200/60 text-xs font-extrabold uppercase tracking-wider text-base-content/60">
             <th class="py-4 pl-6">Project</th>
@@ -47,14 +77,14 @@ const projects = [
         </thead>
         <tbody class="divide-y divide-base-300/60 font-medium text-sm">
           {projects.map((project) => (
-            <tr class="hover:bg-base-200/50 transition-colors">
+            <tr class="hover:bg-base-200/50 transition-colors project-row" data-name={project.name.toLowerCase()} data-org={project.org.toLowerCase()} data-stage={project.stage}>
               <td class="py-3.5 pl-6 font-bold text-base-content">{project.name}</td>
               <td class="text-xs text-base-content/70">{project.org}</td>
               <td>
                 <span class:list={[
                   "badge badge-xs font-bold py-1 px-2.5 uppercase tracking-wider",
                   project.stage === "Approved" && "badge-success",
-                  project.stage === "In Review" && "badge-warning",
+                  project.stage === "Under Review" && "badge-warning",
                   project.stage === "Draft" && "badge-ghost"
                 ]}>
                   {project.stage}
@@ -70,4 +100,61 @@ const projects = [
       </table>
     </div>
   </div>
+
+  <script is:inline>
+    (function () {
+      var bind = function () {
+        var searchInput = document.getElementById("projects-search");
+        var filterButtons = document.querySelectorAll(".project-filter-btn");
+        var rows = document.querySelectorAll(".project-row");
+
+        var currentFilter = "all";
+        var searchQuery = "";
+
+        var applyFilters = function () {
+          rows.forEach(function (row) {
+            var name = row.getAttribute("data-name") || "";
+            var org = row.getAttribute("data-org") || "";
+            var stage = row.getAttribute("data-stage") || "";
+
+            var matchesSearch = !searchQuery || name.indexOf(searchQuery) !== -1 || org.indexOf(searchQuery) !== -1;
+            var matchesFilter = currentFilter === "all" || stage === currentFilter;
+
+            if (matchesSearch && matchesFilter) {
+              row.style.display = "";
+            } else {
+              row.style.display = "none";
+            }
+          });
+        };
+
+        if (searchInput && searchInput.dataset.bound !== "true") {
+          searchInput.dataset.bound = "true";
+          searchInput.addEventListener("input", function () {
+            searchQuery = searchInput.value.trim().toLowerCase();
+            applyFilters();
+          });
+        }
+
+        filterButtons.forEach(function (btn) {
+          if (btn.dataset.bound === "true") return;
+          btn.dataset.bound = "true";
+          btn.addEventListener("click", function () {
+            filterButtons.forEach(function (b) {
+              b.classList.remove("btn-primary", "text-primary-content");
+              b.classList.add("btn-ghost");
+            });
+            btn.classList.remove("btn-ghost");
+            btn.classList.add("btn-primary", "text-primary-content");
+
+            currentFilter = btn.getAttribute("data-filter") || "all";
+            applyFilters();
+          });
+        });
+      };
+
+      bind();
+      document.addEventListener("astro:page-load", bind);
+    })();
+  </script>
 </AdminLayout>

@@ -12,9 +12,9 @@ if (access instanceof Response) return access;
 const actor = access;
 
 const projects = [
-  { name: "Archivo oral afrocolombiano", org: "Casa de la Memoria", stage: "En revisión", budget: "USD 8.500", date: "10 jun" },
-  { name: "Atlas afrolatinoamericano", org: "Red AfroLatam", stage: "Aprobado", budget: "USD 12.000", date: "02 jun" },
-  { name: "Podcast: Saberes del Pacífico", org: "Colectivo Tambó", stage: "Borrador", budget: "USD 3.200", date: "28 may" },
+  { id: 1, name: "Archivo oral afrocolombiano", org: "Casa de la Memoria", stage: "En revisión", budget: "USD 8.500", date: "10 jun" },
+  { id: 2, name: "Atlas afrolatinoamericano", org: "Red AfroLatam", stage: "Aprobado", budget: "USD 12.000", date: "02 jun" },
+  { id: 3, name: "Podcast: Saberes del Pacífico", org: "Colectivo Tambó", stage: "Borrador", budget: "USD 3.200", date: "28 may" },
 ];
 ---
 
@@ -32,10 +32,40 @@ const projects = [
     </div>
   </div>
 
+  <!-- Filter & Search Toolbar -->
+  <div class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300 bg-base-100 p-3 shadow-xs">
+    <div class="relative flex-1 min-w-[240px] max-w-md">
+      <svg class="size-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none">
+        <use href="#ic-world"></use>
+      </svg>
+      <input
+        type="search"
+        id="projects-search"
+        placeholder="Buscar iniciativas por título u organización..."
+        class="input input-sm input-bordered w-full pl-9 bg-base-200/40 text-xs sm:text-sm font-medium"
+      />
+    </div>
+
+    <div class="join border border-base-300 bg-base-200/50 p-0.5 rounded-xl">
+      <button class="btn btn-xs join-item btn-ghost font-bold text-[11px] project-filter-btn active-filter" data-filter="all">
+        Todos ({projects.length})
+      </button>
+      <button class="btn btn-xs join-item btn-ghost font-bold text-[11px] project-filter-btn" data-filter="Aprobado">
+        Aprobados ({projects.filter(p => p.stage === "Aprobado").length})
+      </button>
+      <button class="btn btn-xs join-item btn-ghost font-bold text-[11px] project-filter-btn" data-filter="En revisión">
+        En revisión ({projects.filter(p => p.stage === "En revisión").length})
+      </button>
+      <button class="btn btn-xs join-item btn-ghost font-bold text-[11px] project-filter-btn" data-filter="Borrador">
+        Borradores ({projects.filter(p => p.stage === "Borrador").length})
+      </button>
+    </div>
+  </div>
+
   <!-- Projects Table -->
   <div class="rounded-3xl border border-base-300 bg-base-100 shadow-xs overflow-hidden">
     <div class="overflow-x-auto">
-      <table class="table table-zebra w-full">
+      <table class="table table-zebra w-full" id="projects-table">
         <thead>
           <tr class="border-b border-base-300 bg-base-200/60 text-xs font-extrabold uppercase tracking-wider text-base-content/60">
             <th class="py-4 pl-6">Proyecto</th>
@@ -47,7 +77,7 @@ const projects = [
         </thead>
         <tbody class="divide-y divide-base-300/60 font-medium text-sm">
           {projects.map((project) => (
-            <tr class="hover:bg-base-200/50 transition-colors">
+            <tr class="hover:bg-base-200/50 transition-colors project-row" data-name={project.name.toLowerCase()} data-org={project.org.toLowerCase()} data-stage={project.stage}>
               <td class="py-3.5 pl-6 font-bold text-base-content">{project.name}</td>
               <td class="text-xs text-base-content/70">{project.org}</td>
               <td>
@@ -70,4 +100,61 @@ const projects = [
       </table>
     </div>
   </div>
+
+  <script is:inline>
+    (function () {
+      var bind = function () {
+        var searchInput = document.getElementById("projects-search");
+        var filterButtons = document.querySelectorAll(".project-filter-btn");
+        var rows = document.querySelectorAll(".project-row");
+
+        var currentFilter = "all";
+        var searchQuery = "";
+
+        var applyFilters = function () {
+          rows.forEach(function (row) {
+            var name = row.getAttribute("data-name") || "";
+            var org = row.getAttribute("data-org") || "";
+            var stage = row.getAttribute("data-stage") || "";
+
+            var matchesSearch = !searchQuery || name.indexOf(searchQuery) !== -1 || org.indexOf(searchQuery) !== -1;
+            var matchesFilter = currentFilter === "all" || stage === currentFilter;
+
+            if (matchesSearch && matchesFilter) {
+              row.style.display = "";
+            } else {
+              row.style.display = "none";
+            }
+          });
+        };
+
+        if (searchInput && searchInput.dataset.bound !== "true") {
+          searchInput.dataset.bound = "true";
+          searchInput.addEventListener("input", function () {
+            searchQuery = searchInput.value.trim().toLowerCase();
+            applyFilters();
+          });
+        }
+
+        filterButtons.forEach(function (btn) {
+          if (btn.dataset.bound === "true") return;
+          btn.dataset.bound = "true";
+          btn.addEventListener("click", function () {
+            filterButtons.forEach(function (b) {
+              b.classList.remove("btn-primary", "text-primary-content");
+              b.classList.add("btn-ghost");
+            });
+            btn.classList.remove("btn-ghost");
+            btn.classList.add("btn-primary", "text-primary-content");
+
+            currentFilter = btn.getAttribute("data-filter") || "all";
+            applyFilters();
+          });
+        });
+      };
+
+      bind();
+      document.addEventListener("astro:page-load", bind);
+    })();
+  </script>
 </AdminLayout>

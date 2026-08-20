@@ -2,10 +2,10 @@
 import { env } from "cloudflare:workers";
 import AdminLayout from "../../../layouts/AdminLayout.astro";
 import PageLocaleSwitch from "../../../components/PageLocaleSwitch.astro";
-import { requireModuleAccess } from "../../../lib/admin-scope";
 import { defaultLocale } from "../../../lib/i18n";
+import { requireModuleAccess } from "../../../lib/admin-scope";
 import { resolveRequestCopy } from "../../../lib/request-locale";
-import { translationAccess, visibleOwnerClause } from "../../../lib/editorial";
+import { translationAccess } from "../../../lib/editorial";
 import { hasPermission } from "../../../lib/rbac";
 import { listSiteLanguages } from "../../../lib/site-languages";
 import { getCategoryTheme } from "../../../lib/category-routes";
@@ -16,6 +16,7 @@ const { locale, copy } = await resolveRequestCopy(env.DB, Astro.url);
 const access = await requireModuleAccess(env.DB, Astro.cookies, Astro.url, locale, "categorias");
 if (access instanceof Response) return access;
 const actor = access;
+
 const canCreate = await hasPermission(env.DB, actor.id, "categorias", "create");
 const canUpdate = await hasPermission(env.DB, actor.id, "categorias", "update");
 const canDelete = await hasPermission(env.DB, actor.id, "categorias", "delete");
@@ -26,26 +27,25 @@ interface CategoryRow {
   id: number;
   slug: string;
   title: string | null;
-  article_count?: number;
+  article_count: number;
 }
 
 const categories = (await env.DB.prepare(
   `SELECT c.id, c.slug,
-          (SELECT title FROM article_category_locales l
-            WHERE l.category_id = c.id
-            ORDER BY CASE WHEN l.locale = ? THEN 0 ELSE 1 END, l.locale
-            LIMIT 1) AS title,
+          COALESCE(
+            (SELECT title FROM article_category_locales WHERE category_id = c.id AND locale = ?),
+            (SELECT title FROM article_category_locales WHERE category_id = c.id AND locale = ?)
+          ) AS title,
           (SELECT COUNT(*) FROM article_category_map m WHERE m.category_id = c.id) AS article_count
      FROM article_categories c
-    WHERE ${visibleOwnerClause("c.created_by")}
-    ORDER BY c.created_at DESC, c.id DESC`,
+    ORDER BY title`,
 )
-  .bind(locale, actor.id, "categorias", actor.id)
+  .bind(locale, defaultLocale)
   .all<CategoryRow>()).results ?? [];
 ---
 
 <AdminLayout title={copy.adminCategories} active="categories">
-  <!-- Page Header -->
+  <!-- Page Header & Stats Summary -->
   <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
     <div>
       <div class="flex items-center gap-2.5">
@@ -53,30 +53,32 @@ const categories = (await env.DB.prepare(
         <span class="badge badge-neutral badge-sm font-semibold">{categories.length} taxonomies</span>
       </div>
       <p class="text-xs sm:text-sm text-base-content/60 mt-1">
-        Thematic structure and editorial sections to categorize publications.
+        Organize thematic structures, brand color themes, and editorial hierarchies.
       </p>
     </div>
 
     {canCreate ? (
-      <button
-        type="button"
-        id="btn-toggle-new-category"
-        class="btn btn-primary btn-sm gap-2 shadow-sm hover:scale-[1.02] transition-transform"
-      >
-        <svg class="size-4"><use href="#ic-plus"></use></svg>
-        <span>{copy.adminNewCategory}</span>
-      </button>
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          id="btn-toggle-new-category"
+          class="btn btn-primary btn-sm gap-2 shadow-sm hover:scale-[1.02] transition-transform"
+        >
+          <svg class="size-4"><use href="#ic-plus"></use></svg>
+          <span>{copy.adminNewCategory}</span>
+        </button>
+      </div>
     ) : null}
   </div>
 
-  <!-- Collapsible New Category Form -->
+  <!-- Collapsible New Category Drawer/Box -->
   {canCreate ? (
-    <div id="new-category-box" class="hidden mb-6">
-      <div class="rounded-3xl border border-primary/30 bg-base-100 p-6 shadow-md ring-1 ring-primary/20">
-        <div class="flex items-center justify-between border-b border-base-300 pb-3 mb-4">
+    <div id="new-category-box" class="hidden mb-6 transition-all duration-300">
+      <div class="rounded-3xl border border-primary/30 bg-base-100 p-6 sm:p-8 shadow-md ring-1 ring-primary/20">
+        <div class="flex items-center justify-between border-b border-base-300 pb-3 mb-6">
           <div class="flex items-center gap-2">
             <span class="size-2.5 rounded-full bg-primary animate-pulse"></span>
-            <h3 class="font-display font-bold text-base text-base-content">{copy.adminNewCategory}</h3>
+            <h3 class="font-display font-bold text-lg text-base-content">{copy.adminNewCategory}</h3>
           </div>
           <button type="button" class="btn btn-circle btn-ghost btn-xs" id="btn-close-new-category">✕</button>
         </div>
@@ -84,13 +86,13 @@ const categories = (await env.DB.prepare(
         <form
           method="post"
           action="/api/admin/categories"
-          class="space-y-4"
+          class="space-y-5"
           data-editorial-form
           data-success={copy.adminEditorialSaved}
           data-error={copy.adminEditorialSaveError}
         >
           <div class="flex items-center justify-between">
-            <span class="text-xs font-bold uppercase tracking-wider text-base-content/50">Language:</span>
+            <span class="text-xs font-bold uppercase tracking-wider text-base-content/50">Editing language:</span>
             <PageLocaleSwitch languages={languages} label={copy.adminLanguages} current={defaultLocale} />
           </div>
 
@@ -102,13 +104,27 @@ const categories = (await env.DB.prepare(
                   <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">
                     {copy.adminCategoryTitle} · {language.native_name}
                   </legend>
-                  <input class="input input-bordered w-full font-semibold" name={`title[${language.code}]`} maxlength="160" required={language.code === defaultLocale} disabled={locked} placeholder="Category name..." />
+                  <input
+                    class="input input-bordered w-full font-semibold"
+                    name={`title[${language.code}]`}
+                    maxlength="160"
+                    required={language.code === defaultLocale}
+                    disabled={locked}
+                    placeholder="Category name..."
+                  />
                 </fieldset>
                 <fieldset class="fieldset">
                   <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">
                     {copy.adminCategoryDescription} · {language.native_name}
                   </legend>
-                  <textarea class="textarea textarea-bordered w-full" name={`description[${language.code}]`} rows="2" maxlength="400" disabled={locked} placeholder="Category summary..."></textarea>
+                  <textarea
+                    class="textarea textarea-bordered w-full text-sm leading-relaxed"
+                    name={`description[${language.code}]`}
+                    rows="2"
+                    maxlength="400"
+                    disabled={locked}
+                    placeholder="Editorial description of the theme..."
+                  ></textarea>
                 </fieldset>
               </div>
             );
@@ -116,22 +132,37 @@ const categories = (await env.DB.prepare(
 
           <fieldset class="fieldset">
             <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminCategorySlug}</legend>
-            <input class="input input-bordered w-full font-mono text-xs" name="slug" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" maxlength="80" placeholder="example-category-slug" />
+            <input class="input input-bordered w-full font-mono text-xs" name="slug" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" maxlength="80" placeholder="category-slug-example" />
           </fieldset>
 
-          <div class="flex justify-end gap-2 pt-2 border-t border-base-300">
+          <div class="flex justify-end gap-2 pt-3 border-t border-base-300">
             <button class="btn btn-ghost btn-sm" type="button" id="btn-cancel-new-category">{copy.adminDeleteCancel || "Cancel"}</button>
-            <button class="btn btn-primary btn-sm px-5" type="submit">{copy.adminSave}</button>
+            <button class="btn btn-primary btn-sm px-6 font-bold" type="submit">{copy.adminSave}</button>
           </div>
         </form>
       </div>
     </div>
   ) : null}
 
+  <!-- Filter & Search Toolbar -->
+  <div class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300 bg-base-100 p-3 shadow-xs">
+    <div class="relative flex-1 min-w-[240px] max-w-md">
+      <svg class="size-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none">
+        <use href="#ic-world"></use>
+      </svg>
+      <input
+        type="search"
+        id="categories-search"
+        placeholder="Search categories by name or slug..."
+        class="input input-sm input-bordered w-full pl-9 bg-base-200/40 text-xs sm:text-sm font-medium"
+      />
+    </div>
+  </div>
+
   <!-- Categories Table -->
   <div class="rounded-3xl border border-base-300 bg-base-100 shadow-xs overflow-hidden">
     <div class="overflow-x-auto">
-      <table class="table table-zebra w-full">
+      <table class="table table-zebra w-full" id="categories-table">
         <thead>
           <tr class="border-b border-base-300 bg-base-200/60 text-xs font-extrabold uppercase tracking-wider text-base-content/60">
             <th class="py-4 pl-6">{copy.adminCategoryTitle || "Category"}</th>
@@ -143,8 +174,14 @@ const categories = (await env.DB.prepare(
         <tbody class="divide-y divide-base-300/60 font-medium text-sm">
           {categories.length === 0 ? (
             <tr>
-              <td colspan="4" class="text-center py-10 text-base-content/60">
-                No categories found.
+              <td colspan="4" class="text-center py-12 text-base-content/60">
+                <div class="flex flex-col items-center gap-2">
+                  <div class="size-12 rounded-2xl bg-base-200 flex items-center justify-center text-base-content/40">
+                    <svg class="size-6"><use href="#ic-stack"></use></svg>
+                  </div>
+                  <span class="font-bold text-base">No categories registered</span>
+                  <span class="text-xs text-base-content/50">Create your first category to organize your articles</span>
+                </div>
               </td>
             </tr>
           ) : null}
@@ -154,7 +191,7 @@ const categories = (await env.DB.prepare(
             const editUrl = `${Astro.url.pathname.replace(/\/$/, "")}/${category.id}`;
 
             return (
-              <tr class="hover:bg-base-200/50 transition-colors">
+              <tr class="hover:bg-base-200/50 transition-colors category-row" data-name={(category.title ?? "").toLowerCase()} data-slug={(category.slug ?? "").toLowerCase()}>
                 <td class="py-3.5 pl-6">
                   <div class="flex items-center gap-2.5">
                     <span class:list={["size-2.5 rounded-full", theme.dotClass]}></span>
@@ -170,10 +207,11 @@ const categories = (await env.DB.prepare(
                   <span class="badge badge-sm badge-neutral font-mono">{category.article_count ?? 0}</span>
                 </td>
                 <td class="text-right pr-6">
-                  <div class="inline-flex items-center gap-1">
+                  <div class="inline-flex items-center gap-1.5">
                     {canUpdate ? (
-                      <a class="btn btn-square btn-ghost btn-xs border border-base-300 hover:bg-base-200" href={editUrl} title={copy.adminEdit}>
+                      <a class="btn btn-primary btn-sm btn-outline text-xs font-bold h-7 min-h-0 px-3" href={editUrl} title={copy.adminEdit}>
                         <svg class="size-3.5"><use href="#ic-edit"></use></svg>
+                        <span>{copy.adminEdit || "Edit"}</span>
                       </a>
                     ) : null}
                     {canDelete ? (
@@ -215,102 +253,155 @@ const categories = (await env.DB.prepare(
     </div>
     <form method="dialog" class="modal-backdrop"><button type="submit">close</button></form>
   </dialog>
+</AdminLayout>
 
-  <script is:inline>
-    (function () {
-      var bindCategories = function () {
-        var toggleBtn = document.getElementById("btn-toggle-new-category");
-        var closeBtn = document.getElementById("btn-close-new-category");
-        var cancelBtn = document.getElementById("btn-cancel-new-category");
-        var box = document.getElementById("new-category-box");
+<script is:inline>
+  (function () {
+    var bindCategories = function () {
+      // Toggle New Category Form
+      var toggleBtn = document.getElementById("btn-toggle-new-category");
+      var closeBtn = document.getElementById("btn-close-new-category");
+      var cancelBtn = document.getElementById("btn-cancel-new-category");
+      var newBox = document.getElementById("new-category-box");
 
-        if (toggleBtn && box && toggleBtn.dataset.bound !== "true") {
-          toggleBtn.dataset.bound = "true";
-          toggleBtn.addEventListener("click", function () { box.classList.toggle("hidden"); });
-        }
-        if (closeBtn && box && closeBtn.dataset.bound !== "true") {
-          closeBtn.dataset.bound = "true";
-          closeBtn.addEventListener("click", function () { box.classList.add("hidden"); });
-        }
-        if (cancelBtn && box && cancelBtn.dataset.bound !== "true") {
-          cancelBtn.dataset.bound = "true";
-          cancelBtn.addEventListener("click", function () { box.classList.add("hidden"); });
-        }
-
-        document.querySelectorAll("form[data-editorial-form]").forEach(function (form) {
-          if (form.dataset.bound === "true") return;
-          form.dataset.bound = "true";
-          form.addEventListener("submit", function (event) {
-            event.preventDefault();
-            fetch(form.action, { method: "POST", body: new FormData(form) })
-              .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
-              .then(function (result) {
-                if (result.ok) {
-                  if (window.AfroUpFeedback) window.AfroUpFeedback.toast(form.getAttribute("data-success") || "Saved.", "success");
-                  setTimeout(function () { window.location.reload(); }, 700);
-                  return;
-                }
-                if (window.AfroUpFeedback) window.AfroUpFeedback.toast(form.getAttribute("data-error") || "Failed to save.", "error");
-              })
-              .catch(function () {
-                if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Network error.", "error");
-              });
-          });
-        });
-
-        var dialog = document.getElementById("admin-delete-dialog");
-        if (!dialog) return;
-        var pending = null;
-
-        if (dialog.dataset.bound !== "true") {
-          dialog.dataset.bound = "true";
-          var confirmBtn = dialog.querySelector("[data-delete-confirm]");
-          if (confirmBtn) {
-            confirmBtn.addEventListener("click", function () {
-              if (!pending) return;
-              var data = new FormData();
-              data.append("_intent", "delete");
-              data.append("id", pending.id);
-              fetch("/api/admin/categories", { method: "POST", body: data })
-                .then(function (res) { return res.json(); })
-                .then(function (body) {
-                  if (body && body.ok) {
-                    if (window.AfroUpFeedback) window.AfroUpFeedback.toast(pending.success || "Deleted.", "success");
-                    setTimeout(function () { window.location.reload(); }, 700);
-                    return;
-                  }
-                  if (window.AfroUpFeedback) window.AfroUpFeedback.toast(pending.error || "Failed to delete.", "error");
-                })
-                .catch(function () {
-                  if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Network error.", "error");
-                });
-              dialog.close();
-            });
+      if (toggleBtn && newBox && toggleBtn.dataset.bound !== "true") {
+        toggleBtn.dataset.bound = "true";
+        toggleBtn.addEventListener("click", function () {
+          newBox.classList.toggle("hidden");
+          if (!newBox.classList.contains("hidden")) {
+            var firstInput = newBox.querySelector("input:not([disabled])");
+            if (firstInput) firstInput.focus();
           }
-        }
-
-        document.querySelectorAll("button[data-delete-id]").forEach(function (button) {
-          if (button.dataset.bound === "true") return;
-          button.dataset.bound = "true";
-          button.addEventListener("click", function () {
-            var name = button.getAttribute("data-name") || "";
-            var message = (button.getAttribute("data-confirm") || "").replace("{title}", name);
-            dialog.querySelector("[data-delete-title]").textContent = button.getAttribute("data-title") || "";
-            dialog.querySelector("[data-delete-message]").textContent = message;
-            dialog.querySelector("[data-delete-confirm]").textContent = button.getAttribute("data-accept") || "Delete";
-            dialog.querySelector("[data-delete-cancel]").textContent = button.getAttribute("data-cancel") || "Cancel";
-            pending = {
-              id: button.getAttribute("data-delete-id"),
-              success: button.getAttribute("data-success") || "Deleted.",
-              error: "Failed to delete.",
-            };
-            if (typeof dialog.showModal === "function") dialog.showModal();
-          });
         });
+      }
+
+      var hideBox = function () {
+        if (newBox) newBox.classList.add("hidden");
       };
 
-      bindCategories();
-      document.addEventListener("astro:page-load", bindCategories);
-    })();
-  </script>
-</AdminLayout>
+      if (closeBtn && closeBtn.dataset.bound !== "true") {
+        closeBtn.dataset.bound = "true";
+        closeBtn.addEventListener("click", hideBox);
+      }
+
+      if (cancelBtn && cancelBtn.dataset.bound !== "true") {
+        cancelBtn.dataset.bound = "true";
+        cancelBtn.addEventListener("click", hideBox);
+      }
+
+      // Live search filter
+      var searchInput = document.getElementById("categories-search");
+      var rows = document.querySelectorAll(".category-row");
+
+      if (searchInput && searchInput.dataset.bound !== "true") {
+        searchInput.dataset.bound = "true";
+        searchInput.addEventListener("input", function () {
+          var query = searchInput.value.trim().toLowerCase();
+          rows.forEach(function (row) {
+            var name = row.getAttribute("data-name") || "";
+            var slug = row.getAttribute("data-slug") || "";
+            if (!query || name.indexOf(query) !== -1 || slug.indexOf(query) !== -1) {
+              row.style.display = "";
+            } else {
+              row.style.display = "none";
+            }
+          });
+        });
+      }
+
+      // Editorial Form Submit
+      var forms = document.querySelectorAll("form[data-editorial-form]");
+      forms.forEach(function (form) {
+        if (form.dataset.bound === "true") return;
+        form.dataset.bound = "true";
+        form.addEventListener("submit", function (event) {
+          event.preventDefault();
+          var btn = form.querySelector("button[type='submit']");
+          if (btn) btn.disabled = true;
+
+          var data = new FormData(form);
+          fetch(form.action, { method: "POST", body: data })
+            .then(function (res) {
+              return res.json().then(function (body) { return { ok: res.ok, body: body }; });
+            })
+            .then(function (result) {
+              if (result.ok) {
+                if (window.AfroUpFeedback) window.AfroUpFeedback.toast(form.getAttribute("data-success") || "Saved.", "success");
+                setTimeout(function () { window.location.reload(); }, 600);
+                return;
+              }
+              if (window.AfroUpFeedback) window.AfroUpFeedback.toast(result.body && result.body.error ? result.body.error : form.getAttribute("data-error") || "Error saving.", "error");
+              if (btn) btn.disabled = false;
+            })
+            .catch(function () {
+              if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Network error.", "error");
+              if (btn) btn.disabled = false;
+            });
+        });
+      });
+
+      // Delete confirmation
+      var deleteDialog = document.getElementById("admin-delete-dialog");
+      var titleEl = deleteDialog ? deleteDialog.querySelector("[data-delete-title]") : null;
+      var msgEl = deleteDialog ? deleteDialog.querySelector("[data-delete-message]") : null;
+      var acceptBtn = deleteDialog ? deleteDialog.querySelector("[data-delete-confirm]") : null;
+      var cancelBtnDialog = deleteDialog ? deleteDialog.querySelector("[data-delete-cancel]") : null;
+      var pendingId = null;
+
+      document.querySelectorAll("[data-delete-id]").forEach(function (btn) {
+        if (btn.dataset.bound === "true") return;
+        btn.dataset.bound = "true";
+        btn.addEventListener("click", function () {
+          pendingId = btn.getAttribute("data-delete-id");
+          var name = btn.getAttribute("data-name") || "";
+          var title = btn.getAttribute("data-title") || "Delete";
+          var confirmMsg = btn.getAttribute("data-confirm") || "Delete item?";
+          var accept = btn.getAttribute("data-accept") || "Delete";
+          var cancel = btn.getAttribute("data-cancel") || "Cancel";
+
+          if (titleEl) titleEl.textContent = title;
+          if (msgEl) msgEl.textContent = confirmMsg.replace("{name}", name);
+          if (acceptBtn) acceptBtn.textContent = accept;
+          if (cancelBtnDialog) cancelBtnDialog.textContent = cancel;
+
+          if (deleteDialog && typeof deleteDialog.showModal === "function") {
+            deleteDialog.showModal();
+          }
+        });
+      });
+
+      if (acceptBtn && acceptBtn.dataset.bound !== "true") {
+        acceptBtn.dataset.bound = "true";
+        acceptBtn.addEventListener("click", function () {
+          if (!pendingId) return;
+          acceptBtn.disabled = true;
+
+          var data = new FormData();
+          data.append("id", pendingId);
+          data.append("_intent", "delete");
+
+          fetch("/api/admin/categories", { method: "POST", body: data })
+            .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
+            .then(function (result) {
+              if (result.ok) {
+                if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Category deleted.", "success");
+                setTimeout(function () { window.location.reload(); }, 600);
+                return;
+              }
+              if (window.AfroUpFeedback) window.AfroUpFeedback.toast(result.body && result.body.error ? result.body.error : "Failed to delete.", "error");
+              acceptBtn.disabled = false;
+              if (deleteDialog) deleteDialog.close();
+            })
+            .catch(function () {
+              if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Network error.", "error");
+              acceptBtn.disabled = false;
+              if (deleteDialog) deleteDialog.close();
+            });
+        });
+      }
+    };
+
+    bindCategories();
+    document.addEventListener("astro:page-load", bindCategories);
+  })();
+</script>

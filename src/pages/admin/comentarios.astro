@@ -12,10 +12,10 @@ if (access instanceof Response) return access;
 const actor = access;
 
 const queueItems = [
-  { user: "Anónimo", article: "Voces de la diáspora", comment: "Excelente entrevista, me hizo reflexionar sobre mi propia historia y raíces familiares.", reason: "Reportado", time: "hace 4 min" },
-  { user: "Laura G.", article: "Afrofuturismo: imaginar el mañana", comment: "¿Dónde consigo el libro que mencionan en el segundo párrafo? Me interesa mucho.", reason: "Pregunta", time: "hace 22 min" },
-  { user: "Andrés M.", article: "Trenzas como mapas de resistencia", comment: "Comparte información valiosa e histórica. Lo voy a usar como material en mi clase universitaria.", reason: "Aprobado", time: "hace 1 h" },
-  { user: "Sofía R.", article: "Quilombos y palenques: territorios de libertad", comment: "Falta profundizar en el contexto histórico sobre la Nueva Granada y las rutas de escape.", reason: "Pendiente", time: "hace 2 h" },
+  { id: 1, user: "Anónimo", article: "Voces de la diáspora", comment: "Excelente entrevista, me hizo reflexionar sobre mi propia historia y raíces familiares.", reason: "Reportado", time: "hace 4 min" },
+  { id: 2, user: "Laura G.", article: "Afrofuturismo: imaginar el mañana", comment: "¿Dónde consigo el libro que mencionan en el segundo párrafo? Me interesa mucho.", reason: "Pregunta", time: "hace 22 min" },
+  { id: 3, user: "Andrés M.", article: "Trenzas como mapas de resistencia", comment: "Comparte información valiosa e histórica. Lo voy a usar como material en mi clase universitaria.", reason: "Aprobado", time: "hace 1 h" },
+  { id: 4, user: "Sofía R.", article: "Quilombos y palenques: territorios de libertad", comment: "Falta profundizar en el contexto histórico sobre la Nueva Granada y las rutas de escape.", reason: "Pendiente", time: "hace 2 h" },
 ];
 ---
 
@@ -33,15 +33,51 @@ const queueItems = [
     </div>
   </div>
 
+  <!-- Filter & Search Toolbar -->
+  <div class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300 bg-base-100 p-3 shadow-xs">
+    <div class="relative flex-1 min-w-[240px] max-w-md">
+      <svg class="size-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none">
+        <use href="#ic-world"></use>
+      </svg>
+      <input
+        type="search"
+        id="comments-search"
+        placeholder="Buscar por usuario, artículo o texto del comentario..."
+        class="input input-sm input-bordered w-full pl-9 bg-base-200/40 text-xs sm:text-sm font-medium"
+      />
+    </div>
+
+    <div class="join border border-base-300 bg-base-200/50 p-0.5 rounded-xl">
+      <button class="btn btn-xs join-item btn-ghost font-bold text-[11px] comment-filter-btn active-filter" data-filter="all">
+        Todos ({queueItems.length})
+      </button>
+      <button class="btn btn-xs join-item btn-ghost font-bold text-[11px] comment-filter-btn" data-filter="Reportado">
+        Reportados ({queueItems.filter(q => q.reason === "Reportado").length})
+      </button>
+      <button class="btn btn-xs join-item btn-ghost font-bold text-[11px] comment-filter-btn" data-filter="Pendiente">
+        Pendientes ({queueItems.filter(q => q.reason === "Pendiente").length})
+      </button>
+      <button class="btn btn-xs join-item btn-ghost font-bold text-[11px] comment-filter-btn" data-filter="Aprobado">
+        Aprobados ({queueItems.filter(q => q.reason === "Aprobado").length})
+      </button>
+    </div>
+  </div>
+
   <!-- Comments Stream -->
-  <div class="grid grid-cols-1 gap-4">
+  <div class="grid grid-cols-1 gap-4" id="comments-container">
     {queueItems.map((item) => {
       const isReported = item.reason === "Reportado";
       const isPending = item.reason === "Pendiente";
       const isApproved = item.reason === "Aprobado";
 
       return (
-        <article class="rounded-3xl border border-base-300 bg-base-100 p-5 sm:p-6 shadow-xs space-y-3.5 hover:border-base-300/80 transition-all">
+        <article
+          class="rounded-3xl border border-base-300 bg-base-100 p-5 sm:p-6 shadow-xs space-y-3.5 hover:border-base-300/80 transition-all comment-card"
+          data-user={item.user.toLowerCase()}
+          data-article={item.article.toLowerCase()}
+          data-comment={item.comment.toLowerCase()}
+          data-reason={item.reason}
+        >
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div class="flex items-center gap-3">
               <div class="avatar placeholder">
@@ -88,3 +124,61 @@ const queueItems = [
     })}
   </div>
 </AdminLayout>
+
+<script is:inline>
+  (function () {
+    var bind = function () {
+      var searchInput = document.getElementById("comments-search");
+      var filterButtons = document.querySelectorAll(".comment-filter-btn");
+      var cards = document.querySelectorAll(".comment-card");
+
+      var currentFilter = "all";
+      var searchQuery = "";
+
+      var applyFilters = function () {
+        cards.forEach(function (card) {
+          var user = card.getAttribute("data-user") || "";
+          var article = card.getAttribute("data-article") || "";
+          var comment = card.getAttribute("data-comment") || "";
+          var reason = card.getAttribute("data-reason") || "";
+
+          var matchesSearch = !searchQuery || user.indexOf(searchQuery) !== -1 || article.indexOf(searchQuery) !== -1 || comment.indexOf(searchQuery) !== -1;
+          var matchesFilter = currentFilter === "all" || reason === currentFilter;
+
+          if (matchesSearch && matchesFilter) {
+            card.style.display = "";
+          } else {
+            card.style.display = "none";
+          }
+        });
+      };
+
+      if (searchInput && searchInput.dataset.bound !== "true") {
+        searchInput.dataset.bound = "true";
+        searchInput.addEventListener("input", function () {
+          searchQuery = searchInput.value.trim().toLowerCase();
+          applyFilters();
+        });
+      }
+
+      filterButtons.forEach(function (btn) {
+        if (btn.dataset.bound === "true") return;
+        btn.dataset.bound = "true";
+        btn.addEventListener("click", function () {
+          filterButtons.forEach(function (b) {
+            b.classList.remove("btn-primary", "text-primary-content");
+            b.classList.add("btn-ghost");
+          });
+          btn.classList.remove("btn-ghost");
+          btn.classList.add("btn-primary", "text-primary-content");
+
+          currentFilter = btn.getAttribute("data-filter") || "all";
+          applyFilters();
+        });
+      });
+    };
+
+    bind();
+    document.addEventListener("astro:page-load", bind);
+  })();
+</script>

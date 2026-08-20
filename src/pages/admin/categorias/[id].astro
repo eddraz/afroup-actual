@@ -40,62 +40,98 @@ const languages = await listSiteLanguages(env.DB);
 const listHref = localizedPath(locale, joinPath(routeIds.admin, "categorias"));
 ---
 
-<AdminLayout title={copy.adminEdit} active="categories">
-  <!-- Top Bar -->
-  <div class="mb-6 flex items-center justify-between gap-4">
-    <a class="btn btn-ghost btn-sm gap-2 text-xs font-bold" href={listHref}>
-      <svg class="size-4"><use href="#ic-arrow"></use></svg>
-      <span>{copy.adminCategories}</span>
-    </a>
-  </div>
-
+<AdminLayout title={`${copy.adminEdit}: ${titles[defaultLocale] || category.slug}`} active="categories">
   <form
     method="post"
     action="/api/admin/categories"
-    class="rounded-3xl border border-base-300 bg-base-100 p-6 sm:p-8 shadow-xs space-y-5"
+    class="space-y-6"
     data-editorial-form
     data-success={copy.adminEditorialSaved}
     data-error={copy.adminEditorialSaveError}
   >
     <input type="hidden" name="id" value={category.id} />
 
-    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-base-300 pb-4">
-      <div>
-        <h2 class="font-display text-xl font-bold text-base-content">
-          {copy.adminEdit}: {titles[defaultLocale] || category.slug}
-        </h2>
-        <span class="font-mono text-xs text-base-content/60">ID #{category.id}</span>
+    <!-- Sticky Top Action Bar -->
+    <div class="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300 bg-base-100/95 p-3.5 backdrop-blur-md shadow-xs">
+      <div class="flex items-center gap-3 min-w-0">
+        <a class="btn btn-ghost btn-sm gap-1.5 text-xs font-bold" href={listHref}>
+          <svg class="size-4"><use href="#ic-arrow"></use></svg>
+          <span>{copy.adminCategories}</span>
+        </a>
+        <span class="text-base-content/30 hidden sm:inline">/</span>
+        <span class="font-display font-bold text-sm text-base-content truncate hidden sm:inline max-w-[320px]">
+          {titles[defaultLocale] || category.slug}
+        </span>
+        <span class="badge badge-neutral badge-xs py-1 px-2 font-mono hidden md:inline-flex">#{category.id}</span>
       </div>
-      <PageLocaleSwitch languages={languages} label={copy.adminLanguages} current={defaultLocale} />
+
+      <div class="flex items-center gap-2">
+        <button class="btn btn-primary btn-sm px-6 font-bold shadow-sm hover:scale-[1.02] transition-transform" type="submit">
+          <svg class="size-4"><use href="#ic-check"></use></svg>
+          <span>{copy.adminSave}</span>
+        </button>
+      </div>
     </div>
 
-    {languages.map((language) => {
-      const locked = language.code !== defaultLocale && !translation.canWrite && !translation.canUseAi;
-      return (
-        <div class:list={["grid grid-cols-1 gap-4", language.code !== defaultLocale && "hidden"]} data-i18n-panel={language.code}>
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">
-              {copy.adminCategoryTitle} · {language.native_name}
-            </legend>
-            <input class="input input-bordered w-full font-semibold" name={`title[${language.code}]`} maxlength="160" required={language.code === defaultLocale} disabled={locked} value={titles[language.code] ?? ""} />
-          </fieldset>
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">
-              {copy.adminCategoryDescription} · {language.native_name}
-            </legend>
-            <textarea class="textarea textarea-bordered w-full" name={`description[${language.code}]`} rows="3" maxlength="400" disabled={locked}>{descriptions[language.code] ?? ""}</textarea>
-          </fieldset>
+    <!-- Category Form Container -->
+    <div class="rounded-3xl border border-base-300 bg-base-100 p-6 sm:p-8 shadow-xs space-y-6">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-base-300 pb-4">
+        <div>
+          <h3 class="font-display text-lg font-bold text-base-content">
+            Información Editorial y Multilingüe
+          </h3>
+          <p class="text-xs text-base-content/60 mt-0.5">Configura el nombre y la bajada temática en cada idioma activo.</p>
         </div>
-      );
-    })}
+        <PageLocaleSwitch languages={languages} label={copy.adminLanguages} current={defaultLocale} />
+      </div>
 
-    <fieldset class="fieldset">
-      <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminCategorySlug}</legend>
-      <input class="input input-bordered w-full font-mono text-xs" name="slug" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" maxlength="80" value={category.slug} />
-    </fieldset>
+      {languages.map((language) => {
+        const locked = language.code !== defaultLocale && !translation.canWrite && !translation.canUseAi;
+        return (
+          <div class:list={["grid grid-cols-1 gap-4", language.code !== defaultLocale && "hidden"]} data-i18n-panel={language.code}>
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">
+                {copy.adminCategoryTitle} · {language.native_name}
+              </legend>
+              <input
+                class="input input-bordered w-full font-semibold text-lg py-3"
+                name={`title[${language.code}]`}
+                maxlength="160"
+                required={language.code === defaultLocale}
+                disabled={locked}
+                value={titles[language.code] ?? ""}
+                placeholder="Nombre de la categoría..."
+              />
+            </fieldset>
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">
+                {copy.adminCategoryDescription} · {language.native_name}
+              </legend>
+              <textarea
+                class="textarea textarea-bordered w-full text-base leading-relaxed"
+                name={`description[${language.code}]`}
+                rows="3"
+                maxlength="400"
+                disabled={locked}
+                placeholder="Descripción editorial de la temática..."
+              >{descriptions[language.code] ?? ""}</textarea>
+            </fieldset>
+          </div>
+        );
+      })}
 
-    <div class="flex justify-end pt-3 border-t border-base-300">
-      <button class="btn btn-primary btn-sm px-6 font-bold shadow-sm" type="submit">{copy.adminSave}</button>
+      <fieldset class="fieldset border-t border-base-300/80 pt-4">
+        <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminCategorySlug}</legend>
+        <input
+          class="input input-bordered w-full font-mono text-xs max-w-md"
+          name="slug"
+          pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
+          maxlength="80"
+          value={category.slug}
+          placeholder="slug-de-categoria"
+        />
+        <p class="text-[11px] text-base-content/50 mt-1">Identificador de URL único utilizado para la navegación pública.</p>
+      </fieldset>
     </div>
   </form>
 
@@ -107,17 +143,23 @@ const listHref = localizedPath(locale, joinPath(routeIds.admin, "categorias"));
           form.dataset.bound = "true";
           form.addEventListener("submit", function (event) {
             event.preventDefault();
+            var btn = form.querySelector("button[type='submit']");
+            if (btn) btn.disabled = true;
+
             fetch(form.action, { method: "POST", body: new FormData(form) })
               .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
               .then(function (result) {
                 if (result.ok) {
                   if (window.AfroUpFeedback) window.AfroUpFeedback.toast(form.getAttribute("data-success") || "Guardado.", "success");
+                  setTimeout(function () { window.location.reload(); }, 600);
                   return;
                 }
                 if (window.AfroUpFeedback) window.AfroUpFeedback.toast(form.getAttribute("data-error") || "No pudimos guardar.", "error");
+                if (btn) btn.disabled = false;
               })
               .catch(function () {
                 if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Error de red.", "error");
+                if (btn) btn.disabled = false;
               });
           });
         });

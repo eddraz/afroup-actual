@@ -3,8 +3,9 @@ import AdminLayout from "../../layouts/AdminLayout.astro";
 import { requireModuleAccess } from "../../lib/admin-scope";
 import { localizedPath } from "../../lib/i18n";
 import { resolveRequestCopy } from "../../lib/request-locale";
-import { env } from "cloudflare:workers";
+import { routeIds } from "../../lib/paths";
 import { listSiteLanguages } from "../../lib/site-languages";
+import { env } from "cloudflare:workers";
 
 export const prerender = false;
 
@@ -22,10 +23,10 @@ const languages = await listSiteLanguages(env.DB);
     <div>
       <div class="flex items-center gap-2.5">
         <h2 class="font-display text-2xl font-bold text-base-content">{copy.adminLanguages}</h2>
-        <span class="badge badge-neutral badge-sm font-semibold">{languages.length} configurados</span>
+        <span class="badge badge-neutral badge-sm font-semibold">{languages.length} idiomas</span>
       </div>
       <p class="text-xs sm:text-sm text-base-content/60 mt-1">
-        Gestiona los idiomas soportados para el contenido editorial y las traducciones automáticas con IA.
+        Gestiona la disponibilidad de idiomas públicos y las traducciones en el sistema.
       </p>
     </div>
 
@@ -35,17 +36,17 @@ const languages = await listSiteLanguages(env.DB);
       class="btn btn-primary btn-sm gap-2 shadow-sm hover:scale-[1.02] transition-transform"
     >
       <svg class="size-4"><use href="#ic-plus"></use></svg>
-      <span>{copy.adminLanguageAdd || "Añadir Idioma"}</span>
+      <span>{copy.adminLanguageTranslate || "Añadir Idioma"}</span>
     </button>
   </div>
 
   <!-- Collapsible Add Language Form -->
-  <div id="new-lang-box" class="hidden mb-8">
+  <div id="new-lang-box" class="hidden mb-8 transition-all duration-300">
     <div class="rounded-3xl border border-primary/30 bg-base-100 p-6 sm:p-8 shadow-md ring-1 ring-primary/20">
       <div class="flex items-center justify-between border-b border-base-300 pb-3 mb-6">
         <div class="flex items-center gap-2">
           <span class="size-2.5 rounded-full bg-primary animate-pulse"></span>
-          <h3 class="font-display font-bold text-lg text-base-content">{copy.adminLanguageAdd || "Añadir nuevo idioma"}</h3>
+          <h3 class="font-display font-bold text-lg text-base-content">{copy.adminLanguageTranslate || "Configurar nuevo idioma"}</h3>
         </div>
         <button type="button" class="btn btn-circle btn-ghost btn-xs" id="btn-close-new-lang">✕</button>
       </div>
@@ -79,10 +80,25 @@ const languages = await listSiteLanguages(env.DB);
     </div>
   </div>
 
+  <!-- Filter & Search Toolbar -->
+  <div class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300 bg-base-100 p-3 shadow-xs">
+    <div class="relative flex-1 min-w-[240px] max-w-md">
+      <svg class="size-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none">
+        <use href="#ic-world"></use>
+      </svg>
+      <input
+        type="search"
+        id="languages-search"
+        placeholder="Buscar idiomas por código, nombre o traducción..."
+        class="input input-sm input-bordered w-full pl-9 bg-base-200/40 text-xs sm:text-sm font-medium"
+      />
+    </div>
+  </div>
+
   <!-- Languages Table -->
   <div class="rounded-3xl border border-base-300 bg-base-100 shadow-xs overflow-hidden">
     <div class="overflow-x-auto">
-      <table class="table table-zebra w-full">
+      <table class="table table-zebra w-full" id="languages-table">
         <thead>
           <tr class="border-b border-base-300 bg-base-200/60 text-xs font-extrabold uppercase tracking-wider text-base-content/60">
             <th class="py-4 pl-6">{copy.adminLanguageShow || "Activo"}</th>
@@ -94,7 +110,7 @@ const languages = await listSiteLanguages(env.DB);
         </thead>
         <tbody class="divide-y divide-base-300/60 font-medium text-sm">
           {languages.map((language) => (
-            <tr class="hover:bg-base-200/50 transition-colors">
+            <tr class="hover:bg-base-200/50 transition-colors language-row" data-code={language.code.toLowerCase()} data-name={(language.name || "").toLowerCase()} data-native={(language.native_name || "").toLowerCase()}>
               <td class="py-3.5 pl-6">
                 <form method="post" action="/api/admin/languages" data-language-toggle>
                   <input type="hidden" name="_intent" value="toggle" />
@@ -104,7 +120,7 @@ const languages = await listSiteLanguages(env.DB);
                 </form>
               </td>
               <td>
-                <span class="font-mono text-xs px-2 py-1 rounded-md bg-base-200 border border-base-300 font-bold uppercase text-base-content/80">
+                <span class="font-mono text-xs px-2.5 py-1 rounded-md bg-base-200 border border-base-300 font-bold uppercase text-base-content/80">
                   {language.code}
                 </span>
               </td>
@@ -112,7 +128,7 @@ const languages = await listSiteLanguages(env.DB);
               <td class="text-base-content/80">{language.native_name}</td>
               <td class="text-right pr-6">
                 {language.is_pillar ? (
-                  <span class="badge badge-xs badge-accent font-bold py-1 px-2 uppercase">{copy.adminLanguagePillar || "Principal"}</span>
+                  <span class="badge badge-xs badge-accent font-bold py-1 px-2.5 uppercase">{copy.adminLanguagePillar || "Principal"}</span>
                 ) : (
                   <span class="badge badge-xs badge-ghost py-1 px-2 font-semibold">Opcional</span>
                 )}
@@ -124,20 +140,6 @@ const languages = await listSiteLanguages(env.DB);
     </div>
   </div>
 
-  <dialog id="language-last-modal" class="modal">
-    <div class="modal-box rounded-3xl p-6">
-      <h3 class="font-display text-lg font-bold text-base-content">{copy.adminLanguageLastTitle}</h3>
-      <p class="py-3 text-sm text-base-content/80">{copy.adminLanguageLastLead}</p>
-      <div class="modal-action">
-        <button type="button" class="btn btn-ghost btn-sm" data-last-cancel>{copy.adminCancel}</button>
-        <button type="button" class="btn btn-primary btn-sm" data-last-confirm>{copy.adminLanguageLastConfirm}</button>
-      </div>
-    </div>
-    <form method="dialog" class="modal-backdrop">
-      <button type="submit">{copy.adminCancel}</button>
-    </form>
-  </dialog>
-
   <script is:inline>
     (function () {
       var bind = function () {
@@ -148,39 +150,100 @@ const languages = await listSiteLanguages(env.DB);
 
         if (toggleBtn && box && toggleBtn.dataset.bound !== "true") {
           toggleBtn.dataset.bound = "true";
-          toggleBtn.addEventListener("click", function () { box.classList.toggle("hidden"); });
-        }
-        if (closeBtn && box && closeBtn.dataset.bound !== "true") {
-          closeBtn.dataset.bound = "true";
-          closeBtn.addEventListener("click", function () { box.classList.add("hidden"); });
-        }
-        if (cancelBtn && box && cancelBtn.dataset.bound !== "true") {
-          cancelBtn.dataset.bound = "true";
-          cancelBtn.addEventListener("click", function () { box.classList.add("hidden"); });
+          toggleBtn.addEventListener("click", function () {
+            box.classList.toggle("hidden");
+            if (!box.classList.contains("hidden")) {
+              var input = box.querySelector("input[name='code']");
+              if (input) input.focus();
+            }
+          });
         }
 
-        var form = document.querySelector("[data-language-form]");
-        if (form && !form.dataset.bound) {
-          form.dataset.bound = "true";
-          var suggestBtn = form.querySelector("[data-suggest-native]");
-          var nameInput = form.querySelector("input[name='name']");
-          var nativeInput = form.querySelector("[data-native-name]");
-          if (suggestBtn && nameInput && nativeInput) {
-            suggestBtn.addEventListener("click", function () {
-              var name = nameInput.value.trim();
-              if (!name) return;
-              suggestBtn.disabled = true;
-              fetch("/api/admin/translate", {
-                method: "POST",
-                body: new URLSearchParams({ source: name, target: "native", module: "languages" }),
-              })
-                .then(function (r) { return r.json(); })
-                .then(function (res) {
-                  if (res && res.text) nativeInput.value = res.text;
-                })
-                .finally(function () { suggestBtn.disabled = false; });
+        var hide = function () { if (box) box.classList.add("hidden"); };
+        if (closeBtn && closeBtn.dataset.bound !== "true") { closeBtn.dataset.bound = "true"; closeBtn.addEventListener("click", hide); }
+        if (cancelBtn && cancelBtn.dataset.bound !== "true") { cancelBtn.dataset.bound = "true"; cancelBtn.addEventListener("click", hide); }
+
+        // Search live filter
+        var searchInput = document.getElementById("languages-search");
+        var rows = document.querySelectorAll(".language-row");
+
+        if (searchInput && searchInput.dataset.bound !== "true") {
+          searchInput.dataset.bound = "true";
+          searchInput.addEventListener("input", function () {
+            var q = searchInput.value.trim().toLowerCase();
+            rows.forEach(function (r) {
+              var code = r.getAttribute("data-code") || "";
+              var name = r.getAttribute("data-name") || "";
+              var native = r.getAttribute("data-native") || "";
+              if (!q || code.indexOf(q) !== -1 || name.indexOf(q) !== -1 || native.indexOf(q) !== -1) {
+                r.style.display = "";
+              } else {
+                r.style.display = "none";
+              }
             });
-          }
+          });
+        }
+
+        // Toggle visibility
+        document.querySelectorAll("input[data-show-toggle]").forEach(function (input) {
+          if (input.dataset.boundToggle) return;
+          input.dataset.boundToggle = "true";
+          input.addEventListener("change", function () {
+            var form = input.closest("form");
+            if (form) {
+              fetch(form.action, { method: "POST", body: new FormData(form) })
+                .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
+                .then(function (result) {
+                  if (result.ok) {
+                    if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Idioma actualizado.", "success");
+                    return;
+                  }
+                  if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Error al actualizar visibilidad.", "error");
+                  input.checked = !input.checked;
+                })
+                .catch(function () {
+                  if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Error de red.", "error");
+                  input.checked = !input.checked;
+                });
+            }
+          });
+        });
+
+        // AI Suggestion
+        var suggestBtn = document.querySelector("[data-suggest-native]");
+        if (suggestBtn && !suggestBtn.dataset.boundSuggest) {
+          suggestBtn.dataset.boundSuggest = "true";
+          suggestBtn.addEventListener("click", function () {
+            var nameInp = document.querySelector("input[name='name']");
+            var nativeInp = document.querySelector("input[data-native-name]");
+            var codeInp = document.querySelector("input[name='code']");
+            var name = nameInp ? nameInp.value.trim() : "";
+            var code = codeInp ? codeInp.value.trim() : "";
+
+            if (!name && !code) {
+              if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Ingresa el código o nombre primero.", "error");
+              return;
+            }
+
+            suggestBtn.disabled = true;
+            fetch("/api/admin/translate", {
+              method: "POST",
+              headers: { "Content-Type": "application/x-www-form-urlencoded" },
+              body: new URLSearchParams({
+                module: "idiomas",
+                source: name || code,
+                target: code || "es",
+                intent: "suggest_native_name"
+              })
+            })
+              .then(function (r) { return r.json(); })
+              .then(function (res) {
+                if (res.ok && res.text && nativeInp) {
+                  nativeInp.value = res.text;
+                }
+              })
+              .finally(function () { suggestBtn.disabled = false; });
+          });
         }
       };
 

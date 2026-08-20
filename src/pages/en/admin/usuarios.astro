@@ -161,8 +161,47 @@ const actionLabels: Record<PermissionAction, string> = {
     </div>
   ) : null}
 
+  <!-- Filter & Search Toolbar -->
+  <div class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300 bg-base-100 p-3 shadow-xs">
+    <div class="relative flex-1 min-w-[240px] max-w-md">
+      <svg class="size-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none">
+        <use href="#ic-users"></use>
+      </svg>
+      <input
+        type="search"
+        id="users-search"
+        placeholder="Search users by name, email, or role..."
+        class="input input-sm input-bordered w-full pl-9 bg-base-200/40 text-xs sm:text-sm font-medium"
+      />
+    </div>
+
+    <div class="join border border-base-300 bg-base-200/50 p-0.5 rounded-xl">
+      <button class="btn btn-xs join-item btn-ghost font-bold text-[11px] user-filter-btn active-filter" data-filter="all">
+        All ({users.length})
+      </button>
+      <button class="btn btn-xs join-item btn-ghost font-bold text-[11px] user-filter-btn" data-filter="active">
+        Active ({users.filter(u => u.is_active).length})
+      </button>
+      <button class="btn btn-xs join-item btn-ghost font-bold text-[11px] user-filter-btn" data-filter="pending">
+        Invitations ({users.filter(u => u.invite_pending).length})
+      </button>
+    </div>
+  </div>
+
   <!-- Users Grid / List -->
-  <div class="grid grid-cols-1 gap-4">
+  <div class="grid grid-cols-1 gap-4" id="users-container">
+    {users.length === 0 ? (
+      <div class="rounded-3xl border border-base-300 bg-base-100 p-12 shadow-xs text-center">
+        <div class="flex flex-col items-center gap-2">
+          <div class="size-12 rounded-2xl bg-base-200 flex items-center justify-center text-base-content/40">
+            <svg class="size-6"><use href="#ic-users"></use></svg>
+          </div>
+          <span class="font-bold text-base">No users registered</span>
+          <span class="text-xs text-base-content/50">Invite a team member to start collaborating</span>
+        </div>
+      </div>
+    ) : null}
+
     {users.map((user) => {
       const granted = grantedByUser.get(user.id) ?? new Map();
       const isSelf = user.id === actor.id;
@@ -176,7 +215,14 @@ const actionLabels: Record<PermissionAction, string> = {
         .toUpperCase();
 
       return (
-        <article class="rounded-3xl border border-base-300 bg-base-100 p-5 sm:p-6 shadow-xs space-y-4 hover:border-base-300/80 transition-all">
+        <article
+          class="rounded-3xl border border-base-300 bg-base-100 p-5 sm:p-6 shadow-xs space-y-4 hover:border-base-300/80 transition-all user-card"
+          data-name={(user.name || "").toLowerCase()}
+          data-email={(user.email || "").toLowerCase()}
+          data-role={(user.role_name || "").toLowerCase()}
+          data-active={user.is_active ? "active" : "paused"}
+          data-pending={user.invite_pending ? "pending" : "verified"}
+        >
           <div class="flex flex-wrap items-start justify-between gap-4">
             <div class="flex items-center gap-3.5">
               <div class="avatar placeholder">
@@ -350,6 +396,59 @@ const actionLabels: Record<PermissionAction, string> = {
               });
           });
         }
+
+        // Live User Search & Status Filter
+        var searchInput = document.getElementById("users-search");
+        var filterButtons = document.querySelectorAll(".user-filter-btn");
+        var cards = document.querySelectorAll(".user-card");
+
+        var currentFilter = "all";
+        var searchQuery = "";
+
+        var applyUserFilters = function () {
+          cards.forEach(function (card) {
+            var name = card.getAttribute("data-name") || "";
+            var email = card.getAttribute("data-email") || "";
+            var role = card.getAttribute("data-role") || "";
+            var active = card.getAttribute("data-active") || "";
+            var pending = card.getAttribute("data-pending") || "";
+
+            var matchesSearch = !searchQuery || name.indexOf(searchQuery) !== -1 || email.indexOf(searchQuery) !== -1 || role.indexOf(searchQuery) !== -1;
+            var matchesFilter = currentFilter === "all" ||
+              (currentFilter === "active" && active === "active") ||
+              (currentFilter === "pending" && pending === "pending");
+
+            if (matchesSearch && matchesFilter) {
+              card.style.display = "";
+            } else {
+              card.style.display = "none";
+            }
+          });
+        };
+
+        if (searchInput && searchInput.dataset.bound !== "true") {
+          searchInput.dataset.bound = "true";
+          searchInput.addEventListener("input", function () {
+            searchQuery = searchInput.value.trim().toLowerCase();
+            applyUserFilters();
+          });
+        }
+
+        filterButtons.forEach(function (btn) {
+          if (btn.dataset.bound === "true") return;
+          btn.dataset.bound = "true";
+          btn.addEventListener("click", function () {
+            filterButtons.forEach(function (b) {
+              b.classList.remove("btn-primary", "text-primary-content");
+              b.classList.add("btn-ghost");
+            });
+            btn.classList.remove("btn-ghost");
+            btn.classList.add("btn-primary", "text-primary-content");
+
+            currentFilter = btn.getAttribute("data-filter") || "all";
+            applyUserFilters();
+          });
+        });
       };
 
       bind();
