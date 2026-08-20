@@ -622,7 +622,7 @@ const text = {
             optBox.appendChild(toggleRow);
 
             var controlsDiv = document.createElement("div");
-            controlsDiv.className = "grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1";
+            controlsDiv.className = "grid grid-cols-1 sm:grid-cols-4 gap-2 pt-1";
             controlsDiv.style.display = item.optEnabled ? "" : "none";
 
             // Format selector
@@ -637,6 +637,23 @@ const text = {
             fmtSel.onchange = function () { item.format = fmtSel.value; };
             fmtField.appendChild(fmtSel);
             controlsDiv.appendChild(fmtField);
+
+            // Quality Range
+            var qField = document.createElement("div");
+            qField.innerHTML = '<div class="flex items-center justify-between text-[10px] font-bold text-base-content/60 mb-1"><span>Calidad</span><span class="font-mono text-primary q-label">' + (item.quality || 85) + '%</span></div>';
+            var qInput = document.createElement("input");
+            qInput.type = "range";
+            qInput.min = "50";
+            qInput.max = "100";
+            qInput.value = String(item.quality || 85);
+            qInput.className = "range range-primary range-xs";
+            qInput.oninput = function () {
+              item.quality = parseInt(qInput.value, 10);
+              var qLabel = qField.querySelector(".q-label");
+              if (qLabel) qLabel.textContent = item.quality + "%";
+            };
+            qField.appendChild(qInput);
+            controlsDiv.appendChild(qField);
 
             // Width with max constraint
             var widthField = document.createElement("div");
