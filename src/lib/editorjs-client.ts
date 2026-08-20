@@ -27,6 +27,117 @@ export function destroyArticleEditors(): void {
   }
 }
 
+/**
+ * Optimizes an image file in browser canvas (converting to WebP, scaling down to max 1920px, compressing)
+ * and uploads it directly to Cloudflare R2 bucket under media/articles.
+ */
+async function optimizeAndUploadToR2(file: File, prefix = "articles"): Promise<string> {
+  // If not image, upload directly
+  if (!file.type.startsWith("image/")) {
+    const formData = new FormData();
+    formData.append("_intent", "upload");
+    formData.append("file", file);
+    formData.append("bucket", "media");
+    formData.append("prefix", prefix);
+    formData.append("customName", file.name);
+
+    const res = await fetch("/api/admin/r2", { method: "POST", body: formData });
+    const json = (await res.json()) as any;
+    if (!json.ok || !json.streamUrl) {
+      throw new Error(json.error || "Failed to upload file to R2");
+    }
+    return json.streamUrl;
+  }
+
+  // Create Image Bitmap for canvas optimization
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(e.target?.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const el = new Image();
+    el.onload = () => resolve(el);
+    el.onerror = reject;
+    el.src = dataUrl;
+  });
+
+  const origW = img.naturalWidth || img.width;
+  const origH = img.naturalHeight || img.height;
+
+  // Max bounds for inline article images (1920x1920 max)
+  const maxBound = 1920;
+  let targetW = origW;
+  let targetH = origH;
+
+  if (origW > maxBound || origH > maxBound) {
+    if (origW > origH) {
+      targetW = maxBound;
+      targetH = Math.round(maxBound / (origW / origH));
+    } else {
+      targetH = maxBound;
+      targetW = Math.round(maxBound * (origW / origH));
+    }
+  }
+
+  const canvas = document.createElement("canvas");
+  canvas.width = targetW;
+  canvas.height = targetH;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas context creation failed");
+
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(img, 0, 0, targetW, targetH);
+
+  // Convert to high-performance WebP at 85% quality
+  const blob = await new Promise<Blob | null>((resolve) => {
+    canvas.toBlob((b) => resolve(b), "image/webp", 0.85);
+  });
+
+  if (!blob) throw new Error("Image optimization failed");
+
+  const cleanName = file.name.replace(/\.[^/.]+$/, "");
+  const optimizedFile = new File([blob], `${cleanName}.webp`, { type: "image/webp" });
+
+  const formData = new FormData();
+  formData.append("_intent", "upload");
+  formData.append("file", optimizedFile);
+  formData.append("bucket", "media");
+  formData.append("prefix", prefix);
+  formData.append("customName", optimizedFile.name);
+
+  const res = await fetch("/api/admin/r2", { method: "POST", body: formData });
+  const json = (await res.json()) as any;
+  if (!json.ok || !json.streamUrl) {
+    throw new Error(json.error || "Failed to upload optimized image to R2");
+  }
+
+  return json.streamUrl;
+}
+
+/**
+ * Proxies and optimizes an external image URL to Cloudflare R2 WebP format.
+ */
+async function optimizeAndUploadUrlToR2(url: string, prefix = "articles"): Promise<string> {
+  const formData = new FormData();
+  formData.append("_intent", "fetch_url");
+  formData.append("sourceUrl", url);
+
+  const res = await fetch("/api/admin/r2", { method: "POST", body: formData });
+  const result = (await res.json()) as any;
+  if (!result.ok || !result.dataUrl) {
+    return url;
+  }
+
+  const blobRes = await fetch(result.dataUrl);
+  const blob = await blobRes.blob();
+  const file = new File([blob], result.fileName || "article-image.webp", { type: result.contentType });
+  return await optimizeAndUploadToR2(file, prefix);
+}
+
 export function initArticleEditors(): Record<string, EditorJS> {
   if (typeof window === "undefined") return {};
 
@@ -86,23 +197,41 @@ export function initArticleEditors(): Record<string, EditorJS> {
             class: ImageTool as any,
             config: {
               uploader: {
-                uploadByUrl(url: string) {
-                  return Promise.resolve({
-                    success: 1,
-                    file: { url },
-                  });
-                },
-                uploadByFile(file: File) {
-                  return new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                      resolve({
-                        success: 1,
-                        file: { url: e.target?.result as string },
-                      });
+                async uploadByUrl(url: string) {
+                  try {
+                    const streamUrl = await optimizeAndUploadUrlToR2(url, "articles");
+                    if (typeof window !== "undefined" && (window as any).AfroUpFeedback) {
+                      (window as any).AfroUpFeedback.toast("Imagen optimizada y subida a R2.", "success");
+                    }
+                    return {
+                      success: 1,
+                      file: { url: streamUrl },
                     };
-                    reader.readAsDataURL(file);
-                  });
+                  } catch (err: any) {
+                    console.error("EditorJS image upload from URL error", err);
+                    return {
+                      success: 1,
+                      file: { url },
+                    };
+                  }
+                },
+                async uploadByFile(file: File) {
+                  try {
+                    const streamUrl = await optimizeAndUploadToR2(file, "articles");
+                    if (typeof window !== "undefined" && (window as any).AfroUpFeedback) {
+                      (window as any).AfroUpFeedback.toast("Imagen optimizada a WebP y guardada en R2.", "success");
+                    }
+                    return {
+                      success: 1,
+                      file: { url: streamUrl },
+                    };
+                  } catch (err: any) {
+                    console.error("EditorJS image upload error", err);
+                    if (typeof window !== "undefined" && (window as any).AfroUpFeedback) {
+                      (window as any).AfroUpFeedback.toast("Error al subir imagen a R2.", "error");
+                    }
+                    return { success: 0 };
+                  }
                 },
               },
             },
