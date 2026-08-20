@@ -5,6 +5,7 @@ import BaseLayout from "../../../layouts/BaseLayout.astro";
 import { getCurrentUser, sessionTokenFrom } from "../../../lib/admin-scope";
 import { getCategoryTheme, isReservedCategorySlug } from "../../../lib/category-routes";
 import { defaultLocale, joinPath, localizedPath } from "../../../lib/i18n";
+import { plainBioText } from "../../../lib/bio-writes";
 import { resolveRequestCopy } from "../../../lib/request-locale";
 import { routeIds } from "../../../lib/paths";
 
@@ -165,7 +166,7 @@ const categoryHref = localizedPath(locale, categorySlug);
 const donateHref = localizedPath(locale, routeIds.donate);
 const authorDisplayName = row.author_name || "AfroUp Team";
 const authorRole = copy.articleDefaultRole;
-const authorBioText = row.author_bio || copy.articleDefaultBio;
+const authorBioText = plainBioText(row.author_bio) || copy.articleDefaultBio;
 ---
 
 <BaseLayout title={`AfroUp — ${row.title}`} active={categorySlug}>
