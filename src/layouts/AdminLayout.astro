@@ -218,7 +218,8 @@ function navClass(key: NonNullable<Props["active"]>) {
           </a>
 
           <!-- Navigation Links (Only sidebar menu scrolls with thin, black scrollbar) -->
-          <ul class="sidebar-scroll menu min-h-0 w-full flex-1 flex-nowrap overflow-x-hidden overflow-y-auto px-3.5 py-4 gap-1">
+          <div class="sidebar-scroll min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto">
+              <ul class="menu w-full px-3.5 py-4 gap-1">
             <li class="admin-nav-tooltip tooltip tooltip-right" data-tip={copy.adminDashboard}>
               <a class={navClass("dashboard")} href={paths.admin}>
                 <svg class="size-4.5 shrink-0"><use href="#ic-home"></use></svg>
@@ -328,6 +329,7 @@ function navClass(key: NonNullable<Props["active"]>) {
               </li>
             ) : null}
           </ul>
+          </div>
 
           <!-- Sidebar Footer with Language Switcher and Session User -->
           <div class="admin-sidebar-footer mt-auto flex shrink-0 flex-col gap-3 border-t border-base-300/80 p-3 bg-base-200">
@@ -372,99 +374,135 @@ function navClass(key: NonNullable<Props["active"]>) {
       </div>
     </div>
 
+    <div
+      id="admin-sidebar-tip"
+      role="tooltip"
+      class="pointer-events-none fixed z-[100] hidden -translate-y-1/2 rounded-field bg-neutral px-2 py-1 text-xs leading-5 text-neutral-content shadow"
+    ></div>
+
     <style is:global>
-      /* Custom Thin Black Scrollbars (sidebar menu & admin content) */
-      .sidebar-scroll {
-        scrollbar-width: thin;
-        scrollbar-color: #111111 transparent;
-      }
-      .sidebar-scroll::-webkit-scrollbar {
-        width: 4px;
-        height: 4px;
-      }
-      .sidebar-scroll::-webkit-scrollbar-track {
-        background: transparent;
-      }
-      .sidebar-scroll::-webkit-scrollbar-thumb {
-        background: #111111;
-        border-radius: 9999px;
-      }
-      .sidebar-scroll::-webkit-scrollbar-thumb:hover {
-        background: #000000;
+      /* Ensure Admin Drawer and Sidebar are strictly bounded to viewport */
+      #admin-layout-drawer {
+        height: 100vh !important;
+        height: 100dvh !important;
+        max-height: 100vh !important;
+        max-height: 100dvh !important;
+        overflow: hidden !important;
       }
 
+      #admin-layout-drawer > .drawer-side,
+      .drawer.lg\:drawer-open > .drawer-side {
+        height: 100vh !important;
+        height: 100dvh !important;
+        max-height: 100vh !important;
+        max-height: 100dvh !important;
+        overflow: hidden !important;
+      }
+
+      #admin-sidebar {
+        display: flex !important;
+        flex-direction: column !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        max-height: 100vh !important;
+        max-height: 100dvh !important;
+        width: 264px;
+        overflow: hidden !important;
+      }
+
+      #admin-sidebar .sidebar-scroll {
+        flex: 1 1 0% !important;
+        min-height: 0 !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        flex-wrap: nowrap !important;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* Custom Thin Black Scrollbars (sidebar menu & admin content) */
+      #admin-sidebar .sidebar-scroll,
+      .sidebar-scroll {
+        scrollbar-width: thin !important;
+        scrollbar-color: #111111 transparent !important;
+      }
+      #admin-sidebar .sidebar-scroll::-webkit-scrollbar,
+      .sidebar-scroll::-webkit-scrollbar {
+        width: 5px !important;
+        height: 5px !important;
+        display: block !important;
+      }
+      #admin-sidebar .sidebar-scroll::-webkit-scrollbar-track,
+      .sidebar-scroll::-webkit-scrollbar-track {
+        background: transparent !important;
+      }
+      #admin-sidebar .sidebar-scroll::-webkit-scrollbar-thumb,
+      .sidebar-scroll::-webkit-scrollbar-thumb {
+        background: #111111 !important;
+        border-radius: 9999px !important;
+        min-height: 24px !important;
+      }
+      #admin-sidebar .sidebar-scroll::-webkit-scrollbar-thumb:hover,
+      .sidebar-scroll::-webkit-scrollbar-thumb:hover {
+        background: #000000 !important;
+      }
+
+      [data-theme="afroup-dark"] #admin-sidebar .sidebar-scroll,
       [data-theme="afroup-dark"] .sidebar-scroll {
-        scrollbar-color: #000000 transparent;
+        scrollbar-color: #2e2c26 transparent !important;
       }
+      [data-theme="afroup-dark"] #admin-sidebar .sidebar-scroll::-webkit-scrollbar-thumb,
       [data-theme="afroup-dark"] .sidebar-scroll::-webkit-scrollbar-thumb {
-        background: #000000;
-        border: 1px solid rgba(255, 255, 255, 0.15);
+        background: #2e2c26 !important;
+        border: 1px solid rgba(255, 255, 255, 0.18) !important;
       }
+      [data-theme="afroup-dark"] #admin-sidebar .sidebar-scroll::-webkit-scrollbar-thumb:hover,
       [data-theme="afroup-dark"] .sidebar-scroll::-webkit-scrollbar-thumb:hover {
-        background: #18181b;
+        background: #444137 !important;
       }
 
       .admin-content-scroll {
-        scrollbar-width: thin;
-        scrollbar-color: #18181b transparent;
+        scrollbar-width: thin !important;
+        scrollbar-color: #18181b transparent !important;
       }
       .admin-content-scroll::-webkit-scrollbar {
-        width: 6px;
-        height: 6px;
+        width: 6px !important;
+        height: 6px !important;
+        display: block !important;
       }
       .admin-content-scroll::-webkit-scrollbar-track {
-        background: transparent;
+        background: transparent !important;
       }
       .admin-content-scroll::-webkit-scrollbar-thumb {
-        background: #18181b;
-        border-radius: 9999px;
+        background: #18181b !important;
+        border-radius: 9999px !important;
+        min-height: 24px !important;
       }
       .admin-content-scroll::-webkit-scrollbar-thumb:hover {
-        background: #000000;
+        background: #000000 !important;
       }
 
       [data-theme="afroup-dark"] .admin-content-scroll {
-        scrollbar-color: #000000 transparent;
+        scrollbar-color: #2e2c26 transparent !important;
       }
       [data-theme="afroup-dark"] .admin-content-scroll::-webkit-scrollbar-thumb {
-        background: #000000;
-        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: #2e2c26 !important;
+        border: 1px solid rgba(255, 255, 255, 0.18) !important;
       }
       [data-theme="afroup-dark"] .admin-content-scroll::-webkit-scrollbar-thumb:hover {
-        background: #18181b;
+        background: #444137 !important;
       }
 
       #admin-sidebar {
         transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1), padding 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       }
 
-      .admin-nav-tooltip {
-        position: relative;
-      }
       .admin-nav-tooltip::before,
       .admin-nav-tooltip::after {
-        z-index: 100 !important;
-      }
-
-      html:not([data-admin-collapsed="true"]) aside .admin-nav-tooltip::before,
-      html:not([data-admin-collapsed="true"]) aside .admin-nav-tooltip::after {
         display: none !important;
       }
 
-      @media (max-width: 1023px) {
-        aside .admin-nav-tooltip::before,
-        aside .admin-nav-tooltip::after {
-          display: none !important;
-        }
-      }
-
       @media (min-width: 1024px) {
-        html[data-admin-collapsed="true"] .drawer-side,
-        html[data-admin-collapsed="true"] #admin-sidebar,
-        html[data-admin-collapsed="true"] aside .sidebar-scroll,
-        html[data-admin-collapsed="true"] aside .admin-sidebar-footer {
-          overflow: visible !important;
-        }
         html[data-admin-collapsed="true"] #admin-sidebar {
           width: 80px;
         }
@@ -571,6 +609,11 @@ function navClass(key: NonNullable<Props["active"]>) {
           toggle.addEventListener("click", function () {
             var isCollapsed = document.documentElement.getAttribute("data-admin-collapsed") === "true";
             var next = !isCollapsed;
+            var tip = document.getElementById("admin-sidebar-tip");
+            if (tip) {
+              tip.classList.add("hidden");
+              tip.textContent = "";
+            }
             if (next) {
               document.documentElement.setAttribute("data-admin-collapsed", "true");
               try { localStorage.setItem("afroup-admin-collapsed", "true"); } catch (e) {}
@@ -582,6 +625,43 @@ function navClass(key: NonNullable<Props["active"]>) {
         };
         bindSidebarToggle();
         document.addEventListener("astro:page-load", bindSidebarToggle);
+
+        var bindSidebarTips = function () {
+          var tip = document.getElementById("admin-sidebar-tip");
+          var sidebar = document.getElementById("admin-sidebar");
+          if (!tip || !sidebar || tip.dataset.bound === "true") return;
+          tip.dataset.bound = "true";
+          var hide = function () {
+            tip.classList.add("hidden");
+            tip.textContent = "";
+          };
+          var show = function (el) {
+            if (document.documentElement.getAttribute("data-admin-collapsed") !== "true") return;
+            if (!window.matchMedia("(min-width: 1024px)").matches) return;
+            var text = el.getAttribute("data-tip");
+            if (!text) return;
+            var rect = el.getBoundingClientRect();
+            tip.textContent = text;
+            tip.style.top = rect.top + rect.height / 2 + "px";
+            tip.style.left = rect.right + 8 + "px";
+            tip.classList.remove("hidden");
+          };
+          sidebar.addEventListener("pointerover", function (event) {
+            var el = event.target.closest("[data-tip]");
+            if (!el || !sidebar.contains(el)) return;
+            show(el);
+          });
+          sidebar.addEventListener("pointerout", function (event) {
+            var el = event.target.closest("[data-tip]");
+            if (!el) return;
+            if (event.relatedTarget && el.contains(event.relatedTarget)) return;
+            hide();
+          });
+          var scroller = sidebar.querySelector(".sidebar-scroll");
+          if (scroller) scroller.addEventListener("scroll", hide, { passive: true });
+        };
+        bindSidebarTips();
+        document.addEventListener("astro:page-load", bindSidebarTips);
 
         var ROLE_KEY = "afroup-role";
         var ADMIN_USER_KEY = "afroup-admin-user";

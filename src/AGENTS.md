@@ -20,8 +20,8 @@
 - Keep account bios per locale in `afroup_user_bios` and the shared `components/AccountPage.astro` form. The `usuarios:update` translation checks stay independent: by hand writes translations, with AI unlocks Workers AI. Hide the page language select when the user has neither check. Never copy the primary bio into an empty locale field; show it as a non-invasive original guide. AI reviews the current locale in a modal before applying. AI-only fields stay locked, but an applied AI draft may persist.
 - Keep the page language select in `components/PageLocaleSwitch.astro`, at the top-right of the page title. Only nodes marked `data-i18n-panel` change when the selected language changes.
 - Keep site icons as official Tabler outline symbols in `layouts/BaseLayout.astro`.
-- Keep the sidebar logo and bottom language/donation/session controls outside the scroll region in public and admin; only the menu item list may own vertical overflow.
-- Keep the sidebar menu scrollbar thin and black-toned via the `sidebar-scroll` utility.
+- Keep the sidebar logo and bottom language/donation/session controls outside the scroll region in public and admin; only the menu item list may own vertical overflow. Do not put `sidebar-scroll` on a daisyUI `.menu` element: `.menu` uses `flex-flow: column wrap` and clips extra items instead of scrolling.
+- Keep the sidebar menu scrollbar thin and black-toned via the `sidebar-scroll` utility. Collapsed admin nav labels use the viewport-fixed `#admin-sidebar-tip` host; daisyUI `tooltip` pseudos cannot escape sidebar overflow.
 - Keep branded light and dark themes in `styles/global.css` as `afroup` and `afroup-dark`; switch them with a daisyUI `theme-controller` in `layouts/BaseLayout.astro` and `layouts/AdminLayout.astro`.
 - Keep AI actions in purple via the `ai` theme token and `btn-ai` / `checkbox-ai` / `badge-ai`. Only elements that execute or grant AI use those classes.
 - Keep site-wide Astro view transitions via `ClientRouter` in `layouts/BaseLayout.astro` and reapply the theme on `astro:before-swap` / `astro:after-swap`.
