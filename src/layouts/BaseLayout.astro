@@ -171,8 +171,8 @@ function tabClass(key: NavKey) {
                   <SessionUser
                     menu
                     compact
-                    extraHref={paths.account}
-                    extraLabel={copy.navAccount}
+                    accountHref={paths.account}
+                    accountLabel={copy.navAccount}
                     logoutHref={`/api/logout?next=${encodeURIComponent(paths.login)}`}
                     logoutLabel={copy.accountLogout}
                   />

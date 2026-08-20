@@ -243,10 +243,10 @@ const authorBioText = plainBioText(row.author_bio) || copy.articleDefaultBio;
           alt={authorDisplayName}
           width="44"
           height="44"
-          class="size-11 rounded-full object-cover ring-2 ring-primary/30 ring-offset-2 ring-offset-base-100 shadow-xs flex-none"
+          class="size-11 rounded-full object-cover ring-2 ring-secondary/50 ring-offset-2 ring-offset-base-100 shadow-xs flex-none"
         />
       ) : (
-        <div class="size-11 rounded-full bg-gradient-to-tr from-primary via-primary/90 to-accent flex-none flex items-center justify-center font-extrabold text-primary-content font-display text-base ring-2 ring-primary/30 ring-offset-2 ring-offset-base-100 shadow-xs select-none">
+        <div class="size-11 rounded-full bg-secondary flex-none flex items-center justify-center font-extrabold text-secondary-content font-display text-base ring-2 ring-secondary ring-offset-2 ring-offset-base-100 shadow-xs select-none">
           <span>{authorDisplayName.charAt(0).toUpperCase()}</span>
         </div>
       )}
@@ -329,9 +329,9 @@ const authorBioText = plainBioText(row.author_bio) || copy.articleDefaultBio;
       <h3 class="font-display text-2xl font-bold">{copy.articleCtaTitle}</h3>
       <p class="text-sm opacity-90 mt-1">{copy.articleCtaDek}</p>
     </div>
-    <a class="btn btn-primary btn-md gap-2 shadow-md hover:scale-[1.02] transition-transform" href={donateHref}>
+    <a class="btn btn-neutral gap-2" href={donateHref}>
       <svg class="size-5"><use href="#ic-heart"></use></svg>
-      {copy.navDonate}
+      {copy.donateCta}
     </a>
   </div>
 
@@ -350,11 +350,11 @@ const authorBioText = plainBioText(row.author_bio) || copy.articleDefaultBio;
   <div class="bio rounded-3xl bg-gradient-to-br from-base-200/90 via-base-200/50 to-base-100 p-6 sm:p-7 border border-base-300 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-5 sm:gap-6">
     <div class="avatar placeholder flex-none">
       {row.author_avatar ? (
-        <div class="size-18 sm:size-20 rounded-full ring-2 ring-primary/40 ring-offset-4 ring-offset-base-100 shadow-md overflow-hidden">
+        <div class="size-18 sm:size-20 rounded-full ring-2 ring-secondary/50 ring-offset-4 ring-offset-base-100 shadow-md overflow-hidden">
           <img src={row.author_avatar} alt={authorDisplayName} class="size-full object-cover" />
         </div>
       ) : (
-        <div class="size-18 sm:size-20 rounded-full bg-gradient-to-tr from-primary via-primary/90 to-accent text-primary-content font-extrabold font-display text-2xl sm:text-3xl ring-2 ring-primary/40 ring-offset-4 ring-offset-base-100 shadow-md flex items-center justify-center select-none">
+        <div class="size-18 sm:size-20 rounded-full bg-secondary text-secondary-content font-extrabold font-display text-2xl sm:text-3xl ring-2 ring-secondary ring-offset-4 ring-offset-base-100 shadow-md flex items-center justify-center select-none">
           <span>{authorDisplayName.charAt(0).toUpperCase()}</span>
         </div>
       )}

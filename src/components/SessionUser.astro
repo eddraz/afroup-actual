@@ -11,6 +11,8 @@ interface Props {
   menu?: boolean;
   extraHref?: string;
   extraLabel?: string;
+  accountHref?: string;
+  accountLabel?: string;
   logoutHref?: string;
   logoutLabel?: string;
 }
@@ -25,6 +27,8 @@ const {
   menu = false,
   extraHref,
   extraLabel,
+  accountHref,
+  accountLabel,
   logoutHref = "/api/logout?next=/login",
   logoutLabel = "Cerrar sesión",
 } = Astro.props;
@@ -63,6 +67,12 @@ const {
       ]}
       style="position-anchor:--session-user"
     >
+      {accountHref && accountLabel ? (
+        <a class="btn btn-ghost btn-sm w-full justify-start" href={accountHref}>
+          <svg class="size-4"><use href="#ic-user"></use></svg>
+          {accountLabel}
+        </a>
+      ) : null}
       {extraHref && extraLabel ? (
         <a class="btn btn-ghost btn-sm w-full justify-start" href={extraHref}>
           <svg class="size-4"><use href="#ic-arrow"></use></svg>
