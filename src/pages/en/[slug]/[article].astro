@@ -47,25 +47,25 @@ const row = await env.DB.prepare(
           a.published_at, a.created_at, a.updated_at,
           a.created_by, u.name AS author_name, u.avatar_url AS author_avatar,
           COALESCE(
-            (SELECT body FROM afroup_user_bios WHERE user_id = u.id AND locale = ?),
+            NULLIF((SELECT body FROM afroup_user_bios WHERE user_id = u.id AND locale = ?), ''),
             (SELECT body FROM afroup_user_bios WHERE user_id = u.id AND locale = ?)
           ) AS author_bio,
           COALESCE(
-            (SELECT title FROM article_locales WHERE article_id = a.id AND locale = ?),
+            NULLIF((SELECT title FROM article_locales WHERE article_id = a.id AND locale = ?), ''),
             (SELECT title FROM article_locales WHERE article_id = a.id AND locale = ?)
           ) AS title,
           COALESCE(
-            (SELECT description FROM article_locales WHERE article_id = a.id AND locale = ?),
+            NULLIF((SELECT description FROM article_locales WHERE article_id = a.id AND locale = ?), ''),
             (SELECT description FROM article_locales WHERE article_id = a.id AND locale = ?)
           ) AS description,
           COALESCE(
-            (SELECT content_html FROM article_locales WHERE article_id = a.id AND locale = ?),
+            NULLIF((SELECT content_html FROM article_locales WHERE article_id = a.id AND locale = ?), ''),
             (SELECT content_html FROM article_locales WHERE article_id = a.id AND locale = ?)
           ) AS content_html,
           c.id AS category_id,
           c.slug AS category_slug,
           COALESCE(
-            (SELECT title FROM article_category_locales WHERE category_id = c.id AND locale = ?),
+            NULLIF((SELECT title FROM article_category_locales WHERE category_id = c.id AND locale = ?), ''),
             (SELECT title FROM article_category_locales WHERE category_id = c.id AND locale = ?)
           ) AS category_title
      FROM articles a

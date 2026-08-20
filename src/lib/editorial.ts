@@ -50,6 +50,39 @@ export function plannedLocales(
   return rows;
 }
 
+function isBlankContent(value: string | null | undefined): boolean {
+  return !value || String(value).trim().length === 0;
+}
+
+export function plannedContentWrites(
+  submitted: Record<string, string>,
+  existing: Record<string, string>,
+  access: BioTranslationAccess,
+  primaryLocale = defaultLocale,
+): Record<string, string> {
+  const planned: Record<string, string> = {};
+  const locales = new Set([...Object.keys(existing), ...Object.keys(submitted)]);
+
+  for (const locale of locales) {
+    const submittedBody = String(submitted[locale] ?? "").trim();
+    const existingBody = String(existing[locale] ?? "").trim();
+
+    if (locale === primaryLocale) {
+      if (!isBlankContent(submittedBody)) planned[locale] = submittedBody;
+      continue;
+    }
+
+    if (access.canWrite || access.canUseAi) {
+      if (!isBlankContent(submittedBody)) planned[locale] = submittedBody;
+      continue;
+    }
+
+    if (!isBlankContent(existingBody)) planned[locale] = existingBody;
+  }
+
+  return planned;
+}
+
 export function plannedArticleLocales(
   titles: Record<string, string>,
   descriptions: Record<string, string>,
@@ -61,7 +94,7 @@ export function plannedArticleLocales(
 ): Array<{ locale: string; title: string; description: string; content_html: string }> {
   const plannedTitles = plannedBioWrites(titles, existingTitles, access, defaultLocale);
   const plannedDescriptions = plannedBioWrites(descriptions, existingDescriptions, access, defaultLocale);
-  const plannedContents = plannedBioWrites(contents, existingContents, access, defaultLocale);
+  const plannedContents = plannedContentWrites(contents, existingContents, access, defaultLocale);
   const locales = new Set([
     ...Object.keys(plannedTitles),
     ...Object.keys(plannedDescriptions),
