@@ -7,20 +7,24 @@ import { resolveR2Bucket } from "../../../../lib/r2-storage";
 export const prerender = false;
 
 export const GET: APIRoute = async ({ request, cookies, url }) => {
-  const actor = await getCurrentUser(env.DB, sessionTokenFrom(cookies));
-  if (!actor) {
-    return new Response("Unauthorized", { status: 401 });
-  }
-  if (!(await hasPermission(env.DB, actor.id, "almacenamiento", "read"))) {
-    return new Response("Forbidden", { status: 403 });
-  }
-
   const bucketId = url.searchParams.get("bucket") || "media";
   const key = url.searchParams.get("key") || "";
   const download = url.searchParams.get("download") === "1";
 
   if (!key) {
     return new Response("Missing object key", { status: 400 });
+  }
+
+  // Public buckets (media, avatars) allow unauthenticated streaming for public rendering
+  const isPublicBucket = bucketId === "media" || bucketId === "avatars";
+  if (!isPublicBucket) {
+    const actor = await getCurrentUser(env.DB, sessionTokenFrom(cookies));
+    if (!actor) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+    if (!(await hasPermission(env.DB, actor.id, "almacenamiento", "read"))) {
+      return new Response("Forbidden", { status: 403 });
+    }
   }
 
   const resolved = resolveR2Bucket(env as any, bucketId);

@@ -297,11 +297,11 @@ const authorBioText = row.author_bio || copy.articleDefaultBio;
   <!-- Hero Cover Image -->
   <figure class="mx-auto mt-6 max-w-[980px]">
     {row.cover_image_url ? (
-      <Image
+      <img
         src={row.cover_image_url}
         alt={row.title}
-        width={1200}
-        height={514}
+        width="1200"
+        height="514"
         loading="eager"
         decoding="async"
         class="aspect-[21/9] w-full rounded-[22px] object-cover shadow-lg border border-base-300"
