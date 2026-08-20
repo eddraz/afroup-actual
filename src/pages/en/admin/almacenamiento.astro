@@ -63,12 +63,15 @@ if (resolved) {
 ---
 
 <AdminLayout title={copy.adminStorage || "R2 Storage"} active="storage">
-  <!-- Right-to-Left Drawers for Storage: Upload & Item Details -->
-  <div class="drawer drawer-end">
-    <input id="storage-drawer" type="checkbox" class="drawer-toggle" />
+  <!-- Right-to-Left Drawers for Storage: Upload & Item Details (Isolated Containers) -->
+  <div class="drawer drawer-end" id="detail-drawer-container">
     <input id="detail-drawer" type="checkbox" class="drawer-toggle" />
 
     <div class="drawer-content">
+      <div class="drawer drawer-end" id="storage-drawer-container">
+        <input id="storage-drawer" type="checkbox" class="drawer-toggle" />
+
+        <div class="drawer-content">
       <!-- Page Header -->
       <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -362,10 +365,13 @@ if (resolved) {
             showBucketSelector={true}
             allowOptimization={true}
             locale={locale}
+            flat={true}
           />
         </div>
       </aside>
     </div>
+  </div>
+</div>
 
     <!-- Drawer 2: Item Detail Side Panel -->
     <div class="drawer-side z-50">
@@ -457,11 +463,12 @@ if (resolved) {
         var uploadDrawer = document.getElementById("storage-drawer");
         var detailDrawer = document.getElementById("detail-drawer");
 
-        var bindScrollLock = function (toggle) {
+        var bindScrollLock = function (toggle, otherToggle) {
           if (toggle && toggle.dataset.boundScroll !== "true") {
             toggle.dataset.boundScroll = "true";
             toggle.addEventListener("change", function () {
               if (toggle.checked) {
+                if (otherToggle) otherToggle.checked = false;
                 document.body.style.overflow = "hidden";
               } else if (!uploadDrawer.checked && !detailDrawer.checked) {
                 document.body.style.overflow = "";
@@ -470,8 +477,8 @@ if (resolved) {
           }
         };
 
-        bindScrollLock(uploadDrawer);
-        bindScrollLock(detailDrawer);
+        bindScrollLock(uploadDrawer, detailDrawer);
+        bindScrollLock(detailDrawer, uploadDrawer);
 
         document.addEventListener("keydown", function (e) {
           if (e.key === "Escape") {

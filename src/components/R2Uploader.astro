@@ -10,6 +10,7 @@ interface Props {
   targetInputId?: string;
   componentId?: string;
   locale?: string;
+  flat?: boolean;
 }
 
 const {
@@ -21,6 +22,7 @@ const {
   targetInputId = "",
   componentId = "r2-uploader-" + Math.random().toString(36).slice(2, 8),
   locale = "es",
+  flat = false,
 } = Astro.props;
 
 const isEn = locale.startsWith("en");
@@ -61,7 +63,7 @@ const text = {
 ---
 
 <div
-  class="r2-uploader-root rounded-3xl border border-base-300 bg-base-100 p-5 sm:p-6 shadow-xs space-y-5"
+  class={`r2-uploader-root space-y-5 ${flat ? "" : "rounded-3xl border border-base-300 bg-base-100 p-5 sm:p-6 shadow-xs"}`}
   id={componentId}
   data-bucket={bucket}
   data-allowed-types={allowedTypes}
@@ -73,7 +75,9 @@ const text = {
   <div class="flex flex-wrap items-center justify-between gap-3 border-b border-base-300 pb-3">
     <div class="flex items-center gap-2">
       <span class="size-2.5 rounded-full bg-accent animate-pulse"></span>
-      <span class="font-display font-bold text-sm text-base-content">Subir a Cloudflare R2</span>
+      <span class="font-display font-bold text-xs uppercase tracking-wider text-base-content/70">
+        {isEn ? "Source Mode" : "Modo de Entrada"}
+      </span>
     </div>
 
     <!-- Source Tabs -->
