@@ -15,6 +15,18 @@ export default defineConfig({
       prefixDefaultLocale: false,
     },
   },
+  image: {
+    domains: [
+      "images.unsplash.com",
+      "cloudflare-ipfs.com",
+      "avatars.githubusercontent.com",
+    ],
+    remotePatterns: [
+      { protocol: "https", hostname: "**.r2.cloudflarestorage.com" },
+      { protocol: "https", hostname: "images.unsplash.com" },
+      { protocol: "https", hostname: "**.afroup.com" },
+    ],
+  },
   vite: {
     plugins: [tailwindcss()],
   },

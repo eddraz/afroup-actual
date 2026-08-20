@@ -1,5 +1,6 @@
 ---
 import { env } from "cloudflare:workers";
+import { Image } from "astro:assets";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { getCategoryTheme, isReservedCategorySlug } from "../../lib/category-routes";
 import { defaultLocale, localizedPath } from "../../lib/i18n";
@@ -198,7 +199,13 @@ const authorBioText = row.author_bio || copy.articleDefaultBio;
     <!-- Byline with Author, Date, Reading time, and Share buttons -->
     <div class="mt-6 flex flex-wrap items-center gap-3.5 border-b border-base-300 pb-6">
       {row.author_avatar ? (
-        <img src={row.author_avatar} alt={authorDisplayName} class="size-12 rounded-full object-cover border-2 border-secondary flex-none" />
+        <Image
+          src={row.author_avatar}
+          alt={authorDisplayName}
+          width={48}
+          height={48}
+          class="size-12 rounded-full object-cover border-2 border-secondary flex-none"
+        />
       ) : (
         <div class="size-12 rounded-full bg-secondary/20 border-2 border-secondary flex-none flex items-center justify-center font-bold text-secondary-content font-display text-lg">
           {authorDisplayName.charAt(0).toUpperCase()}
@@ -252,9 +259,13 @@ const authorBioText = row.author_bio || copy.articleDefaultBio;
   <!-- Hero Cover Image -->
   <figure class="mx-auto mt-6 max-w-[980px]">
     {row.cover_image_url ? (
-      <img
+      <Image
         src={row.cover_image_url}
         alt={row.title}
+        width={1200}
+        height={514}
+        loading="eager"
+        decoding="async"
         class="aspect-[21/9] w-full rounded-[22px] object-cover shadow-lg border border-base-300"
       />
     ) : (
@@ -338,7 +349,15 @@ const authorBioText = row.author_bio || copy.articleDefaultBio;
               >
                 {rel.cover_image_url ? (
                   <figure class="aspect-[16/10] overflow-hidden bg-base-300">
-                    <img src={rel.cover_image_url} alt="" class="size-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                    <Image
+                      src={rel.cover_image_url}
+                      alt={rel.title || ""}
+                      width={480}
+                      height={300}
+                      loading="lazy"
+                      decoding="async"
+                      class="size-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
                   </figure>
                 ) : (
                   <div class="aspect-[16/10] bg-base-300/40 flex items-center justify-center text-xs font-mono opacity-40">
