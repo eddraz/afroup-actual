@@ -84,173 +84,184 @@ const actionLabels: Record<PermissionRow["action"], string> = {
 ---
 
 <AdminLayout title={copy.adminRoles} active="roles">
-  <!-- Page Header -->
-  <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-    <div>
-      <div class="flex items-center gap-2.5">
-        <h2 class="font-display text-2xl font-bold text-base-content">{copy.adminRoles}</h2>
-        <span class="badge badge-neutral badge-sm font-semibold">{roles.length} roles</span>
-      </div>
-      <p class="text-xs sm:text-sm text-base-content/60 mt-1">
-        Define permission matrices and privileges assignable to team members.
-      </p>
-    </div>
+  <!-- Right-to-Left Drawer for Roles -->
+  <div class="drawer drawer-end">
+    <input id="role-drawer" type="checkbox" class="drawer-toggle" />
 
-    <button
-      type="button"
-      id="btn-toggle-new-role"
-      class="btn btn-primary btn-sm gap-2 shadow-sm hover:scale-[1.02] transition-transform"
-    >
-      <svg class="size-4"><use href="#ic-plus"></use></svg>
-      <span>{copy.adminNewRole || "New Role"}</span>
-    </button>
-  </div>
-
-  <!-- Collapsible New Role Form -->
-  <div id="new-role-box" class="hidden mb-8 transition-all duration-300">
-    <div class="rounded-3xl border border-primary/30 bg-base-100 p-6 sm:p-8 shadow-md ring-1 ring-primary/20">
-      <div class="flex items-center justify-between border-b border-base-300 pb-3 mb-6">
-        <div class="flex items-center gap-2">
-          <span class="size-2.5 rounded-full bg-primary animate-pulse"></span>
-          <h3 class="font-display font-bold text-lg text-base-content">{copy.adminNewRole || "Create new role"}</h3>
-        </div>
-        <button type="button" class="btn btn-circle btn-ghost btn-xs" id="btn-close-new-role">✕</button>
-      </div>
-
-      <form method="post" action="/api/admin/roles" class="space-y-5" data-admin-form data-intent="create_role">
-        <input type="hidden" name="_intent" value="create_role" />
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminRoleName || "Role Name"}</legend>
-            <input class="input input-bordered w-full font-semibold" name="name" required maxlength="80" placeholder="Editor-in-Chief" />
-          </fieldset>
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminRoleDescription || "Description"}</legend>
-            <input class="input input-bordered w-full" name="description" maxlength="240" placeholder="Full access to editorial content and translation" />
-          </fieldset>
-        </div>
-
-        <div class="border-t border-base-300 pt-4">
-          <p class="text-xs font-extrabold tracking-wider text-base-content/60 uppercase">{copy.adminRolePermissions || "Role Permissions"}</p>
-          <p class="mt-1 text-xs text-base-content/60">{copy.adminPermissionMatrixHelp}</p>
-          <div class="mt-3">
-            <PermissionMatrix
-              modules={modules}
-              permissions={permissions}
-              actionLabels={actionLabels}
-              allowLabel={copy.adminPermissionAllow}
-              limitLabel={copy.adminPermissionLimit}
-              translateLabel={copy.adminPermissionTranslate}
-              translateNoneLabel={copy.adminPermissionTranslateNone}
-              translateManualLabel={copy.adminPermissionTranslateManual}
-              translateAiLabel={copy.adminPermissionTranslateAi}
-              unlimitedLabel={copy.adminPermissionUnlimited}
-              noneLabel={copy.adminPermissionNone}
-              helpToggleLabel={copy.adminPermissionHelpToggle}
-              doneLabel={copy.adminPermissionDone}
-              helpCreate={copy.adminPermissionHelpCreate}
-              helpRead={copy.adminPermissionHelpRead}
-              helpUpdate={copy.adminPermissionHelpUpdate}
-              helpDelete={copy.adminPermissionHelpDelete}
-              helpAllow={copy.adminPermissionHelpAllow}
-              helpLimit={copy.adminPermissionHelpLimit}
-              helpTranslate={copy.adminPermissionHelpTranslate}
-            />
+    <div class="drawer-content">
+      <!-- Page Header -->
+      <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2.5">
+            <h2 class="font-display text-2xl font-bold text-base-content">{copy.adminRoles}</h2>
+            <span class="badge badge-neutral badge-sm font-semibold">{roles.length} roles</span>
           </div>
+          <p class="text-xs sm:text-sm text-base-content/60 mt-1">
+            Define permission matrices and privileges assignable to team members.
+          </p>
         </div>
 
-        <div class="flex justify-end gap-2 pt-2 border-t border-base-300">
-          <button class="btn btn-ghost btn-sm" type="button" id="btn-cancel-new-role">{copy.adminCancel}</button>
-          <button class="btn btn-primary btn-sm px-5 font-bold" type="submit">{copy.adminSave || "Create Role"}</button>
-        </div>
-      </form>
-    </div>
-  </div>
+        <label
+          for="role-drawer"
+          class="drawer-button btn btn-primary btn-sm gap-2 shadow-sm hover:scale-[1.02] transition-transform cursor-pointer"
+        >
+          <svg class="size-4"><use href="#ic-plus"></use></svg>
+          <span>{copy.adminNewRole || "New Role"}</span>
+        </label>
+      </div>
 
-  <!-- Filter & Search Toolbar -->
-  <div class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300 bg-base-100 p-3 shadow-xs">
-    <div class="relative flex-1 min-w-[240px] max-w-md">
-      <svg class="size-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none">
-        <use href="#ic-shield"></use>
-      </svg>
-      <input
-        type="search"
-        id="roles-search"
-        placeholder="Search roles by name or description..."
-        class="input input-sm input-bordered w-full pl-9 bg-base-200/40 text-xs sm:text-sm font-medium"
-      />
-    </div>
-  </div>
-
-  <!-- Roles Grid -->
-  <div class="grid grid-cols-1 gap-4" id="roles-container">
-    {roles.length === 0 ? (
-      <div class="rounded-3xl border border-base-300 bg-base-100 p-12 shadow-xs text-center">
-        <div class="flex flex-col items-center gap-2">
-          <div class="size-12 rounded-2xl bg-base-200 flex items-center justify-center text-base-content/40">
-            <svg class="size-6"><use href="#ic-shield"></use></svg>
-          </div>
-          <span class="font-bold text-base">No roles registered</span>
+      <!-- Filter & Search Toolbar -->
+      <div class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300 bg-base-100 p-3 shadow-xs">
+        <div class="relative flex-1 min-w-[240px] max-w-md">
+          <svg class="size-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none">
+            <use href="#ic-shield"></use>
+          </svg>
+          <input
+            type="search"
+            id="roles-search"
+            placeholder="Search roles by name or description..."
+            class="input input-sm input-bordered w-full pl-9 bg-base-200/40 text-xs sm:text-sm font-medium"
+          />
         </div>
       </div>
-    ) : null}
 
-    {roles.map((role) => {
-      const granted = grantedByRole.get(role.id) ?? new Map();
-      return (
-        <article class="rounded-3xl border border-base-300 bg-base-100 p-6 shadow-xs space-y-4 hover:border-base-300/80 transition-all role-card" data-name={(role.name || "").toLowerCase()} data-desc={(role.description || "").toLowerCase()}>
-          <div class="flex flex-wrap items-start justify-between gap-4">
-            <div class="flex items-center gap-3.5">
-              <div class="size-11 rounded-2xl bg-secondary/15 text-secondary border border-secondary/20 flex items-center justify-center font-bold">
-                <svg class="size-5.5"><use href="#ic-shield"></use></svg>
+      <!-- Roles Grid -->
+      <div class="grid grid-cols-1 gap-4" id="roles-container">
+        {roles.length === 0 ? (
+          <div class="rounded-3xl border border-base-300 bg-base-100 p-12 shadow-xs text-center">
+            <div class="flex flex-col items-center gap-2">
+              <div class="size-12 rounded-2xl bg-base-200 flex items-center justify-center text-base-content/40">
+                <svg class="size-6"><use href="#ic-shield"></use></svg>
               </div>
-              <div>
-                <div class="flex items-center gap-2">
-                  <h3 class="font-display text-lg font-bold text-base-content">{role.name}</h3>
-                  <span class="badge badge-xs badge-neutral font-mono py-1 px-2 font-bold">{role.user_count} members</span>
+              <span class="font-bold text-base">No roles registered</span>
+            </div>
+          </div>
+        ) : null}
+
+        {roles.map((role) => {
+          const granted = grantedByRole.get(role.id) ?? new Map();
+          return (
+            <article class="rounded-3xl border border-base-300 bg-base-100 p-6 shadow-xs space-y-4 hover:border-base-300/80 transition-all role-card" data-name={(role.name || "").toLowerCase()} data-desc={(role.description || "").toLowerCase()}>
+              <div class="flex flex-wrap items-start justify-between gap-4">
+                <div class="flex items-center gap-3.5">
+                  <div class="size-11 rounded-2xl bg-secondary/15 text-secondary border border-secondary/20 flex items-center justify-center font-bold">
+                    <svg class="size-5.5"><use href="#ic-shield"></use></svg>
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <h3 class="font-display text-lg font-bold text-base-content">{role.name}</h3>
+                      <span class="badge badge-xs badge-neutral font-mono py-1 px-2 font-bold">{role.user_count} members</span>
+                    </div>
+                    <p class="text-xs text-base-content/60 mt-0.5">{role.description ?? "No description"}</p>
+                  </div>
                 </div>
-                <p class="text-xs text-base-content/60 mt-0.5">{role.description ?? "No description"}</p>
+
+                <form method="post" action="/api/admin/roles" data-admin-confirm>
+                  <input type="hidden" name="_intent" value="delete_role" />
+                  <input type="hidden" name="id" value={role.id} />
+                  <button class="btn btn-square btn-ghost btn-xs border border-base-300 hover:bg-error/10 hover:text-error" type="submit" title={copy.adminRemove}>
+                    <svg class="size-3.5"><use href="#ic-trash"></use></svg>
+                  </button>
+                </form>
               </div>
+
+              <details class="border-t border-base-300/60 pt-3 group">
+                <summary class="cursor-pointer text-xs font-bold text-base-content/70 hover:text-primary flex items-center justify-between list-none py-1">
+                  <span class="flex items-center gap-1.5">
+                    <svg class="size-4"><use href="#ic-key"></use></svg>
+                    <span>Edit Permission Matrix</span>
+                  </span>
+                  <span class="text-base-content/40 group-open:rotate-180 transition-transform">▼</span>
+                </summary>
+
+                <form method="post" action="/api/admin/roles" class="mt-3 space-y-4" data-admin-form data-intent="update_role">
+                  <input type="hidden" name="_intent" value="update_role" />
+                  <input type="hidden" name="id" value={role.id} />
+
+                  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <fieldset class="fieldset">
+                      <legend class="fieldset-legend font-semibold text-xs text-base-content/70">{copy.adminRoleName}</legend>
+                      <input class="input input-bordered input-sm w-full font-semibold" name="name" value={role.name} required maxlength="80" />
+                    </fieldset>
+                    <fieldset class="fieldset">
+                      <legend class="fieldset-legend font-semibold text-xs text-base-content/70">{copy.adminRoleDescription}</legend>
+                      <input class="input input-bordered input-sm w-full" name="description" value={role.description ?? ""} maxlength="240" />
+                    </fieldset>
+                  </div>
+
+                  <div class="mt-2">
+                    <PermissionMatrix
+                      modules={modules}
+                      permissions={permissions}
+                      assignments={granted}
+                      actionLabels={actionLabels}
+                      allowLabel={copy.adminPermissionAllow}
+                      limitLabel={copy.adminPermissionLimit}
+                      translateLabel={copy.adminPermissionTranslate}
+                      translateNoneLabel={copy.adminPermissionTranslateNone}
+                      translateManualLabel={copy.adminPermissionTranslateManual}
+                      translateAiLabel={copy.adminPermissionTranslateAi}
+                      unlimitedLabel={copy.adminPermissionUnlimited}
+                      noneLabel={copy.adminPermissionNone}
+                      helpToggleLabel={copy.adminPermissionHelpToggle}
+                      doneLabel={copy.adminPermissionDone}
+                      helpCreate={copy.adminPermissionHelpCreate}
+                      helpRead={copy.adminPermissionHelpRead}
+                      helpUpdate={copy.adminPermissionHelpUpdate}
+                      helpDelete={copy.adminPermissionHelpDelete}
+                      helpAllow={copy.adminPermissionHelpAllow}
+                      helpLimit={copy.adminPermissionHelpLimit}
+                      helpTranslate={copy.adminPermissionHelpTranslate}
+                    />
+                  </div>
+
+                  <div class="flex justify-end gap-2 pt-2 border-t border-base-300/60">
+                    <button class="btn btn-primary btn-sm px-5 font-bold" type="submit">{copy.adminSave}</button>
+                  </div>
+                </form>
+              </details>
+            </article>
+          );
+        })}
+      </div>
+    </div>
+
+    <!-- Drawer Side (Right to Left Form) -->
+    <div class="drawer-side z-50">
+      <label for="role-drawer" aria-label="close drawer" class="drawer-overlay"></label>
+      <aside class="w-full max-w-2xl bg-base-100 min-h-dvh h-dvh max-h-dvh flex flex-col p-6 sm:p-8 shadow-2xl border-l border-base-300 overflow-y-auto overscroll-contain">
+        <div class="flex items-center justify-between border-b border-base-300 pb-4 mb-6 shrink-0">
+          <div class="flex items-center gap-2.5">
+            <span class="size-3 rounded-full bg-primary animate-pulse"></span>
+            <div>
+              <h3 class="font-display font-bold text-lg text-base-content">{copy.adminNewRole || "Create new role"}</h3>
+              <p class="text-xs text-base-content/60">Configure reusable permissions and capabilities for the team.</p>
+            </div>
+          </div>
+          <label for="role-drawer" class="btn btn-circle btn-ghost btn-xs">✕</label>
+        </div>
+
+        <form method="post" action="/api/admin/roles" class="space-y-6 flex-1 flex flex-col justify-between" data-admin-form data-intent="create_role">
+          <input type="hidden" name="_intent" value="create_role" />
+          <div class="space-y-5">
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminRoleName || "Role Name"}</legend>
+                <input class="input input-bordered w-full font-semibold" name="name" required maxlength="80" placeholder="Editor-in-Chief" />
+              </fieldset>
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminRoleDescription || "Description"}</legend>
+                <input class="input input-bordered w-full" name="description" maxlength="240" placeholder="Full access to editorial content and translation" />
+              </fieldset>
             </div>
 
-            <form method="post" action="/api/admin/roles" data-admin-confirm>
-              <input type="hidden" name="_intent" value="delete_role" />
-              <input type="hidden" name="id" value={role.id} />
-              <button class="btn btn-square btn-ghost btn-xs border border-base-300 hover:bg-error/10 hover:text-error" type="submit" title={copy.adminRemove}>
-                <svg class="size-3.5"><use href="#ic-trash"></use></svg>
-              </button>
-            </form>
-          </div>
-
-          <details class="border-t border-base-300/60 pt-3 group">
-            <summary class="cursor-pointer text-xs font-bold text-base-content/70 hover:text-primary flex items-center justify-between list-none py-1">
-              <span class="flex items-center gap-1.5">
-                <svg class="size-4"><use href="#ic-key"></use></svg>
-                <span>Edit Permission Matrix</span>
-              </span>
-              <span class="text-base-content/40 group-open:rotate-180 transition-transform">▼</span>
-            </summary>
-
-            <form method="post" action="/api/admin/roles" class="mt-3 space-y-4" data-admin-form data-intent="update_role">
-              <input type="hidden" name="_intent" value="update_role" />
-              <input type="hidden" name="id" value={role.id} />
-
-              <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <fieldset class="fieldset">
-                  <legend class="fieldset-legend font-semibold text-xs text-base-content/70">{copy.adminRoleName}</legend>
-                  <input class="input input-bordered input-sm w-full font-semibold" name="name" value={role.name} required maxlength="80" />
-                </fieldset>
-                <fieldset class="fieldset">
-                  <legend class="fieldset-legend font-semibold text-xs text-base-content/70">{copy.adminRoleDescription}</legend>
-                  <input class="input input-bordered input-sm w-full" name="description" value={role.description ?? ""} maxlength="240" />
-                </fieldset>
-              </div>
-
-              <div class="mt-2">
+            <div class="border-t border-base-300 pt-4">
+              <p class="text-xs font-extrabold tracking-wider text-base-content/60 uppercase">{copy.adminRolePermissions || "Role Permissions"}</p>
+              <p class="mt-1 text-xs text-base-content/60">{copy.adminPermissionMatrixHelp}</p>
+              <div class="mt-3">
                 <PermissionMatrix
                   modules={modules}
                   permissions={permissions}
-                  assignments={granted}
                   actionLabels={actionLabels}
                   allowLabel={copy.adminPermissionAllow}
                   limitLabel={copy.adminPermissionLimit}
@@ -271,39 +282,42 @@ const actionLabels: Record<PermissionRow["action"], string> = {
                   helpTranslate={copy.adminPermissionHelpTranslate}
                 />
               </div>
+            </div>
+          </div>
 
-              <div class="flex justify-end gap-2 pt-2 border-t border-base-300/60">
-                <button class="btn btn-primary btn-sm px-5 font-bold" type="submit">{copy.adminSave}</button>
-              </div>
-            </form>
-          </details>
-        </article>
-      );
-    })}
+          <div class="flex justify-end gap-2 pt-4 border-t border-base-300 mt-6 shrink-0">
+            <label for="role-drawer" class="btn btn-ghost btn-sm cursor-pointer">{copy.adminCancel}</label>
+            <button class="btn btn-primary btn-sm px-6 font-bold" type="submit">{copy.adminSave || "Create Role"}</button>
+          </div>
+        </form>
+      </aside>
+    </div>
   </div>
 
   <script is:inline>
     (function () {
       var bind = function () {
-        var toggleBtn = document.getElementById("btn-toggle-new-role");
-        var closeBtn = document.getElementById("btn-close-new-role");
-        var cancelBtn = document.getElementById("btn-cancel-new-role");
-        var box = document.getElementById("new-role-box");
+        var drawerToggle = document.getElementById("role-drawer");
 
-        if (toggleBtn && box && toggleBtn.dataset.bound !== "true") {
-          toggleBtn.dataset.bound = "true";
-          toggleBtn.addEventListener("click", function () {
-            box.classList.toggle("hidden");
-            if (!box.classList.contains("hidden")) {
-              var input = box.querySelector("input[name='name']");
-              if (input) input.focus();
+        if (drawerToggle && drawerToggle.dataset.boundScroll !== "true") {
+          drawerToggle.dataset.boundScroll = "true";
+          drawerToggle.addEventListener("change", function () {
+            if (drawerToggle.checked) {
+              document.body.style.overflow = "hidden";
+              var firstInput = document.querySelector(".drawer-side input:not([disabled])");
+              if (firstInput) setTimeout(function () { firstInput.focus(); }, 150);
+            } else {
+              document.body.style.overflow = "";
+            }
+          });
+
+          document.addEventListener("keydown", function (e) {
+            if (e.key === "Escape" && drawerToggle.checked) {
+              drawerToggle.checked = false;
+              document.body.style.overflow = "";
             }
           });
         }
-
-        var hide = function () { if (box) box.classList.add("hidden"); };
-        if (closeBtn && closeBtn.dataset.bound !== "true") { closeBtn.dataset.bound = "true"; closeBtn.addEventListener("click", hide); }
-        if (cancelBtn && cancelBtn.dataset.bound !== "true") { cancelBtn.dataset.bound = "true"; cancelBtn.addEventListener("click", hide); }
 
         // Live search filter
         var searchInput = document.getElementById("roles-search");
@@ -336,6 +350,8 @@ const actionLabels: Record<PermissionRow["action"], string> = {
               .then(function (result) {
                 if (result.ok) {
                   if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Role saved.", "success");
+                  if (drawerToggle) drawerToggle.checked = false;
+                  document.body.style.overflow = "";
                   setTimeout(function () { window.location.reload(); }, 600);
                   return;
                 }
@@ -350,6 +366,9 @@ const actionLabels: Record<PermissionRow["action"], string> = {
 
       bind();
       document.addEventListener("astro:page-load", bind);
+      document.addEventListener("astro:before-swap", function () {
+        document.body.style.overflow = "";
+      });
     })();
   </script>
 </AdminLayout>

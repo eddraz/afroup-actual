@@ -18,150 +18,165 @@ const languages = await listSiteLanguages(env.DB);
 ---
 
 <AdminLayout title={copy.adminLanguages} active="languages">
-  <!-- Page Header -->
-  <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-    <div>
-      <div class="flex items-center gap-2.5">
-        <h2 class="font-display text-2xl font-bold text-base-content">{copy.adminLanguages}</h2>
-        <span class="badge badge-neutral badge-sm font-semibold">{languages.length} idiomas</span>
+  <!-- Right-to-Left Drawer for Languages -->
+  <div class="drawer drawer-end">
+    <input id="lang-drawer" type="checkbox" class="drawer-toggle" />
+
+    <div class="drawer-content">
+      <!-- Page Header -->
+      <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2.5">
+            <h2 class="font-display text-2xl font-bold text-base-content">{copy.adminLanguages}</h2>
+            <span class="badge badge-neutral badge-sm font-semibold">{languages.length} idiomas</span>
+          </div>
+          <p class="text-xs sm:text-sm text-base-content/60 mt-1">
+            Gestiona la disponibilidad de idiomas públicos y las traducciones en el sistema.
+          </p>
+        </div>
+
+        <label
+          for="lang-drawer"
+          class="drawer-button btn btn-primary btn-sm gap-2 shadow-sm hover:scale-[1.02] transition-transform cursor-pointer"
+        >
+          <svg class="size-4"><use href="#ic-plus"></use></svg>
+          <span>{copy.adminLanguageTranslate || "Añadir Idioma"}</span>
+        </label>
       </div>
-      <p class="text-xs sm:text-sm text-base-content/60 mt-1">
-        Gestiona la disponibilidad de idiomas públicos y las traducciones en el sistema.
-      </p>
+
+      <!-- Filter & Search Toolbar -->
+      <div class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300 bg-base-100 p-3 shadow-xs">
+        <div class="relative flex-1 min-w-[240px] max-w-md">
+          <svg class="size-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none">
+            <use href="#ic-world"></use>
+          </svg>
+          <input
+            type="search"
+            id="languages-search"
+            placeholder="Buscar idiomas por código, nombre o traducción..."
+            class="input input-sm input-bordered w-full pl-9 bg-base-200/40 text-xs sm:text-sm font-medium"
+          />
+        </div>
+      </div>
+
+      <!-- Languages Table -->
+      <div class="rounded-3xl border border-base-300 bg-base-100 shadow-xs overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="table table-zebra w-full" id="languages-table">
+            <thead>
+              <tr class="border-b border-base-300 bg-base-200/60 text-xs font-extrabold uppercase tracking-wider text-base-content/60">
+                <th class="py-4 pl-6">{copy.adminLanguageShow || "Activo"}</th>
+                <th>{copy.adminLanguageCode || "Código"}</th>
+                <th>{copy.adminLanguageName || "Nombre"}</th>
+                <th>{copy.adminLanguageNative || "Nombre Nativo"}</th>
+                <th class="text-right pr-6">Tipo</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-base-300/60 font-medium text-sm">
+              {languages.map((language) => (
+                <tr class="hover:bg-base-200/50 transition-colors language-row" data-code={language.code.toLowerCase()} data-name={(language.name || "").toLowerCase()} data-native={(language.native_name || "").toLowerCase()}>
+                  <td class="py-3.5 pl-6">
+                    <form method="post" action="/api/admin/languages" data-language-toggle>
+                      <input type="hidden" name="_intent" value="toggle" />
+                      <input type="hidden" name="code" value={language.code} />
+                      <input type="hidden" name="visible" value={language.is_visible ? "0" : "1"} />
+                      <input type="checkbox" class="checkbox checkbox-sm checkbox-primary rounded-md" checked={language.is_visible === 1} data-show-toggle />
+                    </form>
+                  </td>
+                  <td>
+                    <span class="font-mono text-xs px-2.5 py-1 rounded-md bg-base-200 border border-base-300 font-bold uppercase text-base-content/80">
+                      {language.code}
+                    </span>
+                  </td>
+                  <td class="font-bold text-base-content">{language.name}</td>
+                  <td class="text-base-content/80">{language.native_name}</td>
+                  <td class="text-right pr-6">
+                    {language.is_pillar ? (
+                      <span class="badge badge-xs badge-accent font-bold py-1 px-2.5 uppercase">{copy.adminLanguagePillar || "Principal"}</span>
+                    ) : (
+                      <span class="badge badge-xs badge-ghost py-1 px-2 font-semibold">Opcional</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
-    <button
-      type="button"
-      id="btn-toggle-new-lang"
-      class="btn btn-primary btn-sm gap-2 shadow-sm hover:scale-[1.02] transition-transform"
-    >
-      <svg class="size-4"><use href="#ic-plus"></use></svg>
-      <span>{copy.adminLanguageTranslate || "Añadir Idioma"}</span>
-    </button>
-  </div>
-
-  <!-- Collapsible Add Language Form -->
-  <div id="new-lang-box" class="hidden mb-8 transition-all duration-300">
-    <div class="rounded-3xl border border-primary/30 bg-base-100 p-6 sm:p-8 shadow-md ring-1 ring-primary/20">
-      <div class="flex items-center justify-between border-b border-base-300 pb-3 mb-6">
-        <div class="flex items-center gap-2">
-          <span class="size-2.5 rounded-full bg-primary animate-pulse"></span>
-          <h3 class="font-display font-bold text-lg text-base-content">{copy.adminLanguageTranslate || "Configurar nuevo idioma"}</h3>
-        </div>
-        <button type="button" class="btn btn-circle btn-ghost btn-xs" id="btn-close-new-lang">✕</button>
-      </div>
-
-      <form method="post" action="/api/admin/languages" class="space-y-5" data-language-form>
-        <input type="hidden" name="_intent" value="create" />
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminLanguageCode || "Código ISO (2 letras)"}</legend>
-            <input class="input input-bordered w-full font-mono font-bold uppercase" name="code" required maxlength="2" pattern="[a-zA-Z]{2}" placeholder="pt" />
-          </fieldset>
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminLanguageName || "Nombre Internacional"}</legend>
-            <input class="input input-bordered w-full font-semibold" name="name" required maxlength="80" placeholder="Portuguese" />
-          </fieldset>
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminLanguageNative || "Nombre Nativo"}</legend>
-            <div class="join w-full">
-              <input class="input input-bordered join-item w-full font-semibold" name="nativeName" maxlength="80" placeholder="Português" data-native-name />
-              <button class="btn btn-ai join-item text-xs font-bold" type="button" data-suggest-native>{copy.adminLanguageSuggest || "Sugerir IA"}</button>
+    <!-- Drawer Side (Right to Left Form) -->
+    <div class="drawer-side z-50">
+      <label for="lang-drawer" aria-label="close drawer" class="drawer-overlay"></label>
+      <aside class="w-full max-w-xl sm:max-w-2xl bg-base-100 min-h-dvh h-dvh max-h-dvh flex flex-col p-6 sm:p-8 shadow-2xl border-l border-base-300 overflow-y-auto overscroll-contain">
+        <div class="flex items-center justify-between border-b border-base-300 pb-4 mb-6 shrink-0">
+          <div class="flex items-center gap-2.5">
+            <span class="size-3 rounded-full bg-primary animate-pulse"></span>
+            <div>
+              <h3 class="font-display font-bold text-lg text-base-content">{copy.adminLanguageTranslate || "Configurar nuevo idioma"}</h3>
+              <p class="text-xs text-base-content/60">Añade compatibilidad multilingüe para las publicaciones del portal.</p>
             </div>
-            <p class="text-[11px] text-base-content/50 mt-1">{copy.adminLanguageNativeHelp}</p>
-          </fieldset>
+          </div>
+          <label for="lang-drawer" class="btn btn-circle btn-ghost btn-xs">✕</label>
         </div>
 
-        <div class="flex justify-end gap-2 pt-2 border-t border-base-300">
-          <button class="btn btn-ghost btn-sm" type="button" id="btn-cancel-new-lang">{copy.adminCancel}</button>
-          <button class="btn btn-primary btn-sm px-5 font-bold" type="submit">{copy.adminLanguageTranslate || "Añadir Idioma"}</button>
-        </div>
-      </form>
-    </div>
-  </div>
+        <form method="post" action="/api/admin/languages" class="space-y-6 flex-1 flex flex-col justify-between" data-language-form>
+          <input type="hidden" name="_intent" value="create" />
+          <div class="space-y-5">
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminLanguageCode || "Código ISO (2 letras)"}</legend>
+                <input class="input input-bordered w-full font-mono font-bold uppercase" name="code" required maxlength="2" pattern="[a-zA-Z]{2}" placeholder="pt" />
+              </fieldset>
+              <fieldset class="fieldset sm:col-span-2">
+                <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminLanguageName || "Nombre Internacional"}</legend>
+                <input class="input input-bordered w-full font-semibold" name="name" required maxlength="80" placeholder="Portuguese" />
+              </fieldset>
+            </div>
 
-  <!-- Filter & Search Toolbar -->
-  <div class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300 bg-base-100 p-3 shadow-xs">
-    <div class="relative flex-1 min-w-[240px] max-w-md">
-      <svg class="size-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none">
-        <use href="#ic-world"></use>
-      </svg>
-      <input
-        type="search"
-        id="languages-search"
-        placeholder="Buscar idiomas por código, nombre o traducción..."
-        class="input input-sm input-bordered w-full pl-9 bg-base-200/40 text-xs sm:text-sm font-medium"
-      />
-    </div>
-  </div>
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminLanguageNative || "Nombre Nativo"}</legend>
+              <div class="join w-full">
+                <input class="input input-bordered join-item w-full font-semibold" name="nativeName" maxlength="80" placeholder="Português" data-native-name />
+                <button class="btn btn-ai join-item text-xs font-bold" type="button" data-suggest-native>{copy.adminLanguageSuggest || "Sugerir IA"}</button>
+              </div>
+              <p class="text-[11px] text-base-content/50 mt-1">{copy.adminLanguageNativeHelp}</p>
+            </fieldset>
+          </div>
 
-  <!-- Languages Table -->
-  <div class="rounded-3xl border border-base-300 bg-base-100 shadow-xs overflow-hidden">
-    <div class="overflow-x-auto">
-      <table class="table table-zebra w-full" id="languages-table">
-        <thead>
-          <tr class="border-b border-base-300 bg-base-200/60 text-xs font-extrabold uppercase tracking-wider text-base-content/60">
-            <th class="py-4 pl-6">{copy.adminLanguageShow || "Activo"}</th>
-            <th>{copy.adminLanguageCode || "Código"}</th>
-            <th>{copy.adminLanguageName || "Nombre"}</th>
-            <th>{copy.adminLanguageNative || "Nombre Nativo"}</th>
-            <th class="text-right pr-6">Tipo</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-base-300/60 font-medium text-sm">
-          {languages.map((language) => (
-            <tr class="hover:bg-base-200/50 transition-colors language-row" data-code={language.code.toLowerCase()} data-name={(language.name || "").toLowerCase()} data-native={(language.native_name || "").toLowerCase()}>
-              <td class="py-3.5 pl-6">
-                <form method="post" action="/api/admin/languages" data-language-toggle>
-                  <input type="hidden" name="_intent" value="toggle" />
-                  <input type="hidden" name="code" value={language.code} />
-                  <input type="hidden" name="visible" value={language.is_visible ? "0" : "1"} />
-                  <input type="checkbox" class="checkbox checkbox-sm checkbox-primary rounded-md" checked={language.is_visible === 1} data-show-toggle />
-                </form>
-              </td>
-              <td>
-                <span class="font-mono text-xs px-2.5 py-1 rounded-md bg-base-200 border border-base-300 font-bold uppercase text-base-content/80">
-                  {language.code}
-                </span>
-              </td>
-              <td class="font-bold text-base-content">{language.name}</td>
-              <td class="text-base-content/80">{language.native_name}</td>
-              <td class="text-right pr-6">
-                {language.is_pillar ? (
-                  <span class="badge badge-xs badge-accent font-bold py-1 px-2.5 uppercase">{copy.adminLanguagePillar || "Principal"}</span>
-                ) : (
-                  <span class="badge badge-xs badge-ghost py-1 px-2 font-semibold">Opcional</span>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+          <div class="flex justify-end gap-2 pt-4 border-t border-base-300 mt-6 shrink-0">
+            <label for="lang-drawer" class="btn btn-ghost btn-sm cursor-pointer">{copy.adminCancel}</label>
+            <button class="btn btn-primary btn-sm px-6 font-bold" type="submit">{copy.adminLanguageTranslate || "Añadir Idioma"}</button>
+          </div>
+        </form>
+      </aside>
     </div>
   </div>
 
   <script is:inline>
     (function () {
       var bind = function () {
-        var toggleBtn = document.getElementById("btn-toggle-new-lang");
-        var closeBtn = document.getElementById("btn-close-new-lang");
-        var cancelBtn = document.getElementById("btn-cancel-new-lang");
-        var box = document.getElementById("new-lang-box");
+        var drawerToggle = document.getElementById("lang-drawer");
 
-        if (toggleBtn && box && toggleBtn.dataset.bound !== "true") {
-          toggleBtn.dataset.bound = "true";
-          toggleBtn.addEventListener("click", function () {
-            box.classList.toggle("hidden");
-            if (!box.classList.contains("hidden")) {
-              var input = box.querySelector("input[name='code']");
-              if (input) input.focus();
+        if (drawerToggle && drawerToggle.dataset.boundScroll !== "true") {
+          drawerToggle.dataset.boundScroll = "true";
+          drawerToggle.addEventListener("change", function () {
+            if (drawerToggle.checked) {
+              document.body.style.overflow = "hidden";
+              var firstInput = document.querySelector(".drawer-side input:not([disabled])");
+              if (firstInput) setTimeout(function () { firstInput.focus(); }, 150);
+            } else {
+              document.body.style.overflow = "";
+            }
+          });
+
+          document.addEventListener("keydown", function (e) {
+            if (e.key === "Escape" && drawerToggle.checked) {
+              drawerToggle.checked = false;
+              document.body.style.overflow = "";
             }
           });
         }
-
-        var hide = function () { if (box) box.classList.add("hidden"); };
-        if (closeBtn && closeBtn.dataset.bound !== "true") { closeBtn.dataset.bound = "true"; closeBtn.addEventListener("click", hide); }
-        if (cancelBtn && cancelBtn.dataset.bound !== "true") { cancelBtn.dataset.bound = "true"; cancelBtn.addEventListener("click", hide); }
 
         // Search live filter
         var searchInput = document.getElementById("languages-search");
@@ -181,6 +196,30 @@ const languages = await listSiteLanguages(env.DB);
                 r.style.display = "none";
               }
             });
+          });
+        }
+
+        // Form submission
+        var langForm = document.querySelector("[data-language-form]");
+        if (langForm && !langForm.dataset.boundSubmit) {
+          langForm.dataset.boundSubmit = "true";
+          langForm.addEventListener("submit", function (event) {
+            event.preventDefault();
+            fetch(langForm.action, { method: "POST", body: new FormData(langForm) })
+              .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
+              .then(function (result) {
+                if (result.ok) {
+                  if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Idioma añadido.", "success");
+                  if (drawerToggle) drawerToggle.checked = false;
+                  document.body.style.overflow = "";
+                  setTimeout(function () { window.location.reload(); }, 600);
+                  return;
+                }
+                if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Error al añadir idioma.", "error");
+              })
+              .catch(function () {
+                if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Error de red.", "error");
+              });
           });
         }
 
@@ -249,6 +288,9 @@ const languages = await listSiteLanguages(env.DB);
 
       bind();
       document.addEventListener("astro:page-load", bind);
+      document.addEventListener("astro:before-swap", function () {
+        document.body.style.overflow = "";
+      });
     })();
   </script>
 </AdminLayout>

@@ -45,198 +45,215 @@ const categories = (await env.DB.prepare(
 ---
 
 <AdminLayout title={copy.adminCategories} active="categories">
-  <!-- Page Header & Stats Summary -->
-  <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-    <div>
-      <div class="flex items-center gap-2.5">
-        <h2 class="font-display text-2xl font-bold text-base-content">{copy.adminCategories}</h2>
-        <span class="badge badge-neutral badge-sm font-semibold">{categories.length} taxonomías</span>
+  <!-- Right-to-Left Drawer for Categories -->
+  <div class="drawer drawer-end">
+    <input id="category-drawer" type="checkbox" class="drawer-toggle" />
+
+    <div class="drawer-content">
+      <!-- Page Header & Stats Summary -->
+      <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2.5">
+            <h2 class="font-display text-2xl font-bold text-base-content">{copy.adminCategories}</h2>
+            <span class="badge badge-neutral badge-sm font-semibold">{categories.length} taxonomías</span>
+          </div>
+          <p class="text-xs sm:text-sm text-base-content/60 mt-1">
+            Organiza la estructura temática, colores de marca y jerarquía del contenido editorial.
+          </p>
+        </div>
+
+        {canCreate ? (
+          <div class="flex items-center gap-2">
+            <label
+              for="category-drawer"
+              class="drawer-button btn btn-primary btn-sm gap-2 shadow-sm hover:scale-[1.02] transition-transform cursor-pointer"
+            >
+              <svg class="size-4"><use href="#ic-plus"></use></svg>
+              <span>{copy.adminNewCategory}</span>
+            </label>
+          </div>
+        ) : null}
       </div>
-      <p class="text-xs sm:text-sm text-base-content/60 mt-1">
-        Organiza la estructura temática, colores de marca y jerarquía del contenido editorial.
-      </p>
+
+      <!-- Filter & Search Toolbar -->
+      <div class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300 bg-base-100 p-3 shadow-xs">
+        <div class="relative flex-1 min-w-[240px] max-w-md">
+          <svg class="size-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none">
+            <use href="#ic-world"></use>
+          </svg>
+          <input
+            type="search"
+            id="categories-search"
+            placeholder="Buscar categorías por nombre o slug..."
+            class="input input-sm input-bordered w-full pl-9 bg-base-200/40 text-xs sm:text-sm font-medium"
+          />
+        </div>
+      </div>
+
+      <!-- Categories Table -->
+      <div class="rounded-3xl border border-base-300 bg-base-100 shadow-xs overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="table table-zebra w-full" id="categories-table">
+            <thead>
+              <tr class="border-b border-base-300 bg-base-200/60 text-xs font-extrabold uppercase tracking-wider text-base-content/60">
+                <th class="py-4 pl-6">{copy.adminCategoryTitle || "Categoría"}</th>
+                <th>{copy.adminCategorySlug || "Slug URL"}</th>
+                <th>Artículos</th>
+                <th class="text-right pr-6">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-base-300/60 font-medium text-sm">
+              {categories.length === 0 ? (
+                <tr>
+                  <td colspan="4" class="text-center py-12 text-base-content/60">
+                    <div class="flex flex-col items-center gap-2">
+                      <div class="size-12 rounded-2xl bg-base-200 flex items-center justify-center text-base-content/40">
+                        <svg class="size-6"><use href="#ic-stack"></use></svg>
+                      </div>
+                      <span class="font-bold text-base">No hay categorías registradas</span>
+                      <span class="text-xs text-base-content/50">Crea la primera categoría para organizar tus artículos</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : null}
+
+              {categories.map((category) => {
+                const theme = getCategoryTheme(category.slug);
+                const editUrl = `${Astro.url.pathname.replace(/\/$/, "")}/${category.id}`;
+
+                return (
+                  <tr class="hover:bg-base-200/50 transition-colors category-row" data-name={(category.title ?? "").toLowerCase()} data-slug={(category.slug ?? "").toLowerCase()}>
+                    <td class="py-3.5 pl-6">
+                      <div class="flex items-center gap-2.5">
+                        <span class:list={["size-2.5 rounded-full", theme.dotClass]}></span>
+                        <span class="font-bold text-base-content text-base">{category.title ?? "—"}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="font-mono text-xs px-2.5 py-1 rounded-md bg-base-200 border border-base-300 text-base-content/70">
+                        /{category.slug}
+                      </span>
+                    </td>
+                    <td>
+                      <span class="badge badge-sm badge-neutral font-mono">{category.article_count ?? 0}</span>
+                    </td>
+                    <td class="text-right pr-6">
+                      <div class="inline-flex items-center gap-1.5">
+                        {canUpdate ? (
+                          <a class="btn btn-primary btn-sm btn-outline text-xs font-bold h-7 min-h-0 px-3" href={editUrl} title={copy.adminEdit}>
+                            <svg class="size-3.5"><use href="#ic-edit"></use></svg>
+                            <span>{copy.adminEdit || "Editar"}</span>
+                          </a>
+                        ) : null}
+                        {canDelete ? (
+                          <button
+                            class="btn btn-square btn-ghost btn-xs border border-base-300 hover:bg-error/10 hover:text-error"
+                            type="button"
+                            data-delete-id={category.id}
+                            data-name={category.title ?? category.slug}
+                            data-confirm={copy.adminDeleteConfirm}
+                            data-success={copy.adminEditorialDeleted}
+                            data-title={copy.adminDeleteTitle}
+                            data-accept={copy.adminDeleteAccept}
+                            data-cancel={copy.adminDeleteCancel}
+                            title={copy.adminRemove}
+                          >
+                            <svg class="size-3.5"><use href="#ic-trash"></use></svg>
+                          </button>
+                        ) : null}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
-    {canCreate ? (
-      <div class="flex items-center gap-2">
-        <button
-          type="button"
-          id="btn-toggle-new-category"
-          class="btn btn-primary btn-sm gap-2 shadow-sm hover:scale-[1.02] transition-transform"
-        >
-          <svg class="size-4"><use href="#ic-plus"></use></svg>
-          <span>{copy.adminNewCategory}</span>
-        </button>
-      </div>
-    ) : null}
-  </div>
-
-  <!-- Collapsible New Category Drawer/Box -->
-  {canCreate ? (
-    <div id="new-category-box" class="hidden mb-6 transition-all duration-300">
-      <div class="rounded-3xl border border-primary/30 bg-base-100 p-6 sm:p-8 shadow-md ring-1 ring-primary/20">
-        <div class="flex items-center justify-between border-b border-base-300 pb-3 mb-6">
-          <div class="flex items-center gap-2">
-            <span class="size-2.5 rounded-full bg-primary animate-pulse"></span>
-            <h3 class="font-display font-bold text-lg text-base-content">{copy.adminNewCategory}</h3>
+    <!-- Drawer Side (Right to Left Form) -->
+    <div class="drawer-side z-50">
+      <label for="category-drawer" aria-label="close drawer" class="drawer-overlay"></label>
+      <aside class="w-full max-w-xl sm:max-w-2xl bg-base-100 min-h-dvh h-dvh max-h-dvh flex flex-col p-6 sm:p-8 shadow-2xl border-l border-base-300 overflow-y-auto overscroll-contain">
+        <div class="flex items-center justify-between border-b border-base-300 pb-4 mb-6 shrink-0">
+          <div class="flex items-center gap-2.5">
+            <span class="size-3 rounded-full bg-primary animate-pulse"></span>
+            <div>
+              <h3 class="font-display font-bold text-lg text-base-content">{copy.adminNewCategory}</h3>
+              <p class="text-xs text-base-content/60">Configura la nueva categoría y sus versiones traducidas.</p>
+            </div>
           </div>
-          <button type="button" class="btn btn-circle btn-ghost btn-xs" id="btn-close-new-category">✕</button>
+          <label for="category-drawer" class="btn btn-circle btn-ghost btn-xs">✕</label>
         </div>
 
         <form
           method="post"
           action="/api/admin/categories"
-          class="space-y-5"
+          class="space-y-6 flex-1 flex flex-col justify-between"
           data-editorial-form
           data-success={copy.adminEditorialSaved}
           data-error={copy.adminEditorialSaveError}
         >
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold uppercase tracking-wider text-base-content/50">Idioma de edición:</span>
-            <PageLocaleSwitch languages={languages} label={copy.adminLanguages} current={defaultLocale} />
+          <div class="space-y-5">
+            <div class="flex items-center justify-between bg-base-200/50 p-3 rounded-2xl border border-base-300">
+              <span class="text-xs font-bold uppercase tracking-wider text-base-content/70">Idioma de edición:</span>
+              <PageLocaleSwitch languages={languages} label={copy.adminLanguages} current={defaultLocale} />
+            </div>
+
+            {languages.map((language) => {
+              const locked = language.code !== defaultLocale && !translation.canWrite && !translation.canUseAi;
+              return (
+                <div class:list={["grid grid-cols-1 gap-4", language.code !== defaultLocale && "hidden"]} data-i18n-panel={language.code}>
+                  <fieldset class="fieldset">
+                    <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">
+                      {copy.adminCategoryTitle} · {language.native_name}
+                    </legend>
+                    <input
+                      class="input input-bordered w-full font-semibold"
+                      name={`title[${language.code}]`}
+                      maxlength="160"
+                      required={language.code === defaultLocale}
+                      disabled={locked}
+                      placeholder="Nombre de la categoría..."
+                    />
+                  </fieldset>
+                  <fieldset class="fieldset">
+                    <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">
+                      {copy.adminCategoryDescription} · {language.native_name}
+                    </legend>
+                    <textarea
+                      class="textarea textarea-bordered w-full text-sm leading-relaxed"
+                      name={`description[${language.code}]`}
+                      rows="3"
+                      maxlength="400"
+                      disabled={locked}
+                      placeholder="Descripción editorial de la temática..."
+                    ></textarea>
+                  </fieldset>
+                </div>
+              );
+            })}
+
+            <fieldset class="fieldset border-t border-base-300/80 pt-4">
+              <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminCategorySlug}</legend>
+              <input
+                class="input input-bordered w-full font-mono text-xs"
+                name="slug"
+                pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
+                maxlength="80"
+                placeholder="ejemplo-slug-categoria"
+              />
+              <p class="text-[11px] text-base-content/50 mt-1">Identificador de URL único (en minúsculas y separado con guiones).</p>
+            </fieldset>
           </div>
 
-          {languages.map((language) => {
-            const locked = language.code !== defaultLocale && !translation.canWrite && !translation.canUseAi;
-            return (
-              <div class:list={["grid grid-cols-1 gap-4", language.code !== defaultLocale && "hidden"]} data-i18n-panel={language.code}>
-                <fieldset class="fieldset">
-                  <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">
-                    {copy.adminCategoryTitle} · {language.native_name}
-                  </legend>
-                  <input
-                    class="input input-bordered w-full font-semibold"
-                    name={`title[${language.code}]`}
-                    maxlength="160"
-                    required={language.code === defaultLocale}
-                    disabled={locked}
-                    placeholder="Nombre de la categoría..."
-                  />
-                </fieldset>
-                <fieldset class="fieldset">
-                  <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">
-                    {copy.adminCategoryDescription} · {language.native_name}
-                  </legend>
-                  <textarea
-                    class="textarea textarea-bordered w-full text-sm leading-relaxed"
-                    name={`description[${language.code}]`}
-                    rows="2"
-                    maxlength="400"
-                    disabled={locked}
-                    placeholder="Descripción editorial de la temática..."
-                  ></textarea>
-                </fieldset>
-              </div>
-            );
-          })}
-
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminCategorySlug}</legend>
-            <input class="input input-bordered w-full font-mono text-xs" name="slug" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" maxlength="80" placeholder="ejemplo-slug-categoria" />
-          </fieldset>
-
-          <div class="flex justify-end gap-2 pt-3 border-t border-base-300">
-            <button class="btn btn-ghost btn-sm" type="button" id="btn-cancel-new-category">{copy.adminDeleteCancel || "Cancelar"}</button>
+          <div class="flex justify-end gap-2 pt-4 border-t border-base-300 mt-6 shrink-0">
+            <label for="category-drawer" class="btn btn-ghost btn-sm cursor-pointer">{copy.adminDeleteCancel || "Cancelar"}</label>
             <button class="btn btn-primary btn-sm px-6 font-bold" type="submit">{copy.adminSave}</button>
           </div>
         </form>
-      </div>
-    </div>
-  ) : null}
-
-  <!-- Filter & Search Toolbar -->
-  <div class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300 bg-base-100 p-3 shadow-xs">
-    <div class="relative flex-1 min-w-[240px] max-w-md">
-      <svg class="size-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none">
-        <use href="#ic-world"></use>
-      </svg>
-      <input
-        type="search"
-        id="categories-search"
-        placeholder="Buscar categorías por nombre o slug..."
-        class="input input-sm input-bordered w-full pl-9 bg-base-200/40 text-xs sm:text-sm font-medium"
-      />
-    </div>
-  </div>
-
-  <!-- Categories Table -->
-  <div class="rounded-3xl border border-base-300 bg-base-100 shadow-xs overflow-hidden">
-    <div class="overflow-x-auto">
-      <table class="table table-zebra w-full" id="categories-table">
-        <thead>
-          <tr class="border-b border-base-300 bg-base-200/60 text-xs font-extrabold uppercase tracking-wider text-base-content/60">
-            <th class="py-4 pl-6">{copy.adminCategoryTitle || "Categoría"}</th>
-            <th>{copy.adminCategorySlug || "Slug URL"}</th>
-            <th>Artículos</th>
-            <th class="text-right pr-6">Acciones</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-base-300/60 font-medium text-sm">
-          {categories.length === 0 ? (
-            <tr>
-              <td colspan="4" class="text-center py-12 text-base-content/60">
-                <div class="flex flex-col items-center gap-2">
-                  <div class="size-12 rounded-2xl bg-base-200 flex items-center justify-center text-base-content/40">
-                    <svg class="size-6"><use href="#ic-stack"></use></svg>
-                  </div>
-                  <span class="font-bold text-base">No hay categorías registradas</span>
-                  <span class="text-xs text-base-content/50">Crea la primera categoría para organizar tus artículos</span>
-                </div>
-              </td>
-            </tr>
-          ) : null}
-
-          {categories.map((category) => {
-            const theme = getCategoryTheme(category.slug);
-            const editUrl = `${Astro.url.pathname.replace(/\/$/, "")}/${category.id}`;
-
-            return (
-              <tr class="hover:bg-base-200/50 transition-colors category-row" data-name={(category.title ?? "").toLowerCase()} data-slug={(category.slug ?? "").toLowerCase()}>
-                <td class="py-3.5 pl-6">
-                  <div class="flex items-center gap-2.5">
-                    <span class:list={["size-2.5 rounded-full", theme.dotClass]}></span>
-                    <span class="font-bold text-base-content text-base">{category.title ?? "—"}</span>
-                  </div>
-                </td>
-                <td>
-                  <span class="font-mono text-xs px-2.5 py-1 rounded-md bg-base-200 border border-base-300 text-base-content/70">
-                    /{category.slug}
-                  </span>
-                </td>
-                <td>
-                  <span class="badge badge-sm badge-neutral font-mono">{category.article_count ?? 0}</span>
-                </td>
-                <td class="text-right pr-6">
-                  <div class="inline-flex items-center gap-1.5">
-                    {canUpdate ? (
-                      <a class="btn btn-primary btn-sm btn-outline text-xs font-bold h-7 min-h-0 px-3" href={editUrl} title={copy.adminEdit}>
-                        <svg class="size-3.5"><use href="#ic-edit"></use></svg>
-                        <span>{copy.adminEdit || "Editar"}</span>
-                      </a>
-                    ) : null}
-                    {canDelete ? (
-                      <button
-                        class="btn btn-square btn-ghost btn-xs border border-base-300 hover:bg-error/10 hover:text-error"
-                        type="button"
-                        data-delete-id={category.id}
-                        data-name={category.title ?? category.slug}
-                        data-confirm={copy.adminDeleteConfirm}
-                        data-success={copy.adminEditorialDeleted}
-                        data-title={copy.adminDeleteTitle}
-                        data-accept={copy.adminDeleteAccept}
-                        data-cancel={copy.adminDeleteCancel}
-                        title={copy.adminRemove}
-                      >
-                        <svg class="size-3.5"><use href="#ic-trash"></use></svg>
-                      </button>
-                    ) : null}
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      </aside>
     </div>
   </div>
 
@@ -258,35 +275,26 @@ const categories = (await env.DB.prepare(
 <script is:inline>
   (function () {
     var bindCategories = function () {
-      // Toggle New Category Form
-      var toggleBtn = document.getElementById("btn-toggle-new-category");
-      var closeBtn = document.getElementById("btn-close-new-category");
-      var cancelBtn = document.getElementById("btn-cancel-new-category");
-      var newBox = document.getElementById("new-category-box");
+      var drawerToggle = document.getElementById("category-drawer");
 
-      if (toggleBtn && newBox && toggleBtn.dataset.bound !== "true") {
-        toggleBtn.dataset.bound = "true";
-        toggleBtn.addEventListener("click", function () {
-          newBox.classList.toggle("hidden");
-          if (!newBox.classList.contains("hidden")) {
-            var firstInput = newBox.querySelector("input:not([disabled])");
-            if (firstInput) firstInput.focus();
+      if (drawerToggle && drawerToggle.dataset.boundScroll !== "true") {
+        drawerToggle.dataset.boundScroll = "true";
+        drawerToggle.addEventListener("change", function () {
+          if (drawerToggle.checked) {
+            document.body.style.overflow = "hidden";
+            var firstInput = document.querySelector(".drawer-side input:not([disabled])");
+            if (firstInput) setTimeout(function () { firstInput.focus(); }, 150);
+          } else {
+            document.body.style.overflow = "";
           }
         });
-      }
 
-      var hideBox = function () {
-        if (newBox) newBox.classList.add("hidden");
-      };
-
-      if (closeBtn && closeBtn.dataset.bound !== "true") {
-        closeBtn.dataset.bound = "true";
-        closeBtn.addEventListener("click", hideBox);
-      }
-
-      if (cancelBtn && cancelBtn.dataset.bound !== "true") {
-        cancelBtn.dataset.bound = "true";
-        cancelBtn.addEventListener("click", hideBox);
+        document.addEventListener("keydown", function (e) {
+          if (e.key === "Escape" && drawerToggle.checked) {
+            drawerToggle.checked = false;
+            document.body.style.overflow = "";
+          }
+        });
       }
 
       // Live search filter
@@ -327,6 +335,8 @@ const categories = (await env.DB.prepare(
             .then(function (result) {
               if (result.ok) {
                 if (window.AfroUpFeedback) window.AfroUpFeedback.toast(form.getAttribute("data-success") || "Guardado.", "success");
+                if (drawerToggle) drawerToggle.checked = false;
+                document.body.style.overflow = "";
                 setTimeout(function () { window.location.reload(); }, 600);
                 return;
               }
@@ -403,5 +413,8 @@ const categories = (await env.DB.prepare(
 
     bindCategories();
     document.addEventListener("astro:page-load", bindCategories);
+    document.addEventListener("astro:before-swap", function () {
+      document.body.style.overflow = "";
+    });
   })();
 </script>
