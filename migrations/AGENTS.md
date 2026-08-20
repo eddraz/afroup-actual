@@ -49,7 +49,7 @@
 - `0017_bio_translations.sql` adds `afroup_user_bios` for per-locale public bios and registers the `traduccion` admin module (`create` = AI, `update` = manual).
 - `0018_permission_translate.sql` adds `translate` (`none|manual|ai`) to every user and role permission cell so translation is configured per module action.
 - `0019_permission_translate_flags.sql` splits that exclusive mode into independent `translate_manual` and `translate_ai` checks.
-- `0020_unified_users.sql` rebuilds public and admin identity into one `users` table, remaps admin foreign keys, renames slug `usuarios` to `users`, seeds default `users:read` / `users:update`, and drops `afroup_users` plus `admin_users`. Current table map: `docs/database.md`.
+- `0020_unified_users.sql` rebuilds public and admin identity into one `users` table, remaps admin foreign keys through `admin_id_map` when copying into rebuilt tables (never in-place PK updates, which collide when an admin id maps onto another admin's current id), renames slug `usuarios` to `users`, seeds default `users:read` / `users:update`, and drops `afroup_users` plus `admin_users`. Current table map: `docs/database.md`.
 - `0021_record_shares.sql` adds `record_shares` so a user can share one owned record with another user. Visibility is self + owned + shared. Parent no longer opens the creator tree.
 - `0022_article_search.sql` adds `article_categories`, `articles`, per-locale title/description tables, the `categorias` module, and `search_documents` for `/buscar`.
 - `0023_article_taxonomy.sql` maps articles to many categories, drops `articles.category_id`, and adds `article_tags`.

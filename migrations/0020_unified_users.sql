@@ -123,32 +123,11 @@ DELETE FROM admin_parent_grants
     OR parent_id NOT IN (SELECT admin_id FROM admin_id_map)
     OR child_id = parent_id;
 
-UPDATE admin_parent_grants
-   SET child_id = (
-         SELECT user_id FROM admin_id_map WHERE admin_id = admin_parent_grants.child_id
-       ),
-       parent_id = (
-         SELECT user_id FROM admin_id_map WHERE admin_id = admin_parent_grants.parent_id
-       );
-
-DELETE FROM admin_parent_grants
- WHERE child_id = parent_id;
-
 DELETE FROM admin_user_permissions
  WHERE user_id NOT IN (SELECT admin_id FROM admin_id_map);
 
-UPDATE admin_user_permissions
-   SET user_id = (
-     SELECT user_id FROM admin_id_map WHERE admin_id = admin_user_permissions.user_id
-   );
-
 DELETE FROM admin_user_invitations
  WHERE user_id NOT IN (SELECT admin_id FROM admin_id_map);
-
-UPDATE admin_user_invitations
-   SET user_id = (
-     SELECT user_id FROM admin_id_map WHERE admin_id = admin_user_invitations.user_id
-   );
 
 CREATE TABLE admin_user_permissions_new (
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -164,8 +143,9 @@ CREATE TABLE admin_user_permissions_new (
 INSERT INTO admin_user_permissions_new (
   user_id, permission_id, parent, quota, translate, translate_manual, translate_ai
 )
-SELECT user_id, permission_id, parent, quota, translate, translate_manual, translate_ai
-  FROM admin_user_permissions;
+SELECT m.user_id, p.permission_id, p.parent, p.quota, p.translate, p.translate_manual, p.translate_ai
+  FROM admin_user_permissions p
+  JOIN admin_id_map m ON m.admin_id = p.user_id;
 
 DROP TABLE admin_user_permissions;
 ALTER TABLE admin_user_permissions_new RENAME TO admin_user_permissions;
@@ -179,8 +159,9 @@ CREATE TABLE admin_user_invitations_new (
 );
 
 INSERT INTO admin_user_invitations_new (token, user_id, expires_at, consumed_at, created_at)
-SELECT token, user_id, expires_at, consumed_at, created_at
-  FROM admin_user_invitations;
+SELECT i.token, m.user_id, i.expires_at, i.consumed_at, i.created_at
+  FROM admin_user_invitations i
+  JOIN admin_id_map m ON m.admin_id = i.user_id;
 
 DROP TABLE admin_user_invitations;
 ALTER TABLE admin_user_invitations_new RENAME TO admin_user_invitations;
@@ -196,8 +177,12 @@ CREATE TABLE admin_parent_grants_new (
 );
 
 INSERT INTO admin_parent_grants_new (child_id, parent_id, action, created_at)
-SELECT child_id, parent_id, action, created_at
-  FROM admin_parent_grants;
+SELECT mc.user_id, mp.user_id, g.action, MIN(g.created_at)
+  FROM admin_parent_grants g
+  JOIN admin_id_map mc ON mc.admin_id = g.child_id
+  JOIN admin_id_map mp ON mp.admin_id = g.parent_id
+ WHERE mc.user_id != mp.user_id
+ GROUP BY mc.user_id, mp.user_id, g.action;
 
 DROP TABLE admin_parent_grants;
 ALTER TABLE admin_parent_grants_new RENAME TO admin_parent_grants;
