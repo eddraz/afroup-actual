@@ -317,9 +317,9 @@ function formatDate(dateStr?: string | null) {
     <!-- 90% Screen Width Right-to-Left Drawer (drawer-side) -->
     <div class="drawer-side z-50">
       <label for="article-editor-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
-      <aside class="flex min-h-full w-[90vw] max-w-[1600px] flex-col bg-base-100 text-base-content border-l border-base-300 shadow-2xl p-6 sm:p-8 overflow-y-auto">
+      <aside class="flex h-dvh max-h-dvh min-h-dvh w-[90vw] max-w-[1600px] flex-col bg-base-100 text-base-content border-l border-base-300 shadow-2xl p-6 sm:p-8 overflow-y-auto overscroll-contain">
         <!-- Drawer Header -->
-        <div class="flex items-center justify-between border-b border-base-300 pb-4 mb-6">
+        <div class="flex items-center justify-between border-b border-base-300 pb-4 mb-6 shrink-0">
           <div class="flex items-center gap-3">
             <span class="size-3 rounded-full bg-primary animate-pulse"></span>
             <h3 class="font-display text-xl font-bold text-base-content">
@@ -345,6 +345,21 @@ function formatDate(dateStr?: string | null) {
     </div>
   </div>
 </AdminLayout>
+
+<style is:global>
+  #article-editor-drawer:checked ~ .drawer-side {
+    pointer-events: auto !important;
+    visibility: visible !important;
+    overflow-y: hidden !important;
+  }
+  #article-editor-drawer:checked ~ .drawer-side > aside {
+    pointer-events: auto !important;
+    overflow-y: auto !important;
+    max-height: 100dvh !important;
+    height: 100dvh !important;
+    -webkit-overflow-scrolling: touch;
+  }
+</style>
 
 <script is:inline>
   (function () {
@@ -410,9 +425,32 @@ function formatDate(dateStr?: string | null) {
           applyFilters();
         });
       });
+
+      // Drawer scroll lock & escape listener
+      var drawerToggle = document.getElementById("article-editor-drawer");
+      if (drawerToggle && drawerToggle.dataset.boundScroll !== "true") {
+        drawerToggle.dataset.boundScroll = "true";
+        drawerToggle.addEventListener("change", function () {
+          if (drawerToggle.checked) {
+            document.body.style.overflow = "hidden";
+          } else {
+            document.body.style.overflow = "";
+          }
+        });
+
+        document.addEventListener("keydown", function (e) {
+          if (e.key === "Escape" && drawerToggle.checked) {
+            drawerToggle.checked = false;
+            document.body.style.overflow = "";
+          }
+        });
+      }
     };
 
     bindArticlesUI();
     document.addEventListener("astro:page-load", bindArticlesUI);
+    document.addEventListener("astro:before-swap", function () {
+      document.body.style.overflow = "";
+    });
   })();
 </script>
