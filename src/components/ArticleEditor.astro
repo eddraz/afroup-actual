@@ -177,52 +177,50 @@ const publicPath = article?.slug && primaryCategorySlug
             >{descVal}</textarea>
           </fieldset>
 
-          <!-- Rich Content HTML -->
+          <!-- Rich Content with Editor.js -->
           <fieldset class="fieldset">
             <legend class="fieldset-legend font-bold flex items-center justify-between">
               <span>{copy.adminArticleContent} · {language.native_name}</span>
-              <span class="text-xs font-normal text-base-content/60">{copy.adminArticleContentHelp}</span>
+              <div class="flex items-center gap-2">
+                <span class="badge badge-sm badge-neutral font-mono">Editor.js</span>
+                <button
+                  class="btn btn-ghost btn-xs gap-1.5"
+                  type="button"
+                  data-preview-toggle={language.code}
+                >
+                  <svg class="size-3.5"><use href="#ic-book2"></use></svg>
+                  {copy.adminLanguageShow || "Vista previa"}
+                </button>
+              </div>
             </legend>
 
-            <div class="rounded-xl border border-base-300 bg-base-200/50 p-2 flex flex-col gap-2">
-              <!-- Toolbar -->
-              <div class="flex flex-wrap items-center gap-1.5 border-b border-base-300 pb-2">
-                <button class="btn btn-ghost btn-xs font-bold" type="button" data-rte-cmd="bold" data-target-locale={language.code} title="Negrita"><strong>B</strong></button>
-                <button class="btn btn-ghost btn-xs italic font-serif" type="button" data-rte-cmd="italic" data-target-locale={language.code} title="Cursiva"><em>I</em></button>
-                <div class="divider divider-horizontal my-0 mx-1"></div>
-                <button class="btn btn-ghost btn-xs font-display font-bold" type="button" data-rte-cmd="h2" data-target-locale={language.code} title="Subtítulo H2">H2</button>
-                <button class="btn btn-ghost btn-xs font-display font-bold" type="button" data-rte-cmd="h3" data-target-locale={language.code} title="Subtítulo H3">H3</button>
-                <button class="btn btn-ghost btn-xs" type="button" data-rte-cmd="p" data-target-locale={language.code} title="Párrafo">&lt;p&gt;</button>
-                <div class="divider divider-horizontal my-0 mx-1"></div>
-                <button class="btn btn-ghost btn-xs" type="button" data-rte-cmd="pull" data-target-locale={language.code} title="Cita destacada">“Cita”</button>
-                <button class="btn btn-ghost btn-xs" type="button" data-rte-cmd="figure" data-target-locale={language.code} title="Figura / Imagen">📷 Figura</button>
-                <button class="btn btn-ghost btn-xs" type="button" data-rte-cmd="cta" data-target-locale={language.code} title="Llamada CTA">📢 CTA</button>
-                <button class="btn btn-ghost btn-xs" type="button" data-rte-cmd="ul" data-target-locale={language.code} title="Lista">☰ Lista</button>
-                <button class="btn btn-ghost btn-xs" type="button" data-rte-cmd="a" data-target-locale={language.code} title="Enlace">🔗 Link</button>
-                <div class="ml-auto flex items-center gap-1.5">
-                  <button class="btn btn-ghost btn-xs" type="button" data-preview-toggle={language.code}>
-                    👁️ {copy.adminLanguageShow || "Vista previa"}
-                  </button>
-                </div>
+            <div class="flex flex-col gap-3">
+              <!-- Editor.js Canvas Box -->
+              <div
+                class="min-h-[340px] w-full rounded-2xl border border-base-300 bg-base-100 p-6 shadow-xs transition-colors focus-within:border-primary/50"
+              >
+                <div
+                  id={`editorjs-${language.code}`}
+                  class="editorjs-holder min-h-[260px] article-prose max-w-none"
+                  data-editorjs-locale={language.code}
+                  data-disabled={locked ? "true" : "false"}
+                ></div>
               </div>
 
-              <!-- Editor Textarea -->
+              <!-- Synced HTML Textarea (hidden) -->
               <textarea
-                class="textarea textarea-bordered w-full font-mono text-sm leading-relaxed"
+                class="hidden"
                 name={`content_html[${language.code}]`}
                 data-content-input={language.code}
-                rows="12"
-                disabled={locked}
-                placeholder="<p>Escribe aquí el contenido del artículo en HTML...</p>"
               >{contentVal}</textarea>
 
-              <!-- Live Preview box (hidden by default) -->
+              <!-- Live Preview Box -->
               <div
-                class="hidden rounded-lg bg-base-100 p-4 border border-base-300 article-prose"
+                class="hidden rounded-2xl bg-base-200/40 p-6 border border-base-300 article-prose max-w-none"
                 data-preview-box={language.code}
               >
-                <div class="text-xs uppercase tracking-wider text-base-content/50 font-bold mb-2 pb-1 border-b border-base-300">
-                  {copy.adminLanguageShow || "Vista previa en tiempo real"}
+                <div class="text-xs uppercase tracking-wider text-base-content/50 font-bold mb-4 pb-2 border-b border-base-300">
+                  {copy.adminLanguageShow || "Vista previa del artículo"} ({language.code.toUpperCase()})
                 </div>
                 <div data-preview-content={language.code}></div>
               </div>
@@ -352,80 +350,40 @@ const publicPath = article?.slug && primaryCategorySlug
   </div>
 </form>
 
-<script is:inline>
-  (function () {
-    // Rich Text Editor Commands
-    document.querySelectorAll("[data-rte-cmd]").forEach(function (btn) {
-      if (btn.dataset.bound === "true") return;
-      btn.dataset.bound = "true";
-      btn.addEventListener("click", function () {
-        var cmd = btn.getAttribute("data-rte-cmd");
-        var locale = btn.getAttribute("data-target-locale");
-        var textarea = document.querySelector("[data-content-input='" + locale + "']");
-        if (!textarea) return;
+<script>
+  import { initArticleEditors, destroyArticleEditors, blocksToHtml, htmlToBlocks } from "../lib/editorjs-client";
 
-        var start = textarea.selectionStart;
-        var end = textarea.selectionEnd;
-        var selected = textarea.value.substring(start, end);
-        var replacement = "";
+  function setupArticleEditor() {
+    const form = document.querySelector<HTMLFormElement>("form[data-article-form]");
+    if (!form) return;
 
-        switch (cmd) {
-          case "bold":
-            replacement = "<strong>" + (selected || "texto en negrita") + "</strong>";
-            break;
-          case "italic":
-            replacement = "<em>" + (selected || "texto en cursiva") + "</em>";
-            break;
-          case "h2":
-            replacement = "<h2>" + (selected || "Subtítulo de sección") + "</h2>\n";
-            break;
-          case "h3":
-            replacement = "<h3>" + (selected || "Subtítulo secundario") + "</h3>\n";
-            break;
-          case "p":
-            replacement = "<p>" + (selected || "Párrafo del artículo...") + "</p>\n";
-            break;
-          case "pull":
-            replacement = '<div class="pull">“' + (selected || "Cita destacada relevante...") + '”</div>\n';
-            break;
-          case "figure":
-            replacement = '<figure class="figure">\n  <img src="https://images.unsplash.com/photo-1544717305-2782549b5136?w=1200&auto=format&fit=crop&q=80" alt="Descripción de la imagen" />\n  <figcaption>' + (selected || "Pie de foto explicativo.") + '</figcaption>\n</figure>\n';
-            break;
-          case "cta":
-            replacement = '<div class="cta">\n  <div>\n    <h3>' + (selected || "Sé parte de la comunidad AfroUp") + '</h3>\n    <p>Con tu apoyo seguimos educando sobre el legado afro.</p>\n  </div>\n  <a class="btn btn-primary" href="/donacion">Haz tu Donación</a>\n</div>\n';
-            break;
-          case "ul":
-            replacement = "<ul>\n  <li>" + (selected || "Elemento 1") + "</li>\n  <li>Elemento 2</li>\n</ul>\n";
-            break;
-          case "a":
-            var url = prompt("Introduce la URL:", "https://");
-            if (url) {
-              replacement = '<a href="' + url + '">' + (selected || "enlace") + "</a>";
-            } else {
-              return;
-            }
-            break;
-        }
-
-        textarea.setRangeText(replacement, start, end, "end");
-        textarea.dispatchEvent(new Event("input", { bubbles: true }));
-        textarea.focus();
-      });
-    });
+    const editors = initArticleEditors();
 
     // Preview Toggle & Auto-update
-    document.querySelectorAll("[data-preview-toggle]").forEach(function (btn) {
+    document.querySelectorAll<HTMLButtonElement>("[data-preview-toggle]").forEach((btn) => {
       if (btn.dataset.bound === "true") return;
       btn.dataset.bound = "true";
-      btn.addEventListener("click", function () {
-        var locale = btn.getAttribute("data-preview-toggle");
-        var box = document.querySelector("[data-preview-box='" + locale + "']");
-        var textarea = document.querySelector("[data-content-input='" + locale + "']");
-        var content = document.querySelector("[data-preview-content='" + locale + "']");
-        if (!box || !textarea || !content) return;
+      btn.addEventListener("click", async () => {
+        const locale = btn.getAttribute("data-preview-toggle");
+        if (!locale) return;
+        const box = document.querySelector<HTMLElement>(`[data-preview-box='${locale}']`);
+        const content = document.querySelector<HTMLElement>(`[data-preview-content='${locale}']`);
+        if (!box || !content) return;
 
         if (box.classList.contains("hidden")) {
-          content.innerHTML = textarea.value || "<p class='italic opacity-50'>Sin contenido aún.</p>";
+          const editor = editors[locale];
+          let html = "";
+          if (editor) {
+            try {
+              const output = await editor.save();
+              html = blocksToHtml(output);
+            } catch {}
+          }
+          if (!html) {
+            const textarea = document.querySelector<HTMLTextAreaElement>(`[data-content-input='${locale}']`);
+            html = textarea?.value || "";
+          }
+          content.innerHTML = html || "<p class='italic opacity-50'>Sin contenido aún.</p>";
           box.classList.remove("hidden");
         } else {
           box.classList.add("hidden");
@@ -434,13 +392,14 @@ const publicPath = article?.slug && primaryCategorySlug
     });
 
     // Live Cover Image Preview
-    var coverInput = document.querySelector("[data-cover-input]");
-    var coverPreview = document.querySelector("[data-cover-preview]");
-    if (coverInput && coverPreview) {
-      coverInput.addEventListener("input", function () {
-        var val = coverInput.value.trim();
+    const coverInput = document.querySelector<HTMLInputElement>("[data-cover-input]");
+    const coverPreview = document.querySelector<HTMLElement>("[data-cover-preview]");
+    if (coverInput && coverPreview && coverInput.dataset.bound !== "true") {
+      coverInput.dataset.bound = "true";
+      coverInput.addEventListener("input", () => {
+        const val = coverInput.value.trim();
         if (val) {
-          coverPreview.innerHTML = '<img src="' + val + '" alt="Cover preview" class="size-full object-cover" onerror="this.parentElement.innerHTML=\'Error\'" />';
+          coverPreview.innerHTML = `<img src="${val}" alt="Cover preview" class="size-full object-cover" onerror="this.parentElement.innerHTML='Error'" />`;
         } else {
           coverPreview.innerHTML = "<span>Sin foto</span>";
         }
@@ -448,37 +407,51 @@ const publicPath = article?.slug && primaryCategorySlug
     }
 
     // AI Translation Buttons
-    document.querySelectorAll("[data-translate-all-btn]").forEach(function (btn) {
+    document.querySelectorAll<HTMLButtonElement>("[data-translate-all-btn]").forEach((btn) => {
       if (btn.dataset.bound === "true") return;
       btn.dataset.bound = "true";
-      btn.addEventListener("click", function () {
-        var targetLocale = btn.getAttribute("data-translate-all-btn");
-        var sourceTitle = document.querySelector("[data-title-input='es']")?.value || "";
-        var sourceDesc = document.querySelector("[data-desc-input='es']")?.value || "";
-        var sourceContent = document.querySelector("[data-content-input='es']")?.value || "";
+      btn.addEventListener("click", async () => {
+        const targetLocale = btn.getAttribute("data-translate-all-btn");
+        if (!targetLocale) return;
+
+        const sourceTitle = document.querySelector<HTMLInputElement>("[data-title-input='es']")?.value || "";
+        const sourceDesc = document.querySelector<HTMLTextAreaElement>("[data-desc-input='es']")?.value || "";
+
+        let sourceContent = "";
+        const sourceEditor = editors["es"];
+        if (sourceEditor) {
+          try {
+            const saved = await sourceEditor.save();
+            sourceContent = blocksToHtml(saved);
+            const esInp = document.querySelector<HTMLTextAreaElement>("[data-content-input='es']");
+            if (esInp) esInp.value = sourceContent;
+          } catch {}
+        } else {
+          sourceContent = document.querySelector<HTMLTextAreaElement>("[data-content-input='es']")?.value || "";
+        }
 
         if (!sourceTitle && !sourceDesc && !sourceContent) {
-          if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Primero escribe el contenido en español.", "error");
+          if ((window as any).AfroUpFeedback) (window as any).AfroUpFeedback.toast("Primero escribe el contenido en español.", "error");
           return;
         }
 
         btn.disabled = true;
-        var originalHtml = btn.innerHTML;
+        const originalHtml = btn.innerHTML;
         btn.innerHTML = '<span class="loading loading-spinner loading-xs"></span> Traduciendo...';
 
-        var tasks = [];
+        const tasks: Promise<any>[] = [];
 
         if (sourceTitle) {
-          var formTitle = new FormData();
+          const formTitle = new FormData();
           formTitle.append("module", "articulos");
           formTitle.append("source", sourceTitle);
           formTitle.append("target", targetLocale);
           tasks.push(
             fetch("/api/admin/translate", { method: "POST", body: formTitle })
-              .then(function (r) { return r.json(); })
-              .then(function (res) {
+              .then((r) => r.json())
+              .then((res: any) => {
                 if (res.ok && res.text) {
-                  var inp = document.querySelector("[data-title-input='" + targetLocale + "']");
+                  const inp = document.querySelector<HTMLInputElement>(`[data-title-input='${targetLocale}']`);
                   if (inp) inp.value = res.text;
                 }
               })
@@ -486,16 +459,16 @@ const publicPath = article?.slug && primaryCategorySlug
         }
 
         if (sourceDesc) {
-          var formDesc = new FormData();
+          const formDesc = new FormData();
           formDesc.append("module", "articulos");
           formDesc.append("source", sourceDesc);
           formDesc.append("target", targetLocale);
           tasks.push(
             fetch("/api/admin/translate", { method: "POST", body: formDesc })
-              .then(function (r) { return r.json(); })
-              .then(function (res) {
+              .then((r) => r.json())
+              .then((res: any) => {
                 if (res.ok && res.text) {
-                  var inp = document.querySelector("[data-desc-input='" + targetLocale + "']");
+                  const inp = document.querySelector<HTMLTextAreaElement>(`[data-desc-input='${targetLocale}']`);
                   if (inp) inp.value = res.text;
                 }
               })
@@ -503,53 +476,69 @@ const publicPath = article?.slug && primaryCategorySlug
         }
 
         if (sourceContent) {
-          var formContent = new FormData();
+          const formContent = new FormData();
           formContent.append("module", "articulos");
           formContent.append("source", sourceContent);
           formContent.append("target", targetLocale);
           formContent.append("is_html", "1");
           tasks.push(
             fetch("/api/admin/translate", { method: "POST", body: formContent })
-              .then(function (r) { return r.json(); })
-              .then(function (res) {
+              .then((r) => r.json())
+              .then(async (res: any) => {
                 if (res.ok && res.text) {
-                  var inp = document.querySelector("[data-content-input='" + targetLocale + "']");
+                  const targetEditor = editors[targetLocale];
+                  if (targetEditor) {
+                    const newBlocks = htmlToBlocks(res.text);
+                    if (newBlocks.blocks.length) {
+                      await targetEditor.render(newBlocks);
+                    }
+                  }
+                  const inp = document.querySelector<HTMLTextAreaElement>(`[data-content-input='${targetLocale}']`);
                   if (inp) inp.value = res.text;
                 }
               })
           );
         }
 
-        Promise.all(tasks)
-          .then(function () {
-            if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Traducción completada.", "success");
-          })
-          .catch(function () {
-            if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Error al traducir con IA.", "error");
-          })
-          .finally(function () {
-            btn.disabled = false;
-            btn.innerHTML = originalHtml;
-          });
+        try {
+          await Promise.all(tasks);
+          if ((window as any).AfroUpFeedback) (window as any).AfroUpFeedback.toast("Traducción completada.", "success");
+        } catch {
+          if ((window as any).AfroUpFeedback) (window as any).AfroUpFeedback.toast("Error al traducir con IA.", "error");
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = originalHtml;
+        }
       });
     });
 
     // Form submit
-    var form = document.querySelector("form[data-article-form]");
-    if (form && form.dataset.bound !== "true") {
+    if (form.dataset.bound !== "true") {
       form.dataset.bound = "true";
-      form.addEventListener("submit", function (event) {
+      form.addEventListener("submit", async (event) => {
         event.preventDefault();
-        var submitBtn = form.querySelector("button[type='submit']");
+        const submitBtn = form.querySelector<HTMLButtonElement>("button[type='submit']");
         if (submitBtn) submitBtn.disabled = true;
 
-        var data = new FormData(form);
+        // Save all EditorJS blocks to hidden content inputs
+        for (const [locale, editor] of Object.entries(editors)) {
+          try {
+            const data = await editor.save();
+            const html = blocksToHtml(data);
+            const input = document.querySelector<HTMLTextAreaElement>(`[data-content-input='${locale}']`);
+            if (input) input.value = html;
+          } catch (err) {
+            console.warn("EditorJS save warning for locale", locale, err);
+          }
+        }
+
+        const data = new FormData(form);
         fetch(form.action, { method: "POST", body: data })
-          .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
-          .then(function (result) {
+          .then((res) => res.json().then((body: any) => ({ ok: res.ok, body })))
+          .then((result: any) => {
             if (result.ok) {
-              if (window.AfroUpFeedback) window.AfroUpFeedback.toast(form.getAttribute("data-success") || "Guardado.", "success");
-              setTimeout(function () {
+              if ((window as any).AfroUpFeedback) (window as any).AfroUpFeedback.toast(form.getAttribute("data-success") || "Guardado.", "success");
+              setTimeout(() => {
                 if (result.body && result.body.id && !form.querySelector("input[name='id']")) {
                   window.location.href = window.location.pathname.replace(/\/articulos\/?$/, "/articulos/" + result.body.id);
                 } else {
@@ -558,58 +547,65 @@ const publicPath = article?.slug && primaryCategorySlug
               }, 600);
               return;
             }
-            if (window.AfroUpFeedback) window.AfroUpFeedback.toast(result.body?.error || form.getAttribute("data-error") || "Error al guardar.", "error");
+            if ((window as any).AfroUpFeedback) (window as any).AfroUpFeedback.toast(result.body?.error || form.getAttribute("data-error") || "Error al guardar.", "error");
             if (submitBtn) submitBtn.disabled = false;
           })
-          .catch(function () {
-            if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Error de red.", "error");
+          .catch(() => {
+            if ((window as any).AfroUpFeedback) (window as any).AfroUpFeedback.toast("Error de red.", "error");
             if (submitBtn) submitBtn.disabled = false;
           });
       });
     }
 
     // Delete confirmation
-    document.querySelectorAll("[data-article-delete-btn]").forEach(function (btn) {
+    document.querySelectorAll<HTMLButtonElement>("[data-article-delete-btn]").forEach((btn) => {
       if (btn.dataset.bound === "true") return;
       btn.dataset.bound = "true";
-      btn.addEventListener("click", function () {
-        var id = btn.getAttribute("data-article-id");
-        var title = btn.getAttribute("data-article-title") || "este artículo";
-        
-        var proceed = function () {
-          var data = new FormData();
-          data.append("id", id);
+      btn.addEventListener("click", () => {
+        const id = btn.getAttribute("data-article-id");
+        const title = btn.getAttribute("data-article-title") || "este artículo";
+
+        const proceed = () => {
+          const data = new FormData();
+          if (id) data.append("id", id);
           data.append("_intent", "delete");
 
           fetch("/api/admin/articles", { method: "POST", body: data })
-            .then(function (res) { return res.json(); })
-            .then(function (res) {
+            .then((res) => res.json())
+            .then((res: any) => {
               if (res.ok) {
-                if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Artículo eliminado.", "success");
-                setTimeout(function () {
+                if ((window as any).AfroUpFeedback) (window as any).AfroUpFeedback.toast("Artículo eliminado.", "success");
+                setTimeout(() => {
                   window.location.href = window.location.pathname.replace(/\/articulos\/[0-9]+\/?$/, "/articulos");
                 }, 600);
               } else {
-                if (window.AfroUpFeedback) window.AfroUpFeedback.toast("No se pudo eliminar el artículo.", "error");
+                if ((window as any).AfroUpFeedback) (window as any).AfroUpFeedback.toast("No se pudo eliminar el artículo.", "error");
               }
             })
-            .catch(function () {
-              if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Error de red.", "error");
+            .catch(() => {
+              if ((window as any).AfroUpFeedback) (window as any).AfroUpFeedback.toast("Error de red.", "error");
             });
         };
 
-        if (window.AfroUpFeedback && window.AfroUpFeedback.modal) {
-          window.AfroUpFeedback.modal({
+        if ((window as any).AfroUpFeedback && (window as any).AfroUpFeedback.modal) {
+          (window as any).AfroUpFeedback.modal({
             title: "Eliminar artículo",
-            message: "¿Seguro que quieres eliminar el artículo «" + title + "»? No podrás recuperarlo.",
+            message: `¿Seguro que quieres eliminar el artículo «${title}»? No podrás recuperarlo.`,
             acceptText: "Eliminar",
             cancelText: "Cancelar",
             onAccept: proceed,
           });
-        } else if (confirm("¿Seguro que quieres eliminar el artículo «" + title + "»?")) {
+        } else if (confirm(`¿Seguro que quieres eliminar el artículo «${title}»?`)) {
           proceed();
         }
       });
     });
-  })();
+  }
+
+  // Ensure clean teardown on page transition and single init per page load
+  document.addEventListener("astro:before-swap", destroyArticleEditors);
+  document.addEventListener("astro:page-load", setupArticleEditor);
+  if (document.readyState === "complete" || document.readyState === "interactive") {
+    setupArticleEditor();
+  }
 </script>
