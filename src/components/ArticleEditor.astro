@@ -279,18 +279,38 @@ const publicPath = article?.slug && primaryCategorySlug
           />
         </fieldset>
 
-        <!-- Reading Time -->
+        <!-- Dynamic Reading Time -->
         <fieldset class="fieldset">
-          <legend class="fieldset-legend font-semibold text-xs text-base-content/70">{copy.adminArticleReadingTime || "Lectura (min)"}</legend>
-          <input
-            class="input input-bordered input-sm w-full"
-            type="number"
-            name="reading_time_minutes"
-            min="1"
-            max="120"
-            value={article?.reading_time_minutes ?? ""}
-            placeholder="Automático según texto"
-          />
+          <div class="flex items-center justify-between">
+            <legend class="fieldset-legend font-semibold text-xs text-base-content/70">
+              {copy.adminArticleReadingTime || "Tiempo de Lectura"}
+            </legend>
+            <span class="badge badge-primary badge-xs font-bold gap-1" data-reading-time-badge>
+              <svg class="size-3"><use href="#ic-clock"></use></svg>
+              <span data-reading-time-text>{article?.reading_time_minutes ? `${article.reading_time_minutes} min` : "1 min"}</span>
+            </span>
+          </div>
+          <div class="join w-full">
+            <input
+              class="input input-bordered input-sm join-item w-full font-mono font-bold"
+              type="number"
+              name="reading_time_minutes"
+              id="article-reading-time-input"
+              data-reading-time-input
+              min="1"
+              max="120"
+              value={article?.reading_time_minutes ?? 1}
+              placeholder="1"
+            />
+            <span class="btn btn-sm btn-neutral join-item pointer-events-none font-semibold text-xs">min</span>
+          </div>
+          <div class="flex items-center justify-between text-[10px] text-base-content/60 mt-1">
+            <span class="flex items-center gap-1 font-medium">
+              <span class="size-1.5 rounded-full bg-success animate-pulse"></span>
+              Dinámico (~200 ppm)
+            </span>
+            <span data-word-count-text class="font-mono font-semibold">0 palabras</span>
+          </div>
         </fieldset>
       </div>
 
@@ -550,6 +570,60 @@ const publicPath = article?.slug && primaryCategorySlug
           if ((window as any).AfroUpFeedback) (window as any).AfroUpFeedback.toast("Portada asignada y optimizada.", "success");
         }, 800);
       }
+    });
+
+    // Dynamic Reading Time Calculation
+    const readingTimeInput = document.querySelector<HTMLInputElement>("[data-reading-time-input]");
+    const readingTimeText = document.querySelector<HTMLElement>("[data-reading-time-text]");
+    const wordCountText = document.querySelector<HTMLElement>("[data-word-count-text]");
+
+    const updateDynamicReadingTime = async () => {
+      if (!readingTimeInput) return;
+
+      const primaryTitle = (document.querySelector<HTMLInputElement>("[data-title-input='es']")?.value ||
+                            document.querySelector<HTMLInputElement>("[data-title-input]")?.value || "").trim();
+      const primaryDesc = (document.querySelector<HTMLTextAreaElement>("[data-desc-input='es']")?.value ||
+                           document.querySelector<HTMLTextAreaElement>("[data-desc-input]")?.value || "").trim();
+
+      let bodyHtml = "";
+      const primaryEditor = editors["es"] || Object.values(editors)[0];
+      if (primaryEditor) {
+        try {
+          const data = await primaryEditor.save();
+          bodyHtml = blocksToHtml(data);
+        } catch {}
+      }
+      if (!bodyHtml) {
+        bodyHtml = document.querySelector<HTMLTextAreaElement>("[data-content-input='es']")?.value ||
+                   document.querySelector<HTMLTextAreaElement>("[data-content-input]")?.value || "";
+      }
+
+      const fullCombined = `${primaryTitle} ${primaryDesc} ${bodyHtml}`;
+      const cleanText = fullCombined
+        .replace(/<[^>]*>/g, " ")
+        .replace(/[^\w\s\u00C0-\u017F]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+      const words = cleanText ? cleanText.split(" ").filter(Boolean).length : 0;
+      const calculatedMinutes = Math.max(1, Math.ceil(words / 200));
+
+      readingTimeInput.value = String(calculatedMinutes);
+      if (readingTimeText) readingTimeText.textContent = `${calculatedMinutes} min`;
+      if (wordCountText) wordCountText.textContent = `${words} palabras`;
+    };
+
+    // Calculate immediately on load
+    setTimeout(updateDynamicReadingTime, 150);
+
+    // Listen to changes across text inputs
+    document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>("[data-title-input], [data-desc-input], [data-content-input]").forEach((inp) => {
+      inp.addEventListener("input", () => { updateDynamicReadingTime(); });
+    });
+
+    // Listen to Editor.js content change events
+    document.addEventListener("editorjs-content-change", () => {
+      updateDynamicReadingTime();
     });
 
     // AI Translation Buttons

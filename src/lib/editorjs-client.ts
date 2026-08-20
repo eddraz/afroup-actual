@@ -263,6 +263,10 @@ export function initArticleEditors(): Record<string, EditorJS> {
             const html = blocksToHtml(output);
             if (textarea) {
               textarea.value = html;
+              textarea.dispatchEvent(new Event("input", { bubbles: true }));
+            }
+            if (typeof document !== "undefined") {
+              document.dispatchEvent(new CustomEvent("editorjs-content-change", { detail: { locale, html } }));
             }
           } catch {}
         },
