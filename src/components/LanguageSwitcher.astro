@@ -66,24 +66,34 @@ const current = localeFromPath(Astro.url.pathname);
     };
 
     var bind = function () {
-      var root = document.querySelector("[data-language-switcher]");
-      if (!root || root.dataset.bound === "true") return;
-      root.dataset.bound = "true";
-      var scope = root.getAttribute("data-scope") || "visible";
+      var roots = document.querySelectorAll("[data-language-switcher]");
+      if (!roots.length) return;
+      var unbound = [];
+      roots.forEach(function (root) {
+        if (root.dataset.bound !== "true") {
+          root.dataset.bound = "true";
+          unbound.push(root);
+        }
+      });
+      if (!unbound.length) return;
+      var scope = unbound[0].getAttribute("data-scope") || "visible";
       var href = scope === "all" ? "/api/languages?scope=all" : "/api/languages";
       fetch(href, { credentials: "same-origin" })
         .then(function (res) { return res.json(); })
         .then(function (result) {
           if (!result || !result.ok) return;
-          render(root, result.languages || []);
+          unbound.forEach(function (root) {
+            render(root, result.languages || []);
+          });
         })
         .catch(function () {});
     };
 
     bind();
     document.addEventListener("astro:page-load", function () {
-      var root = document.querySelector("[data-language-switcher]");
-      if (root) root.dataset.bound = "";
+      document.querySelectorAll("[data-language-switcher]").forEach(function (root) {
+        root.dataset.bound = "";
+      });
       bind();
     });
   })();
