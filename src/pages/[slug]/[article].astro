@@ -238,16 +238,16 @@ const authorBioText = plainBioText(row.author_bio) || copy.articleDefaultBio;
     <!-- Byline with Author, Date, Reading time, and Share buttons -->
     <div class="mt-6 flex flex-wrap items-center gap-3.5 border-b border-base-300 pb-6">
       {row.author_avatar ? (
-        <Image
+        <img
           src={row.author_avatar}
           alt={authorDisplayName}
-          width={48}
-          height={48}
-          class="size-12 rounded-full object-cover border-2 border-secondary flex-none"
+          width="44"
+          height="44"
+          class="size-11 rounded-full object-cover ring-2 ring-primary/30 ring-offset-2 ring-offset-base-100 shadow-xs flex-none"
         />
       ) : (
-        <div class="size-12 rounded-full bg-secondary/20 border-2 border-secondary flex-none flex items-center justify-center font-bold text-secondary-content font-display text-lg">
-          {authorDisplayName.charAt(0).toUpperCase()}
+        <div class="size-11 rounded-full bg-gradient-to-tr from-primary via-primary/90 to-accent flex-none flex items-center justify-center font-extrabold text-primary-content font-display text-base ring-2 ring-primary/30 ring-offset-2 ring-offset-base-100 shadow-xs select-none">
+          <span>{authorDisplayName.charAt(0).toUpperCase()}</span>
         </div>
       )}
       <div class="leading-tight">
@@ -347,21 +347,28 @@ const authorBioText = plainBioText(row.author_bio) || copy.articleDefaultBio;
   ) : null}
 
   <!-- Author Bio Card -->
-  <div class="bio flex items-center gap-4 p-5 rounded-2xl bg-base-200 border border-base-300">
+  <div class="bio rounded-3xl bg-gradient-to-br from-base-200/90 via-base-200/50 to-base-100 p-6 sm:p-7 border border-base-300 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-5 sm:gap-6">
     <div class="avatar placeholder flex-none">
       {row.author_avatar ? (
-        <div class="size-16 rounded-full ring ring-secondary ring-offset-base-100 ring-offset-2">
+        <div class="size-18 sm:size-20 rounded-full ring-2 ring-primary/40 ring-offset-4 ring-offset-base-100 shadow-md overflow-hidden">
           <img src={row.author_avatar} alt={authorDisplayName} class="size-full object-cover" />
         </div>
       ) : (
-        <div class="size-16 rounded-full bg-secondary/20 text-secondary-content font-bold font-display text-2xl ring ring-secondary ring-offset-base-100 ring-offset-2 flex items-center justify-center">
+        <div class="size-18 sm:size-20 rounded-full bg-gradient-to-tr from-primary via-primary/90 to-accent text-primary-content font-extrabold font-display text-2xl sm:text-3xl ring-2 ring-primary/40 ring-offset-4 ring-offset-base-100 shadow-md flex items-center justify-center select-none">
           <span>{authorDisplayName.charAt(0).toUpperCase()}</span>
         </div>
       )}
     </div>
-    <div>
-      <h4 class="font-display font-bold text-lg text-base-content">{authorDisplayName}</h4>
-      <p class="mt-1 text-sm text-base-content/70 leading-relaxed">{authorBioText}</p>
+    <div class="space-y-1.5 min-w-0">
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="badge badge-primary badge-outline badge-xs font-bold uppercase tracking-wider">
+          {locale === "en" ? "Author" : "Autor"}
+        </span>
+        <span class="text-xs font-semibold text-base-content/50">·</span>
+        <span class="text-xs font-semibold text-base-content/70">{authorRole}</span>
+      </div>
+      <h4 class="font-display font-extrabold text-xl text-base-content tracking-tight">{authorDisplayName}</h4>
+      <p class="text-sm text-base-content/80 leading-relaxed max-w-2xl">{authorBioText}</p>
     </div>
   </div>
 
