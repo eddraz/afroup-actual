@@ -91,10 +91,6 @@
   --font-display: "Baloo 2", system-ui, sans-serif;
 }
 
-@utility sidebar-scroll {
-  scrollbar-width: thin;
-  scrollbar-color: var(--color-base-content) var(--color-base-300);
-}
 
 @utility btn-ai {
   --btn-color: var(--color-ai);
@@ -111,21 +107,25 @@
 }
 
 @utility sidebar-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #111111 transparent;
+
   &::-webkit-scrollbar {
-    width: 6px;
+    width: 4px;
+    height: 4px;
   }
 
   &::-webkit-scrollbar-track {
-    background: var(--color-base-300);
+    background: transparent;
   }
 
   &::-webkit-scrollbar-thumb {
-    background: var(--color-base-content);
-    border-radius: 999px;
+    background: #111111;
+    border-radius: 9999px;
   }
 
   &::-webkit-scrollbar-thumb:hover {
-    background: var(--color-neutral);
+    background: #000000;
   }
 }
 
