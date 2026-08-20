@@ -137,11 +137,11 @@ function navClass(key: NonNullable<Props["active"]>) {
       </defs>
     </svg>
 
-    <div class="drawer lg:drawer-open" id="admin-layout-drawer">
+    <div class="drawer lg:drawer-open h-screen h-dvh max-h-screen overflow-hidden" id="admin-layout-drawer">
       <input id="admin-drawer" type="checkbox" class="drawer-toggle" />
-      <div class="drawer-content flex min-h-screen flex-col bg-base-100/50">
-        <!-- Top Studio Navbar -->
-        <header class="navbar sticky top-0 z-20 min-h-[64px] border-b border-base-300 bg-base-100/90 px-4 backdrop-blur-md lg:px-8">
+      <div class="drawer-content flex h-screen h-dvh max-h-screen flex-col overflow-hidden bg-base-100/50">
+        <!-- Top Studio Navbar (Fixed) -->
+        <header class="navbar shrink-0 min-h-[64px] border-b border-base-300 bg-base-100/90 px-4 backdrop-blur-md lg:px-8">
           <div class="navbar-start gap-2.5">
             <label for="admin-drawer" class="btn btn-square btn-ghost btn-sm drawer-button lg:hidden" aria-label={copy.adminOpenMenu}>
               <svg class="size-5"><use href="#ic-menu"></use></svg>
@@ -194,17 +194,19 @@ function navClass(key: NonNullable<Props["active"]>) {
           </div>
         </header>
 
-        <!-- Main Content Area -->
-        <main class="mx-auto w-full max-w-[1240px] flex-1 px-4 py-6 sm:px-6 lg:px-8">
-          <slot />
+        <!-- Main Content Area (Scrollable content) -->
+        <main class="admin-content-scroll w-full flex-1 min-h-0 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8">
+          <div class="mx-auto w-full max-w-[1240px]">
+            <slot />
+          </div>
         </main>
       </div>
 
-      <!-- Sidebar -->
-      <div class="drawer-side z-30">
+      <!-- Sidebar (Fixed Container, only menu scrolls) -->
+      <div class="drawer-side z-30 h-screen h-dvh max-h-screen overflow-hidden">
         <label for="admin-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
-        <aside id="admin-sidebar" class="flex min-h-full w-[264px] flex-col border-r border-base-300 bg-base-200 text-base-content backdrop-blur-sm shadow-xs">
-          <!-- Logo Brand Header -->
+        <aside id="admin-sidebar" class="flex h-screen h-dvh max-h-screen w-[264px] flex-col border-r border-base-300 bg-base-200 text-base-content backdrop-blur-sm shadow-xs overflow-hidden">
+          <!-- Logo Brand Header (Fixed at top) -->
           <a href={paths.admin} class="admin-logo-link block shrink-0 px-6 py-5 border-b border-base-300/60 text-base-content transition-opacity hover:opacity-90" aria-label="AfroUp Studio">
             <div class="admin-logo-full flex items-center justify-between">
               <AfroUpLogo height={28} variant="wordmark" />
@@ -215,8 +217,8 @@ function navClass(key: NonNullable<Props["active"]>) {
             </div>
           </a>
 
-          <!-- Navigation Links -->
-          <ul class="sidebar-scroll menu min-h-0 w-full grow flex-nowrap overflow-x-hidden overflow-y-auto px-3.5 py-4 gap-1">
+          <!-- Navigation Links (Only sidebar menu scrolls with thin, black scrollbar) -->
+          <ul class="sidebar-scroll menu min-h-0 w-full flex-1 flex-nowrap overflow-x-hidden overflow-y-auto px-3.5 py-4 gap-1">
             <li class="admin-nav-tooltip tooltip tooltip-right" data-tip={copy.adminDashboard}>
               <a class={navClass("dashboard")} href={paths.admin}>
                 <svg class="size-4.5 shrink-0"><use href="#ic-home"></use></svg>
@@ -371,6 +373,67 @@ function navClass(key: NonNullable<Props["active"]>) {
     </div>
 
     <style is:global>
+      /* Custom Thin Black Scrollbars (sidebar menu & admin content) */
+      .sidebar-scroll {
+        scrollbar-width: thin;
+        scrollbar-color: #111111 transparent;
+      }
+      .sidebar-scroll::-webkit-scrollbar {
+        width: 4px;
+        height: 4px;
+      }
+      .sidebar-scroll::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .sidebar-scroll::-webkit-scrollbar-thumb {
+        background: #111111;
+        border-radius: 9999px;
+      }
+      .sidebar-scroll::-webkit-scrollbar-thumb:hover {
+        background: #000000;
+      }
+
+      [data-theme="afroup-dark"] .sidebar-scroll {
+        scrollbar-color: #000000 transparent;
+      }
+      [data-theme="afroup-dark"] .sidebar-scroll::-webkit-scrollbar-thumb {
+        background: #000000;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+      }
+      [data-theme="afroup-dark"] .sidebar-scroll::-webkit-scrollbar-thumb:hover {
+        background: #18181b;
+      }
+
+      .admin-content-scroll {
+        scrollbar-width: thin;
+        scrollbar-color: #18181b transparent;
+      }
+      .admin-content-scroll::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      .admin-content-scroll::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .admin-content-scroll::-webkit-scrollbar-thumb {
+        background: #18181b;
+        border-radius: 9999px;
+      }
+      .admin-content-scroll::-webkit-scrollbar-thumb:hover {
+        background: #000000;
+      }
+
+      [data-theme="afroup-dark"] .admin-content-scroll {
+        scrollbar-color: #000000 transparent;
+      }
+      [data-theme="afroup-dark"] .admin-content-scroll::-webkit-scrollbar-thumb {
+        background: #000000;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+      }
+      [data-theme="afroup-dark"] .admin-content-scroll::-webkit-scrollbar-thumb:hover {
+        background: #18181b;
+      }
+
       #admin-sidebar {
         transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1), padding 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       }
