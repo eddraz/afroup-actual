@@ -159,5 +159,59 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
   }
 
+  if (intent === "fetch_url") {
+    if (!(await hasPermission(env.DB, actor.id, "almacenamiento", "create"))) {
+      return json({ ok: false, error: "forbidden" }, 403);
+    }
+
+    const sourceUrl = String(formData.get("sourceUrl") || "").trim();
+    if (!sourceUrl || (!sourceUrl.startsWith("http://") && !sourceUrl.startsWith("https://"))) {
+      return json({ ok: false, error: "invalid_url" }, 400);
+    }
+
+    try {
+      const response = await fetch(sourceUrl, {
+        headers: {
+          "User-Agent": "AfroUp-Storage-Worker/1.0",
+        },
+      });
+
+      if (!response.ok) {
+        return json({ ok: false, error: `fetch_failed_${response.status}` }, 400);
+      }
+
+      const contentType = response.headers.get("content-type") || "application/octet-stream";
+      const buffer = await response.arrayBuffer();
+      const bytes = new Uint8Array(buffer);
+
+      // Derive file name from URL path
+      const urlObj = new URL(sourceUrl);
+      let fileName = urlObj.pathname.split("/").pop() || "downloaded-file";
+      if (!fileName.includes(".")) {
+        const ext = contentType.includes("png") ? "png" : contentType.includes("webp") ? "webp" : contentType.includes("jpeg") ? "jpg" : "bin";
+        fileName = `${fileName}.${ext}`;
+      }
+
+      // Convert to base64 for direct client-side canvas optimization
+      let binary = "";
+      const len = bytes.byteLength;
+      for (let i = 0; i < len; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      const base64 = btoa(binary);
+      const dataUrl = `data:${contentType};base64,${base64}`;
+
+      return json({
+        ok: true,
+        dataUrl,
+        contentType,
+        fileName,
+        size: bytes.byteLength,
+      });
+    } catch (err: any) {
+      return json({ ok: false, error: err?.message || "fetch_url_failed" }, 500);
+    }
+  }
+
   return json({ ok: false, error: "invalid_intent" }, 400);
 };

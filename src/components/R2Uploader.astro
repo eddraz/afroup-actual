@@ -1,0 +1,859 @@
+---
+import { KNOWN_BUCKETS } from "../lib/r2-storage";
+
+interface Props {
+  bucket?: string;
+  allowedTypes?: string;
+  prefix?: string;
+  showBucketSelector?: boolean;
+  allowOptimization?: boolean;
+  targetInputId?: string;
+  componentId?: string;
+  locale?: string;
+}
+
+const {
+  bucket = "media",
+  allowedTypes = "*/*",
+  prefix = "",
+  showBucketSelector = true,
+  allowOptimization = true,
+  targetInputId = "",
+  componentId = "r2-uploader-" + Math.random().toString(36).slice(2, 8),
+  locale = "es",
+} = Astro.props;
+
+const isEn = locale.startsWith("en");
+
+const text = {
+  tabDrop: isEn ? "Drop / File" : "Archivo / Arrastrar",
+  tabUrl: isEn ? "From URL" : "Desde URL",
+  tabPaste: isEn ? "Paste Clipboard" : "Pegar Imagen",
+  dragLead: isEn ? "Drag & drop files here, or click to browse" : "Arrastra y suelta archivos aquí, o haz clic para explorar",
+  pasteHint: isEn ? "You can also press Ctrl+V / Cmd+V anywhere to paste an image" : "También puedes presionar Ctrl+V / Cmd+V para pegar una imagen",
+  urlPlaceholder: isEn ? "https://example.com/image.jpg" : "https://ejemplo.com/imagen.jpg",
+  fetchUrlBtn: isEn ? "Load from URL" : "Cargar URL",
+  bucketLabel: isEn ? "Destination Bucket" : "Bucket de Destino",
+  prefixLabel: isEn ? "Folder / Prefix (Optional)" : "Carpeta / Prefijo (Opcional)",
+  prefixPlaceholder: isEn ? "e.g. covers/2026" : "ej. portadas/2026",
+  nameLabel: isEn ? "Custom File Name (Optional)" : "Nombre Personalizado (Opcional)",
+  namePlaceholder: isEn ? "e.g. main-banner.webp" : "ej. banner-principal.webp",
+  optTitle: isEn ? "Image Optimization & Scaling" : "Optimización y Escalado de Imagen",
+  optSubtitle: isEn ? "Reduce file weight while maintaining high visual quality" : "Reduce el peso del archivo manteniendo alta calidad visual",
+  optToggle: isEn ? "Optimize and scale image before uploading" : "¿Deseas optimizar y escalar la imagen antes de subir?",
+  optFormat: isEn ? "Target Format" : "Formato de Salida",
+  optQuality: isEn ? "Quality Level" : "Nivel de Calidad",
+  optDimensions: isEn ? "Target Dimensions (Max: original)" : "Dimensiones (Máximo: original)",
+  optWidth: isEn ? "Width (px)" : "Ancho (px)",
+  optHeight: isEn ? "Height (px)" : "Alto (px)",
+  optLockAspect: isEn ? "Maintain aspect ratio" : "Mantener proporción",
+  optPresets: isEn ? "Quick Presets" : "Preajustes rápidos",
+  optEstSavings: isEn ? "Estimated Savings" : "Ahorro Estimado",
+  btnUpload: isEn ? "Upload to R2" : "Guardar en R2",
+  btnUploading: isEn ? "Optimizing & Uploading..." : "Optimizando y Subiendo a R2...",
+  uploadSuccess: isEn ? "Uploaded Successfully to R2!" : "¡Subido con éxito a R2!",
+  btnCopyUrl: isEn ? "Copy URL" : "Copiar Enlace",
+  btnUploadAnother: isEn ? "Upload Another" : "Subir Otro Archivo",
+  originalBadge: isEn ? "Original" : "Original",
+  optimizedBadge: isEn ? "Optimized" : "Optimizado",
+  errorInvalidType: isEn ? "File type not allowed." : "Tipo de archivo no permitido.",
+};
+---
+
+<div
+  class="r2-uploader-root rounded-3xl border border-base-300 bg-base-100 p-5 sm:p-6 shadow-xs space-y-5"
+  id={componentId}
+  data-bucket={bucket}
+  data-allowed-types={allowedTypes}
+  data-default-prefix={prefix}
+  data-allow-opt={allowOptimization ? "true" : "false"}
+  data-target-input={targetInputId}
+>
+  <!-- Header & Input Tabs -->
+  <div class="flex flex-wrap items-center justify-between gap-3 border-b border-base-300 pb-3">
+    <div class="flex items-center gap-2">
+      <span class="size-2.5 rounded-full bg-accent animate-pulse"></span>
+      <span class="font-display font-bold text-sm text-base-content">Subir a Cloudflare R2</span>
+    </div>
+
+    <!-- Source Tabs -->
+    <div class="join border border-base-300 rounded-xl overflow-hidden bg-base-200/40 p-0.5" id={`${componentId}-tabs`}>
+      <button type="button" class="btn btn-xs join-item btn-primary source-tab-btn font-bold" data-tab="drop">
+        <svg class="size-3.5"><use href="#ic-cloud"></use></svg>
+        <span>{text.tabDrop}</span>
+      </button>
+      <button type="button" class="btn btn-xs join-item btn-ghost source-tab-btn font-medium" data-tab="url">
+        <svg class="size-3.5"><use href="#ic-world"></use></svg>
+        <span>{text.tabUrl}</span>
+      </button>
+      <button type="button" class="btn btn-xs join-item btn-ghost source-tab-btn font-medium" data-tab="paste">
+        <svg class="size-3.5"><use href="#ic-edit"></use></svg>
+        <span>{text.tabPaste}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Stage 1: File Ingestion (Dropzone / URL / Paste) -->
+  <div class="stage-ingestion space-y-4" id={`${componentId}-stage-ingest`}>
+    <!-- Dropzone View -->
+    <div
+      class="dropzone-area border-2 border-dashed border-base-300 rounded-3xl p-8 sm:p-10 text-center hover:border-primary/80 transition-all bg-base-200/30 flex flex-col items-center justify-center gap-3 cursor-pointer group"
+      id={`${componentId}-dropzone`}
+    >
+      <div class="size-14 rounded-2xl bg-base-200 group-hover:bg-primary/10 group-hover:text-primary transition-colors flex items-center justify-center text-base-content/50">
+        <svg class="size-7"><use href="#ic-cloud"></use></svg>
+      </div>
+      <div>
+        <p class="text-sm font-bold text-base-content group-hover:text-primary transition-colors">
+          {text.dragLead}
+        </p>
+        <p class="text-xs text-base-content/50 mt-1">
+          {text.pasteHint}
+        </p>
+      </div>
+      <input
+        type="file"
+        class="hidden file-input-element"
+        accept={allowedTypes}
+        id={`${componentId}-file-input`}
+      />
+    </div>
+
+    <!-- URL Ingestion View (Hidden by default) -->
+    <div class="url-ingest-area hidden rounded-2xl border border-base-300 p-4 bg-base-200/20 space-y-3" id={`${componentId}-url-area`}>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">URL de Imagen o Archivo</legend>
+        <div class="join w-full">
+          <input
+            type="url"
+            class="input input-bordered input-sm join-item w-full font-mono text-xs"
+            placeholder={text.urlPlaceholder}
+            id={`${componentId}-url-input`}
+          />
+          <button type="button" class="btn btn-sm btn-primary join-item font-bold" id={`${componentId}-btn-fetch-url`}>
+            {text.fetchUrlBtn}
+          </button>
+        </div>
+        <p class="text-[11px] text-base-content/50 mt-1">Descarga y procesa automáticamente la imagen externa para guardarla en tu bucket R2.</p>
+      </fieldset>
+    </div>
+
+    <!-- Paste Ingestion View (Hidden by default) -->
+    <div class="paste-ingest-area hidden rounded-2xl border border-dashed border-base-300 p-6 text-center bg-base-200/20 space-y-2" id={`${componentId}-paste-area`}>
+      <div class="size-10 rounded-xl bg-accent/10 text-accent mx-auto flex items-center justify-center">
+        <svg class="size-5"><use href="#ic-edit"></use></svg>
+      </div>
+      <p class="text-xs font-bold text-base-content">Pega una imagen copiada desde tu portapapeles</p>
+      <p class="text-[11px] text-base-content/60">Haz clic aquí y presiona <kbd class="kbd kbd-xs">Ctrl</kbd> + <kbd class="kbd kbd-xs">V</kbd> o <kbd class="kbd kbd-xs">Cmd</kbd> + <kbd class="kbd kbd-xs">V</kbd></p>
+    </div>
+  </div>
+
+  <!-- Stage 2: Image Preview & Optimization Configuration (Shown after staging a file) -->
+  <div class="stage-optimization hidden space-y-5" id={`${componentId}-stage-opt`}>
+    <div class="flex flex-col md:flex-row gap-5 items-start">
+      <!-- Image Thumbnail / Visual Preview Box -->
+      <div class="w-full md:w-5/12 rounded-2xl border border-base-300 bg-base-200/50 p-3 overflow-hidden flex flex-col items-center justify-center shrink-0">
+        <div class="aspect-video w-full rounded-xl bg-base-300/40 overflow-hidden flex items-center justify-center relative shadow-inner">
+          <img id={`${componentId}-preview-img`} src="" alt="Previsualización" class="max-h-56 w-auto max-w-full object-contain rounded-lg shadow-xs" />
+          <div id={`${componentId}-preview-fallback`} class="hidden flex-col items-center gap-1 text-base-content/40 py-8">
+            <svg class="size-8"><use href="#ic-stack"></use></svg>
+            <span class="text-xs font-bold" id={`${componentId}-fallback-type`}>Archivo</span>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between w-full mt-3 px-1 text-xs">
+          <span class="font-bold text-base-content truncate max-w-[140px]" id={`${componentId}-file-name-label`}>archivo</span>
+          <div class="flex items-center gap-1.5 font-mono">
+            <span class="badge badge-neutral badge-xs font-bold" id={`${componentId}-file-size-badge`}>0 KB</span>
+            <span class="badge badge-primary badge-xs font-bold" id={`${componentId}-file-dim-badge`}>0x0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Optimization Settings Controls -->
+      <div class="w-full md:w-7/12 space-y-4">
+        <!-- Optimization Toggle Switch -->
+        <div class="flex items-center justify-between p-3.5 rounded-2xl border border-base-300 bg-base-200/30" id={`${componentId}-opt-toggle-box`}>
+          <div>
+            <span class="font-bold text-xs text-base-content block">{text.optTitle}</span>
+            <span class="text-[11px] text-base-content/60 block">{text.optSubtitle}</span>
+          </div>
+          <input type="checkbox" class="toggle toggle-primary toggle-sm" id={`${componentId}-opt-enable`} checked />
+        </div>
+
+        <!-- Controls Container (Collapsible by toggle) -->
+        <div class="space-y-4" id={`${componentId}-opt-controls`}>
+          <!-- Format & Quality Grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{text.optFormat}</legend>
+              <select class="select select-bordered select-sm w-full font-semibold" id={`${componentId}-opt-format`}>
+                <option value="webp" selected>WebP (Recomendado · Menor peso)</option>
+                <option value="jpeg">JPEG (Fotografía estándar)</option>
+                <option value="png">PNG (Sin pérdida / Transparencia)</option>
+                <option value="original">Original (Sin convertir)</option>
+              </select>
+            </fieldset>
+
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">
+                <span>{text.optQuality}</span>
+                <span class="font-mono text-primary font-extrabold ml-1" id={`${componentId}-quality-val`}>85%</span>
+              </legend>
+              <input
+                type="range"
+                min="50"
+                max="100"
+                value="85"
+                class="range range-primary range-xs mt-2"
+                id={`${componentId}-opt-quality`}
+              />
+            </fieldset>
+          </div>
+
+          <!-- Scaling Dimension Controls -->
+          <div class="rounded-2xl border border-base-300 bg-base-200/30 p-3.5 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-xs uppercase tracking-wider text-base-content/70">{text.optDimensions}</span>
+              <label class="label cursor-pointer gap-2 py-0">
+                <input type="checkbox" class="checkbox checkbox-xs checkbox-primary rounded" id={`${componentId}-opt-lock-aspect`} checked />
+                <span class="label-text text-xs font-semibold text-base-content/80">{text.optLockAspect}</span>
+              </label>
+            </div>
+
+            <!-- Quick Presets -->
+            <div class="flex flex-wrap gap-1.5" id={`${componentId}-presets`}>
+              <button type="button" class="btn btn-xs btn-outline preset-btn" data-scale="1.0">100% (Original)</button>
+              <button type="button" class="btn btn-xs btn-outline preset-btn" data-scale="0.75">75%</button>
+              <button type="button" class="btn btn-xs btn-outline preset-btn" data-scale="0.5">50%</button>
+              <button type="button" class="btn btn-xs btn-outline preset-btn" data-max-w="1920">FHD (1920px)</button>
+              <button type="button" class="btn btn-xs btn-outline preset-btn" data-max-w="1200">Editorial (1200px)</button>
+              <button type="button" class="btn btn-xs btn-outline preset-btn" data-max-w="800">Blog (800px)</button>
+              <button type="button" class="btn btn-xs btn-outline preset-btn" data-max-w="400">Avatar (400px)</button>
+            </div>
+
+            <!-- Custom Width & Height with Max Constraints -->
+            <div class="grid grid-cols-2 gap-3 pt-1">
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend text-[11px] font-bold text-base-content/60">{text.optWidth}</legend>
+                <div class="join w-full">
+                  <input
+                    type="number"
+                    min="1"
+                    class="input input-bordered input-sm join-item w-full font-mono font-bold"
+                    id={`${componentId}-opt-width`}
+                  />
+                  <span class="btn btn-sm btn-ghost join-item pointer-events-none text-xs font-mono">px</span>
+                </div>
+              </fieldset>
+
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend text-[11px] font-bold text-base-content/60">{text.optHeight}</legend>
+                <div class="join w-full">
+                  <input
+                    type="number"
+                    min="1"
+                    class="input input-bordered input-sm join-item w-full font-mono font-bold"
+                    id={`${componentId}-opt-height`}
+                  />
+                  <span class="btn btn-sm btn-ghost join-item pointer-events-none text-xs font-mono">px</span>
+                </div>
+              </fieldset>
+            </div>
+          </div>
+
+          <!-- Live Estimated Compression Savings Bar -->
+          <div class="p-3 rounded-2xl bg-base-200 border border-base-300 flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2">
+              <span class="size-2 rounded-full bg-success"></span>
+              <span class="font-bold text-base-content/70">{text.optEstSavings}:</span>
+              <span class="font-mono font-extrabold text-base-content" id={`${componentId}-est-size`}>Calculando...</span>
+            </div>
+            <span class="badge badge-success badge-sm font-bold font-mono" id={`${componentId}-est-percent`}>-0%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Target Bucket, Prefix & Custom Name Destination Fields -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-base-300">
+      {showBucketSelector ? (
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{text.bucketLabel}</legend>
+          <select class="select select-bordered select-sm w-full font-semibold" id={`${componentId}-dest-bucket`}>
+            {KNOWN_BUCKETS.map((b) => (
+              <option value={b.id} selected={b.id === bucket}>
+                {b.label}
+              </option>
+            ))}
+          </select>
+        </fieldset>
+      ) : (
+        <input type="hidden" id={`${componentId}-dest-bucket`} value={bucket} />
+      )}
+
+      <fieldset class="fieldset sm:col-span-1">
+        <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{text.prefixLabel}</legend>
+        <input
+          class="input input-bordered input-sm w-full font-mono text-xs"
+          placeholder={text.prefixPlaceholder}
+          value={prefix}
+          id={`${componentId}-dest-prefix`}
+        />
+      </fieldset>
+
+      <fieldset class="fieldset sm:col-span-1">
+        <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{text.nameLabel}</legend>
+        <input
+          class="input input-bordered input-sm w-full font-mono text-xs"
+          placeholder={text.namePlaceholder}
+          id={`${componentId}-dest-name`}
+        />
+      </fieldset>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex items-center justify-between pt-3 border-t border-base-300">
+      <button type="button" class="btn btn-ghost btn-sm" id={`${componentId}-btn-cancel`}>
+        Cancelar
+      </button>
+      <button type="button" class="btn btn-primary btn-sm px-6 font-bold gap-2" id={`${componentId}-btn-upload`}>
+        <svg class="size-4"><use href="#ic-cloud"></use></svg>
+        <span>{text.btnUpload}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Stage 3: Success Result View -->
+  <div class="stage-success hidden rounded-3xl border border-success/30 bg-success/5 p-6 text-center space-y-4" id={`${componentId}-stage-success`}>
+    <div class="size-12 rounded-2xl bg-success text-success-content mx-auto flex items-center justify-center shadow-md">
+      <svg class="size-6"><use href="#ic-shield"></use></svg>
+    </div>
+    <div>
+      <h4 class="font-display font-bold text-lg text-base-content">{text.uploadSuccess}</h4>
+      <p class="text-xs text-base-content/60 mt-0.5 font-mono break-all" id={`${componentId}-success-key`}>
+        media/imagen.webp
+      </p>
+    </div>
+
+    <fieldset class="fieldset max-w-lg mx-auto">
+      <div class="join w-full">
+        <input
+          class="input input-bordered input-sm join-item w-full font-mono text-xs"
+          id={`${componentId}-success-url`}
+          readonly
+        />
+        <button type="button" class="btn btn-sm btn-primary join-item font-bold" id={`${componentId}-btn-copy-success`}>
+          {text.btnCopyUrl}
+        </button>
+      </div>
+    </fieldset>
+
+    <div class="pt-2">
+      <button type="button" class="btn btn-outline btn-sm font-bold" id={`${componentId}-btn-reset`}>
+        {text.btnUploadAnother}
+      </button>
+    </div>
+  </div>
+</div>
+
+<script is:inline define:vars={{ componentId, allowedTypes, allowOptimization, isEn }}>
+  (function () {
+    var bind = function () {
+      var root = document.getElementById(componentId);
+      if (!root || root.dataset.boundInit === "true") return;
+      root.dataset.boundInit = "true";
+
+      var dropzone = document.getElementById(componentId + "-dropzone");
+      var fileInput = document.getElementById(componentId + "-file-input");
+      var urlInput = document.getElementById(componentId + "-url-input");
+      var btnFetchUrl = document.getElementById(componentId + "-btn-fetch-url");
+
+      var stageIngest = document.getElementById(componentId + "-stage-ingest");
+      var stageOpt = document.getElementById(componentId + "-stage-opt");
+      var stageSuccess = document.getElementById(componentId + "-stage-success");
+
+      var urlArea = document.getElementById(componentId + "-url-area");
+      var pasteArea = document.getElementById(componentId + "-paste-area");
+      var tabBtns = root.querySelectorAll(".source-tab-btn");
+
+      // Optimization Controls
+      var optToggle = document.getElementById(componentId + "-opt-enable");
+      var optControls = document.getElementById(componentId + "-opt-controls");
+      var optFormat = document.getElementById(componentId + "-opt-format");
+      var optQuality = document.getElementById(componentId + "-opt-quality");
+      var qualityVal = document.getElementById(componentId + "-quality-val");
+      var optWidth = document.getElementById(componentId + "-opt-width");
+      var optHeight = document.getElementById(componentId + "-opt-height");
+      var optLockAspect = document.getElementById(componentId + "-opt-lock-aspect");
+      var estSize = document.getElementById(componentId + "-est-size");
+      var estPercent = document.getElementById(componentId + "-est-percent");
+
+      // Preview Elements
+      var previewImg = document.getElementById(componentId + "-preview-img");
+      var previewFallback = document.getElementById(componentId + "-preview-fallback");
+      var fallbackType = document.getElementById(componentId + "-fallback-type");
+      var fileNameLabel = document.getElementById(componentId + "-file-name-label");
+      var fileSizeBadge = document.getElementById(componentId + "-file-size-badge");
+      var fileDimBadge = document.getElementById(componentId + "-file-dim-badge");
+
+      // Destination & Actions
+      var destBucket = document.getElementById(componentId + "-dest-bucket");
+      var destPrefix = document.getElementById(componentId + "-dest-prefix");
+      var destName = document.getElementById(componentId + "-dest-name");
+      var btnCancel = document.getElementById(componentId + "-btn-cancel");
+      var btnUpload = document.getElementById(componentId + "-btn-upload");
+
+      var successKey = document.getElementById(componentId + "-success-key");
+      var successUrl = document.getElementById(componentId + "-success-url");
+      var btnCopySuccess = document.getElementById(componentId + "-btn-copy-success");
+      var btnReset = document.getElementById(componentId + "-btn-reset");
+
+      // Staged State
+      var stagedFile = null;
+      var originalBitmap = null;
+      var originalWidth = 0;
+      var originalHeight = 0;
+      var isImageFile = false;
+
+      var formatBytes = function (bytes) {
+        if (!bytes || bytes <= 0) return "0 B";
+        var k = 1024;
+        var sizes = ["B", "KB", "MB", "GB"];
+        var i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+      };
+
+      // Source Tabs Switcher
+      tabBtns.forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          tabBtns.forEach(function (b) {
+            b.classList.remove("btn-primary");
+            b.classList.add("btn-ghost");
+          });
+          btn.classList.add("btn-primary");
+          btn.classList.remove("btn-ghost");
+
+          var tab = btn.getAttribute("data-tab");
+          if (tab === "drop") {
+            dropzone.classList.remove("hidden");
+            urlArea.classList.add("hidden");
+            pasteArea.classList.add("hidden");
+          } else if (tab === "url") {
+            dropzone.classList.add("hidden");
+            urlArea.classList.remove("hidden");
+            pasteArea.classList.add("hidden");
+            if (urlInput) urlInput.focus();
+          } else if (tab === "paste") {
+            dropzone.classList.add("hidden");
+            urlArea.classList.add("hidden");
+            pasteArea.classList.remove("hidden");
+          }
+        });
+      });
+
+      // Drag & Drop Listeners
+      dropzone.addEventListener("click", function () {
+        if (fileInput) fileInput.click();
+      });
+
+      ["dragenter", "dragover"].forEach(function (eventName) {
+        dropzone.addEventListener(eventName, function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          dropzone.classList.add("border-primary", "bg-primary/5");
+        });
+      });
+
+      ["dragleave", "drop"].forEach(function (eventName) {
+        dropzone.addEventListener(eventName, function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          dropzone.classList.remove("border-primary", "bg-primary/5");
+        });
+      });
+
+      dropzone.addEventListener("drop", function (e) {
+        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          stageSingleFile(e.dataTransfer.files[0]);
+        }
+      });
+
+      if (fileInput) {
+        fileInput.addEventListener("change", function () {
+          if (fileInput.files && fileInput.files.length > 0) {
+            stageSingleFile(fileInput.files[0]);
+          }
+        });
+      }
+
+      // Clipboard Paste Support
+      window.addEventListener("paste", function (e) {
+        if (!e.clipboardData) return;
+        var items = e.clipboardData.items;
+        if (!items) return;
+
+        for (var i = 0; i < items.length; i++) {
+          if (items[i].type.indexOf("image") !== -1) {
+            var blob = items[i].getAsFile();
+            if (blob) {
+              stageSingleFile(blob);
+              return;
+            }
+          }
+        }
+
+        // Also check if text is an image URL
+        var textPasted = e.clipboardData.getData("text");
+        if (textPasted && (textPasted.startsWith("http://") || textPasted.startsWith("https://"))) {
+          if (textPasted.match(/\.(jpeg|jpg|png|webp|gif|svg)$/i)) {
+            fetchImageFromUrl(textPasted);
+          }
+        }
+      });
+
+      // URL Ingestion
+      var fetchImageFromUrl = function (srcUrl) {
+        if (!srcUrl) return;
+        if (btnFetchUrl) {
+          btnFetchUrl.disabled = true;
+          btnFetchUrl.textContent = isEn ? "Fetching..." : "Cargando...";
+        }
+
+        var formData = new FormData();
+        formData.append("_intent", "fetch_url");
+        formData.append("sourceUrl", srcUrl);
+
+        fetch("/api/admin/r2", { method: "POST", body: formData })
+          .then(function (res) { return res.json(); })
+          .then(function (result) {
+            if (result.ok && result.dataUrl) {
+              fetch(result.dataUrl)
+                .then(function (r) { return r.blob(); })
+                .then(function (blob) {
+                  var file = new File([blob], result.fileName || "downloaded-image.webp", { type: result.contentType });
+                  stageSingleFile(file);
+                });
+            } else {
+              if (window.AfroUpFeedback) window.AfroUpFeedback.toast(isEn ? "Could not fetch image from URL." : "No se pudo cargar la imagen desde la URL.", "error");
+            }
+          })
+          .catch(function () {
+            if (window.AfroUpFeedback) window.AfroUpFeedback.toast(isEn ? "Network error fetching URL." : "Error de red al cargar la URL.", "error");
+          })
+          .finally(function () {
+            if (btnFetchUrl) {
+              btnFetchUrl.disabled = false;
+              btnFetchUrl.textContent = text.fetchUrlBtn;
+            }
+          });
+      };
+
+      if (btnFetchUrl && urlInput) {
+        btnFetchUrl.addEventListener("click", function () {
+          fetchImageFromUrl(urlInput.value.trim());
+        });
+      }
+
+      // Stage Single File into Optimization Stage
+      var stageSingleFile = function (file) {
+        stagedFile = file;
+        isImageFile = file.type.indexOf("image/") === 0;
+
+        if (fileNameLabel) fileNameLabel.textContent = file.name;
+        if (fileSizeBadge) fileSizeBadge.textContent = formatBytes(file.size);
+        if (destName && !destName.value) destName.value = file.name;
+
+        stageIngest.classList.add("hidden");
+        stageOpt.classList.remove("hidden");
+        stageSuccess.classList.add("hidden");
+
+        if (isImageFile) {
+          var reader = new FileReader();
+          reader.onload = function (e) {
+            var img = new Image();
+            img.onload = function () {
+              originalBitmap = img;
+              originalWidth = img.naturalWidth || img.width;
+              originalHeight = img.naturalHeight || img.height;
+
+              if (previewImg) {
+                previewImg.src = e.target.result;
+                previewImg.classList.remove("hidden");
+              }
+              if (previewFallback) previewFallback.classList.add("hidden");
+              if (fileDimBadge) fileDimBadge.textContent = originalWidth + "×" + originalHeight;
+
+              // Setup max bounds on inputs
+              if (optWidth) {
+                optWidth.max = originalWidth;
+                optWidth.value = originalWidth;
+              }
+              if (optHeight) {
+                optHeight.max = originalHeight;
+                optHeight.value = originalHeight;
+              }
+
+              recalculateEstimate();
+            };
+            img.src = e.target.result;
+          };
+          reader.readAsDataURL(file);
+        } else {
+          if (previewImg) previewImg.classList.add("hidden");
+          if (previewFallback) {
+            previewFallback.classList.remove("hidden");
+            if (fallbackType) fallbackType.textContent = file.type.split("/")[1] || "archivo";
+          }
+          if (fileDimBadge) fileDimBadge.textContent = "Doc";
+          if (optControls) optControls.classList.add("hidden");
+          if (estSize) estSize.textContent = formatBytes(file.size);
+          if (estPercent) estPercent.textContent = "0%";
+        }
+      };
+
+      // Aspect Ratio Synchronizer
+      var handleDimensionChange = function (changedField) {
+        if (!originalWidth || !originalHeight) return;
+        var ratio = originalWidth / originalHeight;
+        var lock = optLockAspect ? optLockAspect.checked : true;
+
+        if (changedField === "width") {
+          var w = parseInt(optWidth.value, 10);
+          if (isNaN(w) || w <= 0) return;
+          if (w > originalWidth) {
+            w = originalWidth;
+            optWidth.value = originalWidth;
+          }
+          if (lock && optHeight) {
+            optHeight.value = Math.round(w / ratio);
+          }
+        } else if (changedField === "height") {
+          var h = parseInt(optHeight.value, 10);
+          if (isNaN(h) || h <= 0) return;
+          if (h > originalHeight) {
+            h = originalHeight;
+            optHeight.value = originalHeight;
+          }
+          if (lock && optWidth) {
+            optWidth.value = Math.round(h * ratio);
+          }
+        }
+        recalculateEstimate();
+      };
+
+      if (optWidth) optWidth.addEventListener("input", function () { handleDimensionChange("width"); });
+      if (optHeight) optHeight.addEventListener("input", function () { handleDimensionChange("height"); });
+
+      // Presets Buttons
+      var presetBtns = root.querySelectorAll(".preset-btn");
+      presetBtns.forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          if (!originalWidth || !originalHeight) return;
+          var scale = parseFloat(btn.getAttribute("data-scale"));
+          var maxW = parseInt(btn.getAttribute("data-max-w"), 10);
+
+          if (!isNaN(scale)) {
+            var targetW = Math.round(originalWidth * scale);
+            var targetH = Math.round(originalHeight * scale);
+            if (optWidth) optWidth.value = targetW;
+            if (optHeight) optHeight.value = targetH;
+          } else if (!isNaN(maxW)) {
+            var finalW = Math.min(maxW, originalWidth);
+            var finalH = Math.round(finalW / (originalWidth / originalHeight));
+            if (optWidth) optWidth.value = finalW;
+            if (optHeight) optHeight.value = finalH;
+          }
+          recalculateEstimate();
+        });
+      });
+
+      // Quality Slider
+      if (optQuality && qualityVal) {
+        optQuality.addEventListener("input", function () {
+          qualityVal.textContent = optQuality.value + "%";
+          recalculateEstimate();
+        });
+      }
+
+      if (optFormat) optFormat.addEventListener("change", recalculateEstimate);
+      if (optToggle && optControls) {
+        optToggle.addEventListener("change", function () {
+          if (optToggle.checked) {
+            optControls.classList.remove("hidden");
+          } else {
+            optControls.classList.add("hidden");
+          }
+          recalculateEstimate();
+        });
+      }
+
+      // Live Compression Estimator
+      var recalculateEstimate = function () {
+        if (!stagedFile) return;
+        if (!isImageFile || (optToggle && !optToggle.checked)) {
+          if (estSize) estSize.textContent = formatBytes(stagedFile.size);
+          if (estPercent) estPercent.textContent = "0%";
+          return;
+        }
+
+        var w = optWidth ? parseInt(optWidth.value, 10) || originalWidth : originalWidth;
+        var h = optHeight ? parseInt(optHeight.value, 10) || originalHeight : originalHeight;
+        var q = optQuality ? parseInt(optQuality.value, 10) / 100 : 0.85;
+        var fmt = optFormat ? optFormat.value : "webp";
+
+        var areaRatio = (w * h) / (originalWidth * originalHeight || 1);
+        var formatMultiplier = fmt === "webp" ? 0.35 : fmt === "jpeg" ? 0.45 : fmt === "png" ? 0.9 : 1.0;
+        var estBytes = Math.round(stagedFile.size * areaRatio * formatMultiplier * (q + 0.15));
+        estBytes = Math.max(2048, Math.min(estBytes, stagedFile.size));
+
+        if (estSize) estSize.textContent = "~" + formatBytes(estBytes);
+        var saving = Math.round(((stagedFile.size - estBytes) / stagedFile.size) * 100);
+        if (estPercent) estPercent.textContent = "-" + Math.max(0, saving) + "%";
+      };
+
+      // Cancel button
+      if (btnCancel) {
+        btnCancel.addEventListener("click", function () {
+          stagedFile = null;
+          stageIngest.classList.remove("hidden");
+          stageOpt.classList.add("hidden");
+          stageSuccess.classList.add("hidden");
+          if (fileInput) fileInput.value = "";
+        });
+      }
+
+      // Client-Side Canvas Optimization
+      var processAndOptimizeImage = function () {
+        return new Promise(function (resolve) {
+          if (!isImageFile || (optToggle && !optToggle.checked) || !originalBitmap) {
+            resolve(stagedFile);
+            return;
+          }
+
+          var targetW = optWidth ? parseInt(optWidth.value, 10) || originalWidth : originalWidth;
+          var targetH = optHeight ? parseInt(optHeight.value, 10) || originalHeight : originalHeight;
+          targetW = Math.min(targetW, originalWidth);
+          targetH = Math.min(targetH, originalHeight);
+
+          var fmt = optFormat ? optFormat.value : "webp";
+          var mime = fmt === "webp" ? "image/webp" : fmt === "jpeg" ? "image/jpeg" : fmt === "png" ? "image/png" : stagedFile.type;
+          var q = optQuality ? parseInt(optQuality.value, 10) / 100 : 0.85;
+
+          var canvas = document.createElement("canvas");
+          canvas.width = targetW;
+          canvas.height = targetH;
+          var ctx = canvas.getContext("2d");
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = "high";
+
+          ctx.drawImage(originalBitmap, 0, 0, targetW, targetH);
+
+          canvas.toBlob(function (blob) {
+            if (!blob) {
+              resolve(stagedFile);
+              return;
+            }
+
+            var cleanName = (destName && destName.value.trim() ? destName.value.trim() : stagedFile.name).replace(/\.[^/.]+$/, "");
+            var ext = fmt === "webp" ? "webp" : fmt === "jpeg" ? "jpg" : fmt === "png" ? "png" : stagedFile.name.split(".").pop() || "bin";
+            var finalFile = new File([blob], cleanName + "." + ext, { type: mime });
+            resolve(finalFile);
+          }, mime, q);
+        });
+      };
+
+      // Upload Handler
+      if (btnUpload) {
+        btnUpload.addEventListener("click", function () {
+          if (!stagedFile) return;
+
+          btnUpload.disabled = true;
+          btnUpload.textContent = text.btnUploading;
+
+          processAndOptimizeImage().then(function (fileToUpload) {
+            var formData = new FormData();
+            formData.append("_intent", "upload");
+            formData.append("file", fileToUpload);
+
+            var bucketVal = destBucket ? destBucket.value : "media";
+            var prefixVal = destPrefix ? destPrefix.value.trim() : "";
+            var nameVal = destName ? destName.value.trim() : "";
+
+            formData.append("bucket", bucketVal);
+            if (prefixVal) formData.append("prefix", prefixVal);
+            if (nameVal) formData.append("customName", fileToUpload.name);
+
+            fetch("/api/admin/r2", { method: "POST", body: formData })
+              .then(function (res) { return res.json(); })
+              .then(function (result) {
+                if (result.ok) {
+                  if (window.AfroUpFeedback) window.AfroUpFeedback.toast(isEn ? "File saved to R2." : "Archivo guardado en R2.", "success");
+
+                  stageOpt.classList.add("hidden");
+                  stageSuccess.classList.remove("hidden");
+
+                  if (successKey) successKey.textContent = result.key;
+                  if (successUrl) successUrl.value = window.location.origin + result.streamUrl;
+
+                  // Populate target input if specified (e.g. article cover image URL)
+                  var targetInputAttr = root.getAttribute("data-target-input");
+                  if (targetInputAttr) {
+                    var targetInput = document.getElementById(targetInputAttr);
+                    if (targetInput) {
+                      targetInput.value = result.streamUrl;
+                      targetInput.dispatchEvent(new Event("input", { bubbles: true }));
+                    }
+                  }
+
+                  // Dispatch global event for listeners
+                  document.dispatchEvent(new CustomEvent("r2-upload-success", {
+                    detail: {
+                      url: result.streamUrl,
+                      key: result.key,
+                      bucket: bucketVal,
+                      size: result.size,
+                      name: fileToUpload.name,
+                    },
+                  }));
+                } else {
+                  if (window.AfroUpFeedback) window.AfroUpFeedback.toast((isEn ? "Upload failed: " : "Error al subir: ") + (result.error || ""), "error");
+                }
+              })
+              .catch(function () {
+                if (window.AfroUpFeedback) window.AfroUpFeedback.toast(isEn ? "Network error during upload." : "Error de red al subir el archivo.", "error");
+              })
+              .finally(function () {
+                btnUpload.disabled = false;
+                btnUpload.textContent = text.btnUpload;
+              });
+          });
+        });
+      }
+
+      // Copy Success URL
+      if (btnCopySuccess && successUrl) {
+        btnCopySuccess.addEventListener("click", function () {
+          navigator.clipboard.writeText(successUrl.value).then(function () {
+            if (window.AfroUpFeedback) window.AfroUpFeedback.toast(isEn ? "Link copied to clipboard." : "Enlace copiado al portapapeles.", "success");
+          });
+        });
+      }
+
+      // Reset Button
+      if (btnReset) {
+        btnReset.addEventListener("click", function () {
+          stagedFile = null;
+          stageIngest.classList.remove("hidden");
+          stageOpt.classList.add("hidden");
+          stageSuccess.classList.add("hidden");
+          if (fileInput) fileInput.value = "";
+          if (urlInput) urlInput.value = "";
+        });
+      }
+    };
+
+    bind();
+    document.addEventListener("astro:page-load", bind);
+  })();
+</script>

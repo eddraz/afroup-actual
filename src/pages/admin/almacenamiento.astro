@@ -5,6 +5,7 @@ import { localizedPath } from "../../lib/i18n";
 import { resolveRequestCopy } from "../../lib/request-locale";
 import { routeIds } from "../../lib/paths";
 import { KNOWN_BUCKETS, resolveR2Bucket, mapR2Object, formatBytes, type R2ItemSummary } from "../../lib/r2-storage";
+import R2Uploader from "../../components/R2Uploader.astro";
 import { env } from "cloudflare:workers";
 
 export const prerender = false;
@@ -339,62 +340,30 @@ if (resolved) {
       </div>
     </div>
 
-    <!-- Drawer 1: Upload File Side Panel -->
+    <!-- Drawer 1: Upload File Side Panel with Image Optimization -->
     <div class="drawer-side z-50">
       <label for="storage-drawer" aria-label="close drawer" class="drawer-overlay"></label>
-      <aside class="w-full max-w-xl sm:max-w-2xl bg-base-100 min-h-dvh h-dvh max-h-dvh flex flex-col p-6 sm:p-8 shadow-2xl border-l border-base-300 overflow-y-auto overscroll-contain">
+      <aside class="w-full max-w-2xl sm:max-w-3xl bg-base-100 min-h-dvh h-dvh max-h-dvh flex flex-col p-6 sm:p-8 shadow-2xl border-l border-base-300 overflow-y-auto overscroll-contain">
         <div class="flex items-center justify-between border-b border-base-300 pb-4 mb-6 shrink-0">
           <div class="flex items-center gap-2.5">
             <span class="size-3 rounded-full bg-primary animate-pulse"></span>
             <div>
-              <h3 class="font-display font-bold text-lg text-base-content">Subir Archivo a R2</h3>
-              <p class="text-xs text-base-content/60">Sube imágenes, documentos o recursos directamente a Cloudflare R2.</p>
+              <h3 class="font-display font-bold text-lg text-base-content">Subir Archivos a R2</h3>
+              <p class="text-xs text-base-content/60">Arrastra archivos, pega desde el portapapeles o ingresa una URL con optimización y escalado.</p>
             </div>
           </div>
           <label for="storage-drawer" class="btn btn-circle btn-ghost btn-xs">✕</label>
         </div>
 
-        <form method="post" action="/api/admin/r2" class="space-y-6 flex-1 flex flex-col justify-between" id="r2-upload-form" enctype="multipart/form-data">
-          <input type="hidden" name="_intent" value="upload" />
-          <div class="space-y-5">
-            <fieldset class="fieldset">
-              <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">Bucket de Destino</legend>
-              <select name="bucket" class="select select-bordered w-full font-semibold" required>
-                {bucketList.map((b) => (
-                  <option value={b.id} selected={b.id === activeBucketDef.id}>
-                    {b.label} ({b.bucketName})
-                  </option>
-                ))}
-              </select>
-            </fieldset>
-
-            <fieldset class="fieldset">
-              <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">Ruta de Carpeta / Prefijo (Opcional)</legend>
-              <input class="input input-bordered w-full font-mono text-xs" name="prefix" placeholder="articulos/2026 o portadas" />
-              <p class="text-[11px] text-base-content/50 mt-1">Escribe la carpeta donde deseas organizar el archivo.</p>
-            </fieldset>
-
-            <fieldset class="fieldset">
-              <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">Nombre Personalizado (Opcional)</legend>
-              <input class="input input-bordered w-full font-mono text-xs" name="customName" placeholder="portada-principal.webp" />
-              <p class="text-[11px] text-base-content/50 mt-1">Si se deja vacío, se usará el nombre original del archivo sanitizado.</p>
-            </fieldset>
-
-            <fieldset class="fieldset">
-              <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">Seleccionar Archivo</legend>
-              <div class="border-2 border-dashed border-base-300 rounded-3xl p-6 text-center hover:border-primary transition-colors bg-base-200/30 flex flex-col items-center gap-2">
-                <svg class="size-8 text-base-content/40"><use href="#ic-cloud"></use></svg>
-                <span class="text-xs font-bold text-base-content">Arrastra un archivo aquí o haz clic para explorar</span>
-                <input type="file" name="file" class="file-input file-input-bordered file-input-sm w-full max-w-xs mt-2" required />
-              </div>
-            </fieldset>
-          </div>
-
-          <div class="flex justify-end gap-2 pt-4 border-t border-base-300 mt-6 shrink-0">
-            <label for="storage-drawer" class="btn btn-ghost btn-sm cursor-pointer">{copy.adminCancel}</label>
-            <button class="btn btn-primary btn-sm px-6 font-bold" type="submit" id="upload-submit-btn">Subir Archivo</button>
-          </div>
-        </form>
+        <div class="flex-1">
+          <R2Uploader
+            bucket={activeBucketDef.id}
+            prefix={currentPrefix}
+            showBucketSelector={true}
+            allowOptimization={true}
+            locale={locale}
+          />
+        </div>
       </aside>
     </div>
 
@@ -731,41 +700,11 @@ if (resolved) {
           });
         }
 
-        // Upload Form Submission
-        var uploadForm = document.getElementById("r2-upload-form");
-        var uploadSubmitBtn = document.getElementById("upload-submit-btn");
-
-        if (uploadForm && !uploadForm.dataset.boundSubmit) {
-          uploadForm.dataset.boundSubmit = "true";
-          uploadForm.addEventListener("submit", function (e) {
-            e.preventDefault();
-            if (uploadSubmitBtn) {
-              uploadSubmitBtn.disabled = true;
-              uploadSubmitBtn.textContent = "Subiendo archivo...";
-            }
-
-            var formData = new FormData(uploadForm);
-            fetch(uploadForm.action, { method: "POST", body: formData })
-              .then(function (res) { return res.json(); })
-              .then(function (result) {
-                if (result.ok) {
-                  if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Archivo subido con éxito.", "success");
-                  if (uploadDrawer) uploadDrawer.checked = false;
-                  document.body.style.overflow = "";
-                  setTimeout(function () { window.location.reload(); }, 600);
-                  return;
-                }
-                if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Error al subir archivo: " + (result.error || ""), "error");
-              })
-              .catch(function () {
-                if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Error de red al subir archivo.", "error");
-              })
-              .finally(function () {
-                if (uploadSubmitBtn) {
-                  uploadSubmitBtn.disabled = false;
-                  uploadSubmitBtn.textContent = "Subir Archivo";
-                }
-              });
+        // Reload upon R2 upload completion
+        if (!window.__boundR2UploadReload) {
+          window.__boundR2UploadReload = true;
+          document.addEventListener("r2-upload-success", function () {
+            setTimeout(function () { window.location.reload(); }, 1200);
           });
         }
       };
