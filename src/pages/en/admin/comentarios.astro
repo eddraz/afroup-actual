@@ -1,7 +1,7 @@
 ---
 import { env } from "cloudflare:workers";
 import AdminLayout from "../../../layouts/AdminLayout.astro";
-import { requireModuleAccess, sessionTokenFrom } from "../../../lib/admin-scope";
+import { requireModuleAccess } from "../../../lib/admin-scope";
 import { resolveRequestCopy } from "../../../lib/request-locale";
 
 export const prerender = false;
@@ -11,41 +11,80 @@ const access = await requireModuleAccess(env.DB, Astro.cookies, Astro.url, local
 if (access instanceof Response) return access;
 const actor = access;
 
-
 const queueItems = [
-  { user: "Anónimo", article: "Voces de la diáspora", comment: "Excelente entrevista, me hizo reflexionar sobre mi propia historia.", reason: "Reportado", time: "hace 4 min" },
-  { user: "Laura G.", article: "Afrofuturismo: imaginar el mañana", comment: "¿Dónde consigo el libro que mencionan en el segundo párrafo?", reason: "Pregunta", time: "hace 22 min" },
-  { user: "Andrés M.", article: "Trenzas como mapas de resistencia", comment: "Comparte información valiosa. Lo voy a usar en mi clase.", reason: "Aprobado", time: "hace 1 h" },
-  { user: "Sofía R.", article: "Quilombos y palenques: territorios de libertad", comment: "Falta contexto histórico sobre la Nueva Granada.", reason: "Pendiente", time: "hace 2 h" },
+  { user: "Anonymous", article: "Voices of the Diaspora", comment: "Great interview, made me reflect on my own family history.", reason: "Reported", time: "4m ago" },
+  { user: "Laura G.", article: "Afrofuturism: Imagining Tomorrow", comment: "Where can I find the book mentioned in paragraph two?", reason: "Question", time: "22m ago" },
+  { user: "Andres M.", article: "Braids as Maps of Resistance", comment: "Valuable historical information. I will share this in my class.", reason: "Approved", time: "1h ago" },
+  { user: "Sofia R.", article: "Quilombos and Palenques", comment: "Needs deeper historical context on New Granada escape routes.", reason: "Pending", time: "2h ago" },
 ];
 ---
 
 <AdminLayout title={copy.adminComments} active="comments">
-  
+  <!-- Page Header -->
+  <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <div class="flex items-center gap-2.5">
+        <h2 class="font-display text-2xl font-bold text-base-content">{copy.adminComments}</h2>
+        <span class="badge badge-warning badge-sm font-semibold">{queueItems.length} in queue</span>
+      </div>
+      <p class="text-xs sm:text-sm text-base-content/60 mt-1">
+        Moderate user comments, discussions, and community interactions across AfroUp articles.
+      </p>
+    </div>
+  </div>
 
-  <div class="mt-6 flex flex-col gap-4">
-    {queueItems.map((item) => (
-      <article class="card bg-base-100 border border-base-300 shadow-sm">
-        <div class="card-body gap-3">
-          <div class="flex flex-wrap items-center gap-2 text-sm">
-            <span class="font-bold">{item.user}</span>
-            <span class="opacity-50">·</span>
-            <span class="opacity-70">{item.article}</span>
-            <span class="opacity-50">·</span>
-            <span class="opacity-50 text-xs">{item.time}</span>
-            <span class:list={["badge badge-sm ml-auto", item.reason === "Reportado" && "badge-error", item.reason === "Pregunta" && "badge-info", item.reason === "Aprobado" && "badge-success", item.reason === "Pendiente" && "badge-warning"]}>{item.reason}</span>
+  <!-- Comments Stream -->
+  <div class="grid grid-cols-1 gap-4">
+    {queueItems.map((item) => {
+      const isReported = item.reason === "Reported";
+      const isPending = item.reason === "Pending";
+      const isApproved = item.reason === "Approved";
+
+      return (
+        <article class="rounded-3xl border border-base-300 bg-base-100 p-5 sm:p-6 shadow-xs space-y-3.5 hover:border-base-300/80 transition-all">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-3">
+              <div class="avatar placeholder">
+                <div class="size-9 rounded-xl bg-base-200 border border-base-300 font-bold font-display text-xs text-base-content/70 flex items-center justify-center">
+                  <span>{item.user[0]}</span>
+                </div>
+              </div>
+              <div>
+                <span class="font-bold text-sm text-base-content block">{item.user}</span>
+                <span class="text-xs text-base-content/50">on <strong class="text-base-content/70 font-semibold">{item.article}</strong> · {item.time}</span>
+              </div>
+            </div>
+
+            <span class:list={[
+              "badge badge-xs font-bold py-1 px-2.5 uppercase tracking-wider",
+              isReported && "badge-error",
+              isPending && "badge-warning",
+              isApproved && "badge-success",
+              !isReported && !isPending && !isApproved && "badge-info"
+            ]}>
+              {item.reason}
+            </span>
           </div>
-          <p class="text-[15px] leading-[1.55]">{item.comment}</p>
-          <div class="flex flex-wrap gap-2">
-            <button class="btn btn-sm btn-success" type="button">{copy.adminModerateComments} ✓</button>
-            <button class="btn btn-sm btn-dash" type="button">Responder</button>
-            <button class="btn btn-sm btn-ghost text-error" type="button">
-              <svg class="size-4"><use href="#ic-trash"></use></svg>
-              Descartar
+
+          <p class="text-sm text-base-content/90 leading-relaxed pl-12">
+            “{item.comment}”
+          </p>
+
+          <div class="flex items-center gap-2 pt-2 border-t border-base-300/60 pl-12">
+            <button class="btn btn-success btn-xs gap-1 font-bold" type="button">
+              <svg class="size-3.5"><use href="#ic-check"></use></svg>
+              <span>Approve</span>
+            </button>
+            <button class="btn btn-ghost btn-xs border border-base-300 text-xs font-semibold hover:bg-base-200" type="button">
+              Reply
+            </button>
+            <button class="btn btn-ghost btn-xs border border-base-300 text-error hover:bg-error/10 text-xs font-semibold ml-auto" type="button">
+              <svg class="size-3.5"><use href="#ic-trash"></use></svg>
+              <span>Discard</span>
             </button>
           </div>
-        </div>
-      </article>
-    ))}
+        </article>
+      );
+    })}
   </div>
 </AdminLayout>

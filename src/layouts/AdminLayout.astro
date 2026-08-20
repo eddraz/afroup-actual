@@ -134,133 +134,187 @@ function navClass(key: NonNullable<Props["active"]>) {
 
     <div class="drawer lg:drawer-open" id="admin-layout-drawer">
       <input id="admin-drawer" type="checkbox" class="drawer-toggle" />
-      <div class="drawer-content flex min-h-screen flex-col">
-        <div class="navbar sticky top-0 z-20 min-h-[74px] border-b border-base-300 bg-base-100/85 px-4 backdrop-blur lg:px-[38px]">
-          <div class="navbar-start gap-2">
-            <label for="admin-drawer" class="btn btn-square btn-ghost drawer-button lg:hidden" aria-label={copy.adminOpenMenu}>
+      <div class="drawer-content flex min-h-screen flex-col bg-base-100/50">
+        <!-- Top Studio Navbar -->
+        <header class="navbar sticky top-0 z-20 min-h-[64px] border-b border-base-300 bg-base-100/90 px-4 backdrop-blur-md lg:px-8">
+          <div class="navbar-start gap-2.5">
+            <label for="admin-drawer" class="btn btn-square btn-ghost btn-sm drawer-button lg:hidden" aria-label={copy.adminOpenMenu}>
               <svg class="size-5"><use href="#ic-menu"></use></svg>
             </label>
             <button
               type="button"
               id="admin-sidebar-toggle"
-              class="btn btn-square btn-ghost hidden lg:inline-flex"
+              class="btn btn-square btn-ghost btn-sm hidden lg:inline-flex text-base-content/70 hover:text-base-content hover:bg-base-200"
               aria-label={copy.adminToggleSidebar}
               title={copy.adminToggleSidebar}
             >
               <svg class="size-5 sidebar-icon-collapse"><use href="#ic-sidebar-collapse"></use></svg>
               <svg class="size-5 sidebar-icon-expand hidden"><use href="#ic-sidebar-expand"></use></svg>
             </button>
-            <h1 class="font-display text-[20px] leading-none font-bold tracking-[-0.005em]">{title}</h1>
+            
+            <div class="flex items-center gap-2">
+              <div class="hidden sm:flex items-center gap-2 text-xs font-bold tracking-wide uppercase text-base-content/50">
+                <span class="flex items-center gap-1.5 text-base-content/80">
+                  <span class="size-1.5 rounded-full bg-accent shadow-[0_0_8px_var(--color-accent)]"></span>
+                  Studio
+                </span>
+                <span>/</span>
+              </div>
+              <h1 class="font-display text-[18px] sm:text-[20px] leading-tight font-bold tracking-[-0.01em] text-base-content">{title}</h1>
+            </div>
           </div>
-          <div class="navbar-end">
-            <label class="swap swap-rotate" aria-label={copy.themeAria}>
+
+          <div class="navbar-end gap-2.5">
+            <div class="hidden md:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-base-200/80 border border-base-300 text-base-content/70">
+              <span class="size-2 rounded-full bg-success animate-pulse"></span>
+              <span>D1 Cloudflare</span>
+            </div>
+
+            <a
+              href={paths.home}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="btn btn-ghost btn-sm gap-1.5 text-xs font-bold border border-base-300 hover:bg-base-200 text-base-content/80 hover:text-base-content"
+              title={copy.adminBackSite || "Ver sitio público"}
+            >
+              <svg class="size-3.5"><use href="#ic-arrow"></use></svg>
+              <span class="hidden sm:inline">{copy.adminBackSite || "Sitio Web"}</span>
+            </a>
+
+            <label class="swap swap-rotate btn btn-square btn-ghost btn-sm border border-base-300 hover:bg-base-200" aria-label={copy.themeAria}>
               <input type="checkbox" class="theme-controller" value="afroup-dark" />
-              <svg class="swap-off size-5"><use href="#ic-sun"></use></svg>
-              <svg class="swap-on size-5"><use href="#ic-moon"></use></svg>
+              <svg class="swap-off size-4"><use href="#ic-sun"></use></svg>
+              <svg class="swap-on size-4"><use href="#ic-moon"></use></svg>
             </label>
           </div>
-        </div>
+        </header>
 
-        <main class="mx-auto w-full max-w-[1180px] flex-1 px-4 pb-24 pt-[30px] sm:px-[18px] lg:px-[38px] lg:pb-10">
+        <!-- Main Content Area -->
+        <main class="mx-auto w-full max-w-[1240px] flex-1 px-4 py-6 sm:px-6 lg:px-8">
           <slot />
         </main>
       </div>
 
+      <!-- Sidebar -->
       <div class="drawer-side z-30 lg:overflow-visible">
         <label for="admin-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
-        <aside id="admin-sidebar" class="flex h-dvh max-h-dvh w-[264px] flex-col border-r border-base-300 bg-base-200">
-          <a href={paths.admin} class="admin-logo-link block shrink-0 px-[30px] pt-[30px] pb-[21px] text-base-content" aria-label="AfroUp Admin">
-            <span class="admin-logo-full relative inline-block pr-5">
-              <AfroUpLogo height={30} variant="wordmark" />
-              <span class="badge badge-xs badge-accent absolute -top-1.5 -right-5 font-bold uppercase">Admin</span>
-            </span>
-            <span class="admin-logo-mark relative hidden">
-              <AfroUpLogo height={30} variant="mark" />
-            </span>
+        <aside id="admin-sidebar" class="flex h-dvh max-h-dvh w-[264px] flex-col border-r border-base-300 bg-base-200/95 backdrop-blur-sm shadow-xs">
+          <!-- Logo Brand Header -->
+          <a href={paths.admin} class="admin-logo-link block shrink-0 px-6 py-5 border-b border-base-300/60 text-base-content transition-opacity hover:opacity-90" aria-label="AfroUp Studio">
+            <div class="admin-logo-full flex items-center justify-between">
+              <AfroUpLogo height={28} variant="wordmark" />
+              <span class="badge badge-xs badge-accent font-extrabold uppercase tracking-wider py-1.5 px-2">Studio</span>
+            </div>
+            <div class="admin-logo-mark relative hidden">
+              <AfroUpLogo height={28} variant="mark" />
+            </div>
           </a>
-          <ul class="sidebar-scroll menu min-h-0 w-full grow flex-nowrap overflow-x-hidden overflow-y-auto px-5 py-0">
+
+          <!-- Navigation Links -->
+          <ul class="sidebar-scroll menu min-h-0 w-full grow flex-nowrap overflow-x-hidden overflow-y-auto px-3.5 py-4 gap-1">
             <li class="admin-nav-tooltip tooltip tooltip-right" data-tip={copy.adminDashboard}>
               <a class={navClass("dashboard")} href={paths.admin}>
-                <svg class="size-5 shrink-0"><use href="#ic-home"></use></svg>
+                <svg class="size-4.5 shrink-0"><use href="#ic-home"></use></svg>
                 <span class="admin-nav-label truncate">{copy.adminDashboard}</span>
               </a>
             </li>
-            {showContent ? <li class="menu-title mt-3">{copy.adminNavContent}</li> : null}
+
+            {showContent ? (
+              <li class="menu-title mt-4 px-3 text-[11px] font-extrabold tracking-wider uppercase text-base-content/40">
+                {copy.adminNavContent || "Editorial & Contenido"}
+              </li>
+            ) : null}
+
             {can.articles ? (
               <li class="admin-nav-tooltip tooltip tooltip-right" data-tip={copy.adminArticles}>
                 <a class={navClass("articles")} href={paths.articles}>
-                  <svg class="size-5 shrink-0"><use href="#ic-book2"></use></svg>
+                  <svg class="size-4.5 shrink-0"><use href="#ic-book2"></use></svg>
                   <span class="admin-nav-label truncate">{copy.adminArticles}</span>
                 </a>
               </li>
             ) : null}
+
             {can.categories ? (
               <li class="admin-nav-tooltip tooltip tooltip-right" data-tip={copy.adminCategories}>
                 <a class={navClass("categories")} href={paths.categories}>
-                  <svg class="size-5 shrink-0"><use href="#ic-stack"></use></svg>
+                  <svg class="size-4.5 shrink-0"><use href="#ic-stack"></use></svg>
                   <span class="admin-nav-label truncate">{copy.adminCategories}</span>
                 </a>
               </li>
             ) : null}
+
             {can.comments ? (
               <li class="admin-nav-tooltip tooltip tooltip-right" data-tip={copy.adminComments}>
                 <a class={navClass("comments")} href={paths.comments}>
-                  <svg class="size-5 shrink-0"><use href="#ic-pin"></use></svg>
+                  <svg class="size-4.5 shrink-0"><use href="#ic-pin"></use></svg>
                   <span class="admin-nav-label truncate">{copy.adminComments}</span>
                 </a>
               </li>
             ) : null}
+
             {can.projects ? (
               <li class="admin-nav-tooltip tooltip tooltip-right" data-tip={copy.adminProjects}>
                 <a class={navClass("projects")} href={paths.projects}>
-                  <svg class="size-5 shrink-0"><use href="#ic-share"></use></svg>
+                  <svg class="size-4.5 shrink-0"><use href="#ic-share"></use></svg>
                   <span class="admin-nav-label truncate">{copy.adminProjects}</span>
                 </a>
               </li>
             ) : null}
-            {showAccess ? <li class="menu-title mt-3">{copy.adminNavAccess}</li> : null}
-            {can.modules ? (
-              <li class="admin-nav-tooltip tooltip tooltip-right" data-tip={copy.adminModules}>
-                <a class={navClass("modules")} href={paths.modules}>
-                  <svg class="size-5 shrink-0"><use href="#ic-stack"></use></svg>
-                  <span class="admin-nav-label truncate">{copy.adminModules}</span>
-                </a>
+
+            {showAccess ? (
+              <li class="menu-title mt-4 px-3 text-[11px] font-extrabold tracking-wider uppercase text-base-content/40">
+                {copy.adminNavAccess || "Sistema & Roles"}
               </li>
             ) : null}
-            {can.permissions ? (
-              <li class="admin-nav-tooltip tooltip tooltip-right" data-tip={copy.adminPermissions}>
-                <a class={navClass("permissions")} href={paths.permissions}>
-                  <svg class="size-5 shrink-0"><use href="#ic-key"></use></svg>
-                  <span class="admin-nav-label truncate">{copy.adminPermissions}</span>
-                </a>
-              </li>
-            ) : null}
-            {can.roles ? (
-              <li class="admin-nav-tooltip tooltip tooltip-right" data-tip={copy.adminRoles}>
-                <a class={navClass("roles")} href={paths.roles}>
-                  <svg class="size-5 shrink-0"><use href="#ic-shield"></use></svg>
-                  <span class="admin-nav-label truncate">{copy.adminRoles}</span>
-                </a>
-              </li>
-            ) : null}
+
             {can.users ? (
               <li class="admin-nav-tooltip tooltip tooltip-right" data-tip={copy.adminUsers}>
                 <a class={navClass("users")} href={paths.users}>
-                  <svg class="size-5 shrink-0"><use href="#ic-users"></use></svg>
+                  <svg class="size-4.5 shrink-0"><use href="#ic-users"></use></svg>
                   <span class="admin-nav-label truncate">{copy.adminUsers}</span>
                 </a>
               </li>
             ) : null}
+
+            {can.roles ? (
+              <li class="admin-nav-tooltip tooltip tooltip-right" data-tip={copy.adminRoles}>
+                <a class={navClass("roles")} href={paths.roles}>
+                  <svg class="size-4.5 shrink-0"><use href="#ic-shield"></use></svg>
+                  <span class="admin-nav-label truncate">{copy.adminRoles}</span>
+                </a>
+              </li>
+            ) : null}
+
+            {can.permissions ? (
+              <li class="admin-nav-tooltip tooltip tooltip-right" data-tip={copy.adminPermissions}>
+                <a class={navClass("permissions")} href={paths.permissions}>
+                  <svg class="size-4.5 shrink-0"><use href="#ic-key"></use></svg>
+                  <span class="admin-nav-label truncate">{copy.adminPermissions}</span>
+                </a>
+              </li>
+            ) : null}
+
+            {can.modules ? (
+              <li class="admin-nav-tooltip tooltip tooltip-right" data-tip={copy.adminModules}>
+                <a class={navClass("modules")} href={paths.modules}>
+                  <svg class="size-4.5 shrink-0"><use href="#ic-stack"></use></svg>
+                  <span class="admin-nav-label truncate">{copy.adminModules}</span>
+                </a>
+              </li>
+            ) : null}
+
             {can.languages ? (
               <li class="admin-nav-tooltip tooltip tooltip-right" data-tip={copy.adminLanguages}>
                 <a class={navClass("languages")} href={paths.languages}>
-                  <svg class="size-5 shrink-0"><use href="#ic-book2"></use></svg>
+                  <svg class="size-4.5 shrink-0"><use href="#ic-world"></use></svg>
                   <span class="admin-nav-label truncate">{copy.adminLanguages}</span>
                 </a>
               </li>
             ) : null}
           </ul>
-          <div class="admin-sidebar-footer flex shrink-0 flex-col gap-3 border-t border-base-300 p-3">
+
+          <!-- Sidebar Footer with Language Switcher and Session User -->
+          <div class="admin-sidebar-footer flex shrink-0 flex-col gap-3 border-t border-base-300/80 p-3 bg-base-200">
             <div class="admin-lang-expanded w-full">
               <LanguageSwitcher scope="all" />
             </div>

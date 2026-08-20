@@ -1,145 +1,343 @@
 ---
 import { env } from "cloudflare:workers";
 import AdminLayout from "../../../layouts/AdminLayout.astro";
-import { joinPath, localizedPath } from "../../../lib/i18n";
+import { defaultLocale, joinPath, localizedPath } from "../../../lib/i18n";
 import { resolveRequestCopy } from "../../../lib/request-locale";
 import { routeIds } from "../../../lib/paths";
+import { getCategoryTheme } from "../../../lib/category-routes";
 
 export const prerender = false;
 
 const { locale, copy } = await resolveRequestCopy(env.DB, Astro.url);
 const adminBase = localizedPath(locale, routeIds.admin);
 const articlesHref = joinPath(adminBase, "articulos");
+const categoriesHref = joinPath(adminBase, "categorias");
 const commentsHref = joinPath(adminBase, "comentarios");
 const projectsHref = joinPath(adminBase, "proyectos");
 const usersHref = joinPath(adminBase, "usuarios");
+const languagesHref = joinPath(adminBase, "idiomas");
+
+// Dynamic metrics from database
+const [
+  articlesTotal,
+  articlesPublished,
+  categoriesTotal,
+  usersTotal,
+  commentsTotal,
+  recentArticles,
+] = await Promise.all([
+  env.DB.prepare("SELECT COUNT(*) AS c FROM articles").first<{ c: number }>().then((r) => r?.c ?? 0).catch(() => 0),
+  env.DB.prepare("SELECT COUNT(*) AS c FROM articles WHERE status = 'published'").first<{ c: number }>().then((r) => r?.c ?? 0).catch(() => 0),
+  env.DB.prepare("SELECT COUNT(*) AS c FROM article_categories").first<{ c: number }>().then((r) => r?.c ?? 0).catch(() => 0),
+  env.DB.prepare("SELECT COUNT(*) AS c FROM users").first<{ c: number }>().then((r) => r?.c ?? 0).catch(() => 0),
+  env.DB.prepare("SELECT COUNT(*) AS c FROM user_comments").first<{ c: number }>().then((r) => r?.c ?? 0).catch(() => 0),
+  env.DB.prepare(
+    `SELECT a.id, a.slug, a.status, a.cover_image_url, a.reading_time_minutes,
+            a.created_at, a.updated_at, a.published_at, u.name AS author_name,
+            COALESCE(
+              (SELECT title FROM article_locales WHERE article_id = a.id AND locale = ?),
+              (SELECT title FROM article_locales WHERE article_id = a.id AND locale = ?)
+            ) AS title,
+            (SELECT c.slug FROM article_categories c
+               JOIN article_category_map m ON m.category_id = c.id
+              WHERE m.article_id = a.id
+              ORDER BY m.sort_order, c.id
+              LIMIT 1) AS category_slug,
+            (SELECT COALESCE(loc.title, def.title)
+               FROM article_category_map m
+               JOIN article_categories c ON c.id = m.category_id
+               LEFT JOIN article_category_locales loc ON loc.category_id = c.id AND loc.locale = ?
+               LEFT JOIN article_category_locales def ON def.category_id = c.id AND def.locale = ?
+              WHERE m.article_id = a.id
+              ORDER BY m.sort_order, c.id
+              LIMIT 1) AS category_title
+       FROM articles a
+  LEFT JOIN users u ON u.id = a.created_by
+      ORDER BY a.updated_at DESC, a.id DESC
+      LIMIT 5`,
+  )
+    .bind(locale, defaultLocale, locale, defaultLocale)
+    .all<{
+      id: number;
+      slug: string;
+      status: string;
+      cover_image_url: string | null;
+      reading_time_minutes: number | null;
+      created_at: string;
+      updated_at: string;
+      published_at: string | null;
+      author_name: string | null;
+      title: string | null;
+      category_slug: string | null;
+      category_title: string | null;
+    }>()
+    .then((r) => r.results ?? [])
+    .catch(() => []),
+]);
+
+const articlesDrafts = Math.max(0, articlesTotal - articlesPublished);
+
+function formatDate(dateStr?: string | null) {
+  if (!dateStr) return "—";
+  try {
+    const d = new Date(dateStr.endsWith("Z") ? dateStr : `${dateStr}Z`);
+    return new Intl.DateTimeFormat("en-US", {
+      day: "numeric",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(d);
+  } catch {
+    return dateStr.slice(0, 10);
+  }
+}
 ---
 
-<AdminLayout title={copy.adminWelcome} active="dashboard">
-  <p class="max-w-xl text-sm opacity-70">{copy.adminWelcomeLead}</p>
+<AdminLayout title={copy.adminWelcome || "Studio Overview"} active="dashboard">
+  <!-- Hero Banner -->
+  <div class="relative overflow-hidden rounded-3xl border border-base-300 bg-gradient-to-br from-base-200/80 via-base-100 to-base-200/40 p-6 sm:p-8 shadow-xs">
+    <div class="absolute -right-16 -top-16 size-64 rounded-full bg-primary/10 blur-3xl pointer-events-none"></div>
+    <div class="absolute -left-16 -bottom-16 size-64 rounded-full bg-accent/10 blur-3xl pointer-events-none"></div>
+    
+    <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+      <div class="space-y-1.5">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-accent/15 text-accent-content border border-accent/20">
+          <span class="size-1.5 rounded-full bg-accent animate-ping"></span>
+          <span>AfroUp Editorial Studio</span>
+        </div>
+        <h2 class="font-display text-2xl sm:text-3xl font-extrabold text-base-content tracking-tight">
+          {copy.adminWelcome}
+        </h2>
+        <p class="text-sm sm:text-base text-base-content/70 max-w-xl">
+          {copy.adminWelcomeLead || "Manage editorial publications, categories, team contributors, and AfroUp translations."}
+        </p>
+      </div>
 
-  <section class="stats stats-vertical bg-base-100 mt-6 w-full shadow-sm lg:stats-horizontal">
-    <div class="stat">
-      <div class="stat-figure text-primary">
-        <svg class="size-7"><use href="#ic-book2"></use></svg>
+      <div class="flex items-center gap-3 shrink-0">
+        <a class="btn btn-primary btn-md gap-2 shadow-md hover:scale-[1.02] transition-transform" href={articlesHref}>
+          <svg class="size-4.5"><use href="#ic-plus"></use></svg>
+          <span>{copy.adminNewArticle}</span>
+        </a>
       </div>
-      <div class="stat-title">{copy.adminStatsArticles}</div>
-      <div class="stat-value text-primary">128</div>
-      <div class="stat-desc">{copy.adminStatsArticlesTrend}</div>
     </div>
-    <div class="stat">
-      <div class="stat-figure text-secondary">
-        <svg class="size-7"><use href="#ic-users"></use></svg>
+  </div>
+
+  <!-- KPI Metrics Cards Grid -->
+  <section class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <!-- Articles Stat -->
+    <div class="group rounded-2xl border border-base-300 bg-base-100 p-5 shadow-xs transition-all hover:border-primary/40 hover:shadow-sm">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-bold uppercase tracking-wider text-base-content/60">{copy.adminStatsArticles || "Articles"}</span>
+        <div class="size-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
+          <svg class="size-5"><use href="#ic-book2"></use></svg>
+        </div>
       </div>
-      <div class="stat-title">{copy.adminStatsUsers}</div>
-      <div class="stat-value">4 218</div>
-      <div class="stat-desc">{copy.adminStatsUsersTrend}</div>
+      <div class="mt-3 flex items-baseline gap-2">
+        <span class="font-display text-3xl font-extrabold text-base-content">{articlesTotal}</span>
+        <span class="badge badge-success badge-sm font-semibold">{articlesPublished} live</span>
+      </div>
+      <div class="mt-2 text-xs text-base-content/60 flex items-center justify-between">
+        <span>{articlesDrafts} drafts</span>
+        <a class="font-bold text-primary hover:underline" href={articlesHref}>View all →</a>
+      </div>
     </div>
-    <div class="stat">
-      <div class="stat-figure text-warning">
-        <svg class="size-7"><use href="#ic-pin"></use></svg>
+
+    <!-- Categories Stat -->
+    <div class="group rounded-2xl border border-base-300 bg-base-100 p-5 shadow-xs transition-all hover:border-accent/40 hover:shadow-sm">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-bold uppercase tracking-wider text-base-content/60">{copy.adminCategories || "Categories"}</span>
+        <div class="size-10 rounded-xl bg-accent/10 text-accent flex items-center justify-center group-hover:scale-110 transition-transform">
+          <svg class="size-5"><use href="#ic-stack"></use></svg>
+        </div>
       </div>
-      <div class="stat-title">{copy.adminStatsComments}</div>
-      <div class="stat-value text-warning">23</div>
-      <div class="stat-desc">{copy.adminStatsCommentsTrend}</div>
+      <div class="mt-3 flex items-baseline gap-2">
+        <span class="font-display text-3xl font-extrabold text-base-content">{categoriesTotal}</span>
+        <span class="text-xs text-base-content/70 font-semibold">taxonomies</span>
+      </div>
+      <div class="mt-2 text-xs text-base-content/60 flex items-center justify-between">
+        <span>Africa, Diaspora, History</span>
+        <a class="font-bold text-accent hover:underline" href={categoriesHref}>View all →</a>
+      </div>
     </div>
-    <div class="stat">
-      <div class="stat-figure text-success">
-        <svg class="size-7"><use href="#ic-heart"></use></svg>
+
+    <!-- Users Stat -->
+    <div class="group rounded-2xl border border-base-300 bg-base-100 p-5 shadow-xs transition-all hover:border-secondary/40 hover:shadow-sm">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-bold uppercase tracking-wider text-base-content/60">{copy.adminStatsUsers || "Team & Users"}</span>
+        <div class="size-10 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center group-hover:scale-110 transition-transform">
+          <svg class="size-5"><use href="#ic-users"></use></svg>
+        </div>
       </div>
-      <div class="stat-title">{copy.adminStatsRevenue}</div>
-      <div class="stat-value">$1.240</div>
-      <div class="stat-desc text-success">{copy.adminStatsRevenueTrend}</div>
+      <div class="mt-3 flex items-baseline gap-2">
+        <span class="font-display text-3xl font-extrabold text-base-content">{usersTotal}</span>
+        <span class="badge badge-neutral badge-sm font-semibold">Active</span>
+      </div>
+      <div class="mt-2 text-xs text-base-content/60 flex items-center justify-between">
+        <span>Staff & contributors</span>
+        <a class="font-bold text-secondary hover:underline" href={usersHref}>Manage →</a>
+      </div>
+    </div>
+
+    <!-- Comments / Interaction Stat -->
+    <div class="group rounded-2xl border border-base-300 bg-base-100 p-5 shadow-xs transition-all hover:border-warning/40 hover:shadow-sm">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-bold uppercase tracking-wider text-base-content/60">{copy.adminStatsComments || "Comments"}</span>
+        <div class="size-10 rounded-xl bg-warning/10 text-warning flex items-center justify-center group-hover:scale-110 transition-transform">
+          <svg class="size-5"><use href="#ic-pin"></use></svg>
+        </div>
+      </div>
+      <div class="mt-3 flex items-baseline gap-2">
+        <span class="font-display text-3xl font-extrabold text-base-content">{commentsTotal}</span>
+        <span class="badge badge-warning badge-sm font-semibold">Moderation</span>
+      </div>
+      <div class="mt-2 text-xs text-base-content/60 flex items-center justify-between">
+        <span>Community interaction</span>
+        <a class="font-bold text-warning hover:underline" href={commentsHref}>Moderate →</a>
+      </div>
     </div>
   </section>
 
-  <div role="alert" class="alert alert-warning alert-soft mt-6">
-    <svg class="size-5"><use href="#ic-pin"></use></svg>
-    <span>{copy.adminStatsComments}: 23 · {copy.adminStatsCommentsTrend}</span>
-    <a class="btn btn-sm btn-warning" href={commentsHref}>{copy.adminAttentionCta}</a>
-  </div>
-
-  <section class="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[1.4fr_1fr]">
-    <div class="card card-border bg-base-100">
-      <div class="card-body gap-0 p-0">
-        <div class="flex items-center justify-between gap-3 px-5 pt-5 pb-2">
-          <h2 class="card-title font-display text-[20px] tracking-[-0.005em]">{copy.adminRecentActivity}</h2>
-          <a class="btn btn-ghost btn-sm" href={articlesHref}>{copy.adminViewAll}</a>
+  <!-- Two Columns: Recent Articles & Quick Actions -->
+  <section class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[1.5fr_1fr]">
+    <!-- Recent Articles Card -->
+    <div class="rounded-3xl border border-base-300 bg-base-100 shadow-xs overflow-hidden flex flex-col">
+      <div class="flex items-center justify-between border-b border-base-300/80 px-6 py-4.5 bg-base-200/30">
+        <div>
+          <h3 class="font-display text-lg font-bold text-base-content">{copy.adminRecentActivity || "Recent Publications"}</h3>
+          <p class="text-xs text-base-content/60">Latest created or updated articles</p>
         </div>
-        <ul class="list">
-          <li class="list-row">
-            <div class="avatar avatar-placeholder">
-              <div class="bg-primary text-primary-content w-10 rounded-box">
-                <svg class="size-5"><use href="#ic-book2"></use></svg>
+        <a class="btn btn-ghost btn-sm text-xs font-bold gap-1" href={articlesHref}>
+          <span>{copy.adminViewAll || "View all"}</span>
+          <svg class="size-3.5"><use href="#ic-arrow"></use></svg>
+        </a>
+      </div>
+
+      <div class="divide-y divide-base-300/60 overflow-y-auto">
+        {recentArticles.length === 0 ? (
+          <div class="p-8 text-center text-sm text-base-content/60">
+            No articles registered yet in the database.
+          </div>
+        ) : null}
+
+        {recentArticles.map((art) => {
+          const editHref = localizedPath(locale, joinPath(routeIds.admin, `articulos/${art.id}`));
+          const theme = getCategoryTheme(art.category_slug || "");
+          const isPublished = art.status === "published";
+
+          return (
+            <div class="flex items-center justify-between gap-4 p-4.5 hover:bg-base-200/40 transition-colors">
+              <div class="flex items-center gap-3.5 min-w-0">
+                {art.cover_image_url ? (
+                  <div class="size-12 rounded-xl overflow-hidden flex-none border border-base-300 bg-base-200">
+                    <img src={art.cover_image_url} alt="" class="size-full object-cover" />
+                  </div>
+                ) : (
+                  <div class="size-12 rounded-xl bg-base-200/80 border border-base-300 flex-none flex items-center justify-center text-xs font-bold font-display opacity-40">
+                    AU
+                  </div>
+                )}
+
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2">
+                    {art.category_title ? (
+                      <span class:list={["inline-flex items-center gap-1 text-[10px] font-extrabold uppercase", theme.textClass]}>
+                        <span class:list={["size-1.5 rounded-full", theme.dotClass]}></span>
+                        {art.category_title}
+                      </span>
+                    ) : null}
+                    <span class="text-[11px] text-base-content/50">· {formatDate(art.updated_at)}</span>
+                  </div>
+                  <a href={editHref} class="font-bold text-sm text-base-content truncate block hover:text-primary transition-colors">
+                    {art.title ?? art.slug}
+                  </a>
+                  <div class="text-xs text-base-content/60 font-mono truncate">
+                    /{art.slug}
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2.5 shrink-0">
+                <span class:list={["badge badge-xs font-bold py-1 px-2 uppercase text-[10px]", isPublished ? "badge-success" : "badge-ghost"]}>
+                  {isPublished ? "Published" : "Draft"}
+                </span>
+
+                <a class="btn btn-square btn-ghost btn-sm border border-base-300 hover:bg-base-200" href={editHref} title={copy.adminEdit || "Edit"}>
+                  <svg class="size-4"><use href="#ic-edit"></use></svg>
+                </a>
               </div>
             </div>
-            <div>
-              <div class="font-semibold">Jenniffer M.</div>
-              <div class="text-xs opacity-60">{copy.adminActivity1}</div>
-            </div>
-            <span class="badge badge-ghost badge-sm">{copy.adminActivityTime1}</span>
-          </li>
-          <li class="list-row">
-            <div class="avatar avatar-placeholder">
-              <div class="bg-warning text-warning-content w-10 rounded-box">
-                <svg class="size-5"><use href="#ic-pin"></use></svg>
-              </div>
-            </div>
-            <div>
-              <div class="font-semibold">AfroUp team</div>
-              <div class="text-xs opacity-60">{copy.adminActivity2}</div>
-            </div>
-            <span class="badge badge-warning badge-soft badge-sm">{copy.adminActivityTime2}</span>
-          </li>
-          <li class="list-row">
-            <div class="avatar avatar-placeholder">
-              <div class="bg-success text-success-content w-10 rounded-box">
-                <svg class="size-5"><use href="#ic-heart"></use></svg>
-              </div>
-            </div>
-            <div>
-              <div class="font-semibold">María P.</div>
-              <div class="text-xs opacity-60">{copy.adminActivity3}</div>
-            </div>
-            <span class="badge badge-ghost badge-sm">{copy.adminActivityTime3}</span>
-          </li>
-          <li class="list-row">
-            <div class="avatar avatar-placeholder">
-              <div class="bg-neutral text-neutral-content w-10 rounded-box">
-                <svg class="size-5"><use href="#ic-share"></use></svg>
-              </div>
-            </div>
-            <div>
-              <div class="font-semibold">Carlos R.</div>
-              <div class="text-xs opacity-60">{copy.adminActivity4}</div>
-            </div>
-            <span class="badge badge-ghost badge-sm">{copy.adminActivityTime4}</span>
-          </li>
-        </ul>
+          );
+        })}
       </div>
     </div>
 
-    <div class="card card-border bg-base-100">
-      <div class="card-body">
-        <h2 class="card-title font-display text-[20px] tracking-[-0.005em]">{copy.adminQuickActions}</h2>
-        <div class="flex flex-col gap-2">
-          <a class="btn btn-primary justify-start" href={articlesHref}>
-            <svg class="size-4"><use href="#ic-book2"></use></svg>
-            {copy.adminNewArticle}
+    <!-- Quick Tools & System Overview -->
+    <div class="space-y-6">
+      <!-- Quick Action Studio Grid -->
+      <div class="rounded-3xl border border-base-300 bg-base-100 p-6 shadow-xs">
+        <h3 class="font-display text-lg font-bold text-base-content mb-4">{copy.adminQuickActions || "Quick Actions"}</h3>
+        
+        <div class="grid grid-cols-1 gap-2.5">
+          <a class="flex items-center gap-3 p-3 rounded-2xl border border-base-300 bg-base-200/30 hover:bg-primary/10 hover:border-primary/40 transition-all group" href={articlesHref}>
+            <div class="size-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-105 transition-transform">
+              <svg class="size-4.5"><use href="#ic-book2"></use></svg>
+            </div>
+            <div class="leading-tight">
+              <span class="font-bold text-sm block text-base-content group-hover:text-primary transition-colors">{copy.adminNewArticle || "Compose Article"}</span>
+              <span class="text-xs text-base-content/60">Block CMS editor with AI</span>
+            </div>
+            <svg class="size-4 ml-auto text-base-content/40 group-hover:translate-x-0.5 transition-transform"><use href="#ic-arrow"></use></svg>
           </a>
-          <a class="btn btn-dash justify-start" href={commentsHref}>
-            <svg class="size-4"><use href="#ic-pin"></use></svg>
-            {copy.adminModerateComments}
+
+          <a class="flex items-center gap-3 p-3 rounded-2xl border border-base-300 bg-base-200/30 hover:bg-accent/10 hover:border-accent/40 transition-all group" href={categoriesHref}>
+            <div class="size-9 rounded-xl bg-accent/10 text-accent flex items-center justify-center group-hover:scale-105 transition-transform">
+              <svg class="size-4.5"><use href="#ic-stack"></use></svg>
+            </div>
+            <div class="leading-tight">
+              <span class="font-bold text-sm block text-base-content group-hover:text-accent transition-colors">{copy.adminNewCategory || "Manage Categories"}</span>
+              <span class="text-xs text-base-content/60">Organization and taxonomy</span>
+            </div>
+            <svg class="size-4 ml-auto text-base-content/40 group-hover:translate-x-0.5 transition-transform"><use href="#ic-arrow"></use></svg>
           </a>
-          <a class="btn btn-dash justify-start" href={projectsHref}>
-            <svg class="size-4"><use href="#ic-share"></use></svg>
-            {copy.adminReviewProjects}
-          </a>
-          <a class="btn btn-dash justify-start" href={usersHref}>
-            <svg class="size-4"><use href="#ic-users"></use></svg>
-            {copy.adminInviteUser}
+
+          <a class="flex items-center gap-3 p-3 rounded-2xl border border-base-300 bg-base-200/30 hover:bg-secondary/10 hover:border-secondary/40 transition-all group" href={usersHref}>
+            <div class="size-9 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center group-hover:scale-105 transition-transform">
+              <svg class="size-4.5"><use href="#ic-users"></use></svg>
+            </div>
+            <div class="leading-tight">
+              <span class="font-bold text-sm block text-base-content group-hover:text-secondary transition-colors">{copy.adminInviteUser || "Invite Contributor"}</span>
+              <span class="text-xs text-base-content/60">Roles and editorial access</span>
+            </div>
+            <svg class="size-4 ml-auto text-base-content/40 group-hover:translate-x-0.5 transition-transform"><use href="#ic-arrow"></use></svg>
           </a>
         </div>
+      </div>
+
+      <!-- Studio Tech Specs Card -->
+      <div class="rounded-3xl border border-base-300 bg-gradient-to-b from-base-100 to-base-200/50 p-6 shadow-xs">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-bold uppercase tracking-wider text-base-content/60">System Platform</span>
+          <span class="badge badge-xs badge-success py-1 px-2 font-bold uppercase">Online</span>
+        </div>
+
+        <ul class="text-xs space-y-2 text-base-content/80 font-mono">
+          <li class="flex items-center justify-between border-b border-base-300/60 pb-1.5">
+            <span class="text-base-content/60 font-sans">Database</span>
+            <span class="font-bold">Cloudflare D1 (SQLite)</span>
+          </li>
+          <li class="flex items-center justify-between border-b border-base-300/60 pb-1.5">
+            <span class="text-base-content/60 font-sans">Render Engine</span>
+            <span class="font-bold">Astro SSR / Cloudflare</span>
+          </li>
+          <li class="flex items-center justify-between border-b border-base-300/60 pb-1.5">
+            <span class="text-base-content/60 font-sans">Content Editor</span>
+            <span class="font-bold">Editor.js (Block CMS)</span>
+          </li>
+          <li class="flex items-center justify-between">
+            <span class="text-base-content/60 font-sans">Supported Locales</span>
+            <span class="font-bold">ES (Default) · EN</span>
+          </li>
+        </ul>
       </div>
     </div>
   </section>

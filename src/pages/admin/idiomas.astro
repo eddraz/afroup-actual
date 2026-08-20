@@ -1,9 +1,8 @@
 ---
 import AdminLayout from "../../layouts/AdminLayout.astro";
-import { requireModuleAccess, sessionTokenFrom } from "../../lib/admin-scope";
+import { requireModuleAccess } from "../../lib/admin-scope";
 import { localizedPath } from "../../lib/i18n";
 import { resolveRequestCopy } from "../../lib/request-locale";
-import { routeIds } from "../../lib/paths";
 import { env } from "cloudflare:workers";
 import { listSiteLanguages } from "../../lib/site-languages";
 
@@ -14,86 +13,124 @@ const access = await requireModuleAccess(env.DB, Astro.cookies, Astro.url, local
 if (access instanceof Response) return access;
 const actor = access;
 
-const loginHref = localizedPath(locale, routeIds.login);
-
-
 const languages = await listSiteLanguages(env.DB);
 ---
 
 <AdminLayout title={copy.adminLanguages} active="languages">
-
-  <details class="card card-border bg-base-100 mt-6">
-    <summary class="card-body cursor-pointer list-none">
-      <span class="flex items-center gap-2 font-bold">
-        <svg class="size-4"><use href="#ic-plus"></use></svg>
-        {copy.adminLanguageAdd}
-      </span>
-    </summary>
-    <form method="post" action="/api/admin/languages" class="card-body border-t border-base-300 pt-4" data-language-form>
-      <input type="hidden" name="_intent" value="create" />
-      <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <fieldset class="fieldset">
-          <legend class="fieldset-legend">{copy.adminLanguageCode}</legend>
-          <input class="input w-full" name="code" required maxlength="2" pattern="[a-zA-Z]{2}" placeholder="pt" />
-        </fieldset>
-        <fieldset class="fieldset">
-          <legend class="fieldset-legend">{copy.adminLanguageName}</legend>
-          <input class="input w-full" name="name" required maxlength="80" placeholder="Portuguese" />
-        </fieldset>
-        <fieldset class="fieldset">
-          <legend class="fieldset-legend">{copy.adminLanguageNative}</legend>
-          <div class="join w-full">
-            <input class="input join-item w-full" name="nativeName" maxlength="80" placeholder="Português" data-native-name />
-            <button class="btn btn-ai join-item" type="button" data-suggest-native>{copy.adminLanguageSuggest}</button>
-          </div>
-          <p class="label">{copy.adminLanguageNativeHelp}</p>
-        </fieldset>
+  <!-- Page Header -->
+  <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <div class="flex items-center gap-2.5">
+        <h2 class="font-display text-2xl font-bold text-base-content">{copy.adminLanguages}</h2>
+        <span class="badge badge-neutral badge-sm font-semibold">{languages.length} configurados</span>
       </div>
-      <div class="mt-3 flex justify-end">
-        <button class="btn btn-ai btn-sm" type="submit">{copy.adminLanguageTranslate}</button>
-      </div>
-    </form>
-  </details>
+      <p class="text-xs sm:text-sm text-base-content/60 mt-1">
+        Gestiona los idiomas soportados para el contenido editorial y las traducciones automáticas con IA.
+      </p>
+    </div>
 
-  <div class="card card-border bg-base-100 mt-6 overflow-x-auto">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>{copy.adminLanguageShow}</th>
-          <th>{copy.adminLanguageCode}</th>
-          <th>{copy.adminLanguageName}</th>
-          <th>{copy.adminLanguageNative}</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        {languages.map((language) => (
-          <tr>
-            <td>
-              <form method="post" action="/api/admin/languages" data-language-toggle>
-                <input type="hidden" name="_intent" value="toggle" />
-                <input type="hidden" name="code" value={language.code} />
-                <input type="hidden" name="visible" value={language.is_visible ? "0" : "1"} />
-                <input type="checkbox" class="checkbox" checked={language.is_visible === 1} data-show-toggle />
-              </form>
-            </td>
-            <td class="font-mono uppercase">{language.code}</td>
-            <td>{language.name}</td>
-            <td>{language.native_name}</td>
-            <td>{language.is_pillar ? <span class="badge badge-sm">{copy.adminLanguagePillar}</span> : null}</td>
+    <button
+      type="button"
+      id="btn-toggle-new-lang"
+      class="btn btn-primary btn-sm gap-2 shadow-sm hover:scale-[1.02] transition-transform"
+    >
+      <svg class="size-4"><use href="#ic-plus"></use></svg>
+      <span>{copy.adminLanguageAdd || "Añadir Idioma"}</span>
+    </button>
+  </div>
+
+  <!-- Collapsible Add Language Form -->
+  <div id="new-lang-box" class="hidden mb-8">
+    <div class="rounded-3xl border border-primary/30 bg-base-100 p-6 sm:p-8 shadow-md ring-1 ring-primary/20">
+      <div class="flex items-center justify-between border-b border-base-300 pb-3 mb-6">
+        <div class="flex items-center gap-2">
+          <span class="size-2.5 rounded-full bg-primary animate-pulse"></span>
+          <h3 class="font-display font-bold text-lg text-base-content">{copy.adminLanguageAdd || "Añadir nuevo idioma"}</h3>
+        </div>
+        <button type="button" class="btn btn-circle btn-ghost btn-xs" id="btn-close-new-lang">✕</button>
+      </div>
+
+      <form method="post" action="/api/admin/languages" class="space-y-5" data-language-form>
+        <input type="hidden" name="_intent" value="create" />
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminLanguageCode || "Código ISO (2 letras)"}</legend>
+            <input class="input input-bordered w-full font-mono font-bold uppercase" name="code" required maxlength="2" pattern="[a-zA-Z]{2}" placeholder="pt" />
+          </fieldset>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminLanguageName || "Nombre Internacional"}</legend>
+            <input class="input input-bordered w-full font-semibold" name="name" required maxlength="80" placeholder="Portuguese" />
+          </fieldset>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminLanguageNative || "Nombre Nativo"}</legend>
+            <div class="join w-full">
+              <input class="input input-bordered join-item w-full font-semibold" name="nativeName" maxlength="80" placeholder="Português" data-native-name />
+              <button class="btn btn-ai join-item text-xs font-bold" type="button" data-suggest-native>{copy.adminLanguageSuggest || "Sugerir IA"}</button>
+            </div>
+            <p class="text-[11px] text-base-content/50 mt-1">{copy.adminLanguageNativeHelp}</p>
+          </fieldset>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2 border-t border-base-300">
+          <button class="btn btn-ghost btn-sm" type="button" id="btn-cancel-new-lang">{copy.adminCancel}</button>
+          <button class="btn btn-primary btn-sm px-5 font-bold" type="submit">{copy.adminLanguageTranslate || "Añadir Idioma"}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Languages Table -->
+  <div class="rounded-3xl border border-base-300 bg-base-100 shadow-xs overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="table table-zebra w-full">
+        <thead>
+          <tr class="border-b border-base-300 bg-base-200/60 text-xs font-extrabold uppercase tracking-wider text-base-content/60">
+            <th class="py-4 pl-6">{copy.adminLanguageShow || "Activo"}</th>
+            <th>{copy.adminLanguageCode || "Código"}</th>
+            <th>{copy.adminLanguageName || "Nombre"}</th>
+            <th>{copy.adminLanguageNative || "Nombre Nativo"}</th>
+            <th class="text-right pr-6">Tipo</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody class="divide-y divide-base-300/60 font-medium text-sm">
+          {languages.map((language) => (
+            <tr class="hover:bg-base-200/50 transition-colors">
+              <td class="py-3.5 pl-6">
+                <form method="post" action="/api/admin/languages" data-language-toggle>
+                  <input type="hidden" name="_intent" value="toggle" />
+                  <input type="hidden" name="code" value={language.code} />
+                  <input type="hidden" name="visible" value={language.is_visible ? "0" : "1"} />
+                  <input type="checkbox" class="checkbox checkbox-sm checkbox-primary rounded-md" checked={language.is_visible === 1} data-show-toggle />
+                </form>
+              </td>
+              <td>
+                <span class="font-mono text-xs px-2 py-1 rounded-md bg-base-200 border border-base-300 font-bold uppercase text-base-content/80">
+                  {language.code}
+                </span>
+              </td>
+              <td class="font-bold text-base-content">{language.name}</td>
+              <td class="text-base-content/80">{language.native_name}</td>
+              <td class="text-right pr-6">
+                {language.is_pillar ? (
+                  <span class="badge badge-xs badge-accent font-bold py-1 px-2 uppercase">{copy.adminLanguagePillar || "Principal"}</span>
+                ) : (
+                  <span class="badge badge-xs badge-ghost py-1 px-2 font-semibold">Opcional</span>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <dialog id="language-last-modal" class="modal">
-    <div class="modal-box">
-      <h3 class="font-display text-lg font-bold">{copy.adminLanguageLastTitle}</h3>
-      <p class="py-4 text-sm opacity-80">{copy.adminLanguageLastLead}</p>
+    <div class="modal-box rounded-3xl p-6">
+      <h3 class="font-display text-lg font-bold text-base-content">{copy.adminLanguageLastTitle}</h3>
+      <p class="py-3 text-sm text-base-content/80">{copy.adminLanguageLastLead}</p>
       <div class="modal-action">
-        <button type="button" class="btn btn-ghost" data-last-cancel>{copy.adminCancel}</button>
-        <button type="button" class="btn btn-primary" data-last-confirm>{copy.adminLanguageLastConfirm}</button>
+        <button type="button" class="btn btn-ghost btn-sm" data-last-cancel>{copy.adminCancel}</button>
+        <button type="button" class="btn btn-primary btn-sm" data-last-confirm>{copy.adminLanguageLastConfirm}</button>
       </div>
     </div>
     <form method="dialog" class="modal-backdrop">
@@ -104,123 +141,51 @@ const languages = await listSiteLanguages(env.DB);
   <script is:inline>
     (function () {
       var bind = function () {
-        var lastModal = document.getElementById("language-last-modal");
-        var pendingHide = null;
-        var visibleCount = function () {
-          return document.querySelectorAll("[data-show-toggle]:checked").length;
-        };
-        var sendToggle = function (form, box) {
-          form.querySelector('input[name="visible"]').value = box.checked ? "1" : "0";
-          fetch(form.action, { method: "POST", body: new FormData(form) })
-            .then(function (res) { return res.json(); })
-            .then(function () { window.location.reload(); });
-        };
-        var closeLastModal = function () {
-          if (pendingHide) {
-            pendingHide.box.checked = true;
-            pendingHide = null;
-          }
-          if (lastModal) lastModal.close();
-        };
-        if (lastModal && lastModal.dataset.bound !== "true") {
-          lastModal.dataset.bound = "true";
-          var cancel = lastModal.querySelector("[data-last-cancel]");
-          var confirm = lastModal.querySelector("[data-last-confirm]");
-          if (cancel) cancel.addEventListener("click", closeLastModal);
-          lastModal.addEventListener("cancel", function () {
-            if (pendingHide) pendingHide.box.checked = true;
-            pendingHide = null;
-          });
-          if (confirm) {
-            confirm.addEventListener("click", function () {
-              if (!pendingHide) return;
-              var current = pendingHide;
-              pendingHide = null;
-              current.box.checked = false;
-              if (lastModal) lastModal.close();
-              sendToggle(current.form, current.box);
-            });
-          }
-        }
-        document.querySelectorAll("[data-language-toggle]").forEach(function (form) {
-          if (form.dataset.bound === "true") return;
-          form.dataset.bound = "true";
-          var box = form.querySelector("[data-show-toggle]");
-          if (!box) return;
-          box.addEventListener("change", function () {
-            if (!box.checked && visibleCount() === 0) {
-              box.checked = true;
-              pendingHide = { form: form, box: box };
-              if (lastModal && typeof lastModal.showModal === "function") lastModal.showModal();
-              return;
-            }
-            sendToggle(form, box);
-          });
-        });
+        var toggleBtn = document.getElementById("btn-toggle-new-lang");
+        var closeBtn = document.getElementById("btn-close-new-lang");
+        var cancelBtn = document.getElementById("btn-cancel-new-lang");
+        var box = document.getElementById("new-lang-box");
 
-        var create = document.querySelector("[data-language-form]");
-        if (create && create.dataset.bound !== "true") {
-          create.dataset.bound = "true";
-          var nativeInput = create.querySelector("[data-native-name]");
-          var suggestBtn = create.querySelector("[data-suggest-native]");
-          var codeInput = create.querySelector('input[name="code"]');
-          var nameInput = create.querySelector('input[name="name"]');
-          var suggestNative = function () {
-            var code = codeInput && codeInput.value.trim();
-            var name = nameInput && nameInput.value.trim();
-            if (!code || !name || !nativeInput) return Promise.resolve();
-            if (suggestBtn) suggestBtn.disabled = true;
-            var data = new FormData();
-            data.set("_intent", "suggest");
-            data.set("code", code);
-            data.set("name", name);
-            return fetch(create.action, { method: "POST", body: data })
-              .then(function (res) { return res.json(); })
-              .then(function (result) {
-                if (result && result.ok && result.nativeName && !nativeInput.dataset.edited) {
-                  nativeInput.value = result.nativeName;
-                }
-              })
-              .finally(function () {
-                if (suggestBtn) suggestBtn.disabled = false;
-              });
-          };
-          if (nativeInput) {
-            nativeInput.addEventListener("input", function () {
-              nativeInput.dataset.edited = nativeInput.value.trim() ? "true" : "";
-            });
-          }
-          if (nameInput) {
-            nameInput.addEventListener("blur", function () {
-              if (nativeInput && !nativeInput.value.trim()) suggestNative();
-            });
-          }
-          if (suggestBtn) {
+        if (toggleBtn && box && toggleBtn.dataset.bound !== "true") {
+          toggleBtn.dataset.bound = "true";
+          toggleBtn.addEventListener("click", function () { box.classList.toggle("hidden"); });
+        }
+        if (closeBtn && box && closeBtn.dataset.bound !== "true") {
+          closeBtn.dataset.bound = "true";
+          closeBtn.addEventListener("click", function () { box.classList.add("hidden"); });
+        }
+        if (cancelBtn && box && cancelBtn.dataset.bound !== "true") {
+          cancelBtn.dataset.bound = "true";
+          cancelBtn.addEventListener("click", function () { box.classList.add("hidden"); });
+        }
+
+        var form = document.querySelector("[data-language-form]");
+        if (form && !form.dataset.bound) {
+          form.dataset.bound = "true";
+          var suggestBtn = form.querySelector("[data-suggest-native]");
+          var nameInput = form.querySelector("input[name='name']");
+          var nativeInput = form.querySelector("[data-native-name]");
+          if (suggestBtn && nameInput && nativeInput) {
             suggestBtn.addEventListener("click", function () {
-              if (nativeInput) nativeInput.dataset.edited = "";
-              suggestNative();
+              var name = nameInput.value.trim();
+              if (!name) return;
+              suggestBtn.disabled = true;
+              fetch("/api/admin/translate", {
+                method: "POST",
+                body: new URLSearchParams({ source: name, target: "native", module: "languages" }),
+              })
+                .then(function (r) { return r.json(); })
+                .then(function (res) {
+                  if (res && res.text) nativeInput.value = res.text;
+                })
+                .finally(function () { suggestBtn.disabled = false; });
             });
           }
-          create.addEventListener("submit", function (event) {
-            event.preventDefault();
-            var submit = create.querySelector("button[type=submit]");
-            if (submit) submit.disabled = true;
-            fetch(create.action, { method: "POST", body: new FormData(create) })
-              .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
-              .then(function (result) {
-                if (result.ok) { window.location.reload(); return; }
-                var lang = document.documentElement.lang === "en" ? "en" : "es";
-                if (window.AfroUpFeedback) window.AfroUpFeedback.toast(lang === "en" ? "Could not add the language." : "No pudimos agregar el idioma.", "error");
-                if (submit) submit.disabled = false;
-              })
-              .catch(function () {
-                if (submit) submit.disabled = false;
-              });
-          });
         }
       };
+
       bind();
-      document.addEventListener("astro:after-swap", bind);
+      document.addEventListener("astro:page-load", bind);
     })();
   </script>
 </AdminLayout>

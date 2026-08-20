@@ -23,8 +23,6 @@ const access = await requireModuleAccess(env.DB, Astro.cookies, Astro.url, local
 if (access instanceof Response) return access;
 const actor = access;
 
-const loginHref = localizedPath(locale, routeIds.login);
-
 const canInvite = await hasPermission(env.DB, actor.id, "users", "create");
 
 interface RoleRow {
@@ -46,11 +44,11 @@ interface PermissionRow {
 }
 
 const users = await listVisibleAdminUsers(env.DB, actor.id);
-    const shareable = users.filter((user) => user.id !== actor.id && user.created_by === actor.id);
-    const sharedRows = (await env.DB.prepare(
-      `SELECT record_id FROM record_shares WHERE module_slug = 'users' AND shared_with_id = ?`,
-    ).bind(actor.id).all<{ record_id: number }>()).results ?? [];
-    const sharedWithMe = new Set(sharedRows.map((row) => row.record_id));
+const shareable = users.filter((user) => user.id !== actor.id && user.created_by === actor.id);
+const sharedRows = (await env.DB.prepare(
+  `SELECT record_id FROM record_shares WHERE module_slug = 'users' AND shared_with_id = ?`,
+).bind(actor.id).all<{ record_id: number }>()).results ?? [];
+const sharedWithMe = new Set(sharedRows.map((row) => row.record_id));
 const roles = (await env.DB.prepare("SELECT id, name, description FROM admin_roles ORDER BY name").all<RoleRow>()).results ?? [];
 const modules = (await env.DB.prepare("SELECT id, name, slug FROM admin_modules ORDER BY name").all<ModuleRow>()).results ?? [];
 const permissions = (await env.DB.prepare("SELECT id, module_id, action FROM admin_permissions ORDER BY module_id, action").all<PermissionRow>()).results ?? [];
@@ -64,169 +62,219 @@ const actionLabels: Record<PermissionAction, string> = {
   update: copy.adminActionUpdate,
   delete: copy.adminActionDelete,
 };
-
-const usuariosReadId = permissions.find((permission) => {
-  if (permission.action !== "read") return false;
-  return modules.some((module) => module.id === permission.module_id && module.slug === "users");
-})?.id;
 ---
 
 <AdminLayout title={copy.adminUsers} active="users">
-  
+  <!-- Page Header -->
+  <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <div class="flex items-center gap-2.5">
+        <h2 class="font-display text-2xl font-bold text-base-content">{copy.adminUsers}</h2>
+        <span class="badge badge-neutral badge-sm font-semibold">{users.length} miembros</span>
+      </div>
+      <p class="text-xs sm:text-sm text-base-content/60 mt-1">
+        Administra el equipo editorial, colaboradores, roles y permisos granulares de acceso.
+      </p>
+    </div>
 
-{canInvite ? (
-  <details class="card bg-base-100 border border-base-300 shadow-sm mt-6">
-    <summary class="card-body cursor-pointer list-none">
-      <span class="flex items-center gap-2 font-bold">
+    {canInvite ? (
+      <button
+        type="button"
+        id="btn-toggle-invite"
+        class="btn btn-primary btn-sm gap-2 shadow-sm hover:scale-[1.02] transition-transform"
+      >
         <svg class="size-4"><use href="#ic-plus"></use></svg>
-        {copy.adminNewUserInvite}
-      </span>
-      <p class="mt-1 text-sm opacity-70">{copy.adminInviteSelectRole}</p>
-    </summary>
+        <span>{copy.adminNewUserInvite || "Invitar Usuario"}</span>
+      </button>
+    ) : null}
+  </div>
 
-    <form method="post" action="/api/admin/users/invite" class="card-body border-t border-base-300 pt-4" data-invite-form>
-      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <fieldset class="fieldset">
-          <legend class="fieldset-legend">{copy.adminModuleName}</legend>
-          <input class="input w-full" name="name" required maxlength="80" autocomplete="off" />
-        </fieldset>
-        <fieldset class="fieldset">
-          <legend class="fieldset-legend">{copy.adminUserEmail}</legend>
-          <input class="input w-full" name="email" type="email" required maxlength="120" autocomplete="off" />
-        </fieldset>
-        <fieldset class="fieldset sm:col-span-2">
-          <legend class="fieldset-legend">{copy.adminUserRole}</legend>
-          <select class="select w-full" name="roleId" data-role-select>
-            <option value="">{copy.adminUserNoRole}</option>
-            {roles.map((role) => <option value={role.id}>{role.name}</option>)}
-          </select>
-          <p class="text-xs opacity-60">{copy.adminInviteRoleHint}</p>
-        </fieldset>
+  <!-- Collapsible Invite Form -->
+  {canInvite ? (
+    <div id="invite-box" class="hidden mb-8">
+      <div class="rounded-3xl border border-primary/30 bg-base-100 p-6 sm:p-8 shadow-md ring-1 ring-primary/20">
+        <div class="flex items-center justify-between border-b border-base-300 pb-3 mb-6">
+          <div class="flex items-center gap-2">
+            <span class="size-2.5 rounded-full bg-primary animate-pulse"></span>
+            <h3 class="font-display font-bold text-lg text-base-content">{copy.adminNewUserInvite || "Invitar nuevo miembro"}</h3>
+          </div>
+          <button type="button" class="btn btn-circle btn-ghost btn-xs" id="btn-close-invite">✕</button>
+        </div>
+
+        <form method="post" action="/api/admin/users/invite" class="space-y-5" data-invite-form>
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminModuleName || "Nombre completo"}</legend>
+              <input class="input input-bordered w-full font-semibold" name="name" required maxlength="80" autocomplete="off" placeholder="Jenniffer M." />
+            </fieldset>
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminUserEmail || "Correo electrónico"}</legend>
+              <input class="input input-bordered w-full font-semibold" name="email" type="email" required maxlength="120" autocomplete="off" placeholder="usuario@afroup.com" />
+            </fieldset>
+            <fieldset class="fieldset sm:col-span-2">
+              <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminUserRole || "Rol predeterminado"}</legend>
+              <select class="select select-bordered w-full font-semibold" name="roleId" data-role-select>
+                <option value="">{copy.adminUserNoRole || "Sin rol asignado"}</option>
+                {roles.map((role) => <option value={role.id}>{role.name}</option>)}
+              </select>
+              <p class="text-xs text-base-content/50 mt-1">{copy.adminInviteRoleHint}</p>
+            </fieldset>
+          </div>
+
+          <div class="border-t border-base-300 pt-4">
+            <p class="text-xs font-extrabold tracking-wider text-base-content/60 uppercase">{copy.adminUserPermissions || "Matriz de Permisos Específicos"}</p>
+            <p class="mt-1 text-xs text-base-content/60">{copy.adminPermissionMatrixHelp}</p>
+            <div class="mt-3">
+              <PermissionMatrix
+                modules={modules}
+                permissions={permissions}
+                actionLabels={actionLabels}
+                allowLabel={copy.adminPermissionAllow}
+                limitLabel={copy.adminPermissionLimit}
+                translateLabel={copy.adminPermissionTranslate}
+                translateNoneLabel={copy.adminPermissionTranslateNone}
+                translateManualLabel={copy.adminPermissionTranslateManual}
+                translateAiLabel={copy.adminPermissionTranslateAi}
+                unlimitedLabel={copy.adminPermissionUnlimited}
+                noneLabel={copy.adminPermissionNone}
+                helpToggleLabel={copy.adminPermissionHelpToggle}
+                doneLabel={copy.adminPermissionDone}
+                helpCreate={copy.adminPermissionHelpCreate}
+                helpRead={copy.adminPermissionHelpRead}
+                helpUpdate={copy.adminPermissionHelpUpdate}
+                helpDelete={copy.adminPermissionHelpDelete}
+                helpAllow={copy.adminPermissionHelpAllow}
+                helpLimit={copy.adminPermissionHelpLimit}
+                helpTranslate={copy.adminPermissionHelpTranslate}
+              />
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-2 pt-2 border-t border-base-300">
+            <button class="btn btn-ghost btn-sm" type="reset" id="btn-cancel-invite">{copy.adminCancel}</button>
+            <button class="btn btn-primary btn-sm px-5 font-bold" type="submit">
+              {copy.adminInviteSelectRole?.includes("rol") ? "Enviar invitación" : copy.adminAdd || "Guardar"}
+            </button>
+          </div>
+        </form>
       </div>
+    </div>
+  ) : null}
 
-      <p class="mt-3 text-xs font-extrabold tracking-[0.16em] text-base-content/60 uppercase">{copy.adminUserPermissions}</p>
-      <p class="mt-1 text-sm opacity-70">{copy.adminPermissionMatrixHelp}</p>
-      <div class="mt-2">
-        <PermissionMatrix
-          modules={modules}
-          permissions={permissions}
-          actionLabels={actionLabels}
-          allowLabel={copy.adminPermissionAllow}
-          limitLabel={copy.adminPermissionLimit}
-          translateLabel={copy.adminPermissionTranslate}
-          translateNoneLabel={copy.adminPermissionTranslateNone}
-          translateManualLabel={copy.adminPermissionTranslateManual}
-          translateAiLabel={copy.adminPermissionTranslateAi}
-          unlimitedLabel={copy.adminPermissionUnlimited}
-          noneLabel={copy.adminPermissionNone}
-          helpToggleLabel={copy.adminPermissionHelpToggle}
-          doneLabel={copy.adminPermissionDone}
-          helpCreate={copy.adminPermissionHelpCreate}
-          helpRead={copy.adminPermissionHelpRead}
-          helpUpdate={copy.adminPermissionHelpUpdate}
-          helpDelete={copy.adminPermissionHelpDelete}
-          helpAllow={copy.adminPermissionHelpAllow}
-          helpLimit={copy.adminPermissionHelpLimit}
-          helpTranslate={copy.adminPermissionHelpTranslate}
-        />
-      </div>
-
-      <div class="flex justify-end gap-2">
-        <button class="btn btn-ghost btn-sm" type="reset">{copy.adminCancel}</button>
-        <button class="btn btn-primary btn-sm" type="submit">{copy.adminInviteSelectRole.includes("rol") ? "Enviar invitación" : copy.adminAdd}</button>
-      </div>
-    </form>
-  </details>
-
-) : null}
-
-  <div class="mt-6 flex flex-col gap-6">
+  <!-- Users Grid / List -->
+  <div class="grid grid-cols-1 gap-4">
     {users.map((user) => {
       const granted = grantedByUser.get(user.id) ?? new Map();
       const isSelf = user.id === actor.id;
       const isChild = user.created_by === actor.id;
       const isShared = sharedWithMe.has(user.id);
+      const initials = (user.name || "U")
+        .split(" ")
+        .map((p) => p[0])
+        .slice(0, 2)
+        .join("")
+        .toUpperCase();
+
       return (
-        <article class="card bg-base-100 border border-base-300 shadow-sm">
-          <div class="card-body gap-4">
-            <div class="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h2 class="font-display text-[20px] tracking-[-0.005em]">{user.name}</h2>
-                <p class="text-sm opacity-70">{user.email}</p>
-                <div class="mt-1 flex flex-wrap items-center gap-2">
-                  <span class:list={["badge badge-sm", user.is_active ? "badge-success" : "badge-ghost"]}>{user.is_active ? copy.adminUserActive : copy.adminUserPaused}</span>
-                  {user.invite_pending ? <span class="badge badge-sm badge-warning">{copy.inviteEyebrow}</span> : null}
-                  {user.role_name ? <span class="badge badge-sm badge-accent">{user.role_name}</span> : null}
-                  {isSelf ? <span class="badge badge-sm">{copy.adminYou}</span> : null}
-                  {isChild ? <span class="badge badge-sm badge-ghost">{copy.adminCreatedByYou}</span> : null}
-                  {isShared ? <span class="badge badge-sm badge-info">{copy.adminSharedWithYou}</span> : null}
+        <article class="rounded-3xl border border-base-300 bg-base-100 p-5 sm:p-6 shadow-xs space-y-4 hover:border-base-300/80 transition-all">
+          <div class="flex flex-wrap items-start justify-between gap-4">
+            <div class="flex items-center gap-3.5">
+              <div class="avatar placeholder">
+                <div class="size-12 rounded-2xl bg-primary/10 text-primary font-bold font-display text-base border border-primary/20 flex items-center justify-center">
+                  <span>{initials}</span>
                 </div>
               </div>
-              {!isSelf ? (
-                <form method="post" action="/api/admin/roles" data-admin-confirm>
-                  <input type="hidden" name="_intent" value="delete_user" />
-                  <input type="hidden" name="id" value={user.id} />
-                  <button class="btn btn-square btn-ghost btn-sm" type="submit" title={copy.adminRemove}>
-                    <svg class="size-4"><use href="#ic-trash"></use></svg>
-                  </button>
-                </form>
-              ) : null}
+              <div>
+                <div class="flex items-center gap-2">
+                  <h3 class="font-display text-lg font-bold text-base-content">{user.name}</h3>
+                  {isSelf ? <span class="badge badge-xs badge-primary font-bold">{copy.adminYou || "Tú"}</span> : null}
+                </div>
+                <p class="text-xs text-base-content/60 font-mono">{user.email}</p>
+                <div class="mt-2 flex flex-wrap items-center gap-1.5">
+                  <span class:list={[
+                    "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider",
+                    user.is_active ? "bg-success/15 text-success border border-success/30" : "bg-base-300 text-base-content/60"
+                  ]}>
+                    <span class:list={["size-1.5 rounded-full", user.is_active ? "bg-success animate-pulse" : "bg-base-content/40"]}></span>
+                    {user.is_active ? copy.adminUserActive || "Activo" : copy.adminUserPaused || "Pausado"}
+                  </span>
+                  {user.invite_pending ? <span class="badge badge-xs badge-warning font-bold py-1 px-2 uppercase">{copy.inviteEyebrow || "Invitación Pendiente"}</span> : null}
+                  {user.role_name ? <span class="badge badge-xs badge-accent font-bold py-1 px-2 uppercase">{user.role_name}</span> : null}
+                  {isChild ? <span class="badge badge-xs badge-ghost font-semibold py-1 px-2">{copy.adminCreatedByYou || "Creado por ti"}</span> : null}
+                  {isShared ? <span class="badge badge-xs badge-info font-semibold py-1 px-2">{copy.adminSharedWithYou || "Compartido"}</span> : null}
+                </div>
+              </div>
             </div>
 
-            {isChild ? (
-              <form method="post" action="/api/admin/shares" class="flex flex-wrap items-end gap-2" data-share-form>
-                <input type="hidden" name="module" value="users" />
-                <input type="hidden" name="recordId" value={user.id} />
-                <fieldset class="fieldset">
-                  <legend class="fieldset-legend">{copy.adminShareWith}</legend>
-                  <select class="select select-sm" name="sharedWithId" required>
-                    <option value="">{copy.adminShareNone}</option>
-                    {shareable.filter((candidate) => candidate.id !== user.id).map((candidate) => (
-                      <option value={candidate.id}>{candidate.name}</option>
-                    ))}
-                  </select>
-                </fieldset>
-                <button class="btn btn-dash btn-sm" type="submit">{copy.adminShare}</button>
-              </form>
-            ) : null}
-
-            {!isSelf && isChild ? (
-              <form method="post" action="/api/admin/permissions" data-admin-permissions-form>
-                <input type="hidden" name="_intent" value="assign_user" />
-                <input type="hidden" name="userId" value={user.id} />
-                <p class="text-xs font-extrabold tracking-[0.16em] text-base-content/60 uppercase">{copy.adminUserPermissions}</p>
-                <p class="mt-1 text-sm opacity-70">{copy.adminPermissionMatrixHelp}</p>
-                <div class="mt-3">
-                  <PermissionMatrix
-                    modules={modules}
-                    permissions={permissions}
-                    assignments={granted}
-                    actionLabels={actionLabels}
-                    allowLabel={copy.adminPermissionAllow}
-                    limitLabel={copy.adminPermissionLimit}
-                    translateLabel={copy.adminPermissionTranslate}
-                    translateNoneLabel={copy.adminPermissionTranslateNone}
-                    translateManualLabel={copy.adminPermissionTranslateManual}
-                    translateAiLabel={copy.adminPermissionTranslateAi}
-                    unlimitedLabel={copy.adminPermissionUnlimited}
-                    noneLabel={copy.adminPermissionNone}
-                    helpToggleLabel={copy.adminPermissionHelpToggle}
-                    doneLabel={copy.adminPermissionDone}
-                    helpCreate={copy.adminPermissionHelpCreate}
-                    helpRead={copy.adminPermissionHelpRead}
-                    helpUpdate={copy.adminPermissionHelpUpdate}
-                    helpDelete={copy.adminPermissionHelpDelete}
-                    helpAllow={copy.adminPermissionHelpAllow}
-                    helpLimit={copy.adminPermissionHelpLimit}
-                    helpTranslate={copy.adminPermissionHelpTranslate}
-                  />
-                </div>
-                <div class="mt-3 flex justify-end gap-2">
-                  <button class="btn btn-primary btn-sm" type="submit">{copy.adminSave}</button>
-                </div>
+            {!isSelf ? (
+              <form method="post" action="/api/admin/roles" data-admin-confirm>
+                <input type="hidden" name="_intent" value="delete_user" />
+                <input type="hidden" name="id" value={user.id} />
+                <button class="btn btn-square btn-ghost btn-xs border border-base-300 hover:bg-error/10 hover:text-error" type="submit" title={copy.adminRemove}>
+                  <svg class="size-3.5"><use href="#ic-trash"></use></svg>
+                </button>
               </form>
             ) : null}
           </div>
+
+          {isChild ? (
+            <div class="border-t border-base-300/60 pt-3">
+              <form method="post" action="/api/admin/shares" class="flex flex-wrap items-center gap-2 text-xs" data-share-form>
+                <input type="hidden" name="module" value="users" />
+                <input type="hidden" name="recordId" value={user.id} />
+                <span class="font-semibold text-base-content/60">{copy.adminShareWith || "Compartir acceso con:"}</span>
+                <select class="select select-bordered select-xs text-xs font-semibold" name="sharedWithId" required>
+                  <option value="">{copy.adminShareNone || "Seleccionar..."}</option>
+                  {shareable.filter((candidate) => candidate.id !== user.id).map((candidate) => (
+                    <option value={candidate.id}>{candidate.name}</option>
+                  ))}
+                </select>
+                <button class="btn btn-ghost btn-xs border border-base-300" type="submit">{copy.adminShare || "Compartir"}</button>
+              </form>
+            </div>
+          ) : null}
+
+          {!isSelf && isChild ? (
+            <details class="border-t border-base-300/60 pt-3 group">
+              <summary class="cursor-pointer text-xs font-bold text-base-content/70 hover:text-primary flex items-center justify-between list-none py-1">
+                <span class="flex items-center gap-1.5">
+                  <svg class="size-3.5"><use href="#ic-key"></use></svg>
+                  <span>{copy.adminUserPermissions || "Configurar permisos directos del usuario"}</span>
+                </span>
+                <span class="text-xs group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <form method="post" action="/api/admin/permissions" data-admin-permissions-form class="mt-3 space-y-3">
+                <input type="hidden" name="_intent" value="assign_user" />
+                <input type="hidden" name="userId" value={user.id} />
+                <PermissionMatrix
+                  modules={modules}
+                  permissions={permissions}
+                  assignments={granted}
+                  actionLabels={actionLabels}
+                  allowLabel={copy.adminPermissionAllow}
+                  limitLabel={copy.adminPermissionLimit}
+                  translateLabel={copy.adminPermissionTranslate}
+                  translateNoneLabel={copy.adminPermissionTranslateNone}
+                  translateManualLabel={copy.adminPermissionTranslateManual}
+                  translateAiLabel={copy.adminPermissionTranslateAi}
+                  unlimitedLabel={copy.adminPermissionUnlimited}
+                  noneLabel={copy.adminPermissionNone}
+                  helpToggleLabel={copy.adminPermissionHelpToggle}
+                  doneLabel={copy.adminPermissionDone}
+                  helpCreate={copy.adminPermissionHelpCreate}
+                  helpRead={copy.adminPermissionHelpRead}
+                  helpUpdate={copy.adminPermissionHelpUpdate}
+                  helpDelete={copy.adminPermissionHelpDelete}
+                  helpAllow={copy.adminPermissionHelpAllow}
+                  helpLimit={copy.adminPermissionHelpLimit}
+                  helpTranslate={copy.adminPermissionHelpTranslate}
+                />
+                <div class="flex justify-end gap-2 pt-2">
+                  <button class="btn btn-primary btn-xs px-4 font-bold" type="submit">{copy.adminSave || "Guardar permisos"}</button>
+                </div>
+              </form>
+            </details>
+          ) : null}
         </article>
       );
     })}
@@ -238,6 +286,26 @@ const usuariosReadId = permissions.find((permission) => {
       var lang = locale === "en" ? "en" : "es";
 
       var bind = function () {
+        var toggleBtn = document.getElementById("btn-toggle-invite");
+        var closeBtn = document.getElementById("btn-close-invite");
+        var cancelBtn = document.getElementById("btn-cancel-invite");
+        var inviteBox = document.getElementById("invite-box");
+
+        if (toggleBtn && inviteBox && toggleBtn.dataset.bound !== "true") {
+          toggleBtn.dataset.bound = "true";
+          toggleBtn.addEventListener("click", function () {
+            inviteBox.classList.toggle("hidden");
+          });
+        }
+        if (closeBtn && inviteBox && closeBtn.dataset.bound !== "true") {
+          closeBtn.dataset.bound = "true";
+          closeBtn.addEventListener("click", function () { inviteBox.classList.add("hidden"); });
+        }
+        if (cancelBtn && inviteBox && cancelBtn.dataset.bound !== "true") {
+          cancelBtn.dataset.bound = "true";
+          cancelBtn.addEventListener("click", function () { inviteBox.classList.add("hidden"); });
+        }
+
         var form = document.querySelector("[data-invite-form]");
         if (form && !form.dataset.boundRole) {
           form.dataset.boundRole = "true";
@@ -249,124 +317,43 @@ const usuariosReadId = permissions.find((permission) => {
             matrix.querySelectorAll("[data-allow-box]").forEach(function (box) {
               var grant = grants[box.value];
               box.checked = Boolean(grant);
+              var row = box.closest("[data-permission-row]");
+              var limit = row ? row.querySelector("[data-limit-select]") : null;
+              var translate = row ? row.querySelector("[data-translate-select]") : null;
+              if (limit) {
+                limit.value = grant && grant.scope ? grant.scope : "unlimited";
+                limit.disabled = !box.checked;
+              }
+              if (translate) {
+                translate.value = grant && grant.translation_tier ? grant.translation_tier : "none";
+                translate.disabled = !box.checked;
+              }
             });
-            matrix.querySelectorAll("[data-quota-input]").forEach(function (input) {
-              var grant = grants[input.getAttribute("data-permission-id")];
-              input.value = grant && grant.quota != null ? grant.quota : "";
-            });
-            matrix.querySelectorAll("[data-translate-manual]").forEach(function (box) {
-              var grant = grants[box.getAttribute("data-permission-id")];
-              box.checked = Boolean(grant && grant.translateManual);
-            });
-            matrix.querySelectorAll("[data-translate-ai]").forEach(function (box) {
-              var grant = grants[box.getAttribute("data-permission-id")];
-              box.checked = Boolean(grant && grant.translateAi);
-            });
-            if (window.AfroUpPermissions) window.AfroUpPermissions.paint(matrix);
           }
           if (roleSelect) {
-            roleSelect.addEventListener("change", function (event) { applyRole(event.target.value); });
+            roleSelect.addEventListener("change", function () { applyRole(roleSelect.value); });
           }
-
-          var submit = form.querySelector("button[type=submit]");
-          var toast = function (message, kind) {
-            if (window.AfroUpFeedback) window.AfroUpFeedback.toast(message, kind);
-          };
-
           form.addEventListener("submit", function (event) {
             event.preventDefault();
-            submit.disabled = true;
-            var data = new FormData(form);
-            data.set("locale", lang);
-            var messages = lang === "en" ? {
-              name_required: "Name is required.",
-              email_invalid: "Enter a valid email.",
-              email_taken: "An admin already exists with that email.",
-              email_failed: "We couldn't send the invite email.",
-              insert_failed: "Could not save the user.",
-              quota_exceeded: "This account reached its user limit.",
-            } : {
-              name_required: "Ingresa un nombre.",
-              email_invalid: "Ingresa un correo válido.",
-              email_taken: "Ya existe un administrador con ese correo.",
-              email_failed: "No pudimos enviar el correo de invitación.",
-              insert_failed: "No pudimos guardar el usuario.",
-              quota_exceeded: "Esta cuenta llegó al límite de usuarios.",
-            };
-            fetch(form.action, { method: "POST", body: data })
+            fetch(form.action, { method: "POST", body: new FormData(form) })
               .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
               .then(function (result) {
                 if (result.ok) {
-                  toast(lang === "en"
-                    ? "Invite sent to " + result.body.emailSentTo
-                    : "Invitación enviada a " + result.body.emailSentTo, "success");
-                  form.reset();
-                  applyRole("");
-                  setTimeout(function () { window.location.reload(); }, 1400);
+                  if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Invitación enviada.", "success");
+                  setTimeout(function () { window.location.reload(); }, 700);
                   return;
                 }
-                toast(messages[result.body && result.body.error] || (lang === "en" ? "Could not save." : "No pudimos guardar."), "error");
-                submit.disabled = false;
+                if (window.AfroUpFeedback) window.AfroUpFeedback.toast("No pudimos enviar la invitación.", "error");
               })
               .catch(function () {
-                toast(lang === "en" ? "Network error." : "Error de red.", "error");
-                submit.disabled = false;
+                if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Error de red.", "error");
               });
           });
         }
-
-
-        document.querySelectorAll("form[data-share-form]").forEach(function (f) {
-          if (f.dataset.boundShare === "true") return;
-          f.dataset.boundShare = "true";
-          f.addEventListener("submit", function (event) {
-            event.preventDefault();
-            var data = new FormData(f);
-            fetch(f.action, { method: "POST", body: data })
-              .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
-              .then(function (result) {
-                if (result.ok) {
-                  if (window.AfroUpFeedback) window.AfroUpFeedback.toast(lang === "en" ? "Record shared." : "Registro compartido.", "success");
-                  setTimeout(function () { window.location.reload(); }, 900);
-                  return;
-                }
-                if (window.AfroUpFeedback) window.AfroUpFeedback.toast(lang === "en" ? "Could not share." : "No pudimos compartir.", "error");
-              })
-              .catch(function () {
-                if (window.AfroUpFeedback) window.AfroUpFeedback.toast(lang === "en" ? "Network error." : "Error de red.", "error");
-              });
-          });
-        });
-
-        document.querySelectorAll("form[data-admin-confirm]").forEach(function (f) {
-          if (f.dataset.boundConfirm === "true") return;
-          f.dataset.boundConfirm = "true";
-          f.addEventListener("submit", function (event) {
-            event.preventDefault();
-            if (!window.confirm(lang === "en" ? "Delete this user?" : "¿Eliminar este usuario?")) return;
-            var data = new FormData(f);
-            fetch(f.action, { method: "POST", body: data }).then(function () { window.location.reload(); });
-          });
-        });
-
-        document.querySelectorAll("form[data-admin-permissions-form]").forEach(function (f) {
-          if (f.dataset.boundPerm === "true") return;
-          f.dataset.boundPerm = "true";
-          f.addEventListener("submit", function (event) {
-            event.preventDefault();
-            var data = new FormData(f);
-            fetch(f.action, { method: "POST", body: data })
-              .then(function (res) { return res.json(); })
-              .then(function () {
-                if (window.AfroUpFeedback) {
-                  window.AfroUpFeedback.toast(lang === "en" ? "Permissions saved." : "Permisos guardados.", "success");
-                }
-              });
-          });
-        });
       };
+
       bind();
-      document.addEventListener("astro:after-swap", bind);
+      document.addEventListener("astro:page-load", bind);
     })();
   </script>
 </AdminLayout>

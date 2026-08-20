@@ -58,294 +58,343 @@ const publicPath = article?.slug && primaryCategorySlug
   : null;
 ---
 
-<div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-  <div class="flex items-center gap-3">
-    <a class="btn btn-ghost btn-sm" href={backHref}>
-      <svg class="size-4"><use href="#ic-arrow"></use></svg>
-      {copy.adminArticles}
-    </a>
-    {publicPath && article?.status === "published" ? (
-      <a class="btn btn-outline btn-sm gap-1.5" href={publicPath} target="_blank" rel="noopener noreferrer">
-        <svg class="size-4"><use href="#ic-link"></use></svg>
-        {copy.adminArticleViewPublic}
-      </a>
-    ) : null}
-  </div>
-  {isEdit && canDelete ? (
-    <button
-      class="btn btn-error btn-outline btn-sm"
-      type="button"
-      data-article-delete-btn
-      data-article-id={article?.id}
-      data-article-title={titles[defaultLocale] || article?.slug}
-    >
-      <svg class="size-4"><use href="#ic-trash"></use></svg>
-      {copy.adminDeleteAccept}
-    </button>
-  ) : null}
-</div>
-
 <form
   method="post"
   action={action}
-  class="card bg-base-100 border border-base-300 shadow-sm"
   data-article-form
   data-success={copy.adminEditorialSaved}
   data-error={copy.adminEditorialSaveError}
+  class="space-y-6"
 >
-  <div class="card-body gap-6">
-    {isEdit ? <input type="hidden" name="id" value={article?.id} /> : null}
+  {isEdit ? <input type="hidden" name="id" value={article?.id} /> : null}
 
-    <!-- Header / Language switch -->
-    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-base-300 pb-4">
-      <div>
-        <h2 class="font-display text-xl font-bold">
-          {isEdit ? `${copy.adminEdit}: ${titles[defaultLocale] || article?.slug}` : copy.adminNewArticle}
-        </h2>
-        {isEdit && article?.created_by_name ? (
-          <p class="text-xs text-base-content/70 mt-0.5">
-            {copy.adminArticleAuthor}: <span class="font-semibold text-base-content">{article.created_by_name}</span>
-            {article.created_at ? ` · ${copy.adminArticleCreatedAt}: ${article.created_at.slice(0, 10)}` : ""}
-            {article.updated_at ? ` · ${copy.adminArticleUpdatedAt}: ${article.updated_at.slice(0, 10)}` : ""}
-          </p>
-        ) : null}
-      </div>
-      <PageLocaleSwitch languages={languages} label={copy.adminLanguages} current={defaultLocale} />
+  <!-- Sticky Top Action Bar -->
+  <div class="sticky top-[64px] z-10 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300 bg-base-100/95 p-3.5 backdrop-blur-md shadow-xs">
+    <div class="flex items-center gap-3 min-w-0">
+      <a class="btn btn-ghost btn-sm gap-1.5 text-xs font-bold" href={backHref}>
+        <svg class="size-4"><use href="#ic-arrow"></use></svg>
+        <span>{copy.adminArticles}</span>
+      </a>
+      <span class="text-base-content/30 hidden sm:inline">/</span>
+      <span class="font-display font-bold text-sm text-base-content truncate hidden sm:inline max-w-[280px]">
+        {isEdit ? (titles[defaultLocale] || article?.slug) : copy.adminNewArticle}
+      </span>
+      {isEdit && article?.status === "published" ? (
+        <span class="badge badge-success badge-xs py-1 px-2 font-bold uppercase tracking-wider hidden md:inline-flex">Publicado</span>
+      ) : isEdit ? (
+        <span class="badge badge-ghost badge-xs py-1 px-2 font-bold uppercase tracking-wider hidden md:inline-flex">Borrador</span>
+      ) : null}
     </div>
 
-    <!-- Multilingual fields -->
-    {languages.map((language) => {
-      const isPrimary = language.code === defaultLocale;
-      const locked = !isPrimary && !translation.canWrite && !translation.canUseAi;
-      const titleVal = titles[language.code] ?? "";
-      const descVal = descriptions[language.code] ?? "";
-      const contentVal = contents[language.code] ?? "";
+    <div class="flex items-center gap-2">
+      {publicPath && article?.status === "published" ? (
+        <a class="btn btn-ghost btn-sm gap-1.5 text-xs border border-base-300 hover:bg-base-200" href={publicPath} target="_blank" rel="noopener noreferrer">
+          <svg class="size-3.5"><use href="#ic-link"></use></svg>
+          <span class="hidden md:inline">{copy.adminArticleViewPublic || "Ver público"}</span>
+        </a>
+      ) : null}
 
-      return (
-        <div
-          class:list={["flex flex-col gap-4", !isPrimary && "hidden"]}
-          data-i18n-panel={language.code}
-          data-locale={language.code}
+      {isEdit && canDelete ? (
+        <button
+          class="btn btn-error btn-outline btn-sm text-xs"
+          type="button"
+          data-article-delete-btn
+          data-article-id={article?.id}
+          data-article-title={titles[defaultLocale] || article?.slug}
         >
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <span class="badge badge-outline font-semibold gap-1">
-              <span class="size-2 rounded-full bg-primary"></span>
-              {language.native_name} ({language.code.toUpperCase()})
-            </span>
-            {!isPrimary && translation.canUseAi ? (
-              <button
-                class="btn btn-ai btn-sm gap-1.5"
-                type="button"
-                data-translate-all-btn={language.code}
-              >
-                <svg class="size-4"><use href="#ic-sparkles"></use></svg>
-                {copy.adminTranslateWithAi}
-              </button>
-            ) : null}
-          </div>
+          <svg class="size-3.5"><use href="#ic-trash"></use></svg>
+          <span class="hidden sm:inline">{copy.adminDeleteAccept}</span>
+        </button>
+      ) : null}
 
-          <!-- Title -->
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend font-bold">
-              {copy.adminCategoryTitle} · {language.native_name}
-            </legend>
-            <input
-              class="input input-bordered w-full font-semibold"
-              name={`title[${language.code}]`}
-              data-title-input={language.code}
-              maxlength="180"
-              required={isPrimary}
-              disabled={locked}
-              value={titleVal}
-              placeholder={isPrimary ? "Título del artículo..." : `Traducción al ${language.native_name}...`}
-            />
-          </fieldset>
+      <button class="btn btn-primary btn-sm px-5 font-bold shadow-sm hover:scale-[1.02] transition-transform" type="submit">
+        <svg class="size-4"><use href="#ic-check"></use></svg>
+        <span>{copy.adminSave || "Guardar Artículo"}</span>
+      </button>
+    </div>
+  </div>
 
-          <!-- Short description / Dek -->
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend font-bold">
-              {copy.adminCategoryDescription} · {language.native_name}
-            </legend>
-            <textarea
-              class="textarea textarea-bordered w-full leading-relaxed"
-              name={`description[${language.code}]`}
-              data-desc-input={language.code}
-              rows="3"
-              maxlength="500"
-              disabled={locked}
-              placeholder="Descripción corta o bajada (dek) del artículo..."
-            >{descVal}</textarea>
-          </fieldset>
+  <!-- Studio 2-Column Grid -->
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-12 items-start">
+    <!-- Left Column: Editorial Canvas (Col 8) -->
+    <div class="space-y-6 lg:col-span-8">
+      <!-- Language Selector Header -->
+      <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300 bg-base-100 p-4 shadow-xs">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-extrabold uppercase tracking-wider text-base-content/50">Idioma de Edición:</span>
+          <PageLocaleSwitch languages={languages} label={copy.adminLanguages} current={defaultLocale} />
+        </div>
 
-          <!-- Rich Content with Editor.js -->
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend font-bold flex items-center justify-between">
-              <span>{copy.adminArticleContent} · {language.native_name}</span>
-              <div class="flex items-center gap-2">
-                <span class="badge badge-sm badge-neutral font-mono">Editor.js</span>
+        {languages.map((language) => {
+          const isPrimary = language.code === defaultLocale;
+          return !isPrimary && translation.canUseAi ? (
+            <button
+              class="btn btn-ai btn-xs gap-1.5 font-bold"
+              type="button"
+              data-translate-all-btn={language.code}
+            >
+              <svg class="size-3.5"><use href="#ic-sparkles"></use></svg>
+              <span>Traducir al {language.native_name} con IA</span>
+            </button>
+          ) : null;
+        })}
+      </div>
+
+      <!-- Multilingual Editorial Panels -->
+      {languages.map((language) => {
+        const isPrimary = language.code === defaultLocale;
+        const locked = !isPrimary && !translation.canWrite && !translation.canUseAi;
+        const titleVal = titles[language.code] ?? "";
+        const descVal = descriptions[language.code] ?? "";
+        const contentVal = contents[language.code] ?? "";
+
+        return (
+          <div
+            class:list={["space-y-5 rounded-3xl border border-base-300 bg-base-100 p-6 sm:p-8 shadow-xs", !isPrimary && "hidden"]}
+            data-i18n-panel={language.code}
+            data-locale={language.code}
+          >
+            <!-- Panel Header -->
+            <div class="flex items-center justify-between border-b border-base-300 pb-3">
+              <span class="badge badge-outline badge-md font-bold gap-1.5 py-1 px-3">
+                <span class="size-2 rounded-full bg-primary animate-pulse"></span>
+                {language.native_name} ({language.code.toUpperCase()})
+              </span>
+              <span class="text-xs font-medium text-base-content/50">
+                {isPrimary ? "Contenido principal de referencia" : "Versión traducida"}
+              </span>
+            </div>
+
+            <!-- Title Input (Editorial Heading) -->
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend font-bold text-xs uppercase tracking-wider text-base-content/60">
+                {copy.adminCategoryTitle || "Título del Artículo"} · {language.native_name}
+              </legend>
+              <input
+                class="input input-bordered w-full font-display text-xl sm:text-2xl font-extrabold h-auto py-3.5 px-4 focus:border-primary"
+                name={`title[${language.code}]`}
+                data-title-input={language.code}
+                maxlength="180"
+                required={isPrimary}
+                disabled={locked}
+                value={titleVal}
+                placeholder={isPrimary ? "Escribe un título impactante aquí..." : `Título traducido al ${language.native_name}...`}
+              />
+            </fieldset>
+
+            <!-- Dek / Short Summary Textarea -->
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend font-bold text-xs uppercase tracking-wider text-base-content/60">
+                {copy.adminCategoryDescription || "Bajada o Resumen (Dek)"} · {language.native_name}
+              </legend>
+              <textarea
+                class="textarea textarea-bordered w-full text-base leading-relaxed p-4 focus:border-primary"
+                name={`description[${language.code}]`}
+                data-desc-input={language.code}
+                rows="2"
+                maxlength="500"
+                disabled={locked}
+                placeholder="Breve introducción o bajada editorial que contextualiza la historia..."
+              >{descVal}</textarea>
+            </fieldset>
+
+            <!-- Editor.js Canvas -->
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend font-bold text-xs uppercase tracking-wider text-base-content/60 flex items-center justify-between">
+                <span>{copy.adminArticleContent || "Cuerpo del Artículo"} (Editor.js)</span>
                 <button
-                  class="btn btn-ghost btn-xs gap-1.5"
+                  class="btn btn-ghost btn-xs gap-1.5 text-xs text-base-content/70 hover:text-base-content"
                   type="button"
                   data-preview-toggle={language.code}
                 >
                   <svg class="size-3.5"><use href="#ic-book2"></use></svg>
-                  {copy.adminLanguageShow || "Vista previa"}
+                  <span>{copy.adminLanguageShow || "Vista previa"}</span>
                 </button>
-              </div>
-            </legend>
+              </legend>
 
-            <div class="flex flex-col gap-3">
-              <!-- Editor.js Canvas Box -->
-              <div
-                class="min-h-[340px] w-full rounded-2xl border border-base-300 bg-base-100 p-6 shadow-xs transition-colors focus-within:border-primary/50"
-              >
-                <div
-                  id={`editorjs-${language.code}`}
-                  class="editorjs-holder min-h-[260px] article-prose max-w-none"
-                  data-editorjs-locale={language.code}
-                  data-disabled={locked ? "true" : "false"}
-                ></div>
-              </div>
-
-              <!-- Synced HTML Textarea (hidden) -->
-              <textarea
-                class="hidden"
-                name={`content_html[${language.code}]`}
-                data-content-input={language.code}
-              >{contentVal}</textarea>
-
-              <!-- Live Preview Box -->
-              <div
-                class="hidden rounded-2xl bg-base-200/40 p-6 border border-base-300 article-prose max-w-none"
-                data-preview-box={language.code}
-              >
-                <div class="text-xs uppercase tracking-wider text-base-content/50 font-bold mb-4 pb-2 border-b border-base-300">
-                  {copy.adminLanguageShow || "Vista previa del artículo"} ({language.code.toUpperCase()})
+              <div class="space-y-3">
+                <!-- Editor.js Container Box -->
+                <div class="min-h-[380px] w-full rounded-2xl border border-base-300 bg-base-100 p-6 shadow-inner focus-within:border-primary/60 transition-colors">
+                  <div
+                    id={`editorjs-${language.code}`}
+                    class="editorjs-holder min-h-[320px] article-prose max-w-none"
+                    data-editorjs-locale={language.code}
+                    data-disabled={locked ? "true" : "false"}
+                  ></div>
                 </div>
-                <div data-preview-content={language.code}></div>
+
+                <!-- Synced HTML Textarea (hidden) -->
+                <textarea
+                  class="hidden"
+                  name={`content_html[${language.code}]`}
+                  data-content-input={language.code}
+                >{contentVal}</textarea>
+
+                <!-- Live Preview Box -->
+                <div
+                  class="hidden rounded-2xl bg-base-200/50 p-6 border border-base-300 article-prose max-w-none shadow-xs"
+                  data-preview-box={language.code}
+                >
+                  <div class="text-xs uppercase tracking-wider text-base-content/50 font-extrabold mb-4 pb-2 border-b border-base-300">
+                    {copy.adminLanguageShow || "Vista previa del artículo"} ({language.code.toUpperCase()})
+                  </div>
+                  <div data-preview-content={language.code}></div>
+                </div>
               </div>
-            </div>
-          </fieldset>
-        </div>
-      );
-    })}
+            </fieldset>
+          </div>
+        );
+      })}
+    </div>
 
-    <!-- Global Article Metadata -->
-    <div class="border-t border-base-300 pt-4">
-      <h3 class="font-display font-bold text-lg mb-3">Configuración y Metadatos</h3>
+    <!-- Right Column: Metadata & Publication Settings (Col 4) -->
+    <div class="space-y-6 lg:col-span-4">
+      <!-- Card: Estado y Publicación -->
+      <div class="rounded-3xl border border-base-300 bg-base-100 p-6 shadow-xs space-y-4">
+        <h3 class="font-display font-bold text-base text-base-content flex items-center gap-2 border-b border-base-300/80 pb-3">
+          <svg class="size-4.5 text-primary"><use href="#ic-pin"></use></svg>
+          <span>Configuración de Publicación</span>
+        </h3>
 
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <!-- Slug -->
+        <!-- Status Selector -->
         <fieldset class="fieldset">
-          <legend class="fieldset-legend font-semibold">{copy.adminCategorySlug}</legend>
+          <legend class="fieldset-legend font-semibold text-xs text-base-content/70">{copy.adminArticleStatus || "Estado del Artículo"}</legend>
+          <select class="select select-bordered select-sm w-full font-bold" name="status">
+            <option value="draft" selected={article?.status !== "published"}>📝 {copy.adminArticleDraft || "Borrador"}</option>
+            <option value="published" selected={article?.status === "published"}>🌐 {copy.adminArticlePublished || "Publicado en vivo"}</option>
+          </select>
+        </fieldset>
+
+        <!-- Slug Input -->
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend font-semibold text-xs text-base-content/70">{copy.adminCategorySlug || "Identificador URL (Slug)"}</legend>
           <input
-            class="input input-bordered w-full"
+            class="input input-bordered input-sm w-full font-mono text-xs"
             name="slug"
             pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
             maxlength="80"
             value={article?.slug ?? ""}
             placeholder="ejemplo-slug-articulo"
           />
-        </fieldset>
-
-        <!-- Status -->
-        <fieldset class="fieldset">
-          <legend class="fieldset-legend font-semibold">{copy.adminArticleStatus}</legend>
-          <select class="select select-bordered w-full" name="status">
-            <option value="draft" selected={article?.status !== "published"}>{copy.adminArticleDraft}</option>
-            <option value="published" selected={article?.status === "published"}>{copy.adminArticlePublished}</option>
-          </select>
+          <span class="text-[11px] text-base-content/50 mt-1">Generado automáticamente si se deja vacío.</span>
         </fieldset>
 
         <!-- Reading Time -->
         <fieldset class="fieldset">
-          <legend class="fieldset-legend font-semibold">{copy.adminArticleReadingTime}</legend>
+          <legend class="fieldset-legend font-semibold text-xs text-base-content/70">{copy.adminArticleReadingTime || "Tiempo de Lectura (minutos)"}</legend>
           <input
-            class="input input-bordered w-full"
+            class="input input-bordered input-sm w-full"
             type="number"
             name="reading_time_minutes"
             min="1"
             max="120"
             value={article?.reading_time_minutes ?? ""}
-            placeholder="Auto (según palabras)"
+            placeholder="Automático según recuento de palabras"
           />
         </fieldset>
       </div>
 
-      <!-- Cover Image URL -->
-      <fieldset class="fieldset mt-4">
-        <legend class="fieldset-legend font-semibold">{copy.adminArticleCoverImage}</legend>
-        <div class="flex flex-col sm:flex-row gap-3 items-start">
+      <!-- Card: Imagen de Portada -->
+      <div class="rounded-3xl border border-base-300 bg-base-100 p-6 shadow-xs space-y-4">
+        <h3 class="font-display font-bold text-base text-base-content flex items-center gap-2 border-b border-base-300/80 pb-3">
+          <svg class="size-4.5 text-accent"><use href="#ic-share"></use></svg>
+          <span>{copy.adminArticleCoverImage || "Imagen de Portada"}</span>
+        </h3>
+
+        <div class="space-y-3">
           <input
-            class="input input-bordered flex-1 w-full"
+            class="input input-bordered input-sm w-full text-xs font-mono"
             name="cover_image_url"
             data-cover-input
-            type="text"
+            type="url"
             maxlength="500"
             value={article?.cover_image_url ?? ""}
-            placeholder={copy.adminArticleCoverImageHelp}
+            placeholder="https://images.unsplash.com/..."
           />
+
           <div
-            class="size-14 rounded-lg bg-base-200 border border-base-300 flex-none overflow-hidden flex items-center justify-center text-xs text-base-content/50"
+            class="aspect-video w-full rounded-2xl bg-base-200 border border-base-300 overflow-hidden flex items-center justify-center text-xs text-base-content/50 shadow-2xs"
             data-cover-preview
           >
             {article?.cover_image_url ? (
               <img src={article.cover_image_url} alt="Cover preview" class="size-full object-cover" />
             ) : (
-              <span>Sin foto</span>
+              <div class="flex flex-col items-center gap-1.5 text-base-content/40">
+                <svg class="size-8 opacity-40"><use href="#ic-book2"></use></svg>
+                <span class="font-semibold text-xs">Sin imagen asignada</span>
+              </div>
             )}
           </div>
         </div>
-      </fieldset>
-
-      <!-- Categories & Tags -->
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 mt-4">
-        <!-- Categories Multi-check -->
-        <fieldset class="fieldset">
-          <legend class="fieldset-legend font-semibold">{copy.adminArticleCategory}</legend>
-          <div class="grid grid-cols-2 gap-2 rounded-xl border border-base-300 p-3 bg-base-200/40">
-            {categories.map((category) => {
-              const theme = getCategoryTheme(category.slug);
-              return (
-                <label class="label cursor-pointer justify-start gap-2.5 rounded-lg p-1 hover:bg-base-100">
-                  <input
-                    class="checkbox checkbox-sm checkbox-primary"
-                    type="checkbox"
-                    name="categoryIds"
-                    value={category.id}
-                    checked={selectedCategoryIds.has(category.id)}
-                  />
-                  <span class="flex items-center gap-1.5 text-sm font-semibold">
-                    <span class:list={["size-2 rounded-full", theme.dotClass]}></span>
-                    {category.title}
-                  </span>
-                </label>
-              );
-            })}
-          </div>
-        </fieldset>
-
-        <!-- Tags -->
-        <fieldset class="fieldset">
-          <legend class="fieldset-legend font-semibold">{copy.adminArticleTags}</legend>
-          <textarea
-            class="textarea textarea-bordered w-full"
-            name="tags"
-            rows="3"
-            maxlength="240"
-            placeholder={copy.adminArticleTagsHelp}
-          >{tagsString}</textarea>
-        </fieldset>
       </div>
-    </div>
 
-    <!-- Actions -->
-    <div class="flex items-center justify-end gap-3 border-t border-base-300 pt-4">
-      <a class="btn btn-ghost btn-sm" href={backHref}>{copy.adminDeleteCancel}</a>
-      <button class="btn btn-primary btn-sm px-6" type="submit">
-        <svg class="size-4"><use href="#ic-check"></use></svg>
-        {copy.adminSave}
-      </button>
+      <!-- Card: Categorías -->
+      <div class="rounded-3xl border border-base-300 bg-base-100 p-6 shadow-xs space-y-4">
+        <h3 class="font-display font-bold text-base text-base-content flex items-center gap-2 border-b border-base-300/80 pb-3">
+          <svg class="size-4.5 text-secondary"><use href="#ic-stack"></use></svg>
+          <span>{copy.adminArticleCategory || "Categorías"}</span>
+        </h3>
+
+        <div class="grid grid-cols-1 gap-1.5 rounded-2xl border border-base-300/80 p-3 bg-base-200/40 max-h-60 overflow-y-auto">
+          {categories.map((category) => {
+            const theme = getCategoryTheme(category.slug);
+            return (
+              <label class="label cursor-pointer justify-start gap-2.5 rounded-xl p-2 hover:bg-base-100 transition-colors">
+                <input
+                  class="checkbox checkbox-xs checkbox-primary rounded-md"
+                  type="checkbox"
+                  name="categoryIds"
+                  value={category.id}
+                  checked={selectedCategoryIds.has(category.id)}
+                />
+                <span class="flex items-center gap-2 text-xs font-bold text-base-content">
+                  <span class:list={["size-2 rounded-full", theme.dotClass]}></span>
+                  {category.title}
+                </span>
+              </label>
+            );
+          })}
+        </div>
+      </div>
+
+      <!-- Card: Etiquetas (Tags) -->
+      <div class="rounded-3xl border border-base-300 bg-base-100 p-6 shadow-xs space-y-4">
+        <h3 class="font-display font-bold text-base text-base-content flex items-center gap-2 border-b border-base-300/80 pb-3">
+          <svg class="size-4.5 text-warning"><use href="#ic-pin"></use></svg>
+          <span>{copy.adminArticleTags || "Etiquetas"}</span>
+        </h3>
+
+        <textarea
+          class="textarea textarea-bordered textarea-sm w-full text-xs leading-relaxed"
+          name="tags"
+          rows="2"
+          maxlength="240"
+          placeholder="cultura, musica, historia, diaspora"
+        >{tagsString}</textarea>
+        <span class="text-[11px] text-base-content/50 block">Separadas por comas.</span>
+      </div>
+
+      <!-- Card: Metadatos de Autoría (si es edición) -->
+      {isEdit && article ? (
+        <div class="rounded-3xl border border-base-300 bg-base-200/40 p-5 text-xs space-y-2 text-base-content/70">
+          <div class="flex items-center justify-between border-b border-base-300/60 pb-1.5">
+            <span>Autor</span>
+            <span class="font-bold text-base-content">{article.created_by_name || "Equipo AfroUp"}</span>
+          </div>
+          {article.created_at ? (
+            <div class="flex items-center justify-between border-b border-base-300/60 pb-1.5">
+              <span>Creado</span>
+              <span class="font-mono">{article.created_at.slice(0, 10)}</span>
+            </div>
+          ) : null}
+          {article.updated_at ? (
+            <div class="flex items-center justify-between">
+              <span>Última edición</span>
+              <span class="font-mono">{article.updated_at.slice(0, 10)}</span>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   </div>
 </form>
@@ -399,9 +448,9 @@ const publicPath = article?.slug && primaryCategorySlug
       coverInput.addEventListener("input", () => {
         const val = coverInput.value.trim();
         if (val) {
-          coverPreview.innerHTML = `<img src="${val}" alt="Cover preview" class="size-full object-cover" onerror="this.parentElement.innerHTML='Error'" />`;
+          coverPreview.innerHTML = `<img src="${val}" alt="Cover preview" class="size-full object-cover" onerror="this.parentElement.innerHTML='<span class=\\'text-error font-semibold\\'>Error al cargar URL</span>'" />`;
         } else {
-          coverPreview.innerHTML = "<span>Sin foto</span>";
+          coverPreview.innerHTML = `<div class="flex flex-col items-center gap-1.5 text-base-content/40"><span class="font-semibold text-xs">Sin imagen asignada</span></div>`;
         }
       });
     }

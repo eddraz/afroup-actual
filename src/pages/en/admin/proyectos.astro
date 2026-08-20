@@ -1,7 +1,7 @@
 ---
 import { env } from "cloudflare:workers";
 import AdminLayout from "../../../layouts/AdminLayout.astro";
-import { requireModuleAccess, sessionTokenFrom } from "../../../lib/admin-scope";
+import { requireModuleAccess } from "../../../lib/admin-scope";
 import { resolveRequestCopy } from "../../../lib/request-locale";
 
 export const prerender = false;
@@ -11,45 +11,63 @@ const access = await requireModuleAccess(env.DB, Astro.cookies, Astro.url, local
 if (access instanceof Response) return access;
 const actor = access;
 
-
 const projects = [
-  { name: "Archivo oral afrocolombiano", org: "Casa de la Memoria", stage: "En revisión", budget: "USD 8.500", date: "10 jun" },
-  { name: "Atlas afrolatinoamericano", org: "Red AfroLatam", stage: "Aprobado", budget: "USD 12.000", date: "02 jun" },
-  { name: "Podcast: Saberes del Pacífico", org: "Colectivo Tambó", stage: "Borrador", budget: "USD 3.200", date: "28 may" },
+  { name: "Afro-Colombian Oral Archive", org: "Memory House", stage: "In Review", budget: "USD 8,500", date: "Jun 10" },
+  { name: "Afro-Latin American Atlas", org: "AfroLatam Network", stage: "Approved", budget: "USD 12,000", date: "Jun 02" },
+  { name: "Podcast: Pacific Knowledge", org: "Tambo Collective", stage: "Draft", budget: "USD 3,200", date: "May 28" },
 ];
 ---
 
 <AdminLayout title={copy.adminProjects} active="projects">
-  
-
-  <div class="card bg-base-100 border border-base-300 shadow-sm mt-6">
-    <div class="card-body p-0">
-      <div class="overflow-x-auto">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Proyecto</th>
-              <th>Organización</th>
-              <th>Etapa</th>
-              <th>Presupuesto</th>
-              <th>Fecha</th>
-            </tr>
-          </thead>
-          <tbody>
-            {projects.map((project) => (
-              <tr>
-                <td class="font-semibold">{project.name}</td>
-                <td>{project.org}</td>
-                <td>
-                  <span class:list={["badge badge-sm", project.stage === "Aprobado" && "badge-success", project.stage === "En revisión" && "badge-warning", project.stage === "Borrador" && "badge-ghost"]}>{project.stage}</span>
-                </td>
-                <td>{project.budget}</td>
-                <td class="text-sm opacity-70">{project.date}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+  <!-- Page Header -->
+  <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <div class="flex items-center gap-2.5">
+        <h2 class="font-display text-2xl font-bold text-base-content">{copy.adminProjects}</h2>
+        <span class="badge badge-neutral badge-sm font-semibold">{projects.length} initiatives</span>
       </div>
+      <p class="text-xs sm:text-sm text-base-content/60 mt-1">
+        Track cultural grants, community initiatives, and funded heritage projects.
+      </p>
+    </div>
+  </div>
+
+  <!-- Projects Table -->
+  <div class="rounded-3xl border border-base-300 bg-base-100 shadow-xs overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="table table-zebra w-full">
+        <thead>
+          <tr class="border-b border-base-300 bg-base-200/60 text-xs font-extrabold uppercase tracking-wider text-base-content/60">
+            <th class="py-4 pl-6">Project</th>
+            <th>Organization</th>
+            <th>Stage</th>
+            <th>Budget</th>
+            <th class="text-right pr-6">Date</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-base-300/60 font-medium text-sm">
+          {projects.map((project) => (
+            <tr class="hover:bg-base-200/50 transition-colors">
+              <td class="py-3.5 pl-6 font-bold text-base-content">{project.name}</td>
+              <td class="text-xs text-base-content/70">{project.org}</td>
+              <td>
+                <span class:list={[
+                  "badge badge-xs font-bold py-1 px-2.5 uppercase tracking-wider",
+                  project.stage === "Approved" && "badge-success",
+                  project.stage === "In Review" && "badge-warning",
+                  project.stage === "Draft" && "badge-ghost"
+                ]}>
+                  {project.stage}
+                </span>
+              </td>
+              <td>
+                <span class="font-mono text-xs font-bold text-base-content/90">{project.budget}</span>
+              </td>
+              <td class="text-right pr-6 text-xs text-base-content/60">{project.date}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   </div>
 </AdminLayout>

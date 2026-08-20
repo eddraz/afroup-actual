@@ -1,6 +1,6 @@
 ---
 import AdminLayout from "../../layouts/AdminLayout.astro";
-import { requireModuleAccess, sessionTokenFrom } from "../../lib/admin-scope";
+import { requireModuleAccess } from "../../lib/admin-scope";
 import { localizedPath } from "../../lib/i18n";
 import { resolveRequestCopy } from "../../lib/request-locale";
 import { routeIds } from "../../lib/paths";
@@ -12,8 +12,6 @@ const { locale, copy } = await resolveRequestCopy(env.DB, Astro.url);
 const access = await requireModuleAccess(env.DB, Astro.cookies, Astro.url, locale, "modulos");
 if (access instanceof Response) return access;
 const actor = access;
-
-const adminHref = localizedPath(locale, routeIds.admin);
 
 interface ModuleRow {
   id: number;
@@ -32,104 +30,143 @@ const modules = (await env.DB.prepare(
 ---
 
 <AdminLayout title={copy.adminModules} active="modules">
-  <div class="flex justify-end">
-    <a class="btn btn-sm btn-ghost" href={adminHref}>{copy.adminBackSite.replace("sitio", "Panel") || "Panel"}</a>
+  <!-- Page Header -->
+  <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <div class="flex items-center gap-2.5">
+        <h2 class="font-display text-2xl font-bold text-base-content">{copy.adminModules}</h2>
+        <span class="badge badge-neutral badge-sm font-semibold">{modules.length} módulos</span>
+      </div>
+      <p class="text-xs sm:text-sm text-base-content/60 mt-1">
+        Módulos y recursos del sistema administrables a través de políticas RBAC.
+      </p>
+    </div>
+
+    <button
+      type="button"
+      id="btn-toggle-new-module"
+      class="btn btn-primary btn-sm gap-2 shadow-sm hover:scale-[1.02] transition-transform"
+    >
+      <svg class="size-4"><use href="#ic-plus"></use></svg>
+      <span>{copy.adminNewModule || "Nuevo Módulo"}</span>
+    </button>
   </div>
 
-  <details class="card bg-base-100 border border-base-300 shadow-sm mt-6" data-admin-create>
-    <summary class="card-body cursor-pointer list-none">
-      <span class="flex items-center gap-2 font-bold">
-        <svg class="size-4"><use href="#ic-plus"></use></svg>
-        {copy.adminNewModule}
-      </span>
-    </summary>
-    <form method="post" action="/api/admin/modules" class="card-body border-t border-base-300 pt-4" data-admin-form>
-      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <fieldset class="fieldset">
-          <legend class="fieldset-legend">{copy.adminModuleName}</legend>
-          <input class="input w-full" name="name" required maxlength="80" />
-        </fieldset>
-        <fieldset class="fieldset">
-          <legend class="fieldset-legend">{copy.adminModuleSlug}</legend>
-          <input class="input w-full" name="slug" required pattern="[a-z0-9-]+" maxlength="60" />
-        </fieldset>
+  <!-- Collapsible Add Module Form -->
+  <div id="new-module-box" class="hidden mb-8">
+    <div class="rounded-3xl border border-primary/30 bg-base-100 p-6 sm:p-8 shadow-md ring-1 ring-primary/20">
+      <div class="flex items-center justify-between border-b border-base-300 pb-3 mb-6">
+        <div class="flex items-center gap-2">
+          <span class="size-2.5 rounded-full bg-primary animate-pulse"></span>
+          <h3 class="font-display font-bold text-lg text-base-content">{copy.adminNewModule || "Crear nuevo módulo"}</h3>
+        </div>
+        <button type="button" class="btn btn-circle btn-ghost btn-xs" id="btn-close-new-module">✕</button>
       </div>
-      <fieldset class="fieldset">
-        <legend class="fieldset-legend">{copy.adminModuleDescription}</legend>
-        <textarea class="textarea w-full" name="description" rows="2" maxlength="240"></textarea>
-      </fieldset>
-      <div class="flex justify-end gap-2">
-        <button class="btn btn-ghost btn-sm" type="reset">{copy.adminCancel}</button>
-        <button class="btn btn-primary btn-sm" type="submit">{copy.adminAdd}</button>
-      </div>
-    </form>
-  </details>
 
-  <div class="card bg-base-100 border border-base-300 shadow-sm mt-6">
-    <div class="card-body p-0">
-      <div class="overflow-x-auto">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>{copy.adminModuleName}</th>
-              <th>{copy.adminModuleSlug}</th>
-              <th>{copy.adminModuleDescription}</th>
-              <th>{copy.adminPermissions}</th>
-              <th></th>
+      <form method="post" action="/api/admin/modules" class="space-y-4" data-admin-form>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminModuleName || "Nombre del Módulo"}</legend>
+            <input class="input input-bordered w-full font-semibold" name="name" required maxlength="80" placeholder="Artículos" />
+          </fieldset>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminModuleSlug || "Slug Identificador"}</legend>
+            <input class="input input-bordered w-full font-mono text-xs" name="slug" required pattern="[a-z0-9-]+" maxlength="60" placeholder="articulos" />
+          </fieldset>
+        </div>
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminModuleDescription || "Descripción"}</legend>
+          <textarea class="textarea textarea-bordered w-full text-sm" name="description" rows="2" maxlength="240" placeholder="Gestión editorial de artículos..."></textarea>
+        </fieldset>
+        <div class="flex justify-end gap-2 pt-2 border-t border-base-300">
+          <button class="btn btn-ghost btn-sm" type="button" id="btn-cancel-new-module">{copy.adminCancel}</button>
+          <button class="btn btn-primary btn-sm px-5 font-bold" type="submit">{copy.adminAdd || "Crear Módulo"}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modules Table -->
+  <div class="rounded-3xl border border-base-300 bg-base-100 shadow-xs overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="table table-zebra w-full">
+        <thead>
+          <tr class="border-b border-base-300 bg-base-200/60 text-xs font-extrabold uppercase tracking-wider text-base-content/60">
+            <th class="py-4 pl-6">{copy.adminModuleName || "Módulo"}</th>
+            <th>{copy.adminModuleSlug || "Slug"}</th>
+            <th>{copy.adminModuleDescription || "Descripción"}</th>
+            <th>Permisos</th>
+            <th class="text-right pr-6">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-base-300/60 font-medium text-sm">
+          {modules.map((m) => (
+            <tr class="hover:bg-base-200/50 transition-colors">
+              <td class="py-3.5 pl-6 font-bold text-base-content">{m.name}</td>
+              <td>
+                <span class="font-mono text-xs px-2.5 py-1 rounded-md bg-base-200 border border-base-300 text-base-content/80">
+                  {m.slug}
+                </span>
+              </td>
+              <td class="text-xs text-base-content/70">{m.description ?? "—"}</td>
+              <td>
+                <span class="badge badge-xs badge-neutral font-mono py-1 px-2 font-bold">{m.permission_count} acciones</span>
+              </td>
+              <td class="text-right pr-6">
+                <form method="post" action="/api/admin/modules" data-admin-confirm>
+                  <input type="hidden" name="_intent" value="delete" />
+                  <input type="hidden" name="id" value={m.id} />
+                  <button class="btn btn-square btn-ghost btn-xs border border-base-300 hover:bg-error/10 hover:text-error" type="submit" title={copy.adminRemove}>
+                    <svg class="size-3.5"><use href="#ic-trash"></use></svg>
+                  </button>
+                </form>
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {modules.map((m) => (
-              <tr>
-                <td class="font-semibold">{m.name}</td>
-                <td><code class="text-xs">{m.slug}</code></td>
-                <td class="text-sm opacity-70">{m.description ?? "—"}</td>
-                <td><span class="badge badge-sm badge-ghost">{m.permission_count}</span></td>
-                <td class="text-right">
-                  <form method="post" action="/api/admin/modules" data-admin-confirm>
-                    <input type="hidden" name="_intent" value="delete" />
-                    <input type="hidden" name="id" value={m.id} />
-                    <button class="btn btn-square btn-ghost btn-sm" type="submit" title={copy.adminRemove}>
-                      <svg class="size-4"><use href="#ic-trash"></use></svg>
-                    </button>
-                  </form>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+          ))}
+        </tbody>
+      </table>
     </div>
   </div>
 
   <script is:inline>
     (function () {
       var bind = function () {
+        var toggleBtn = document.getElementById("btn-toggle-new-module");
+        var closeBtn = document.getElementById("btn-close-new-module");
+        var cancelBtn = document.getElementById("btn-cancel-new-module");
+        var box = document.getElementById("new-module-box");
+
+        if (toggleBtn && box && toggleBtn.dataset.bound !== "true") {
+          toggleBtn.dataset.bound = "true";
+          toggleBtn.addEventListener("click", function () { box.classList.toggle("hidden"); });
+        }
+        if (closeBtn && box && closeBtn.dataset.bound !== "true") {
+          closeBtn.dataset.bound = "true";
+          closeBtn.addEventListener("click", function () { box.classList.add("hidden"); });
+        }
+        if (cancelBtn && box && cancelBtn.dataset.bound !== "true") {
+          cancelBtn.dataset.bound = "true";
+          cancelBtn.addEventListener("click", function () { box.classList.add("hidden"); });
+        }
+
         document.querySelectorAll("form[data-admin-form]").forEach(function (form) {
           if (form.dataset.bound === "true") return;
           form.dataset.bound = "true";
           form.addEventListener("submit", function (event) {
             event.preventDefault();
-            var toast = function (message, kind) {
-              if (window.AfroUpFeedback) window.AfroUpFeedback.toast(message, kind);
-            };
-            var lang = document.documentElement.lang === "en" ? "en" : "es";
             var data = new FormData(form);
             fetch(form.action, { method: "POST", body: data })
               .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
               .then(function (result) {
                 if (result.ok) {
-                  window.location.reload();
+                  if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Módulo guardado.", "success");
+                  setTimeout(function () { window.location.reload(); }, 700);
                   return;
                 }
-                var key = result.body && result.body.error;
-                var msg = lang === "en"
-                  ? { slug_invalid: "Slug must be lowercase letters, numbers, and dashes.", slug_taken: "A module with that slug already exists.", name_required: "Name is required." }[key] || "Could not save."
-                  : { slug_invalid: "El slug solo admite minúsculas, números y guiones.", slug_taken: "Ya existe un módulo con ese slug.", name_required: "El nombre es obligatorio." }[key] || "No pudimos guardar.";
-                toast(msg, "error");
+                if (window.AfroUpFeedback) window.AfroUpFeedback.toast("No pudimos guardar el módulo.", "error");
               })
               .catch(function () {
-                toast(lang === "en" ? "Network error." : "Error de red.", "error");
+                if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Error de red.", "error");
               });
           });
         });
@@ -139,16 +176,15 @@ const modules = (await env.DB.prepare(
           form.dataset.bound = "true";
           form.addEventListener("submit", function (event) {
             event.preventDefault();
-            var lang = document.documentElement.lang === "en" ? "en" : "es";
-            var prompt = lang === "en" ? "Delete this module?" : "¿Eliminar este módulo?";
-            if (!window.confirm(prompt)) return;
+            if (!window.confirm("¿Eliminar este módulo?")) return;
             var data = new FormData(form);
             fetch(form.action, { method: "POST", body: data }).then(function () { window.location.reload(); });
           });
         });
       };
+
       bind();
-      document.addEventListener("astro:after-swap", bind);
+      document.addEventListener("astro:page-load", bind);
     })();
   </script>
 </AdminLayout>
