@@ -597,13 +597,22 @@ function tabClass(key: NavKey) {
               justify-content: center;
             }
             html[data-site-collapsed="true"] #site-sidebar .menu {
-              padding-left: 0.5rem;
-              padding-right: 0.5rem;
+              width: 100%;
+              flex-wrap: nowrap;
+              align-items: stretch;
+              padding: 0.25rem;
+            }
+            html[data-site-collapsed="true"] #site-sidebar .menu > li {
+              width: 100%;
             }
             html[data-site-collapsed="true"] #site-sidebar .menu > li > a {
+              display: flex;
+              width: 2.5rem;
+              height: 2.5rem;
+              margin-inline: auto;
               justify-content: center;
-              padding-left: 0.5rem;
-              padding-right: 0.5rem;
+              align-items: center;
+              padding: 0;
               gap: 0;
             }
             html[data-site-collapsed="true"] #site-sidebar .site-nav-label,
