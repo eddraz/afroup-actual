@@ -99,21 +99,27 @@ const aboutData = await loadAboutPageLocale(env.DB, locale);
     }
   </div>
 
-  <div class="card bg-neutral text-neutral-content mt-9">
-    <div class="card-body sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h3 class="card-title font-display">{aboutData.cta_title}</h3>
-        <p class="opacity-70">{aboutData.cta_body}</p>
-      </div>
-      <div class="card-actions">
-        <a class="btn btn-accent" href={collaborateHref}>{aboutData.collaborate_label || copy.aboutCollaborate}</a>
-        <a class="btn btn-secondary" href={donateHref}>
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <use href="#ic-heart"></use>
-          </svg>
-          {aboutData.donate_label || copy.aboutDonate}
-        </a>
-      </div>
+  <section class="mt-10 rounded-[24px] bg-neutral text-neutral-content p-6 sm:p-8 md:p-9 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-6">
+    <div class="flex-1 min-w-0 pr-0 md:pr-4 space-y-1">
+      <h3 class="font-display text-xl sm:text-2xl font-bold text-neutral-content">{aboutData.cta_title}</h3>
+      <p class="text-sm sm:text-[15px] leading-relaxed text-neutral-content/75">{aboutData.cta_body}</p>
     </div>
-  </div>
+    <div class="flex flex-wrap sm:flex-nowrap items-center gap-3 shrink-0">
+      <a
+        class="btn btn-accent rounded-full font-bold px-6 py-2.5 text-sm text-[#063b42] border-0 hover:scale-[1.02] transition-transform shadow-xs"
+        href={collaborateHref}
+      >
+        {aboutData.collaborate_label || copy.aboutCollaborate}
+      </a>
+      <a
+        class="btn btn-secondary rounded-full font-bold px-6 py-2.5 text-sm text-[#5a4406] border-0 gap-2 hover:scale-[1.02] transition-transform shadow-xs"
+        href={donateHref}
+      >
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+          <use href="#ic-heart"></use>
+        </svg>
+        <span>{aboutData.donate_label || copy.aboutDonate}</span>
+      </a>
+    </div>
+  </section>
 </BaseLayout>
