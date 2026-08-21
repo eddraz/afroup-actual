@@ -32,552 +32,552 @@ const primaryContact = contactByLocale[defaultLocale] || contactByLocale[locale]
 const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
 ---
 
-<div class="space-y-6" data-contact-admin-root>
-  <!-- Page Header & Action Bar -->
-  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-base-300 pb-5">
-    <div>
-      <div class="flex items-center gap-2.5">
-        <h2 class="font-display text-2xl font-bold text-base-content">{copy.adminContact || "Módulo de Contacto"}</h2>
-        <span class="badge badge-primary badge-sm font-semibold">Institucional</span>
+<div class="drawer drawer-end" data-contact-admin-root>
+  <input id="contact-detail-drawer" type="checkbox" class="drawer-toggle" />
+
+  <div class="drawer-content space-y-6">
+    <!-- Page Header & Action Bar -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-base-300 pb-5">
+      <div>
+        <div class="flex items-center gap-2.5">
+          <h2 class="font-display text-2xl font-bold text-base-content">{copy.adminContact || "Módulo de Contacto"}</h2>
+          <span class="badge badge-primary badge-sm font-semibold">Institucional</span>
+        </div>
+        <p class="text-xs sm:text-sm text-base-content/60 mt-1">
+          Gestiona la información pública de contacto y administra los mensajes recibidos desde la web.
+        </p>
       </div>
-      <p class="text-xs sm:text-sm text-base-content/60 mt-1">
-        Gestiona la información pública de contacto y administra los mensajes recibidos desde la web.
-      </p>
+
+      <div class="flex flex-wrap items-center gap-2.5">
+        <!-- Public Preview Link -->
+        <a
+          href={publicHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="btn btn-ghost btn-sm border border-base-300 hover:bg-base-200 gap-1.5 text-base-content/80 hover:text-base-content"
+        >
+          <svg class="size-3.5"><use href="#ic-link"></use></svg>
+          <span>{copy.adminArticleViewPublic || "Ver página pública"}</span>
+        </a>
+
+        <!-- Save Config Button (active when on Config tab) -->
+        <button
+          type="submit"
+          form="contact-page-form"
+          class="btn btn-primary btn-sm gap-2 shadow-sm font-bold hidden"
+          data-contact-submit-btn
+        >
+          <svg class="size-4"><use href="#ic-plus"></use></svg>
+          <span>{copy.accountProfileSave || "Guardar Configuración"}</span>
+        </button>
+      </div>
     </div>
 
-    <div class="flex flex-wrap items-center gap-2.5">
-      <!-- Public Preview Link -->
-      <a
-        href={publicHref}
-        target="_blank"
-        rel="noopener noreferrer"
-        class="btn btn-ghost btn-sm border border-base-300 hover:bg-base-200 gap-1.5 text-base-content/80 hover:text-base-content"
-      >
-        <svg class="size-3.5"><use href="#ic-link"></use></svg>
-        <span>{copy.adminArticleViewPublic || "Ver página pública"}</span>
-      </a>
+    <!-- Metric Badges Overview -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div class="card bg-base-100 border border-base-300 p-4 shadow-2xs">
+        <div class="text-xs font-semibold text-base-content/60">Total Mensajes</div>
+        <div class="text-2xl font-display font-bold text-base-content mt-1" data-stat-total>{stats.total}</div>
+      </div>
+      <div class="card bg-base-100 border border-base-300 p-4 shadow-2xs">
+        <div class="text-xs font-semibold text-warning">No Leídos</div>
+        <div class="text-2xl font-display font-bold text-warning mt-1" data-stat-unread>{stats.unread}</div>
+      </div>
+      <div class="card bg-base-100 border border-base-300 p-4 shadow-2xs">
+        <div class="text-xs font-semibold text-success">Respondidos</div>
+        <div class="text-2xl font-display font-bold text-success mt-1" data-stat-replied>{stats.replied}</div>
+      </div>
+      <div class="card bg-base-100 border border-base-300 p-4 shadow-2xs">
+        <div class="text-xs font-semibold text-base-content/50">Archivados</div>
+        <div class="text-2xl font-display font-bold text-base-content/70 mt-1" data-stat-archived>{stats.archived}</div>
+      </div>
+    </div>
 
-      <!-- Save Config Button (active when on Config tab) -->
+    <!-- Main View Tabs (Bandeja de Mensajes vs Configuración de la Página) -->
+    <div class="tabs tabs-box bg-base-200/60 p-1 rounded-2xl w-fit" role="tablist">
       <button
-        type="submit"
-        form="contact-page-form"
-        class="btn btn-primary btn-sm gap-2 shadow-sm font-bold"
-        data-contact-submit-btn
+        type="button"
+        role="tab"
+        class="tab tab-active font-bold text-xs sm:text-sm gap-2"
+        data-view-tab="messages"
       >
-        <svg class="size-4"><use href="#ic-plus"></use></svg>
-        <span>{copy.accountProfileSave || "Guardar Configuración"}</span>
+        <svg class="size-4"><use href="#ic-message-report"></use></svg>
+        <span>Mensajes Recibidos ({stats.total})</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="tab font-bold text-xs sm:text-sm gap-2"
+        data-view-tab="config"
+      >
+        <svg class="size-4"><use href="#ic-pin"></use></svg>
+        <span>Información de la Página</span>
       </button>
     </div>
-  </div>
 
-  <!-- Metric Badges Overview -->
-  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-    <div class="card bg-base-100 border border-base-300 p-4 shadow-2xs">
-      <div class="text-xs font-semibold text-base-content/60">Total Mensajes</div>
-      <div class="text-2xl font-display font-bold text-base-content mt-1" data-stat-total>{stats.total}</div>
-    </div>
-    <div class="card bg-base-100 border border-base-300 p-4 shadow-2xs">
-      <div class="text-xs font-semibold text-warning">No Leídos</div>
-      <div class="text-2xl font-display font-bold text-warning mt-1" data-stat-unread>{stats.unread}</div>
-    </div>
-    <div class="card bg-base-100 border border-base-300 p-4 shadow-2xs">
-      <div class="text-xs font-semibold text-success">Respondidos</div>
-      <div class="text-2xl font-display font-bold text-success mt-1" data-stat-replied>{stats.replied}</div>
-    </div>
-    <div class="card bg-base-100 border border-base-300 p-4 shadow-2xs">
-      <div class="text-xs font-semibold text-base-content/50">Archivados</div>
-      <div class="text-2xl font-display font-bold text-base-content/70 mt-1" data-stat-archived>{stats.archived}</div>
-    </div>
-  </div>
+    <!-- TAB 1: Bandeja de Mensajes Recibidos -->
+    <section class="space-y-4" data-view-panel="messages">
+      <!-- Filter Toolbar -->
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-base-100 p-3.5 rounded-2xl border border-base-300">
+        <div class="flex flex-wrap items-center gap-1.5">
+          <button type="button" class="btn btn-xs btn-active font-semibold" data-filter-status="all">
+            Todos ({stats.total})
+          </button>
+          <button type="button" class="btn btn-xs btn-ghost text-warning font-semibold" data-filter-status="unread">
+            No leídos ({stats.unread})
+          </button>
+          <button type="button" class="btn btn-xs btn-ghost text-info font-semibold" data-filter-status="read">
+            Leídos ({stats.read})
+          </button>
+          <button type="button" class="btn btn-xs btn-ghost text-success font-semibold" data-filter-status="replied">
+            Respondidos ({stats.replied})
+          </button>
+          <button type="button" class="btn btn-xs btn-ghost text-base-content/60 font-semibold" data-filter-status="archived">
+            Archivados ({stats.archived})
+          </button>
+        </div>
 
-  <!-- Main View Tabs (Bandeja de Mensajes vs Configuración de la Página) -->
-  <div class="tabs tabs-box bg-base-200/60 p-1 rounded-2xl w-fit" role="tablist">
-    <button
-      type="button"
-      role="tab"
-      class="tab tab-active font-bold text-xs sm:text-sm gap-2"
-      data-view-tab="messages"
-    >
-      <svg class="size-4"><use href="#ic-mail"></use></svg>
-      <span>Mensajes Recibidos ({stats.total})</span>
-    </button>
-    <button
-      type="button"
-      role="tab"
-      class="tab font-bold text-xs sm:text-sm gap-2"
-      data-view-tab="config"
-    >
-      <svg class="size-4"><use href="#ic-pin"></use></svg>
-      <span>Información de la Página</span>
-    </button>
-  </div>
-
-  <!-- TAB 1: Bandeja de Mensajes Recibidos -->
-  <section class="space-y-4" data-view-panel="messages">
-    <!-- Filter Toolbar -->
-    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-base-100 p-3.5 rounded-2xl border border-base-300">
-      <div class="flex flex-wrap items-center gap-1.5">
-        <button type="button" class="btn btn-xs btn-active font-semibold" data-filter-status="all">
-          Todos ({stats.total})
-        </button>
-        <button type="button" class="btn btn-xs btn-ghost text-warning font-semibold" data-filter-status="unread">
-          No leídos ({stats.unread})
-        </button>
-        <button type="button" class="btn btn-xs btn-ghost text-info font-semibold" data-filter-status="read">
-          Leídos ({stats.read})
-        </button>
-        <button type="button" class="btn btn-xs btn-ghost text-success font-semibold" data-filter-status="replied">
-          Respondidos ({stats.replied})
-        </button>
-        <button type="button" class="btn btn-xs btn-ghost text-base-content/60 font-semibold" data-filter-status="archived">
-          Archivados ({stats.archived})
-        </button>
+        <div class="relative min-w-[220px]">
+          <input
+            type="search"
+            placeholder="Buscar mensaje por nombre, correo..."
+            class="input input-bordered input-xs w-full pl-8"
+            data-search-input
+          />
+          <svg class="size-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none">
+            <use href="#ic-search"></use>
+          </svg>
+        </div>
       </div>
 
-      <div class="relative min-w-[220px]">
-        <input
-          type="search"
-          placeholder="Buscar mensaje por nombre, correo..."
-          class="input input-bordered input-xs w-full pl-8"
-          data-search-input
-        />
-        <svg class="size-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none">
-          <use href="#ic-search"></use>
-        </svg>
-      </div>
-    </div>
-
-    <!-- Messages Data Table -->
-    <div class="rounded-3xl border border-base-300 bg-base-100 overflow-hidden shadow-xs">
-      <div class="overflow-x-auto">
-        <table class="table table-zebra w-full text-left" data-submissions-table>
-          <thead class="bg-base-200/70 text-[11px] uppercase tracking-wider text-base-content/60">
-            <tr>
-              <th class="py-3 px-4">Estado</th>
-              <th class="py-3 px-4">Fecha</th>
-              <th class="py-3 px-4">Remitente</th>
-              <th class="py-3 px-4">Asunto / Mensaje</th>
-              <th class="py-3 px-4 text-right">Acciones</th>
-            </tr>
-          </thead>
-          <tbody class="text-xs divide-y divide-base-200" data-submissions-tbody>
-            {submissions.length === 0 ? (
+      <!-- Messages Data Table -->
+      <div class="rounded-3xl border border-base-300 bg-base-100 overflow-hidden shadow-xs">
+        <div class="overflow-x-auto">
+          <table class="table table-zebra w-full text-left" data-submissions-table>
+            <thead class="bg-base-200/70 text-[11px] uppercase tracking-wider text-base-content/60">
               <tr>
-                <td colspan="5" class="py-8 text-center text-base-content/50">
-                  No hay mensajes de contacto guardados aún.
-                </td>
+                <th class="py-3 px-4">Estado</th>
+                <th class="py-3 px-4">Fecha</th>
+                <th class="py-3 px-4">Remitente</th>
+                <th class="py-3 px-4">Asunto / Mensaje</th>
+                <th class="py-3 px-4 text-right">Acciones</th>
               </tr>
-            ) : (
-              submissions.map((sub) => {
-                const statusBadge =
-                  sub.status === "unread"
-                    ? "badge-warning"
-                    : sub.status === "replied"
-                    ? "badge-success"
-                    : sub.status === "read"
-                    ? "badge-info"
-                    : "badge-neutral opacity-60";
-                const statusLabel =
-                  sub.status === "unread"
-                    ? "No leído"
-                    : sub.status === "replied"
-                    ? "Respondido"
-                    : sub.status === "read"
-                    ? "Leído"
-                    : "Archivado";
+            </thead>
+            <tbody class="text-xs divide-y divide-base-200" data-submissions-tbody>
+              {submissions.length === 0 ? (
+                <tr>
+                  <td colspan="5" class="py-8 text-center text-base-content/50">
+                    No hay mensajes de contacto guardados aún.
+                  </td>
+                </tr>
+              ) : (
+                submissions.map((sub) => {
+                  const statusBadge =
+                    sub.status === "unread"
+                      ? "badge-warning"
+                      : sub.status === "replied"
+                      ? "badge-success"
+                      : sub.status === "read"
+                      ? "badge-info"
+                      : "badge-neutral opacity-60";
+                  const statusLabel =
+                    sub.status === "unread"
+                      ? "No leído"
+                      : sub.status === "replied"
+                      ? "Respondido"
+                      : sub.status === "read"
+                      ? "Leído"
+                      : "Archivado";
 
-                return (
-                  <tr class="hover:bg-base-200/50 transition-colors group" data-sub-row={sub.id} data-status={sub.status}>
-                    <td class="py-3 px-4 whitespace-nowrap">
-                      <span class:list={["badge badge-xs py-1 px-2 font-bold", statusBadge]}>
-                        {statusLabel}
-                      </span>
-                    </td>
-                    <td class="py-3 px-4 whitespace-nowrap text-base-content/60 font-mono text-[11px]">
-                      {new Date(sub.created_at).toLocaleDateString("es-ES", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </td>
-                    <td class="py-3 px-4 whitespace-nowrap">
-                      <div class="font-bold text-base-content">{sub.name}</div>
-                      <div class="text-base-content/60 font-mono text-[11px]">{sub.email}</div>
-                    </td>
-                    <td class="py-3 px-4 max-w-xs sm:max-w-md">
-                      <div class="font-semibold text-base-content truncate">{sub.subject}</div>
-                      <div class="text-base-content/60 truncate text-[11px]">{sub.message}</div>
-                    </td>
-                    <td class="py-3 px-4 text-right whitespace-nowrap">
-                      <button
-                        type="button"
-                        class="btn btn-xs btn-outline btn-primary font-bold gap-1"
-                        data-open-drawer={sub.id}
-                        data-sub-data={JSON.stringify(sub)}
-                      >
-                        <span>Ver Detalle</span>
-                        <svg class="size-3"><use href="#ic-arrow"></use></svg>
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+                  return (
+                    <tr class="hover:bg-base-200/50 transition-colors group" data-sub-row={sub.id} data-status={sub.status}>
+                      <td class="py-3 px-4 whitespace-nowrap">
+                        <span class:list={["badge badge-xs py-1 px-2 font-bold", statusBadge]}>
+                          {statusLabel}
+                        </span>
+                      </td>
+                      <td class="py-3 px-4 whitespace-nowrap text-base-content/60 font-mono text-[11px]">
+                        {new Date(sub.created_at).toLocaleDateString("es-ES", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </td>
+                      <td class="py-3 px-4 whitespace-nowrap">
+                        <div class="font-bold text-base-content">{sub.name}</div>
+                        <div class="text-base-content/60 font-mono text-[11px]">{sub.email}</div>
+                      </td>
+                      <td class="py-3 px-4 max-w-xs sm:max-w-md">
+                        <div class="font-semibold text-base-content truncate">{sub.subject}</div>
+                        <div class="text-base-content/60 truncate text-[11px]">{sub.message}</div>
+                      </td>
+                      <td class="py-3 px-4 text-right whitespace-nowrap">
+                        <button
+                          type="button"
+                          class="btn btn-xs btn-outline btn-primary font-bold gap-1"
+                          data-open-drawer={sub.id}
+                        >
+                          <span>Ver Detalle</span>
+                          <svg class="size-3"><use href="#ic-arrow"></use></svg>
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- TAB 2: Configuración de la Página de Contacto -->
-  <section class="space-y-6 hidden" data-view-panel="config">
-    <!-- Translation Modal Dialog -->
-    {translation.canUseAi && targetLanguages.length > 0 ? (
-      <dialog class="modal" id="contact-translate-modal">
-        <div class="modal-box max-w-md space-y-4 rounded-3xl border border-base-300 bg-base-100 p-6 shadow-2xl">
-          <div class="flex items-center justify-between gap-3 border-b border-base-200 pb-3">
-            <div class="flex items-center gap-2.5">
-              <div class="flex size-9 items-center justify-center rounded-xl bg-ai/15 text-ai shrink-0">
-                <svg class="size-5"><use href="#ic-language"></use></svg>
+    <!-- TAB 2: Configuración de la Página de Contacto -->
+    <section class="space-y-6 hidden" data-view-panel="config">
+      <!-- Translation Modal Dialog -->
+      {translation.canUseAi && targetLanguages.length > 0 ? (
+        <dialog class="modal" id="contact-translate-modal">
+          <div class="modal-box max-w-md space-y-4 rounded-3xl border border-base-300 bg-base-100 p-6 shadow-2xl">
+            <div class="flex items-center justify-between gap-3 border-b border-base-200 pb-3">
+              <div class="flex items-center gap-2.5">
+                <div class="flex size-9 items-center justify-center rounded-xl bg-ai/15 text-ai shrink-0">
+                  <svg class="size-5"><use href="#ic-language"></use></svg>
+                </div>
+                <div>
+                  <h3 class="font-display text-base font-bold text-base-content">
+                    {copy.adminTranslateModalTitle || "Traducir página de contacto"}
+                  </h3>
+                  <p class="text-xs text-base-content/60">
+                    Traduce textos institucionales y canales de atención con IA.
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 class="font-display text-base font-bold text-base-content">
-                  {copy.adminTranslateModalTitle || "Traducir página de contacto"}
-                </h3>
-                <p class="text-xs text-base-content/60">
-                  Traduce textos institucionales y canales de atención con IA.
-                </p>
-              </div>
-            </div>
-            <button type="button" class="btn btn-circle btn-ghost btn-xs text-base-content/70" data-close-contact-translate-modal>✕</button>
-          </div>
-
-          <p class="text-xs leading-relaxed text-base-content/70">
-            Esta acción traducirá con IA el hero, los canales de atención y los metadatos al idioma seleccionado tomando como origen el español.
-          </p>
-
-          <div class="space-y-3 rounded-2xl bg-base-200/60 p-3.5 border border-base-300/60">
-            <div class="flex items-center justify-between text-xs">
-              <span class="font-semibold text-base-content/60">{copy.adminTranslateSourceLang || "Idioma de origen"}:</span>
-              <span class="badge badge-neutral badge-sm font-bold uppercase">Español (ES)</span>
+              <button type="button" class="btn btn-circle btn-ghost btn-xs text-base-content/70" data-close-contact-translate-modal>✕</button>
             </div>
 
-            <fieldset class="fieldset space-y-1.5">
-              <legend class="fieldset-legend text-[11px] font-mono uppercase tracking-wider text-base-content/70">
-                {copy.adminTranslateTargetLang || "Idioma de destino"}
-              </legend>
-              <select class="select select-bordered select-sm w-full font-medium" id="contact-translate-target-select">
-                {targetLanguages.map((lang) => (
-                  <option value={lang.code}>
-                    {lang.native_name} ({lang.code.toUpperCase()})
-                  </option>
-                ))}
-              </select>
-            </fieldset>
+            <p class="text-xs leading-relaxed text-base-content/70">
+              Esta acción traducirá con IA el hero, los canales de atención y los metadatos al idioma seleccionado tomando como origen el español.
+            </p>
+
+            <div class="space-y-3 rounded-2xl bg-base-200/60 p-3.5 border border-base-300/60">
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-semibold text-base-content/60">{copy.adminTranslateSourceLang || "Idioma de origen"}:</span>
+                <span class="badge badge-neutral badge-sm font-bold uppercase">Español (ES)</span>
+              </div>
+
+              <fieldset class="fieldset space-y-1.5">
+                <legend class="fieldset-legend text-[11px] font-mono uppercase tracking-wider text-base-content/70">
+                  {copy.adminTranslateTargetLang || "Idioma de destino"}
+                </legend>
+                <select class="select select-bordered select-sm w-full font-medium" id="contact-translate-target-select">
+                  {targetLanguages.map((lang) => (
+                    <option value={lang.code}>
+                      {lang.native_name} ({lang.code.toUpperCase()})
+                    </option>
+                  ))}
+                </select>
+              </fieldset>
+            </div>
+
+            <div class="modal-action flex items-center justify-end gap-2 pt-2 border-t border-base-200">
+              <button type="button" class="btn btn-ghost btn-sm" data-close-contact-translate-modal>
+                {copy.cancel || "Cancelar"}
+              </button>
+              <button type="button" class="btn btn-ai btn-sm gap-2 font-bold" id="contact-translate-confirm-btn">
+                <svg class="size-4 shrink-0"><use href="#ic-sparkles"></use></svg>
+                <span>{copy.adminTranslateAction || "Traducir ahora"}</span>
+              </button>
+            </div>
+          </div>
+          <form method="dialog" class="modal-backdrop"><button type="submit">close</button></form>
+        </dialog>
+      ) : null}
+
+      <!-- R2 Modal for Open Graph / Social Images -->
+      <dialog class="modal z-50" id="contact-og-image-r2-modal">
+        <div class="modal-box max-w-2xl p-6 bg-base-100 rounded-3xl border border-base-300 shadow-2xl space-y-4">
+          <div class="flex items-center justify-between border-b border-base-300 pb-3">
+            <div class="flex items-center gap-2">
+              <span class="size-2.5 rounded-full bg-accent animate-pulse"></span>
+              <h3 class="font-display font-bold text-base text-base-content">
+                Subir Imagen Social / Open Graph (R2 Storage)
+              </h3>
+            </div>
+            <button type="button" class="btn btn-circle btn-ghost btn-xs" data-close-contact-og-modal>✕</button>
           </div>
 
-          <div class="modal-action flex items-center justify-end gap-2 pt-2 border-t border-base-200">
-            <button type="button" class="btn btn-ghost btn-sm" data-close-contact-translate-modal>
-              {copy.cancel || "Cancelar"}
-            </button>
-            <button type="button" class="btn btn-ai btn-sm gap-2 font-bold" id="contact-translate-confirm-btn">
-              <svg class="size-4 shrink-0"><use href="#ic-sparkles"></use></svg>
-              <span>{copy.adminTranslateAction || "Traducir ahora"}</span>
-            </button>
-          </div>
+          <R2Uploader
+            bucket="media"
+            prefix="og/contacto"
+            allowedTypes="image/*"
+            targetInputId="contact-og-target-input"
+            locale={locale}
+            flat={true}
+            showBucketSelector={false}
+            allowAiGenerate={true}
+            canUseAi={translation.canUseAi}
+            promptModel="@cf/deepseek-ai/deepseek-v4-flash-0731"
+            imageModel="xai/grok-imagine-image-2.0"
+            videoModel="bytedance/seedance-2.5"
+            musicModel="minimax/music-2.6"
+            textModel="@cf/deepseek-ai/deepseek-v4-flash-0731"
+          />
         </div>
         <form method="dialog" class="modal-backdrop"><button type="submit">close</button></form>
       </dialog>
-    ) : null}
 
-    <!-- R2 Modal for Open Graph / Social Images -->
-    <dialog class="modal z-50" id="contact-og-image-r2-modal">
-      <div class="modal-box max-w-2xl p-6 bg-base-100 rounded-3xl border border-base-300 shadow-2xl space-y-4">
-        <div class="flex items-center justify-between border-b border-base-300 pb-3">
-          <div class="flex items-center gap-2">
-            <span class="size-2.5 rounded-full bg-accent animate-pulse"></span>
-            <h3 class="font-display font-bold text-base text-base-content">
-              Subir Imagen Social / Open Graph (R2 Storage)
-            </h3>
-          </div>
-          <button type="button" class="btn btn-circle btn-ghost btn-xs" data-close-contact-og-modal>✕</button>
+      <input type="hidden" id="contact-og-target-input" value="" />
+
+      <!-- Config Form -->
+      <form
+        id="contact-page-form"
+        method="post"
+        action="/api/admin/contact-config"
+        class="space-y-8"
+        data-contact-form
+      >
+        <div class="flex items-center justify-between bg-base-200/40 p-3.5 rounded-2xl border border-base-300">
+          <PageLocaleSwitch languages={languages} currentLocale={locale} />
+
+          {translation.canUseAi && targetLanguages.length > 0 ? (
+            <button
+              type="button"
+              class="btn btn-xs btn-ai gap-1.5 shadow-xs font-semibold"
+              data-open-contact-translate-modal
+            >
+              <svg class="size-3.5"><use href="#ic-sparkles"></use></svg>
+              <span>Traducir con IA</span>
+            </button>
+          ) : null}
         </div>
 
-        <R2Uploader
-          bucket="media"
-          prefix="og/contacto"
-          allowedTypes="image/*"
-          targetInputId="contact-og-target-input"
-          locale={locale}
-          flat={true}
-          showBucketSelector={false}
-          allowAiGenerate={true}
-          canUseAi={translation.canUseAi}
-          promptModel="@cf/deepseek-ai/deepseek-v4-flash-0731"
-          imageModel="xai/grok-imagine-image-2.0"
-          videoModel="bytedance/seedance-2.5"
-          musicModel="minimax/music-2.6"
-          textModel="@cf/deepseek-ai/deepseek-v4-flash-0731"
-        />
-      </div>
-      <form method="dialog" class="modal-backdrop"><button type="submit">close</button></form>
-    </dialog>
+        {languages.map((lang) => {
+          const loc = lang.code;
+          const isDefault = loc === defaultLocale;
+          const data = contactByLocale[loc] || contactByLocale[defaultLocale] || primaryContact;
+          const isHidden = loc !== locale;
 
-    <input type="hidden" id="contact-og-target-input" value="" />
-
-    <!-- Config Form -->
-    <form
-      id="contact-page-form"
-      method="post"
-      action="/api/admin/contact-config"
-      class="space-y-8"
-      data-contact-form
-    >
-      <div class="flex items-center justify-between bg-base-200/40 p-3.5 rounded-2xl border border-base-300">
-        <PageLocaleSwitch languages={languages} currentLocale={locale} />
-
-        {translation.canUseAi && targetLanguages.length > 0 ? (
-          <button
-            type="button"
-            class="btn btn-xs btn-ai gap-1.5 shadow-xs font-semibold"
-            data-open-contact-translate-modal
-          >
-            <svg class="size-3.5"><use href="#ic-sparkles"></use></svg>
-            <span>Traducir con IA</span>
-          </button>
-        ) : null}
-      </div>
-
-      {languages.map((lang) => {
-        const loc = lang.code;
-        const isDefault = loc === defaultLocale;
-        const data = contactByLocale[loc] || contactByLocale[defaultLocale] || primaryContact;
-        const isHidden = loc !== locale;
-
-        return (
-          <div data-i18n-panel={loc} class:list={["space-y-6", { hidden: isHidden }]}>
-            <!-- Section 1: Hero Principal -->
-            <div class="rounded-3xl border border-base-300 bg-base-100 p-6 shadow-xs space-y-4">
-              <div class="border-b border-base-300/80 pb-3 flex items-center justify-between">
-                <h3 class="font-display font-bold text-base text-base-content flex items-center gap-2">
-                  <span class="size-2 rounded-full bg-primary"></span>
-                  <span>1. Cabecera (Hero)</span>
-                </h3>
-                <span class="text-xs text-base-content/50">Banner superior de la página</span>
-              </div>
-
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="space-y-1.5 md:col-span-1">
-                  <label class="label-text font-bold text-xs">Antetítulo (Eyebrow)</label>
-                  <input
-                    type="text"
-                    name={`eyebrow_${loc}`}
-                    value={data.eyebrow}
-                    class="input input-bordered input-sm w-full font-medium"
-                    placeholder="Contáctanos"
-                    required={isDefault}
-                  />
+          return (
+            <div data-i18n-panel={loc} class:list={["space-y-6", { hidden: isHidden }]}>
+              <!-- Section 1: Hero Principal -->
+              <div class="rounded-3xl border border-base-300 bg-base-100 p-6 shadow-xs space-y-4">
+                <div class="border-b border-base-300/80 pb-3 flex items-center justify-between">
+                  <h3 class="font-display font-bold text-base text-base-content flex items-center gap-2">
+                    <span class="size-2 rounded-full bg-primary"></span>
+                    <span>1. Cabecera (Hero)</span>
+                  </h3>
+                  <span class="text-xs text-base-content/50">Banner superior de la página</span>
                 </div>
 
-                <div class="space-y-1.5 md:col-span-2">
-                  <label class="label-text font-bold text-xs">Título Principal (H1)</label>
-                  <input
-                    type="text"
-                    name={`title_${loc}`}
-                    value={data.title}
-                    class="input input-bordered input-sm w-full font-bold text-sm"
-                    placeholder="Hablemos"
-                    required={isDefault}
-                  />
-                </div>
-              </div>
-
-              <div class="space-y-1.5">
-                <label class="label-text font-bold text-xs">Subtítulo / Lead Descriptivo</label>
-                <textarea
-                  name={`lead_${loc}`}
-                  rows="2"
-                  class="textarea textarea-bordered textarea-sm w-full leading-relaxed"
-                  placeholder="Prensa, alianzas, talleres o simplemente saludar — te respondemos en menos de 72 horas."
-                >{data.lead}</textarea>
-              </div>
-            </div>
-
-            <!-- Section 2: Canales de Atención Directa -->
-            <div class="rounded-3xl border border-base-300 bg-base-100 p-6 shadow-xs space-y-4">
-              <div class="border-b border-base-300/80 pb-3 flex items-center justify-between">
-                <h3 class="font-display font-bold text-base text-base-content flex items-center gap-2">
-                  <span class="size-2 rounded-full bg-accent"></span>
-                  <span>2. Canales de Contacto Directo</span>
-                </h3>
-                <span class="text-xs text-base-content/50">Tarjetas mostradas en la columna lateral</span>
-              </div>
-
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <!-- Correo -->
-                <div class="rounded-2xl border border-base-300 bg-base-200/40 p-4 space-y-2">
-                  <div class="flex items-center gap-2 text-xs font-bold text-primary">
-                    <svg class="size-4"><use href="#ic-mail"></use></svg>
-                    <span>Correo Electrónico Oficial</span>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div class="space-y-1.5 md:col-span-1">
+                    <label class="label-text font-bold text-xs">Antetítulo (Eyebrow)</label>
+                    <input
+                      type="text"
+                      name={`eyebrow_${loc}`}
+                      value={data.eyebrow}
+                      class="input input-bordered input-sm w-full font-medium"
+                      placeholder="Contáctanos"
+                      required={isDefault}
+                    />
                   </div>
-                  <input
-                    type="email"
-                    name={`email_${loc}`}
-                    value={data.email}
-                    class="input input-bordered input-sm w-full font-mono text-xs"
-                    placeholder="hello@afroup.org"
-                  />
-                </div>
 
-                <!-- WhatsApp -->
-                <div class="rounded-2xl border border-base-300 bg-base-200/40 p-4 space-y-2">
-                  <div class="flex items-center gap-2 text-xs font-bold text-success">
-                    <svg class="size-4"><use href="#ic-users"></use></svg>
-                    <span>WhatsApp / Líneas Telefónicas</span>
+                  <div class="space-y-1.5 md:col-span-2">
+                    <label class="label-text font-bold text-xs">Título Principal (H1)</label>
+                    <input
+                      type="text"
+                      name={`title_${loc}`}
+                      value={data.title}
+                      class="input input-bordered input-sm w-full font-bold text-sm"
+                      placeholder="Hablemos"
+                      required={isDefault}
+                    />
                   </div>
-                  <input
-                    type="text"
-                    name={`whatsapp_${loc}`}
-                    value={data.whatsapp}
-                    class="input input-bordered input-sm w-full text-xs"
-                    placeholder="+57 320 7146 · +31 20 211 7146"
-                  />
                 </div>
 
-                <!-- Base / Ubicación -->
-                <div class="rounded-2xl border border-base-300 bg-base-200/40 p-4 space-y-2">
-                  <div class="flex items-center gap-2 text-xs font-bold text-secondary">
-                    <svg class="size-4"><use href="#ic-pin"></use></svg>
-                    <span>Base & Territorio</span>
-                  </div>
-                  <input
-                    type="text"
-                    name={`base_location_${loc}`}
-                    value={data.base_location}
-                    class="input input-bordered input-sm w-full text-xs"
-                    placeholder="Colombia · trabajamos con toda la diáspora"
-                  />
-                </div>
-
-                <!-- Redes Sociales -->
-                <div class="rounded-2xl border border-base-300 bg-base-200/40 p-4 space-y-2">
-                  <div class="flex items-center gap-2 text-xs font-bold text-accent">
-                    <svg class="size-4"><use href="#ic-ig"></use></svg>
-                    <span>Redes Sociales</span>
-                  </div>
-                  <input
-                    type="text"
-                    name={`social_channels_${loc}`}
-                    value={data.social_channels}
-                    class="input input-bordered input-sm w-full text-xs"
-                    placeholder="@afroup en Instagram, TikTok, YouTube y Facebook"
-                  />
-                </div>
-
-                <!-- Tiempo estimado de respuesta -->
-                <div class="rounded-2xl border border-base-300 bg-base-200/40 p-4 space-y-2 sm:col-span-2">
-                  <label class="label-text font-bold text-xs">Tiempo Estimado de Respuesta</label>
-                  <input
-                    type="text"
-                    name={`response_time_${loc}`}
-                    value={data.response_time}
-                    class="input input-bordered input-sm w-full text-xs"
-                    placeholder="Menos de 72 horas"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <!-- Section 3: Metadatos SEO / Open Graph -->
-            <div class="rounded-3xl border border-base-300 bg-base-100 p-6 shadow-xs space-y-4">
-              <div class="border-b border-base-300/80 pb-3 flex items-center justify-between">
-                <h3 class="font-display font-bold text-base text-base-content flex items-center gap-2">
-                  <svg class="size-4 text-base-content/60"><use href="#ic-share"></use></svg>
-                  <span>3. Metadatos Open Graph / SEO (R2 Media)</span>
-                </h3>
-                <span class="text-xs text-base-content/50">Vista previa para compartir en redes</span>
-              </div>
-
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="space-y-1.5 md:col-span-2">
-                  <label class="label-text font-bold text-xs">Título Social (og:title)</label>
-                  <input
-                    type="text"
-                    name={`og:title_${loc}`}
-                    value={data.og?.title || ""}
-                    class="input input-bordered input-sm w-full"
-                    placeholder="Contacto · AfroUp"
-                  />
-                </div>
-
-                <div class="space-y-1.5 md:col-span-2">
-                  <label class="label-text font-bold text-xs">Descripción Social (og:description)</label>
+                <div class="space-y-1.5">
+                  <label class="label-text font-bold text-xs">Subtítulo / Lead Descriptivo</label>
                   <textarea
-                    name={`og:description_${loc}`}
+                    name={`lead_${loc}`}
                     rows="2"
                     class="textarea textarea-bordered textarea-sm w-full leading-relaxed"
-                    placeholder="Ponte en contacto con el equipo de AfroUp."
-                  >{data.og?.description || ""}</textarea>
+                    placeholder="Prensa, alianzas, talleres o simplemente saludar — te respondemos en menos de 72 horas."
+                  >{data.lead}</textarea>
+                </div>
+              </div>
+
+              <!-- Section 2: Canales de Atención Directa -->
+              <div class="rounded-3xl border border-base-300 bg-base-100 p-6 shadow-xs space-y-4">
+                <div class="border-b border-base-300/80 pb-3 flex items-center justify-between">
+                  <h3 class="font-display font-bold text-base text-base-content flex items-center gap-2">
+                    <span class="size-2 rounded-full bg-accent"></span>
+                    <span>2. Canales de Contacto Directo</span>
+                  </h3>
+                  <span class="text-xs text-base-content/50">Tarjetas mostradas en la columna lateral</span>
                 </div>
 
-                <div class="space-y-2 md:col-span-2 rounded-2xl bg-base-200/50 p-4 border border-base-300">
-                  <div class="flex items-center justify-between">
-                    <div>
-                      <label class="label-text font-bold text-xs">Imagen Social (og:image)</label>
-                      <p class="text-[11px] text-base-content/50">Gestionada mediante Cloudflare R2</p>
-                    </div>
-                    <div class="flex items-center gap-2">
-                      <button
-                        type="button"
-                        class="btn btn-xs btn-outline btn-accent gap-1 font-semibold"
-                        data-open-contact-og-uploader
-                        data-loc={loc}
-                      >
-                        <svg class="size-3"><use href="#ic-cloud"></use></svg>
-                        <span>Subir imagen con R2</span>
-                      </button>
-                      <button
-                        type="button"
-                        class:list={["btn btn-ghost btn-xs text-error text-[11px]", { hidden: !data.og?.["og:image"] }]}
-                        data-clear-contact-og-image={loc}
-                      >
-                        Quitar
-                      </button>
-                    </div>
-                  </div>
-
-                  <div class="flex items-center gap-3 mt-1">
-                    <div class="size-16 rounded-xl bg-base-300 border border-base-300 overflow-hidden shrink-0 flex items-center justify-center relative shadow-2xs" data-contact-og-preview-box={loc}>
-                      {data.og?.["og:image"] ? (
-                        <img src={data.og?.["og:image"]} alt="OG Preview" class="w-full h-full object-cover" data-contact-og-preview-img={loc} />
-                      ) : (
-                        <svg class="size-7 text-base-content/40"><use href="#ic-folder"></use></svg>
-                      )}
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <!-- Correo -->
+                  <div class="rounded-2xl border border-base-300 bg-base-200/40 p-4 space-y-2">
+                    <div class="flex items-center gap-2 text-xs font-bold text-primary">
+                      <svg class="size-4"><use href="#ic-mail"></use></svg>
+                      <span>Correo Electrónico Oficial</span>
                     </div>
                     <input
-                      type="hidden"
-                      name={`og:image_${loc}`}
-                      id={`contact-og-image-input-${loc}`}
-                      value={data.og?.["og:image"] || ""}
-                      data-contact-og-image-input={loc}
+                      type="email"
+                      name={`email_${loc}`}
+                      value={data.email}
+                      class="input input-bordered input-sm w-full font-mono text-xs"
+                      placeholder="hello@afroup.org"
+                    />
+                  </div>
+
+                  <!-- WhatsApp -->
+                  <div class="rounded-2xl border border-base-300 bg-base-200/40 p-4 space-y-2">
+                    <div class="flex items-center gap-2 text-xs font-bold text-success">
+                      <svg class="size-4"><use href="#ic-users"></use></svg>
+                      <span>WhatsApp / Líneas Telefónicas</span>
+                    </div>
+                    <input
+                      type="text"
+                      name={`whatsapp_${loc}`}
+                      value={data.whatsapp}
+                      class="input input-bordered input-sm w-full text-xs"
+                      placeholder="+57 320 7146 · +31 20 211 7146"
+                    />
+                  </div>
+
+                  <!-- Base / Ubicación -->
+                  <div class="rounded-2xl border border-base-300 bg-base-200/40 p-4 space-y-2">
+                    <div class="flex items-center gap-2 text-xs font-bold text-secondary">
+                      <svg class="size-4"><use href="#ic-pin"></use></svg>
+                      <span>Base & Territorio</span>
+                    </div>
+                    <input
+                      type="text"
+                      name={`base_location_${loc}`}
+                      value={data.base_location}
+                      class="input input-bordered input-sm w-full text-xs"
+                      placeholder="Colombia · trabajamos con toda la diáspora"
+                    />
+                  </div>
+
+                  <!-- Redes Sociales -->
+                  <div class="rounded-2xl border border-base-300 bg-base-200/40 p-4 space-y-2">
+                    <div class="flex items-center gap-2 text-xs font-bold text-accent">
+                      <svg class="size-4"><use href="#ic-ig"></use></svg>
+                      <span>Redes Sociales</span>
+                    </div>
+                    <input
+                      type="text"
+                      name={`social_channels_${loc}`}
+                      value={data.social_channels}
+                      class="input input-bordered input-sm w-full text-xs"
+                      placeholder="@afroup en Instagram, TikTok, YouTube y Facebook"
+                    />
+                  </div>
+
+                  <!-- Tiempo estimado de respuesta -->
+                  <div class="rounded-2xl border border-base-300 bg-base-200/40 p-4 space-y-2 sm:col-span-2">
+                    <label class="label-text font-bold text-xs">Tiempo Estimado de Respuesta</label>
+                    <input
+                      type="text"
+                      name={`response_time_${loc}`}
+                      value={data.response_time}
+                      class="input input-bordered input-sm w-full text-xs"
+                      placeholder="Menos de 72 horas"
                     />
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-        );
-      })}
-    </form>
-  </section>
-</div>
 
-<!-- Slide-in daisyUI Drawer for Contact Message Inspector -->
-<div class="drawer drawer-end z-50" data-contact-drawer-container>
-  <input id="contact-detail-drawer" type="checkbox" class="drawer-toggle" />
-  <div class="drawer-side">
+              <!-- Section 3: Metadatos SEO / Open Graph -->
+              <div class="rounded-3xl border border-base-300 bg-base-100 p-6 shadow-xs space-y-4">
+                <div class="border-b border-base-300/80 pb-3 flex items-center justify-between">
+                  <h3 class="font-display font-bold text-base text-base-content flex items-center gap-2">
+                    <svg class="size-4 text-base-content/60"><use href="#ic-share"></use></svg>
+                    <span>3. Metadatos Open Graph / SEO (R2 Media)</span>
+                  </h3>
+                  <span class="text-xs text-base-content/50">Vista previa para compartir en redes</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="space-y-1.5 md:col-span-2">
+                    <label class="label-text font-bold text-xs">Título Social (og:title)</label>
+                    <input
+                      type="text"
+                      name={`og:title_${loc}`}
+                      value={data.og?.title || ""}
+                      class="input input-bordered input-sm w-full"
+                      placeholder="Contacto · AfroUp"
+                    />
+                  </div>
+
+                  <div class="space-y-1.5 md:col-span-2">
+                    <label class="label-text font-bold text-xs">Descripción Social (og:description)</label>
+                    <textarea
+                      name={`og:description_${loc}`}
+                      rows="2"
+                      class="textarea textarea-bordered textarea-sm w-full leading-relaxed"
+                      placeholder="Ponte en contacto con el equipo de AfroUp."
+                    >{data.og?.description || ""}</textarea>
+                  </div>
+
+                  <div class="space-y-2 md:col-span-2 rounded-2xl bg-base-200/50 p-4 border border-base-300">
+                    <div class="flex items-center justify-between">
+                      <div>
+                        <label class="label-text font-bold text-xs">Imagen Social (og:image)</label>
+                        <p class="text-[11px] text-base-content/50">Gestionada mediante Cloudflare R2</p>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <button
+                          type="button"
+                          class="btn btn-xs btn-outline btn-accent gap-1 font-semibold"
+                          data-open-contact-og-uploader
+                          data-loc={loc}
+                        >
+                          <svg class="size-3"><use href="#ic-cloud"></use></svg>
+                          <span>Subir imagen con R2</span>
+                        </button>
+                        <button
+                          type="button"
+                          class:list={["btn btn-ghost btn-xs text-error text-[11px]", { hidden: !data.og?.["og:image"] }]}
+                          data-clear-contact-og-image={loc}
+                        >
+                          Quitar
+                        </button>
+                      </div>
+                    </div>
+
+                    <div class="flex items-center gap-3 mt-1">
+                      <div class="size-16 rounded-xl bg-base-300 border border-base-300 overflow-hidden shrink-0 flex items-center justify-center relative shadow-2xs" data-contact-og-preview-box={loc}>
+                        {data.og?.["og:image"] ? (
+                          <img src={data.og?.["og:image"]} alt="OG Preview" class="w-full h-full object-cover" data-contact-og-preview-img={loc} />
+                        ) : (
+                          <svg class="size-7 text-base-content/40"><use href="#ic-folder"></use></svg>
+                        )}
+                      </div>
+                      <input
+                        type="hidden"
+                        name={`og:image_${loc}`}
+                        id={`contact-og-image-input-${loc}`}
+                        value={data.og?.["og:image"] || ""}
+                        data-contact-og-image-input={loc}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </form>
+    </section>
+  </div>
+
+  <!-- Slide-in daisyUI Drawer for Contact Message Inspector -->
+  <div class="drawer-side z-50">
     <label for="contact-detail-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
     <aside class="menu bg-base-100 text-base-content min-h-full w-full max-w-lg p-6 space-y-5 border-l border-base-300 shadow-2xl flex flex-col justify-between">
       <div class="space-y-5">
@@ -585,7 +585,7 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
         <div class="flex items-center justify-between border-b border-base-300 pb-4">
           <div class="flex items-center gap-2">
             <div class="flex size-9 items-center justify-center rounded-xl bg-primary/15 text-primary shrink-0">
-              <svg class="size-5"><use href="#ic-mail"></use></svg>
+              <svg class="size-5"><use href="#ic-message-report"></use></svg>
             </div>
             <div>
               <h3 class="font-display font-bold text-base text-base-content">Mensaje de Contacto</h3>
@@ -668,6 +668,9 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
   </div>
 </div>
 
+<!-- Embedded Submissions JSON Data -->
+<script id="contact-submissions-data" type="application/json" set:html={JSON.stringify(submissions)} />
+
 <script>
   function setupContactAdmin() {
     const root = document.querySelector("[data-contact-admin-root]");
@@ -693,6 +696,18 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
       });
     });
 
+    // Submissions Data Map from Script
+    const submissionsScript = document.getElementById("contact-submissions-data");
+    let submissionsList: any[] = [];
+    try {
+      if (submissionsScript && submissionsScript.textContent) {
+        submissionsList = JSON.parse(submissionsScript.textContent);
+      }
+    } catch (e) {
+      console.error("Error parsing submissions json:", e);
+    }
+    const submissionsMap = new Map<number, any>(submissionsList.map((s) => [Number(s.id), s]));
+
     // Submissions Drawer & Status Management
     const drawerToggle = document.getElementById("contact-detail-drawer") as HTMLInputElement | null;
     let activeSubId: number | null = null;
@@ -709,36 +724,57 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
     const drawerSaveBtn = root.querySelector<HTMLButtonElement>("[data-drawer-save-btn]");
     const drawerDeleteBtn = root.querySelector<HTMLButtonElement>("[data-drawer-delete-btn]");
 
-    document.querySelectorAll("[data-open-drawer]").forEach((btn) => {
+    if (drawerToggle && drawerToggle.dataset.boundScroll !== "true") {
+      drawerToggle.dataset.boundScroll = "true";
+      drawerToggle.addEventListener("change", () => {
+        if (drawerToggle.checked) {
+          document.body.style.overflow = "hidden";
+        } else {
+          document.body.style.overflow = "";
+        }
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && drawerToggle.checked) {
+          drawerToggle.checked = false;
+          document.body.style.overflow = "";
+        }
+      });
+    }
+
+    root.querySelectorAll<HTMLButtonElement>("[data-open-drawer]").forEach((btn) => {
       if (btn.dataset.bound === "true") return;
       btn.dataset.bound = "true";
       btn.addEventListener("click", () => {
-        const raw = btn.getAttribute("data-sub-data");
-        if (!raw) return;
-        try {
-          const sub = JSON.parse(raw);
-          activeSubId = sub.id;
+        const idStr = btn.getAttribute("data-open-drawer");
+        const subId = Number(idStr);
+        const sub = submissionsMap.get(subId);
+        if (!sub) return;
 
-          if (drawerName) drawerName.textContent = sub.name;
-          if (drawerEmail) drawerEmail.textContent = sub.email;
-          if (drawerMailto) drawerMailto.href = `mailto:${sub.email}?subject=Re: ${encodeURIComponent(sub.subject)}`;
-          if (drawerSubject) drawerSubject.textContent = sub.subject;
-          if (drawerLocale) drawerLocale.textContent = (sub.locale || "es").toUpperCase();
-          if (drawerDate) {
-            drawerDate.textContent = new Date(sub.created_at).toLocaleDateString("es-ES", {
-              day: "2-digit",
-              month: "long",
-              year: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            });
-          }
-          if (drawerMessage) drawerMessage.textContent = sub.message;
-          if (drawerStatusSelect) drawerStatusSelect.value = sub.status || "unread";
-          if (drawerNotes) drawerNotes.value = sub.admin_notes || "";
+        activeSubId = sub.id;
 
-          if (drawerToggle) drawerToggle.checked = true;
-        } catch {}
+        if (drawerName) drawerName.textContent = sub.name;
+        if (drawerEmail) drawerEmail.textContent = sub.email;
+        if (drawerMailto) drawerMailto.href = `mailto:${sub.email}?subject=Re: ${encodeURIComponent(sub.subject || "")}`;
+        if (drawerSubject) drawerSubject.textContent = sub.subject;
+        if (drawerLocale) drawerLocale.textContent = (sub.locale || "es").toUpperCase();
+        if (drawerDate) {
+          drawerDate.textContent = new Date(sub.created_at).toLocaleDateString("es-ES", {
+            day: "2-digit",
+            month: "long",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+        }
+        if (drawerMessage) drawerMessage.textContent = sub.message;
+        if (drawerStatusSelect) drawerStatusSelect.value = sub.status || "unread";
+        if (drawerNotes) drawerNotes.value = sub.admin_notes || "";
+
+        if (drawerToggle) {
+          drawerToggle.checked = true;
+          document.body.style.overflow = "hidden";
+        }
       });
     });
 
@@ -760,8 +796,11 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
             if ((window as any).AfroUpFeedback) {
               (window as any).AfroUpFeedback.toast("Mensaje actualizado.", "success");
             }
-            if (drawerToggle) drawerToggle.checked = false;
-            // Reload window to refresh stats and table
+            if (drawerToggle) {
+              drawerToggle.checked = false;
+              document.body.style.overflow = "";
+            }
+            // Reload to refresh stats and table
             setTimeout(() => window.location.reload(), 400);
           } else {
             if ((window as any).AfroUpFeedback) {
@@ -787,7 +826,10 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
             if ((window as any).AfroUpFeedback) {
               (window as any).AfroUpFeedback.toast("Mensaje eliminado.", "success");
             }
-            if (drawerToggle) drawerToggle.checked = false;
+            if (drawerToggle) {
+              drawerToggle.checked = false;
+              document.body.style.overflow = "";
+            }
             setTimeout(() => window.location.reload(), 400);
           }
         } catch {}
