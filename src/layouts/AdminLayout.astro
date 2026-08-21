@@ -13,7 +13,7 @@ import { resolveRequestCopy } from "../lib/request-locale";
 
 interface Props {
   title?: string;
-  active?: "dashboard" | "articles" | "categories" | "about" | "contact" | "resources" | "collaborate" | "storage" | "users" | "comments" | "projects" | "modules" | "permissions" | "roles" | "languages";
+  active?: "dashboard" | "articles" | "categories" | "about" | "contact" | "resources" | "collaborate" | "referentes" | "storage" | "users" | "comments" | "projects" | "modules" | "permissions" | "roles" | "languages";
 }
 
 const { locale, copy } = await resolveRequestCopy(env.DB, Astro.url);

@@ -14,6 +14,7 @@ const articlesHref = joinPath(adminBase, "articulos");
 const categoriesHref = joinPath(adminBase, "categorias");
 const commentsHref = joinPath(adminBase, "comentarios");
 const projectsHref = joinPath(adminBase, "proyectos");
+const referentesHref = joinPath(adminBase, "referentes");
 const usersHref = joinPath(adminBase, "usuarios");
 const languagesHref = joinPath(adminBase, "idiomas");
 
@@ -295,7 +296,18 @@ function formatDate(dateStr?: string | null) {
             </div>
             <div class="leading-tight">
               <span class="font-bold text-sm block text-base-content group-hover:text-accent transition-colors">{copy.adminNewCategory || "Manage Categories"}</span>
-              <span class="text-xs text-base-content/60">Organization and taxonomy</span>
+              <span class="text-xs text-base-content/60">Taxonomy and organization</span>
+            </div>
+            <svg class="size-4 ml-auto text-base-content/40 group-hover:translate-x-0.5 transition-transform"><use href="#ic-arrow"></use></svg>
+          </a>
+
+          <a class="flex items-center gap-3 p-3 rounded-2xl border border-base-300 bg-base-200/30 hover:bg-warning/10 hover:border-warning/40 transition-all group" href={referentesHref}>
+            <div class="size-9 rounded-xl bg-warning/10 text-warning flex items-center justify-center group-hover:scale-105 transition-transform">
+              <svg class="size-4.5"><use href="#ic-user-star"></use></svg>
+            </div>
+            <div class="leading-tight">
+              <span class="font-bold text-sm block text-base-content group-hover:text-warning transition-colors">{copy.adminReferentes || "Role Models & Figures"}</span>
+              <span class="text-xs text-base-content/60">Historical figures and leaders</span>
             </div>
             <svg class="size-4 ml-auto text-base-content/40 group-hover:translate-x-0.5 transition-transform"><use href="#ic-arrow"></use></svg>
           </a>
