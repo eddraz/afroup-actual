@@ -404,9 +404,9 @@ function tabClass(key: NavKey) {
               </div>
             </div>
             <div data-session-guest-nav class="w-full">
-              <a class="btn btn-outline btn-sm btn-block gap-2 rounded-xl text-xs font-bold border-base-300" href={paths.login}>
+              <a class="btn btn-outline btn-sm btn-block gap-2 rounded-xl text-xs font-bold border-base-300 site-guest-btn" href={paths.login} data-tip={copy.navLogin || "Iniciar sesión"}>
                 <svg class="size-4 shrink-0"><use href="#ic-user"></use></svg>
-                <span>{copy.navLogin || "Iniciar sesión"}</span>
+                <span class="site-guest-label">{copy.navLogin || "Iniciar sesión"}</span>
               </a>
             </div>
             <div data-session-user-nav class="w-full hidden">
@@ -640,8 +640,10 @@ function tabClass(key: NavKey) {
             html[data-site-collapsed="true"] #site-sidebar .site-nav-label,
             html[data-site-collapsed="true"] #site-sidebar .menu-title,
             html[data-site-collapsed="true"] .site-lang-expanded,
-            html[data-site-collapsed="true"] .site-donate-label {
-              display: none;
+            html[data-site-collapsed="true"] .site-donate-label,
+            html[data-site-collapsed="true"] .site-guest-label,
+            html[data-site-collapsed="true"] #site-sidebar [data-session-user] .leading-tight {
+              display: none !important;
             }
             html[data-site-collapsed="true"] .site-sidebar-footer {
               padding: 0.5rem;
@@ -651,6 +653,33 @@ function tabClass(key: NavKey) {
               display: flex;
               justify-content: center;
               width: 100%;
+            }
+            html[data-site-collapsed="true"] #site-sidebar [data-session-guest-nav],
+            html[data-site-collapsed="true"] #site-sidebar [data-session-user-nav] {
+              display: flex;
+              justify-content: center;
+              width: 100%;
+            }
+            html[data-site-collapsed="true"] #site-sidebar [data-session-guest-nav].hidden,
+            html[data-site-collapsed="true"] #site-sidebar [data-session-user-nav].hidden {
+              display: none !important;
+            }
+            html[data-site-collapsed="true"] .site-guest-btn {
+              width: 2.5rem;
+              min-height: 2.5rem;
+              height: 2.5rem;
+              padding: 0;
+              justify-content: center;
+            }
+            html[data-site-collapsed="true"] #site-sidebar [data-session-user] {
+              justify-content: center;
+              width: 100%;
+            }
+            html[data-site-collapsed="true"] #site-sidebar button[popovertarget="session-user-menu"] {
+              display: flex;
+              justify-content: center;
+              width: 100%;
+              padding: 0.25rem;
             }
             html[data-site-collapsed="true"] .site-donate {
               width: 2.5rem;
