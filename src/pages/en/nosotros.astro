@@ -1,25 +1,22 @@
 ---
+import { env } from "cloudflare:workers";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { getLocaleFromUrl, localizedPath, t } from "../../lib/i18n";
 import { routeIds } from "../../lib/paths";
+import { loadAboutPageLocale } from "../../lib/about";
 
-export const prerender = true;
+export const prerender = false;
 
 const locale = getLocaleFromUrl(Astro.url);
 const copy = t(locale);
 const homeHref = localizedPath(locale, routeIds.home);
 const donateHref = localizedPath(locale, routeIds.donate);
 const collaborateHref = localizedPath(locale, routeIds.collaborate);
-const chips = [copy.aboutChipProud, copy.aboutChipEducational, copy.aboutChipVibrant, copy.aboutChipCommunity] as const;
-const team = [
-  { name: "Jenniffer M.", role: "Fundadora · Editora", figure: "bg-secondary/30" },
-  { name: "Equipo editorial", role: "Investigación y redacción", figure: "bg-accent/30" },
-  { name: "Diseño", role: "Identidad y contenido visual", figure: "bg-primary/20" },
-  { name: "Comunidad", role: "Colaboradores de la diáspora", figure: "bg-[url('/assets/pattern.png')] bg-cover bg-center" },
-] as const;
+
+const aboutData = await loadAboutPageLocale(env.DB, locale);
 ---
 
-<BaseLayout title={copy.titleAbout}>
+<BaseLayout title={aboutData.og?.title || copy.titleAbout} description={aboutData.og?.description}>
   <div class="breadcrumbs text-sm">
     <ul>
       <li><a href={homeHref}>{copy.navHome}</a></li>
@@ -30,81 +27,91 @@ const team = [
   <section class="hero relative mt-6 overflow-hidden rounded-[24px] bg-primary text-primary-content shadow-lg">
     <div class="absolute inset-y-0 right-0 w-[200px] bg-[url('/assets/pattern.png')] bg-cover bg-center max-md:w-[90px]"></div>
     <div class="hero-content relative w-full flex-col items-start gap-3 px-6 py-8 lg:px-11 lg:py-11">
-      <p class="text-accent text-xs font-extrabold tracking-[0.18em] uppercase">{copy.aboutEyebrow}</p>
-      <h1 class="font-display max-w-[18ch] text-[31px] font-bold lg:text-[44px]">{copy.aboutTitle}</h1>
-      <p class="max-w-[56ch] text-[17px] leading-[1.55] text-primary-content/80">{copy.aboutLead}</p>
+      <p class="text-accent text-xs font-extrabold tracking-[0.18em] uppercase">{aboutData.eyebrow}</p>
+      <h1 class="font-display max-w-[18ch] text-[31px] font-bold lg:text-[44px]">{aboutData.title}</h1>
+      <p class="max-w-[56ch] text-[17px] leading-[1.55] text-primary-content/80">{aboutData.lead}</p>
     </div>
   </section>
 
   <div class="mt-[30px] grid grid-cols-1 items-start gap-8 lg:grid-cols-2">
     <section>
-      <h2 class="font-display text-[26px] font-bold">{copy.aboutStoryTitle}</h2>
-      <p class="mt-3 text-[15.5px] leading-[1.7] opacity-80">
-        AfroUp nace como una cuenta educativa en redes sociales y crece hasta convertirse en una plataforma digital activista, educativa y cultural afrocéntrica. Creemos que el conocimiento es poder: que conocer nuestra historia —la que no se enseñó en la escuela— transforma la manera en que nos vemos y nos organizamos.
+      <h2 class="font-display text-[26px] font-bold">{aboutData.story_title}</h2>
+      <p class="mt-3 text-[15.5px] leading-[1.7] opacity-80 whitespace-pre-line">
+        {aboutData.story_body}
       </p>
-      <div class="mt-[18px] flex flex-wrap gap-2">
-        {chips.map((chip) => <span class="badge badge-ghost">{chip}</span>)}
-      </div>
+      {aboutData.values && aboutData.values.length > 0 ? (
+        <div class="mt-[18px] flex flex-wrap gap-2">
+          {aboutData.values.map((chip) => <span class="badge badge-ghost font-medium">{chip}</span>)}
+        </div>
+      ) : null}
     </section>
     <div class="grid grid-cols-1 gap-4">
       <article class="card bg-base-200 shadow">
         <div class="card-body">
-          <h3 class="card-title">{copy.aboutMissionTitle}</h3>
-          <p class="text-[14.5px] leading-[1.6] opacity-60">Educar y empoderar a través del conocimiento afrocéntrico, accesible y riguroso.</p>
+          <h3 class="card-title font-display">{aboutData.mission_title}</h3>
+          <p class="text-[14.5px] leading-[1.6] opacity-70">{aboutData.mission_body}</p>
         </div>
       </article>
       <article class="card bg-base-200 shadow">
         <div class="card-body">
-          <h3 class="card-title">{copy.aboutVisionTitle}</h3>
-          <p class="text-[14.5px] leading-[1.6] opacity-60">Una comunidad global que reconoce, valora y vive su legado afro.</p>
+          <h3 class="card-title font-display">{aboutData.vision_title}</h3>
+          <p class="text-[14.5px] leading-[1.6] opacity-70">{aboutData.vision_body}</p>
         </div>
       </article>
     </div>
   </div>
 
-  <div class="stats stats-vertical mt-[30px] w-full bg-base-200 shadow lg:stats-horizontal">
-    <div class="stat">
-      <div class="stat-value text-primary">+200</div>
-      <div class="stat-desc text-sm opacity-70">{copy.aboutStatArticles}</div>
+  {aboutData.stats && aboutData.stats.length > 0 ? (
+    <div class="stats stats-vertical mt-[30px] w-full bg-base-200 shadow lg:stats-horizontal">
+      {aboutData.stats.map((stat, idx) => {
+        const colorClass = idx === 0 ? "text-primary" : idx === 1 ? "text-accent" : "text-secondary";
+        return (
+          <div class="stat">
+            <div class:list={["stat-value font-mono", colorClass]}>{stat.value}</div>
+            <div class="stat-desc text-sm opacity-70">{stat.label}</div>
+          </div>
+        );
+      })}
     </div>
-    <div class="stat">
-      <div class="stat-value text-accent">14</div>
-      <div class="stat-desc text-sm opacity-70">{copy.aboutStatCountries}</div>
-    </div>
-    <div class="stat">
-      <div class="stat-value text-secondary">+80K</div>
-      <div class="stat-desc text-sm opacity-70">{copy.aboutStatCommunity}</div>
-    </div>
-  </div>
+  ) : null}
 
-  <h2 class="font-display mt-10 mb-5 text-[26px] font-bold">{copy.aboutTeamTitle}</h2>
+  <h2 class="font-display mt-10 mb-5 text-[26px] font-bold">{copy.aboutTeamTitle || "Team & Collaborators"}</h2>
   <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
     {
-      team.map((person) => (
-        <article class="card bg-base-200 shadow">
-          <figure class:list={["aspect-[4/3]", person.figure]}></figure>
-          <div class="card-body">
-            <h3 class="card-title font-display">{person.name}</h3>
-            <p class="text-sm opacity-60">{person.role}</p>
-          </div>
-        </article>
-      ))
+      aboutData.team.map((person, idx) => {
+        const fallbackFigure = idx === 0 ? "bg-secondary/30" : idx === 1 ? "bg-accent/30" : idx === 2 ? "bg-primary/20" : "bg-[url('/assets/pattern.png')] bg-cover bg-center";
+        return (
+          <article class="card bg-base-200 shadow overflow-hidden">
+            {person.avatar_url ? (
+              <figure class="aspect-[4/3] bg-base-300">
+                <img src={person.avatar_url} alt={person.name} class="w-full h-full object-cover" />
+              </figure>
+            ) : (
+              <figure class:list={["aspect-[4/3]", person.figure || fallbackFigure]}></figure>
+            )}
+            <div class="card-body">
+              <h3 class="card-title font-display">{person.name}</h3>
+              <p class="text-sm opacity-60">{person.role}</p>
+            </div>
+          </article>
+        );
+      })
     }
   </div>
 
   <div class="card bg-neutral text-neutral-content mt-9">
     <div class="card-body sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <h3 class="card-title">{copy.supportBandTitle}</h3>
-        <p class="opacity-70">{copy.aboutBandDek}</p>
+        <h3 class="card-title font-display">{aboutData.cta_title}</h3>
+        <p class="opacity-70">{aboutData.cta_body}</p>
       </div>
       <div class="card-actions">
-        <a class="btn btn-accent" href={collaborateHref}>{copy.aboutCollaborate}</a>
+        <a class="btn btn-accent" href={collaborateHref}>{aboutData.collaborate_label || copy.aboutCollaborate}</a>
         <a class="btn btn-secondary" href={donateHref}>
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <use href="#ic-heart"></use>
           </svg>
-          {copy.aboutDonate}
+          {aboutData.donate_label || copy.aboutDonate}
         </a>
       </div>
     </div>

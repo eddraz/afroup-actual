@@ -13,7 +13,7 @@ import { resolveRequestCopy } from "../lib/request-locale";
 
 interface Props {
   title?: string;
-  active?: "dashboard" | "articles" | "categories" | "storage" | "users" | "comments" | "projects" | "modules" | "permissions" | "roles" | "languages";
+  active?: "dashboard" | "articles" | "categories" | "about" | "storage" | "users" | "comments" | "projects" | "modules" | "permissions" | "roles" | "languages";
 }
 
 const { locale, copy } = await resolveRequestCopy(env.DB, Astro.url);
@@ -26,6 +26,7 @@ const paths = {
   admin: adminBase,
   articles: joinPath(adminBase, "articulos"),
   categories: joinPath(adminBase, "categorias"),
+  about: joinPath(adminBase, "nosotros"),
   storage: joinPath(adminBase, "almacenamiento"),
   users: joinPath(adminBase, "usuarios"),
   comments: joinPath(adminBase, "comentarios"),
@@ -40,6 +41,7 @@ const canRead = async (slug: string) => Boolean(actor && (await hasPermission(en
 const can = {
   articles: await canRead("articulos"),
   categories: await canRead("categorias"),
+  about: await canRead("nosotros"),
   storage: await canRead("almacenamiento"),
   comments: await canRead("comentarios"),
   projects: await canRead("proyectos"),
@@ -49,7 +51,7 @@ const can = {
   users: await canRead("users"),
   languages: await canRead("idiomas"),
 };
-const showContent = can.articles || can.categories || can.storage || can.comments || can.projects;
+const showContent = can.articles || can.categories || can.about || can.storage || can.comments || can.projects;
 const showAccess = can.modules || can.permissions || can.roles || can.users || can.languages;
 
 function navClass(key: NonNullable<Props["active"]>) {
@@ -251,6 +253,15 @@ function navClass(key: NonNullable<Props["active"]>) {
                 <a class={navClass("categories")} href={paths.categories}>
                   <svg class="size-4.5 shrink-0"><use href="#ic-stack"></use></svg>
                   <span class="admin-nav-label truncate">{copy.adminCategories}</span>
+                </a>
+              </li>
+            ) : null}
+
+            {can.about ? (
+              <li class="admin-nav-tooltip tooltip tooltip-right" data-tip={copy.adminAbout || "Nosotros"}>
+                <a class={navClass("about")} href={paths.about}>
+                  <svg class="size-4.5 shrink-0"><use href="#ic-world"></use></svg>
+                  <span class="admin-nav-label truncate">{copy.adminAbout || "Nosotros"}</span>
                 </a>
               </li>
             ) : null}

@@ -199,6 +199,7 @@ Cero o un idioma visible oculta el selector público. Dos muestran un interrupto
 | `article_category_map` | `(article_id, category_id)` | Relación muchos a muchos con `sort_order` |
 | `article_tags` | `(article_id, tag)` | Etiquetas asociadas por artículo |
 | `tags` | `id` | Catálogo global de etiquetas con `name` y `slug` únicos para autocompletado y búsqueda |
+| `about_page_locales` | `locale` | Contenido editorial, misión, visión, equipo, estadísticas y CTA de `/nosotros` por idioma |
 | `search_documents` | `id` | Índice unificado para `/buscar` con `(module_slug, record_id, locale)` único |
 
 ## Ayuda de emergencia heredada

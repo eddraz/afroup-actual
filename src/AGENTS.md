@@ -37,7 +37,7 @@
 - Keep the article mockup at `/articulo` and `/en/articulo`, wired through `paths.article`.
 - Keep the donation mockup at `/donacion` and `/en/donacion`, wired through `paths.donate`.
 - Keep the support mockup at `/apoyanos` and `/en/apoyanos`, wired through `paths.support`.
-- Keep the About mockup at `/nosotros` and `/en/nosotros`, wired through `paths.about`.
+- Keep the About page at `/nosotros` and `/en/nosotros` dynamically loaded from `about_page_locales` in D1, with full editorial management at `/admin/nosotros` and `/en/admin/nosotros` via `components/AboutEditor.astro`, `lib/about.ts`, and `/api/admin/about`, supporting multi-language tabs, AI translation, impact stats, team roster management, and Open Graph metadata.
 - Keep the Collaborate mockup at `/colabora` and `/en/colabora`, wired through `paths.collaborate`.
 - Keep the Contact mockup at `/contacto` and `/en/contacto`, wired through `paths.contact`.
 - Keep the Resources mockup at `/recursos` and `/en/recursos`, wired through `paths.resources`.

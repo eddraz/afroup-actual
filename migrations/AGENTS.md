@@ -62,6 +62,7 @@
 - `0030_grant_full_admin_ai_permissions.sql` grants full permissions across all modules with AI enabled to the `Administrador` role and ensures active administrator accounts for `tantaorth@gmail.com`, `tantaroth@gmail.com`, and `jenniffer@afroup.com`.
 - `0031_seed_category_open_graph_metadata.sql` populates complete structured Open Graph and Twitter Card JSON metadata (`og_json`) for all seeded categories in Spanish and English.
 - `0032_global_tags.sql` creates the global `tags` table for global tag indexing, autocomplete in admin editors, and public cross-article discovery.
+- `0033_about_page.sql` registers the `nosotros` admin module, assigns permissions with AI enabled, and creates `about_page_locales` with seeded Spanish and English content for editing `/nosotros`.
 
 ## Manual D1 apply notes
 

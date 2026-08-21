@@ -1,0 +1,802 @@
+---
+import type { AboutPageData } from "../lib/about";
+import type { BioTranslationAccess } from "../lib/editorial";
+import type { LanguageItem } from "../lib/site-languages";
+import PageLocaleSwitch from "./PageLocaleSwitch.astro";
+
+interface Props {
+  aboutByLocale: Record<string, AboutPageData>;
+  languages: LanguageItem[];
+  translation: BioTranslationAccess;
+  locale: string;
+  copy: Record<string, string>;
+  publicHref: string;
+}
+
+const {
+  aboutByLocale,
+  languages,
+  translation,
+  locale,
+  copy,
+  publicHref,
+} = Astro.props;
+
+const defaultLocale = "es";
+const primaryAbout = aboutByLocale[defaultLocale] || aboutByLocale[locale] || {};
+const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
+---
+
+<div class="space-y-6" data-about-editor-container>
+  <!-- Page Header & Action Bar -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-base-300 pb-5">
+    <div>
+      <div class="flex items-center gap-2.5">
+        <h2 class="font-display text-2xl font-bold text-base-content">{copy.adminAbout || "Página Nosotros"}</h2>
+        <span class="badge badge-accent badge-sm font-semibold">Institucional</span>
+      </div>
+      <p class="text-xs sm:text-sm text-base-content/60 mt-1">
+        {copy.adminAboutDesc || "Gestiona la historia, misión, visión, métricas de impacto y equipo que se muestran en /nosotros."}
+      </p>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2.5">
+      <!-- Language Switcher -->
+      <PageLocaleSwitch languages={languages} currentLocale={locale} />
+
+      <!-- Translate with AI button -->
+      {translation.canUseAi && targetLanguages.length > 0 ? (
+        <button
+          type="button"
+          class="btn btn-sm btn-ai gap-2 shadow-xs"
+          data-open-about-translate-modal
+        >
+          <svg class="size-4"><use href="#ic-sparkles"></use></svg>
+          <span>{copy.adminTranslateWithAi || "Traducir con IA"}</span>
+        </button>
+      ) : null}
+
+      <!-- Public Preview Link -->
+      <a
+        href={publicHref}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="btn btn-ghost btn-sm border border-base-300 hover:bg-base-200 gap-1.5 text-base-content/80 hover:text-base-content"
+      >
+        <svg class="size-3.5"><use href="#ic-link"></use></svg>
+        <span>{copy.adminArticleViewPublic || "Ver página"}</span>
+      </a>
+
+      <!-- Save Button -->
+      <button
+        type="submit"
+        form="about-page-form"
+        class="btn btn-primary btn-sm gap-2 shadow-sm font-bold"
+        data-about-submit-btn
+      >
+        <svg class="size-4"><use href="#ic-plus"></use></svg>
+        <span>{copy.accountProfileSave || "Guardar Cambios"}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Translation Modal Dialog -->
+  {translation.canUseAi && targetLanguages.length > 0 ? (
+    <dialog class="modal" id="about-translate-modal">
+      <div class="modal-box max-w-md space-y-4 rounded-3xl border border-base-300 bg-base-100 p-6 shadow-2xl">
+        <div class="flex items-center justify-between gap-3 border-b border-base-200 pb-3">
+          <div class="flex items-center gap-2.5">
+            <div class="flex size-9 items-center justify-center rounded-xl bg-ai/15 text-ai shrink-0">
+              <svg class="size-5"><use href="#ic-language"></use></svg>
+            </div>
+            <div>
+              <h3 class="font-display text-base font-bold text-base-content">
+                {copy.adminTranslateModalTitle || "Traducir página con IA"}
+              </h3>
+              <p class="text-xs text-base-content/60">
+                Traduce toda la estructura institucional desde el español.
+              </p>
+            </div>
+          </div>
+          <button type="button" class="btn btn-circle btn-ghost btn-xs text-base-content/70" data-close-about-translate-modal>✕</button>
+        </div>
+
+        <p class="text-xs leading-relaxed text-base-content/70">
+          Esta acción traducirá con IA todos los textos (hero, historia, valores, misión, visión, etiquetas de estadísticas y llamados) al idioma seleccionado.
+        </p>
+
+        <div class="space-y-3 rounded-2xl bg-base-200/60 p-3.5 border border-base-300/60">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-semibold text-base-content/60">{copy.adminTranslateSourceLang || "Idioma de origen"}:</span>
+            <span class="badge badge-neutral badge-sm font-bold uppercase">Español (ES)</span>
+          </div>
+
+          <fieldset class="fieldset space-y-1.5">
+            <legend class="fieldset-legend text-[11px] font-mono uppercase tracking-wider text-base-content/70">
+              {copy.adminTranslateTargetLang || "Idioma de destino"}
+            </legend>
+            <select class="select select-bordered select-sm w-full font-medium" id="about-translate-target-select">
+              {targetLanguages.map((lang) => (
+                <option value={lang.code}>
+                  {lang.native_name} ({lang.code.toUpperCase()})
+                </option>
+              ))}
+            </select>
+          </fieldset>
+        </div>
+
+        <div class="modal-action flex items-center justify-end gap-2 pt-2 border-t border-base-200">
+          <button type="button" class="btn btn-ghost btn-sm" data-close-about-translate-modal>
+            {copy.cancel || "Cancelar"}
+          </button>
+          <button type="button" class="btn btn-ai btn-sm gap-2 font-bold" id="about-translate-confirm-btn">
+            <svg class="size-4 shrink-0"><use href="#ic-sparkles"></use></svg>
+            <span>{copy.adminTranslateAction || "Traducir ahora"}</span>
+          </button>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop"><button type="submit">close</button></form>
+    </dialog>
+  ) : null}
+
+  <!-- Main Edit Form -->
+  <form
+    id="about-page-form"
+    method="post"
+    action="/api/admin/about"
+    class="space-y-8"
+    data-about-form
+  >
+    {languages.map((lang) => {
+      const loc = lang.code;
+      const isDefault = loc === defaultLocale;
+      const data = aboutByLocale[loc] || aboutByLocale[defaultLocale] || primaryAbout;
+      const isHidden = loc !== locale;
+
+      return (
+        <div data-i18n-panel={loc} class:list={["space-y-6", { hidden: isHidden }]}>
+          <!-- Locale Notice -->
+          <div class="flex items-center justify-between p-3.5 rounded-2xl bg-base-200/60 border border-base-300 text-xs">
+            <span class="font-bold flex items-center gap-2">
+              <span class="badge badge-primary badge-sm font-mono uppercase">{loc}</span>
+              <span>Editando contenido en <strong>{lang.name} ({lang.native_name})</strong></span>
+            </span>
+            {isDefault ? (
+              <span class="badge badge-neutral badge-xs py-1 px-2">Idioma Principal</span>
+            ) : (
+              <span class="text-base-content/60">Traducción de página</span>
+            )}
+          </div>
+
+          <!-- Section 1: Hero Principal -->
+          <div class="rounded-3xl border border-base-300 bg-base-100 p-6 shadow-xs space-y-4">
+            <div class="border-b border-base-300/80 pb-3 flex items-center justify-between">
+              <h3 class="font-display font-bold text-base text-base-content flex items-center gap-2">
+                <span class="size-2 rounded-full bg-primary"></span>
+                <span>1. Hero Principal (Cabecera de Página)</span>
+              </h3>
+              <span class="text-xs text-base-content/50">Banner superior con patrón</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="space-y-1.5 md:col-span-1">
+                <label class="label-text font-bold text-xs">Antetítulo (Eyebrow)</label>
+                <input
+                  type="text"
+                  name={`eyebrow_${loc}`}
+                  value={data.eyebrow}
+                  class="input input-bordered input-sm w-full font-medium"
+                  placeholder="CONOCE AFROUP"
+                  required={isDefault}
+                />
+              </div>
+
+              <div class="space-y-1.5 md:col-span-2">
+                <label class="label-text font-bold text-xs">Título Principal (H1)</label>
+                <input
+                  type="text"
+                  name={`title_${loc}`}
+                  value={data.title}
+                  class="input input-bordered input-sm w-full font-bold text-sm"
+                  placeholder="Una plataforma para amplificar la voz, cultura y memoria afro"
+                  required={isDefault}
+                />
+              </div>
+            </div>
+
+            <div class="space-y-1.5">
+              <label class="label-text font-bold text-xs">Subtítulo / Lead Descriptivo</label>
+              <textarea
+                name={`lead_${loc}`}
+                rows="2"
+                class="textarea textarea-bordered textarea-sm w-full leading-relaxed"
+                placeholder="Investigamos, creamos y compartimos contenidos educativos, culturales y de memoria histórica afrodiaspórica."
+              >{data.lead}</textarea>
+            </div>
+          </div>
+
+          <!-- Section 2: Nuestra Historia y Valores -->
+          <div class="rounded-3xl border border-base-300 bg-base-100 p-6 shadow-xs space-y-4">
+            <div class="border-b border-base-300/80 pb-3 flex items-center justify-between">
+              <h3 class="font-display font-bold text-base text-base-content flex items-center gap-2">
+                <span class="size-2 rounded-full bg-accent"></span>
+                <span>2. Nuestra Historia & Valores</span>
+              </h3>
+              <span class="text-xs text-base-content/50">Narrativa y etiquetas de pilares</span>
+            </div>
+
+            <div class="space-y-1.5">
+              <label class="label-text font-bold text-xs">Título de la Historia</label>
+              <input
+                type="text"
+                name={`story_title_${loc}`}
+                value={data.story_title}
+                class="input input-bordered input-sm w-full font-bold"
+                placeholder="Nuestra historia"
+              />
+            </div>
+
+            <div class="space-y-1.5">
+              <label class="label-text font-bold text-xs">Cuerpo de la Historia</label>
+              <textarea
+                name={`story_body_${loc}`}
+                rows="4"
+                class="textarea textarea-bordered textarea-sm w-full leading-relaxed"
+                placeholder="AfroUp nace como una cuenta educativa en redes sociales..."
+              >{data.story_body}</textarea>
+            </div>
+
+            <div class="space-y-1.5 pt-2">
+              <label class="label-text font-bold text-xs">Insignias de Valores / Pilares (separados por comas o saltos de línea)</label>
+              <input
+                type="text"
+                name={`values_${loc}`}
+                value={data.values?.join(", ")}
+                class="input input-bordered input-sm w-full text-xs font-medium"
+                placeholder="Orgullosamente afrocéntrico, Educación comunitaria, Cultura viva, En red"
+              />
+            </div>
+          </div>
+
+          <!-- Section 3: Misión y Visión -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Misión -->
+            <div class="rounded-3xl border border-base-300 bg-base-100 p-6 shadow-xs space-y-3">
+              <h3 class="font-display font-bold text-base text-base-content flex items-center gap-2 border-b border-base-300/80 pb-2.5">
+                <svg class="size-4 text-primary"><use href="#ic-heart"></use></svg>
+                <span>Misión</span>
+              </h3>
+              <div class="space-y-1.5">
+                <label class="label-text font-bold text-xs">Título de Misión</label>
+                <input
+                  type="text"
+                  name={`mission_title_${loc}`}
+                  value={data.mission_title}
+                  class="input input-bordered input-sm w-full font-bold"
+                  placeholder="Nuestra misión"
+                />
+              </div>
+              <div class="space-y-1.5">
+                <label class="label-text font-bold text-xs">Texto de Misión</label>
+                <textarea
+                  name={`mission_body_${loc}`}
+                  rows="3"
+                  class="textarea textarea-bordered textarea-sm w-full leading-relaxed"
+                  placeholder="Educar y empoderar a través del conocimiento afrocéntrico..."
+                >{data.mission_body}</textarea>
+              </div>
+            </div>
+
+            <!-- Visión -->
+            <div class="rounded-3xl border border-base-300 bg-base-100 p-6 shadow-xs space-y-3">
+              <h3 class="font-display font-bold text-base text-base-content flex items-center gap-2 border-b border-base-300/80 pb-2.5">
+                <svg class="size-4 text-accent"><use href="#ic-world"></use></svg>
+                <span>Visión</span>
+              </h3>
+              <div class="space-y-1.5">
+                <label class="label-text font-bold text-xs">Título de Visión</label>
+                <input
+                  type="text"
+                  name={`vision_title_${loc}`}
+                  value={data.vision_title}
+                  class="input input-bordered input-sm w-full font-bold"
+                  placeholder="Nuestra visión"
+                />
+              </div>
+              <div class="space-y-1.5">
+                <label class="label-text font-bold text-xs">Texto de Visión</label>
+                <textarea
+                  name={`vision_body_${loc}`}
+                  rows="3"
+                  class="textarea textarea-bordered textarea-sm w-full leading-relaxed"
+                  placeholder="Una comunidad global que reconoce, valora y vive su legado afro..."
+                >{data.vision_body}</textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 4: Métricas de Impacto -->
+          <div class="rounded-3xl border border-base-300 bg-base-100 p-6 shadow-xs space-y-4">
+            <div class="border-b border-base-300/80 pb-3 flex items-center justify-between">
+              <h3 class="font-display font-bold text-base text-base-content flex items-center gap-2">
+                <span class="size-2 rounded-full bg-secondary"></span>
+                <span>3. Métricas de Impacto (Stats)</span>
+              </h3>
+              <span class="text-xs text-base-content/50">3 cifras clave mostradas en la barra horizontal</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <!-- Stat 1 -->
+              <div class="rounded-2xl border border-base-300 bg-base-200/40 p-4 space-y-2">
+                <span class="text-xs font-bold text-primary flex items-center gap-1.5">Métrica 1</span>
+                <input
+                  type="text"
+                  name={`stat_val_1_${loc}`}
+                  value={data.stats?.[0]?.value || "+200"}
+                  class="input input-bordered input-sm w-full font-mono font-bold text-lg"
+                  placeholder="+200"
+                />
+                <input
+                  type="text"
+                  name={`stat_lbl_1_${loc}`}
+                  value={data.stats?.[0]?.label || "Artículos y guías publicados"}
+                  class="input input-bordered input-xs w-full text-xs"
+                  placeholder="Etiqueta descriptiva"
+                />
+              </div>
+
+              <!-- Stat 2 -->
+              <div class="rounded-2xl border border-base-300 bg-base-200/40 p-4 space-y-2">
+                <span class="text-xs font-bold text-accent flex items-center gap-1.5">Métrica 2</span>
+                <input
+                  type="text"
+                  name={`stat_val_2_${loc}`}
+                  value={data.stats?.[1]?.value || "14"}
+                  class="input input-bordered input-sm w-full font-mono font-bold text-lg"
+                  placeholder="14"
+                />
+                <input
+                  type="text"
+                  name={`stat_lbl_2_${loc}`}
+                  value={data.stats?.[1]?.label || "Países alcanzados"}
+                  class="input input-bordered input-xs w-full text-xs"
+                  placeholder="Etiqueta descriptiva"
+                />
+              </div>
+
+              <!-- Stat 3 -->
+              <div class="rounded-2xl border border-base-300 bg-base-200/40 p-4 space-y-2">
+                <span class="text-xs font-bold text-secondary flex items-center gap-1.5">Métrica 3</span>
+                <input
+                  type="text"
+                  name={`stat_val_3_${loc}`}
+                  value={data.stats?.[2]?.value || "+80K"}
+                  class="input input-bordered input-sm w-full font-mono font-bold text-lg"
+                  placeholder="+80K"
+                />
+                <input
+                  type="text"
+                  name={`stat_lbl_3_${loc}`}
+                  value={data.stats?.[2]?.label || "Comunidad en redes"}
+                  class="input input-bordered input-xs w-full text-xs"
+                  placeholder="Etiqueta descriptiva"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 5: Equipo y Colaboradores -->
+          <div class="rounded-3xl border border-base-300 bg-base-100 p-6 shadow-xs space-y-4" data-team-manager-section={loc}>
+            <div class="border-b border-base-300/80 pb-3 flex items-center justify-between">
+              <h3 class="font-display font-bold text-base text-base-content flex items-center gap-2">
+                <svg class="size-4 text-warning"><use href="#ic-users"></use></svg>
+                <span>4. Equipo & Colaboradores</span>
+              </h3>
+              <button
+                type="button"
+                class="btn btn-xs btn-outline btn-primary gap-1"
+                data-add-team-member={loc}
+              >
+                <svg class="size-3.5"><use href="#ic-plus"></use></svg>
+                <span>Añadir miembro</span>
+              </button>
+            </div>
+
+            <!-- Hidden JSON for Team array submission -->
+            <input
+              type="hidden"
+              name={`team_json_${loc}`}
+              value={JSON.stringify(data.team || [])}
+              data-team-hidden-input={loc}
+            />
+
+            <!-- Team Members Grid Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" data-team-cards-container={loc}>
+              {(data.team || []).map((member, idx) => (
+                <div class="card bg-base-200/70 border border-base-300 shadow-2xs p-4 space-y-3 relative group" data-team-card-idx={idx}>
+                  <button
+                    type="button"
+                    class="btn btn-circle btn-ghost btn-xs absolute top-2 right-2 text-error opacity-70 hover:opacity-100"
+                    data-remove-team-member={idx}
+                    title="Eliminar miembro"
+                  >
+                    ✕
+                  </button>
+
+                  <div class="space-y-1">
+                    <label class="label-text font-bold text-[11px]">Nombre</label>
+                    <input
+                      type="text"
+                      class="input input-bordered input-xs w-full font-bold"
+                      value={member.name}
+                      data-member-name
+                      placeholder="Nombre del integrante"
+                    />
+                  </div>
+
+                  <div class="space-y-1">
+                    <label class="label-text font-bold text-[11px]">Rol / Función</label>
+                    <input
+                      type="text"
+                      class="input input-bordered input-xs w-full text-xs"
+                      value={member.role}
+                      data-member-role
+                      placeholder="Ej: Fundadora · Editora"
+                    />
+                  </div>
+
+                  <div class="space-y-1">
+                    <label class="label-text font-bold text-[11px]">Avatar URL (opcional)</label>
+                    <input
+                      type="text"
+                      class="input input-bordered input-xs w-full text-[11px] font-mono"
+                      value={member.avatar_url || ""}
+                      data-member-avatar
+                      placeholder="https://... o vacío para gradiente"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <!-- Section 6: Banda de Apoyo y CTA -->
+          <div class="rounded-3xl border border-base-300 bg-base-100 p-6 shadow-xs space-y-4">
+            <div class="border-b border-base-300/80 pb-3 flex items-center justify-between">
+              <h3 class="font-display font-bold text-base text-base-content flex items-center gap-2">
+                <span class="size-2 rounded-full bg-primary"></span>
+                <span>5. Banda Inferior de Apoyo (CTA)</span>
+              </h3>
+              <span class="text-xs text-base-content/50">Caja negra con botones Colabora y Donación</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="space-y-1.5">
+                <label class="label-text font-bold text-xs">Título del Llamado</label>
+                <input
+                  type="text"
+                  name={`cta_title_${loc}`}
+                  value={data.cta_title}
+                  class="input input-bordered input-sm w-full font-bold"
+                  placeholder="¿Quieres apoyar este proyecto?"
+                />
+              </div>
+
+              <div class="space-y-1.5">
+                <label class="label-text font-bold text-xs">Descripción / Bajada del Llamado</label>
+                <input
+                  type="text"
+                  name={`cta_body_${loc}`}
+                  value={data.cta_body}
+                  class="input input-bordered input-sm w-full text-xs"
+                  placeholder="Únete como colaborador o haz una donación..."
+                />
+              </div>
+
+              <div class="space-y-1.5">
+                <label class="label-text font-bold text-xs">Texto Botón Colaborar</label>
+                <input
+                  type="text"
+                  name={`collaborate_label_${loc}`}
+                  value={data.collaborate_label}
+                  class="input input-bordered input-sm w-full font-medium"
+                  placeholder="Colabora con nosotros"
+                />
+              </div>
+
+              <div class="space-y-1.5">
+                <label class="label-text font-bold text-xs">Texto Botón Donar</label>
+                <input
+                  type="text"
+                  name={`donate_label_${loc}`}
+                  value={data.donate_label}
+                  class="input input-bordered input-sm w-full font-medium"
+                  placeholder="Haz una donación"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 7: Metadatos SEO / Open Graph -->
+          <div class="rounded-3xl border border-base-300 bg-base-100 p-6 shadow-xs space-y-4">
+            <div class="border-b border-base-300/80 pb-3 flex items-center justify-between">
+              <h3 class="font-display font-bold text-base text-base-content flex items-center gap-2">
+                <svg class="size-4 text-base-content/60"><use href="#ic-share"></use></svg>
+                <span>6. Metadatos Open Graph / SEO</span>
+              </h3>
+              <span class="text-xs text-base-content/50">Vista previa en redes sociales</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="space-y-1.5">
+                <label class="label-text font-bold text-xs">Título Social (og:title)</label>
+                <input
+                  type="text"
+                  name={`og:title_${loc}`}
+                  value={data.og?.title || ""}
+                  class="input input-bordered input-sm w-full"
+                  placeholder="Nosotros · AfroUp"
+                />
+              </div>
+
+              <div class="space-y-1.5">
+                <label class="label-text font-bold text-xs">Imagen Social (og:image)</label>
+                <input
+                  type="text"
+                  name={`og:image_${loc}`}
+                  value={data.og?.["og:image"] || ""}
+                  class="input input-bordered input-sm w-full font-mono text-xs"
+                  placeholder="/assets/brand-hero.png o URL"
+                />
+              </div>
+
+              <div class="space-y-1.5 md:col-span-2">
+                <label class="label-text font-bold text-xs">Descripción Social (og:description)</label>
+                <textarea
+                  name={`og:description_${loc}`}
+                  rows="2"
+                  class="textarea textarea-bordered textarea-sm w-full leading-relaxed"
+                  placeholder="Conoce la historia, misión, visión y equipo detrás de AfroUp."
+                >{data.og?.description || ""}</textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    })}
+  </form>
+</div>
+
+<script>
+  function setupAboutEditor() {
+    const form = document.querySelector<HTMLFormElement>("[data-about-form]");
+    if (!form) return;
+
+    // Team Manager Logic per Locale
+    document.querySelectorAll("[data-team-manager-section]").forEach((section) => {
+      const loc = section.getAttribute("data-team-manager-section");
+      if (!loc) return;
+
+      const hiddenInput = section.querySelector<HTMLInputElement>(`[data-team-hidden-input='${loc}']`);
+      const container = section.querySelector<HTMLElement>(`[data-team-cards-container='${loc}']`);
+      const addBtn = section.querySelector<HTMLButtonElement>(`[data-add-team-member='${loc}']`);
+
+      const syncTeamJson = () => {
+        if (!container || !hiddenInput) return;
+        const cards = container.querySelectorAll("[data-team-card-idx]");
+        const teamData: Array<{ name: string; role: string; avatar_url: string; figure?: string }> = [];
+
+        cards.forEach((card) => {
+          const nameInput = card.querySelector<HTMLInputElement>("[data-member-name]");
+          const roleInput = card.querySelector<HTMLInputElement>("[data-member-role]");
+          const avatarInput = card.querySelector<HTMLInputElement>("[data-member-avatar]");
+
+          teamData.push({
+            name: (nameInput?.value || "").trim() || "Integrante",
+            role: (roleInput?.value || "").trim() || "Colaborador/a",
+            avatar_url: (avatarInput?.value || "").trim(),
+            figure: "bg-secondary/30",
+          });
+        });
+
+        hiddenInput.value = JSON.stringify(teamData);
+      };
+
+      if (container && container.dataset.bound !== "true") {
+        container.dataset.bound = "true";
+        container.addEventListener("input", syncTeamJson);
+        container.addEventListener("click", (e) => {
+          const target = e.target as HTMLElement;
+          const removeBtn = target.closest<HTMLButtonElement>("[data-remove-team-member]");
+          if (removeBtn) {
+            const card = removeBtn.closest("[data-team-card-idx]");
+            if (card) {
+              card.remove();
+              syncTeamJson();
+            }
+          }
+        });
+      }
+
+      if (addBtn && addBtn.dataset.bound !== "true") {
+        addBtn.dataset.bound = "true";
+        addBtn.addEventListener("click", () => {
+          if (!container) return;
+          const idx = container.children.length;
+          const card = document.createElement("div");
+          card.className = "card bg-base-200/70 border border-base-300 shadow-2xs p-4 space-y-3 relative group";
+          card.setAttribute("data-team-card-idx", String(idx));
+          card.innerHTML = `
+            <button type="button" class="btn btn-circle btn-ghost btn-xs absolute top-2 right-2 text-error opacity-70 hover:opacity-100" data-remove-team-member="${idx}" title="Eliminar miembro">✕</button>
+            <div class="space-y-1">
+              <label class="label-text font-bold text-[11px]">Nombre</label>
+              <input type="text" class="input input-bordered input-xs w-full font-bold" value="" data-member-name placeholder="Nombre del integrante" />
+            </div>
+            <div class="space-y-1">
+              <label class="label-text font-bold text-[11px]">Rol / Función</label>
+              <input type="text" class="input input-bordered input-xs w-full text-xs" value="" data-member-role placeholder="Ej: Redactor/a" />
+            </div>
+            <div class="space-y-1">
+              <label class="label-text font-bold text-[11px]">Avatar URL (opcional)</label>
+              <input type="text" class="input input-bordered input-xs w-full text-[11px] font-mono" value="" data-member-avatar placeholder="https://..." />
+            </div>
+          `;
+          container.appendChild(card);
+          syncTeamJson();
+        });
+      }
+    });
+
+    // Translation Modal Logic
+    const openModalBtn = document.querySelector<HTMLButtonElement>("[data-open-about-translate-modal]");
+    const modalDialog = document.getElementById("about-translate-modal") as HTMLDialogElement | null;
+    const closeModalBtns = document.querySelectorAll<HTMLButtonElement>("[data-close-about-translate-modal]");
+    const confirmTranslateBtn = document.getElementById("about-translate-confirm-btn") as HTMLButtonElement | null;
+    const targetSelect = document.getElementById("about-translate-target-select") as HTMLSelectElement | null;
+
+    if (openModalBtn && modalDialog && openModalBtn.dataset.bound !== "true") {
+      openModalBtn.dataset.bound = "true";
+      openModalBtn.addEventListener("click", () => {
+        // Preselect current active language tab if not 'es'
+        const localeSelect = document.querySelector<HTMLSelectElement>("[data-page-locale]");
+        if (targetSelect && localeSelect && localeSelect.value !== "es") {
+          targetSelect.value = localeSelect.value;
+        }
+        modalDialog.showModal();
+      });
+    }
+
+    closeModalBtns.forEach((btn) => {
+      if (btn.dataset.bound === "true") return;
+      btn.dataset.bound = "true";
+      btn.addEventListener("click", () => {
+        if (modalDialog) modalDialog.close();
+      });
+    });
+
+    if (confirmTranslateBtn && modalDialog && confirmTranslateBtn.dataset.bound !== "true") {
+      confirmTranslateBtn.dataset.bound = "true";
+      confirmTranslateBtn.addEventListener("click", async () => {
+        const targetLocale = targetSelect ? targetSelect.value : "";
+        if (!targetLocale) return;
+
+        const originalBtnHtml = confirmTranslateBtn.innerHTML;
+        confirmTranslateBtn.disabled = true;
+        confirmTranslateBtn.innerHTML = '<span class="loading loading-spinner loading-sm"></span> <span>Traduciendo...</span>';
+
+        const readVal = (name: string) => {
+          const el = form.querySelector<HTMLInputElement | HTMLTextAreaElement>(`[name="${name}"]`);
+          return el ? el.value : "";
+        };
+        const setVal = (name: string, val: string) => {
+          if (!val) return;
+          const el = form.querySelector<HTMLInputElement | HTMLTextAreaElement>(`[name="${name}"]`);
+          if (el) el.value = val;
+        };
+
+        const translateItem = async (sourceText: string, fieldName: string, isHtml = false) => {
+          if (!sourceText.trim()) return;
+          const curVal = readVal(`${fieldName}_${targetLocale}`);
+          const fd = new FormData();
+          fd.append("module", "nosotros");
+          fd.append("source", sourceText);
+          fd.append("current", curVal);
+          fd.append("target", targetLocale);
+          if (isHtml) fd.append("is_html", "1");
+
+          try {
+            const res = await fetch("/api/admin/translate", { method: "POST", body: fd });
+            const result = await res.json();
+            if (result.ok && result.text) {
+              setVal(`${fieldName}_${targetLocale}`, result.text);
+            }
+          } catch {}
+        };
+
+        const tasks: Promise<void>[] = [];
+
+        // 1. Hero
+        tasks.push(translateItem(readVal("eyebrow_es"), "eyebrow"));
+        tasks.push(translateItem(readVal("title_es"), "title"));
+        tasks.push(translateItem(readVal("lead_es"), "lead"));
+
+        // 2. Story & Values
+        tasks.push(translateItem(readVal("story_title_es"), "story_title"));
+        tasks.push(translateItem(readVal("story_body_es"), "story_body"));
+        tasks.push(translateItem(readVal("values_es"), "values"));
+
+        // 3. Mission & Vision
+        tasks.push(translateItem(readVal("mission_title_es"), "mission_title"));
+        tasks.push(translateItem(readVal("mission_body_es"), "mission_body"));
+        tasks.push(translateItem(readVal("vision_title_es"), "vision_title"));
+        tasks.push(translateItem(readVal("vision_body_es"), "vision_body"));
+
+        // 4. Stats labels
+        tasks.push(translateItem(readVal("stat_lbl_1_es"), "stat_lbl_1"));
+        tasks.push(translateItem(readVal("stat_lbl_2_es"), "stat_lbl_2"));
+        tasks.push(translateItem(readVal("stat_lbl_3_es"), "stat_lbl_3"));
+
+        // 5. CTA Band
+        tasks.push(translateItem(readVal("cta_title_es"), "cta_title"));
+        tasks.push(translateItem(readVal("cta_body_es"), "cta_body"));
+        tasks.push(translateItem(readVal("collaborate_label_es"), "collaborate_label"));
+        tasks.push(translateItem(readVal("donate_label_es"), "donate_label"));
+
+        // 6. OG metadata
+        tasks.push(translateItem(readVal("og:title_es"), "og:title"));
+        tasks.push(translateItem(readVal("og:description_es"), "og:description"));
+
+        await Promise.all(tasks);
+
+        confirmTranslateBtn.disabled = false;
+        confirmTranslateBtn.innerHTML = originalBtnHtml;
+        modalDialog.close();
+
+        // Switch to translated language tab
+        const localeSelect = document.querySelector<HTMLSelectElement>("[data-page-locale]");
+        if (localeSelect) {
+          localeSelect.value = targetLocale;
+          localeSelect.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+
+        if ((window as any).AfroUpFeedback) {
+          (window as any).AfroUpFeedback.toast("Página Nosotros traducida con éxito.", "success");
+        }
+      });
+    }
+
+    // Form submit with Feedback
+    if (form.dataset.bound !== "true") {
+      form.dataset.bound = "true";
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const submitBtn = document.querySelector<HTMLButtonElement>("[data-about-submit-btn]");
+        if (submitBtn) submitBtn.disabled = true;
+
+        const data = new FormData(form);
+        try {
+          const res = await fetch(form.action, { method: "POST", body: data });
+          const result = await res.json();
+          if (result.ok) {
+            if ((window as any).AfroUpFeedback) {
+              (window as any).AfroUpFeedback.toast(result.message || "Página Nosotros guardada con éxito.", "success");
+            }
+          } else {
+            if ((window as any).AfroUpFeedback) {
+              (window as any).AfroUpFeedback.toast(result.message || "No se pudo guardar la página.", "error");
+            }
+          }
+        } catch {
+          if ((window as any).AfroUpFeedback) {
+            (window as any).AfroUpFeedback.toast("Error de red al guardar.", "error");
+          }
+        } finally {
+          if (submitBtn) submitBtn.disabled = false;
+        }
+      });
+    }
+  }
+
+  setupAboutEditor();
+  document.addEventListener("astro:page-load", setupAboutEditor);
+</script>
