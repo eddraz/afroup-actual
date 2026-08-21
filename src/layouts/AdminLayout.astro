@@ -30,6 +30,7 @@ const paths = {
   contact: joinPath(adminBase, "contacto"),
   resources: joinPath(adminBase, "recursos"),
   collaborate: joinPath(adminBase, "colabora"),
+  referentes: joinPath(adminBase, "referentes"),
   storage: joinPath(adminBase, "almacenamiento"),
   users: joinPath(adminBase, "usuarios"),
   comments: joinPath(adminBase, "comentarios"),
@@ -48,6 +49,7 @@ const can = {
   contact: await canRead("contacto"),
   resources: await canRead("recursos"),
   collaborate: await canRead("colabora"),
+  referentes: await canRead("referentes"),
   storage: await canRead("almacenamiento"),
   comments: await canRead("comentarios"),
   projects: await canRead("proyectos"),
@@ -57,7 +59,7 @@ const can = {
   users: await canRead("users"),
   languages: await canRead("idiomas"),
 };
-const showContent = can.articles || can.categories || can.about || can.contact || can.resources || can.collaborate || can.storage || can.comments || can.projects;
+const showContent = can.articles || can.categories || can.about || can.contact || can.resources || can.collaborate || can.referentes || can.storage || can.comments || can.projects;
 const showAccess = can.modules || can.permissions || can.roles || can.users || can.languages;
 
 function navClass(key: NonNullable<Props["active"]>) {
@@ -149,6 +151,7 @@ function navClass(key: NonNullable<Props["active"]>) {
         <symbol id="ic-message-report" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 4a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-5l-5 3v-3h-2a3 3 0 0 1 -3 -3v-8a3 3 0 0 1 3 -3h12z"></path><path d="M12 8v3"></path><path d="M12 14v.01"></path></symbol>
         <symbol id="ic-books" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4m0 1a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1z"></path><path d="M9 4m0 1a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1z"></path><path d="M5 8h4"></path><path d="M9 16h4"></path><path d="M13.803 4.56l2.184 -.53c.562 -.135 1.133 .19 1.282 .732l3.695 13.418a1.02 1.02 0 0 1 -.634 1.219l-.133 .041l-2.184 .53c-.562 .135 -1.133 -.19 -1.282 -.732l-3.695 -13.418a1.02 1.02 0 0 1 .634 -1.219l.133 -.041z"></path><path d="M14 9l4 -1"></path><path d="M16 16l3.923 -.98"></path></symbol>
         <symbol id="ic-heart-handshake" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12.572l-7.5 7.428l-7.5 -7.428a5 5 0 1 1 7.5 -6.566a5 5 0 1 1 7.5 6.572"></path><path d="M12 6l-3.293 3.293a1 1 0 0 0 0 1.414l.543 .543c.69 .69 1.81 .69 2.5 0l1 -1a3.182 3.182 0 0 1 4.5 0l2.25 2.25"></path><path d="M12.5 15.5l2 2"></path><path d="M15 13l2 2"></path></symbol>
+        <symbol id="ic-user-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"></path><path d="M6 21v-2a4 4 0 0 1 4 -4h.5"></path><path d="M17.8 20.817l-2.172 1.138a.392 .392 0 0 1 -.568 -.41l.415 -2.411l-1.757 -1.707a.389 .389 0 0 1 .217 -.665l2.428 -.352l1.086 -2.193a.392 .392 0 0 1 .702 0l1.086 2.193l2.428 .352a.39 .39 0 0 1 .217 .665l-1.757 1.707l.414 2.41a.39 .39 0 0 1 -.567 .411l-2.172 -1.138z"></path></symbol>
       </defs>
     </svg>
 
@@ -298,6 +301,15 @@ function navClass(key: NonNullable<Props["active"]>) {
                 <a class={navClass("collaborate")} href={paths.collaborate}>
                   <svg class="size-4.5 shrink-0"><use href="#ic-heart-handshake"></use></svg>
                   <span class="admin-nav-label truncate">{copy.adminCollaborate || "Colabora"}</span>
+                </a>
+              </li>
+            ) : null}
+
+            {can.referentes ? (
+              <li class="admin-nav-tooltip tooltip tooltip-right" data-tip={copy.adminReferentes || "Referentes"}>
+                <a class={navClass("referentes" as any)} href={paths.referentes}>
+                  <svg class="size-4.5 shrink-0"><use href="#ic-user-star"></use></svg>
+                  <span class="admin-nav-label truncate">{copy.adminReferentes || "Referentes"}</span>
                 </a>
               </li>
             ) : null}

@@ -209,6 +209,9 @@ Cero o un idioma visible oculta el selector público. Dos muestran un interrupto
 | `collaborate_skill_locales` | `(skill_id, locale)` | Título y descripción breve de la habilidad por idioma |
 | `collaborate_page_locales` | `locale` | Hero, títulos y notas del formulario de `/colabora` por idioma |
 | `collaborate_submissions` | `id` | Bandeja de postulaciones recibidas con datos del candidato, rol deseado, mensaje, notas y estado (`unread|read|contacted|archived`) |
+| `referentes` | `id` | Catálogo de figuras y referentes históricos y contemporáneos con `slug` único, `category_tag`, `badge_theme`, `photo_url`, `years_active`, `status`, `featured` y `sort_order` |
+| `referente_locales` | `(referente_id, locale)` | Nombre, rol, fechas, biografía completa (`bio_html`), cita (`quote`), hitos cronológicos (`milestones_json`) y metadatos `og_json` por idioma |
+| `referentes_page_locales` | `locale` | Configuración de cabecera (hero) y banner de propuesta («¿Falta alguien?») de `/referentes` por idioma |
 | `search_documents` | `id` | Índice unificado para `/buscar` con `(module_slug, record_id, locale)` único |
 
 ## Ayuda de emergencia heredada

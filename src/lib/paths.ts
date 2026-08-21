@@ -24,7 +24,7 @@ export const routeIds = {
   entrepreneurs: "emprendedores",
   entrepreneur: "emprendimiento",
   people: "referentes",
-  person: "#",
+  person: "referente",
   collaborate: "colabora",
   saved: "guardados",
   login: "login",
@@ -35,6 +35,7 @@ export const routeIds = {
   adminContact: "admin/contacto",
   adminResources: "admin/recursos",
   adminCollaborate: "admin/colabora",
+  adminReferentes: "admin/referentes",
   sitemap: "#",
 } as const;
 
@@ -64,7 +65,7 @@ export const paths = {
   entrepreneurs: "/emprendedores",
   entrepreneur: "/emprendimiento",
   people: "/referentes",
-  person: "#",
+  person: "/referente",
   collaborate: "/colabora",
   saved: "/guardados",
   login: "/login",
@@ -72,6 +73,7 @@ export const paths = {
   recover: "/recuperar",
   account: "/cuenta",
   admin: "/admin",
+  adminReferentes: "/admin/referentes",
   sitemap: "#",
 } as const;
 

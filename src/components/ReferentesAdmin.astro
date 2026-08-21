@@ -1,0 +1,1547 @@
+---
+import type { ReferenteItem, ReferentesPageData, ReferentesStats } from "../lib/referentes";
+import type { BioTranslationAccess } from "../lib/editorial";
+import type { LanguageItem } from "../lib/site-languages";
+import PageLocaleSwitch from "./PageLocaleSwitch.astro";
+import R2Uploader from "./R2Uploader.astro";
+
+interface Props {
+  referentes: ReferenteItem[];
+  allReferentesWithLocales: any[];
+  pageConfigByLocale: Record<string, ReferentesPageData>;
+  stats: ReferentesStats;
+  languages: LanguageItem[];
+  translation: BioTranslationAccess;
+  locale: string;
+  copy: Record<string, string>;
+  publicHref: string;
+}
+
+const {
+  referentes,
+  allReferentesWithLocales = [],
+  pageConfigByLocale,
+  stats,
+  languages,
+  translation,
+  locale,
+  copy,
+  publicHref,
+} = Astro.props;
+
+const defaultLocale = "es";
+const primaryPageConfig = pageConfigByLocale[defaultLocale] || pageConfigByLocale[locale] || {};
+const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
+
+const categoriesList = [
+  "Historia",
+  "Activismo",
+  "Pensamiento",
+  "Arte",
+  "Ciencia",
+  "Deporte",
+];
+---
+
+<div class="drawer drawer-end" data-referentes-admin-root>
+  <input id="referente-detail-drawer" type="checkbox" class="drawer-toggle" />
+
+  <div class="drawer-content flex flex-col space-y-6">
+    <!-- Header Metrics & Toolbar -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-base-300 pb-5">
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-base-content">
+            {copy.adminReferentes || "Referentes"}
+          </h1>
+          <span class="badge badge-accent badge-sm font-bold uppercase tracking-wider">
+            Comunidad
+          </span>
+        </div>
+        <p class="text-xs sm:text-sm text-base-content/70 mt-1 max-w-2xl">
+          {copy.adminReferentesDesc || "Catálogo de figuras históricas y líderes contemporáneos de la diáspora afro."}
+        </p>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <PageLocaleSwitch currentLocale={locale} />
+
+        <a
+          href={publicHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="btn btn-ghost btn-sm gap-1.5 text-xs font-semibold"
+          title="Ver página pública"
+        >
+          <svg class="size-4"><use href="#ic-share"></use></svg>
+          <span class="hidden sm:inline">Ver /referentes</span>
+        </a>
+
+        <button
+          type="button"
+          class="btn btn-primary btn-sm gap-1.5 font-bold shadow-xs"
+          data-open-create-referente-drawer
+        >
+          <svg class="size-4"><use href="#ic-user"></use></svg>
+          <span>Nuevo Referente</span>
+        </button>
+
+        <button
+          type="submit"
+          form="referentes-page-config-form"
+          class="btn btn-neutral btn-sm gap-1.5 font-bold shadow-xs hidden"
+          data-page-config-submit-btn
+        >
+          <svg class="size-4"><use href="#ic-check"></use></svg>
+          <span>Guardar Configuración</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Metrics Cards -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div class="stat bg-base-100 rounded-2xl border border-base-300 p-4 shadow-xs">
+        <div class="stat-figure text-primary">
+          <div class="size-10 rounded-xl bg-primary/10 flex items-center justify-center">
+            <svg class="size-5"><use href="#ic-users"></use></svg>
+          </div>
+        </div>
+        <div class="stat-title text-xs font-bold uppercase tracking-wider text-base-content/60">Total Referentes</div>
+        <div class="stat-value text-2xl sm:text-3xl font-extrabold text-primary">{stats.total}</div>
+        <div class="stat-desc text-xs text-base-content/50">En la base de datos</div>
+      </div>
+
+      <div class="stat bg-base-100 rounded-2xl border border-base-300 p-4 shadow-xs">
+        <div class="stat-figure text-success">
+          <div class="size-10 rounded-xl bg-success/10 flex items-center justify-center">
+            <svg class="size-5"><use href="#ic-book2"></use></svg>
+          </div>
+        </div>
+        <div class="stat-title text-xs font-bold uppercase tracking-wider text-base-content/60">Publicados</div>
+        <div class="stat-value text-2xl sm:text-3xl font-extrabold text-success">{stats.published}</div>
+        <div class="stat-desc text-xs text-base-content/50">Visibles en la web</div>
+      </div>
+
+      <div class="stat bg-base-100 rounded-2xl border border-base-300 p-4 shadow-xs">
+        <div class="stat-figure text-secondary">
+          <div class="size-10 rounded-xl bg-secondary/10 flex items-center justify-center">
+            <svg class="size-5"><use href="#ic-stack"></use></svg>
+          </div>
+        </div>
+        <div class="stat-title text-xs font-bold uppercase tracking-wider text-base-content/60">Categorías</div>
+        <div class="stat-value text-2xl sm:text-3xl font-extrabold text-secondary">{stats.categoriesCount}</div>
+        <div class="stat-desc text-xs text-base-content/50">Disciplinas activas</div>
+      </div>
+
+      <div class="stat bg-base-100 rounded-2xl border border-base-300 p-4 shadow-xs">
+        <div class="stat-figure text-warning">
+          <div class="size-10 rounded-xl bg-warning/10 flex items-center justify-center">
+            <svg class="size-5"><use href="#ic-sun"></use></svg>
+          </div>
+        </div>
+        <div class="stat-title text-xs font-bold uppercase tracking-wider text-base-content/60">Destacados</div>
+        <div class="stat-value text-2xl sm:text-3xl font-extrabold text-warning">{stats.featuredCount}</div>
+        <div class="stat-desc text-xs text-base-content/50">En carruseles / cabecera</div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="tabs tabs-boxed bg-base-200/60 p-1 rounded-2xl w-fit border border-base-300">
+      <button class="tab tab-active font-bold text-xs sm:text-sm gap-2" data-view-tab="referentes">
+        <svg class="size-4"><use href="#ic-users"></use></svg>
+        <span>Catálogo de Referentes</span>
+      </button>
+      <button class="tab font-bold text-xs sm:text-sm gap-2" data-view-tab="config">
+        <svg class="size-4"><use href="#ic-edit"></use></svg>
+        <span>Configuración de /referentes</span>
+      </button>
+    </div>
+
+    <!-- Panel 1: Referentes Table & Filter Toolbar -->
+    <div class="space-y-4" data-view-panel="referentes">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-base-100 p-3.5 rounded-2xl border border-base-300 shadow-xs">
+        <div class="flex flex-wrap items-center gap-1.5" data-filter-toolbar>
+          <button class="btn btn-xs btn-active font-semibold" data-filter-category="all">
+            Todos
+          </button>
+          {categoriesList.map((cat) => (
+            <button class="btn btn-xs btn-ghost font-semibold" data-filter-category={cat}>
+              {cat}
+            </button>
+          ))}
+          <div class="divider divider-horizontal mx-0.5"></div>
+          <button class="btn btn-xs btn-ghost font-semibold" data-filter-status="featured">
+            ⭐ Destacados
+          </button>
+          <button class="btn btn-xs btn-ghost font-semibold" data-filter-status="draft">
+            Borradores
+          </button>
+        </div>
+
+        <div class="relative w-full sm:w-64">
+          <input
+            type="search"
+            placeholder="Buscar por nombre o hito..."
+            class="input input-bordered input-sm w-full pl-8 text-xs"
+            data-search-input
+          />
+          <svg class="size-4 absolute left-2.5 top-2 opacity-50"><use href="#ic-search"></use></svg>
+        </div>
+      </div>
+
+      <!-- Data Table -->
+      <div class="overflow-x-auto rounded-2xl border border-base-300 bg-base-100 shadow-xs">
+        <table class="table table-zebra table-sm w-full">
+          <thead class="bg-base-200/50 text-xs text-base-content/70 uppercase">
+            <tr>
+              <th class="w-12 text-center">#</th>
+              <th>Referente</th>
+              <th>Disciplina</th>
+              <th>Época / Años</th>
+              <th>Hitos</th>
+              <th>Estado</th>
+              <th class="text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {referentes.length === 0 ? (
+              <tr>
+                <td colspan="7" class="text-center py-12 text-base-content/60 text-sm">
+                  No hay referentes registrados. Haz clic en <strong>«Nuevo Referente»</strong> para crear el primero.
+                </td>
+              </tr>
+            ) : (
+              referentes.map((r, idx) => {
+                const categoryBadgeClass =
+                  r.category_tag === "Historia"
+                    ? "badge-secondary"
+                    : r.category_tag === "Activismo"
+                    ? "badge-primary"
+                    : r.category_tag === "Pensamiento"
+                    ? "badge-accent"
+                    : r.category_tag === "Arte"
+                    ? "badge-info"
+                    : "badge-ghost";
+
+                return (
+                  <tr
+                    data-referente-row
+                    data-status={r.status}
+                    data-category={r.category_tag}
+                    data-featured={r.featured ? "true" : "false"}
+                    class="hover:bg-base-200/30 transition-colors"
+                  >
+                    <td class="text-center font-mono text-xs opacity-50">{idx + 1}</td>
+                    <td>
+                      <div class="flex items-center gap-3">
+                        {r.photo_url ? (
+                          <img
+                            src={r.photo_url}
+                            alt={r.name}
+                            class="size-10 rounded-xl object-cover border border-base-300 shrink-0"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div class="size-10 rounded-xl bg-primary/20 text-primary font-bold flex items-center justify-center shrink-0 text-sm">
+                            {r.name.slice(0, 2).toUpperCase()}
+                          </div>
+                        )}
+                        <div>
+                          <div class="font-bold text-sm text-base-content flex items-center gap-1.5">
+                            <span>{r.name}</span>
+                            {r.featured ? (
+                              <span class="badge badge-warning badge-xs font-bold">⭐ Destacado</span>
+                            ) : null}
+                          </div>
+                          <div class="font-mono text-[11px] text-base-content/50">
+                            /referente/{r.slug}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <span class:list={["badge badge-sm font-semibold", categoryBadgeClass]}>
+                        {r.category_tag}
+                      </span>
+                    </td>
+                    <td class="text-xs text-base-content/80 font-medium">
+                      {r.years_label || r.years_active || "—"}
+                    </td>
+                    <td class="text-xs text-base-content/70">
+                      <span class="badge badge-ghost badge-sm">
+                        {r.milestones.length} {r.milestones.length === 1 ? "hito" : "hitos"}
+                      </span>
+                    </td>
+                    <td>
+                      {r.status === "published" ? (
+                        <span class="badge badge-success badge-sm gap-1 font-semibold">
+                          <span class="size-1.5 rounded-full bg-success-content"></span>
+                          Publicado
+                        </span>
+                      ) : (
+                        <span class="badge badge-warning badge-sm gap-1 font-semibold">
+                          <span class="size-1.5 rounded-full bg-warning-content"></span>
+                          Borrador
+                        </span>
+                      )}
+                    </td>
+                    <td class="text-right space-x-1">
+                      <a
+                        href={locale === "en" ? `/en/referente/${r.slug}` : `/referente/${r.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="btn btn-ghost btn-xs text-base-content/70"
+                        title="Ver ficha pública"
+                      >
+                        <svg class="size-3.5"><use href="#ic-share"></use></svg>
+                      </a>
+                      <button
+                        type="button"
+                        class="btn btn-neutral btn-xs font-semibold gap-1"
+                        data-edit-referente={r.id}
+                      >
+                        <svg class="size-3.5"><use href="#ic-edit"></use></svg>
+                        <span>Editar</span>
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Panel 2: Page Configuration Form -->
+    <div class="space-y-6 hidden" data-view-panel="config">
+      <form
+        id="referentes-page-config-form"
+        method="post"
+        action="/api/admin/referentes-page"
+        class="space-y-6"
+        data-page-config-form
+      >
+        <div class="flex items-center justify-between bg-base-200/50 p-4 rounded-2xl border border-base-300">
+          <div>
+            <h3 class="font-bold text-sm text-base-content">Textos de Cabecera y Banner</h3>
+            <p class="text-xs text-base-content/60">Configura el Hero y el bloque inferior «¿Falta alguien?» de /referentes.</p>
+          </div>
+          <button type="submit" class="btn btn-neutral btn-sm font-bold">
+            Guardar Textos
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {languages.map((lang) => {
+            const loc = lang.code;
+            const cfg = pageConfigByLocale[loc] || primaryPageConfig;
+
+            return (
+              <div class="rounded-2xl border border-base-300 bg-base-100 p-5 space-y-4 shadow-xs">
+                <div class="flex items-center justify-between border-b border-base-300 pb-2">
+                  <h4 class="font-bold text-sm text-base-content flex items-center gap-2">
+                    <span class="badge badge-neutral badge-sm font-mono">{loc.toUpperCase()}</span>
+                    <span>{lang.native_name}</span>
+                  </h4>
+                </div>
+
+                <div class="space-y-3">
+                  <div class="space-y-1">
+                    <label class="label-text font-bold text-xs">Eyebrow (Categoría superior)</label>
+                    <input
+                      type="text"
+                      name={`eyebrow_${loc}`}
+                      value={cfg.eyebrow}
+                      class="input input-bordered input-sm w-full text-xs font-semibold"
+                      placeholder="Comunidad"
+                    />
+                  </div>
+
+                  <div class="space-y-1">
+                    <label class="label-text font-bold text-xs">Título Principal</label>
+                    <input
+                      type="text"
+                      name={`title_${loc}`}
+                      value={cfg.title}
+                      class="input input-bordered input-sm w-full font-bold text-sm"
+                      placeholder="Referentes"
+                    />
+                  </div>
+
+                  <div class="space-y-1">
+                    <label class="label-text font-bold text-xs">Bajada / Descripción Lead</label>
+                    <textarea
+                      name={`lead_${loc}`}
+                      rows="3"
+                      class="textarea textarea-bordered textarea-sm w-full text-xs leading-relaxed"
+                      placeholder="Las personas que abrieron camino..."
+                    >{cfg.lead}</textarea>
+                  </div>
+
+                  <div class="pt-3 border-t border-base-300/70 space-y-2">
+                    <h5 class="text-xs font-bold uppercase tracking-wider text-base-content/60">
+                      Banner Inferior («¿Falta alguien?»)
+                    </h5>
+
+                    <div class="space-y-1">
+                      <label class="label-text font-bold text-xs">Título del Banner</label>
+                      <input
+                        type="text"
+                        name={`band_title_${loc}`}
+                        value={cfg.band_title}
+                        class="input input-bordered input-sm w-full text-xs font-bold"
+                        placeholder="¿Falta alguien?"
+                      />
+                    </div>
+
+                    <div class="space-y-1">
+                      <label class="label-text font-bold text-xs">Descripción del Banner</label>
+                      <input
+                        type="text"
+                        name={`band_dek_${loc}`}
+                        value={cfg.band_dek}
+                        class="input input-bordered input-sm w-full text-xs"
+                        placeholder="Propón un referente para la colección."
+                      />
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                      <div class="space-y-1">
+                        <label class="label-text font-bold text-xs">Texto Botón CTA</label>
+                        <input
+                          type="text"
+                          name={`band_cta_label_${loc}`}
+                          value={cfg.band_cta_label}
+                          class="input input-bordered input-sm w-full text-xs"
+                          placeholder="Proponer"
+                        />
+                      </div>
+                      <div class="space-y-1">
+                        <label class="label-text font-bold text-xs">URL de Destino</label>
+                        <input
+                          type="text"
+                          name={`band_cta_url_${loc}`}
+                          value={cfg.band_cta_url}
+                          class="input input-bordered input-sm w-full text-xs font-mono"
+                          placeholder="/colabora"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Slide-in Drawer Side (Inspector & Editor) -->
+  <div class="drawer-side z-50">
+    <label for="referente-detail-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
+
+    <div class="bg-base-100 min-h-full w-full max-w-2xl p-6 shadow-2xl flex flex-col justify-between overflow-y-auto space-y-6">
+      <div class="space-y-6">
+        <!-- Drawer Header -->
+        <div class="flex items-center justify-between border-b border-base-300 pb-4">
+          <div class="flex items-center gap-2">
+            <span class="size-3 rounded-full bg-primary"></span>
+            <h3 class="font-display text-lg font-bold text-base-content" data-drawer-title-header>
+              Crear Nuevo Referente
+            </h3>
+          </div>
+          <label for="referente-detail-drawer" class="btn btn-circle btn-ghost btn-xs">✕</label>
+        </div>
+
+        <!-- Referente Form -->
+        <form
+          id="referente-editor-form"
+          method="post"
+          action="/api/admin/referentes"
+          class="space-y-6"
+          data-referente-form
+        >
+          <input type="hidden" name="id" id="ref-field-id" value="" />
+
+          <!-- Language Switcher + AI Translate Button -->
+          <div class="flex items-center justify-between bg-base-200/50 p-3 rounded-2xl border border-base-300">
+            <div class="flex items-center gap-1.5">
+              {languages.map((lang) => (
+                <button
+                  type="button"
+                  class:list={["btn btn-xs font-bold", lang.code === defaultLocale ? "btn-active btn-neutral" : "btn-ghost"]}
+                  data-drawer-lang-btn={lang.code}
+                >
+                  {lang.native_name} ({lang.code.toUpperCase()})
+                </button>
+              ))}
+            </div>
+
+            {translation.canUseAi && targetLanguages.length > 0 ? (
+              <button
+                type="button"
+                class="btn btn-xs btn-ai gap-1.5 shadow-xs font-semibold"
+                data-drawer-ai-translate-btn
+              >
+                <svg class="size-3.5"><use href="#ic-sparkles"></use></svg>
+                <span>Traducir con IA</span>
+              </button>
+            ) : null}
+          </div>
+
+          <!-- Common Global Settings -->
+          <div class="rounded-2xl border border-base-300 bg-base-200/40 p-4 space-y-4">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-base-content/70">
+              Propiedades Globales & Retrato
+            </h4>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="space-y-1">
+                <label class="label-text font-bold text-xs">Slug URL</label>
+                <input
+                  type="text"
+                  name="slug"
+                  id="ref-field-slug"
+                  class="input input-bordered input-sm w-full font-mono text-xs"
+                  placeholder="martin-luther-king-jr"
+                  required
+                />
+              </div>
+
+              <div class="space-y-1">
+                <label class="label-text font-bold text-xs">Disciplina / Categoría</label>
+                <select
+                  name="category_tag"
+                  id="ref-field-category-tag"
+                  class="select select-bordered select-sm w-full text-xs font-semibold"
+                >
+                  {categoriesList.map((cat) => (
+                    <option value={cat}>{cat}</option>
+                  ))}
+                  <option value="Otro">Otro</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="space-y-1">
+                <label class="label-text font-bold text-xs">Años / Época (Global)</label>
+                <input
+                  type="text"
+                  name="years_active"
+                  id="ref-field-years-active"
+                  class="input input-bordered input-sm w-full text-xs"
+                  placeholder="1929–1968 o s. XVII o Presente"
+                />
+              </div>
+
+              <div class="space-y-1">
+                <label class="label-text font-bold text-xs">Color de Tema (Badge)</label>
+                <select
+                  name="badge_theme"
+                  id="ref-field-badge-theme"
+                  class="select select-bordered select-sm w-full text-xs font-semibold"
+                >
+                  <option value="primary">Primario (Azul)</option>
+                  <option value="secondary">Secundario (Oro/Ocre)</option>
+                  <option value="accent">Acento (Cian/Turquesa)</option>
+                  <option value="warning">Amarillo / Warning</option>
+                  <option value="info">Info / Violeta</option>
+                  <option value="neutral">Neutral / Tinta</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Retrato / Photo URL con Cloudflare R2 -->
+            <div class="space-y-1.5 pt-2 border-t border-base-300/80">
+              <div class="flex items-center justify-between">
+                <label class="label-text font-bold text-xs">URL del Retrato / Fotografía</label>
+                <button
+                  type="button"
+                  class="btn btn-neutral btn-xs gap-1 font-semibold"
+                  data-open-ref-photo-uploader
+                >
+                  <svg class="size-3"><use href="#ic-cloud"></use></svg>
+                  <span>Subir retrato a R2</span>
+                </button>
+              </div>
+              <input
+                type="text"
+                name="photo_url"
+                id="ref-field-photo-url"
+                class="input input-bordered input-sm w-full font-mono text-xs"
+                placeholder="https://media.afroup.org/referentes/portrait.webp"
+              />
+            </div>
+
+            <!-- Status, Featured & Sort Order -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-base-300/80">
+              <div class="space-y-1">
+                <label class="label-text font-bold text-xs">Estado</label>
+                <select name="status" id="ref-field-status" class="select select-bordered select-sm w-full text-xs">
+                  <option value="published">🟢 Publicado</option>
+                  <option value="draft">🟡 Borrador</option>
+                </select>
+              </div>
+
+              <div class="space-y-1">
+                <label class="label-text font-bold text-xs">Orden</label>
+                <input
+                  type="number"
+                  name="sort_order"
+                  id="ref-field-sort-order"
+                  value="0"
+                  class="input input-bordered input-sm w-full text-xs"
+                />
+              </div>
+
+              <div class="flex items-center gap-2 pt-6">
+                <input
+                  type="checkbox"
+                  name="featured"
+                  id="ref-field-featured"
+                  class="checkbox checkbox-accent checkbox-sm"
+                />
+                <label for="ref-field-featured" class="label-text font-bold text-xs cursor-pointer">
+                  Destacado ⭐
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Localized Fields per Language -->
+          {languages.map((lang) => {
+            const loc = lang.code;
+            const isDefault = loc === defaultLocale;
+
+            return (
+              <div data-drawer-locale-panel={loc} class:list={["space-y-4", { hidden: !isDefault }]}>
+                <div class="rounded-2xl border border-base-300 bg-base-100 p-4 space-y-3">
+                  <div class="space-y-1">
+                    <label class="label-text font-bold text-xs">
+                      Nombre ({lang.native_name}) <span class="text-error">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name={`name_${loc}`}
+                      id={`ref-field-name-${loc}`}
+                      class="input input-bordered input-sm w-full font-bold text-sm"
+                      placeholder="Martin Luther King Jr."
+                      required={isDefault}
+                    />
+                  </div>
+
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="space-y-1">
+                      <label class="label-text font-bold text-xs">Rol / Disciplina</label>
+                      <input
+                        type="text"
+                        name={`role_label_${loc}`}
+                        id={`ref-field-role-${loc}`}
+                        class="input input-bordered input-sm w-full text-xs"
+                        placeholder="Activismo · Derechos civiles"
+                      />
+                    </div>
+
+                    <div class="space-y-1">
+                      <label class="label-text font-bold text-xs">Lugares & Fechas</label>
+                      <input
+                        type="text"
+                        name={`years_label_${loc}`}
+                        id={`ref-field-years-label-${loc}`}
+                        class="input input-bordered input-sm w-full text-xs"
+                        placeholder="Atlanta, 1929 — Memphis, 1968"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="space-y-1">
+                    <label class="label-text font-bold text-xs">Resumen Biográfico (Lead)</label>
+                    <textarea
+                      name={`dek_${loc}`}
+                      id={`ref-field-dek-${loc}`}
+                      rows="2"
+                      class="textarea textarea-bordered textarea-sm w-full text-xs leading-relaxed"
+                      placeholder="Pastor, orador y líder del movimiento por los derechos civiles..."
+                    ></textarea>
+                  </div>
+
+                  <!-- Editor.js for Extended Biography -->
+                  <div class="space-y-1.5">
+                    <label class="label-text font-bold text-xs uppercase tracking-wider text-base-content/60 flex items-center justify-between">
+                      <span>Biografía Completa / Contenido Extendido (Editor.js)</span>
+                      <span class="badge badge-ghost badge-xs text-[10px]">Bloques</span>
+                    </label>
+                    <div class="min-h-[220px] w-full rounded-2xl border border-base-300 bg-base-100 p-4 sm:p-5 shadow-inner focus-within:border-primary/60 transition-colors">
+                      <div
+                        id={`referente-editorjs-${loc}`}
+                        class="editorjs-holder min-h-[160px] article-prose max-w-none text-xs"
+                        data-referente-editorjs-locale={loc}
+                      ></div>
+                    </div>
+                    <textarea
+                      class="hidden"
+                      name={`bio_html_${loc}`}
+                      id={`ref-field-bio-html-${loc}`}
+                    ></textarea>
+                  </div>
+
+                  <div class="space-y-1">
+                    <label class="label-text font-bold text-xs">Cita Célebre / Frase Memorable</label>
+                    <textarea
+                      name={`quote_${loc}`}
+                      id={`ref-field-quote-${loc}`}
+                      rows="2"
+                      class="textarea textarea-bordered textarea-sm w-full text-xs font-serif leading-relaxed"
+                      placeholder="“La verdadera paz no es la ausencia de tensión: es la presencia de justicia.”"
+                    ></textarea>
+                  </div>
+
+                  <!-- Milestones Repeater Section -->
+                  <div class="space-y-2 pt-3 border-t border-base-300/80">
+                    <div class="flex items-center justify-between">
+                      <label class="label-text font-bold text-xs uppercase tracking-wider text-base-content/60">
+                        Hitos Clave (Timeline de Vida)
+                      </label>
+                      <button
+                        type="button"
+                        class="btn btn-ghost btn-xs text-primary font-bold gap-1"
+                        data-add-milestone-btn={loc}
+                      >
+                        <svg class="size-3"><use href="#ic-plus"></use></svg>
+                        <span>+ Añadir Hito</span>
+                      </button>
+                    </div>
+
+                    <div id={`ref-milestones-container-${loc}`} class="space-y-2">
+                      <!-- Dynamically rendered milestones rows -->
+                    </div>
+
+                    <input
+                      type="hidden"
+                      name={`milestones_json_${loc}`}
+                      id={`ref-field-milestones-json-${loc}`}
+                      value="[]"
+                    />
+                  </div>
+                </div>
+
+                <!-- Open Graph SEO Metadata -->
+                <div class="rounded-2xl border border-base-300 bg-base-200/40 p-4 space-y-3">
+                  <h5 class="text-xs font-bold text-base-content/70">Metadatos SEO / Open Graph</h5>
+                  <div class="space-y-1">
+                    <label class="label-text font-bold text-xs">Título Social (og:title)</label>
+                    <input
+                      type="text"
+                      name={`og:title_${loc}`}
+                      id={`ref-field-og-title-${loc}`}
+                      class="input input-bordered input-sm w-full text-xs"
+                      placeholder="Martin Luther King Jr. · AfroUp"
+                    />
+                  </div>
+                  <div class="space-y-1">
+                    <label class="label-text font-bold text-xs">Descripción Social (og:description)</label>
+                    <textarea
+                      name={`og:description_${loc}`}
+                      id={`ref-field-og-desc-${loc}`}
+                      rows="2"
+                      class="textarea textarea-bordered textarea-sm w-full text-xs"
+                      placeholder="Pastor, orador y líder del movimiento por los derechos civiles..."
+                    ></textarea>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </form>
+      </div>
+
+      <!-- Drawer Action Buttons -->
+      <div class="border-t border-base-300 pt-4 flex items-center justify-between">
+        <button
+          type="button"
+          class="btn btn-error btn-outline btn-sm font-semibold hidden gap-1.5"
+          data-drawer-delete-referente-btn
+        >
+          <svg class="size-4"><use href="#ic-trash"></use></svg>
+          <span>Eliminar</span>
+        </button>
+
+        <div class="flex items-center gap-2 ml-auto">
+          <label for="referente-detail-drawer" class="btn btn-ghost btn-sm font-semibold">
+            Cancelar
+          </label>
+          <button
+            type="submit"
+            form="referente-editor-form"
+            class="btn btn-primary btn-sm font-bold shadow-xs gap-1.5"
+            data-drawer-submit-ref-btn
+          >
+            <svg class="size-4"><use href="#ic-check"></use></svg>
+            <span>Guardar Referente</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de R2 Uploader para Retratos -->
+<dialog id="referente-photo-r2-modal" class="modal">
+  <div class="modal-box max-w-2xl bg-base-100 p-6 space-y-4 rounded-3xl border border-base-300 shadow-2xl">
+    <div class="flex items-center justify-between border-b border-base-300 pb-3">
+      <div class="flex items-center gap-2">
+        <span class="size-2.5 rounded-full bg-accent animate-pulse"></span>
+        <h3 class="font-display font-bold text-base text-base-content">
+          Subir Retrato o Fotografía a Cloudflare R2
+        </h3>
+      </div>
+      <button type="button" class="btn btn-circle btn-ghost btn-xs" data-close-ref-r2-modal>✕</button>
+    </div>
+
+    <R2Uploader
+      bucket="media"
+      prefix="referentes"
+      allowedTypes="image/*"
+      targetInputId="ref-field-photo-url"
+      locale={locale}
+      flat={true}
+      showBucketSelector={true}
+      allowAiGenerate={false}
+      canUseAi={false}
+    />
+  </div>
+  <form method="dialog" class="modal-backdrop"><button type="submit">close</button></form>
+</dialog>
+
+<!-- Embedded Referentes JSON Data -->
+<script id="referentes-data-script" type="application/json" set:html={JSON.stringify(referentes)} />
+<script id="referentes-locales-script" type="application/json" set:html={JSON.stringify(allReferentesWithLocales)} />
+
+<script>
+  import { createCustomEditor, htmlToBlocks, blocksToHtml } from "../lib/editorjs-client";
+
+  function setupReferentesAdmin() {
+    const root = document.querySelector("[data-referentes-admin-root]");
+    if (!root) return;
+
+    // View Tabs Switching
+    const viewTabs = root.querySelectorAll<HTMLButtonElement>("[data-view-tab]");
+    const viewPanels = root.querySelectorAll<HTMLElement>("[data-view-panel]");
+    const createBtn = root.querySelector<HTMLButtonElement>("[data-open-create-referente-drawer]");
+    const savePageBtn = root.querySelector<HTMLButtonElement>("[data-page-config-submit-btn]");
+
+    viewTabs.forEach((tab) => {
+      if (tab.dataset.bound === "true") return;
+      tab.dataset.bound = "true";
+      tab.addEventListener("click", () => {
+        const view = tab.getAttribute("data-view-tab");
+        viewTabs.forEach((t) => t.classList.toggle("tab-active", t === tab));
+        viewPanels.forEach((panel) => {
+          panel.classList.toggle("hidden", panel.getAttribute("data-view-panel") !== view);
+        });
+        if (createBtn) createBtn.classList.toggle("hidden", view !== "referentes");
+        if (savePageBtn) savePageBtn.classList.toggle("hidden", view !== "config");
+      });
+    });
+
+    // Submissions / Referentes Data Map
+    const scriptEl = document.getElementById("referentes-data-script");
+    let referentesList: any[] = [];
+    try {
+      if (scriptEl && scriptEl.textContent) {
+        referentesList = JSON.parse(scriptEl.textContent);
+      }
+    } catch (e) {
+      console.error("Error parsing referentes JSON:", e);
+    }
+    const referentesMap = new Map<number, any>(referentesList.map((r) => [Number(r.id), r]));
+
+    const localesScriptEl = document.getElementById("referentes-locales-script");
+    let referentesLocalesList: any[] = [];
+    try {
+      if (localesScriptEl && localesScriptEl.textContent) {
+        referentesLocalesList = JSON.parse(localesScriptEl.textContent);
+      }
+    } catch (e) {
+      console.error("Error parsing referentes locales JSON:", e);
+    }
+    const referentesLocalesMap = new Map<number, any>(referentesLocalesList.map((item) => [Number(item.referente.id), item]));
+
+    // Editor.js Instances per Language
+    const referenteEditors: Record<string, any> = {};
+
+    async function initEditorForLocale(loc: string, initialHtml = "") {
+      const holder = document.getElementById(`referente-editorjs-${loc}`);
+      if (!holder) return;
+
+      if (referenteEditors[loc]) {
+        try {
+          await referenteEditors[loc].render(htmlToBlocks(initialHtml));
+          const textarea = document.getElementById(`ref-field-bio-html-${loc}`) as HTMLTextAreaElement | null;
+          if (textarea) textarea.value = initialHtml;
+          return;
+        } catch {
+          try {
+            if (typeof referenteEditors[loc].destroy === "function") {
+              referenteEditors[loc].destroy();
+            }
+          } catch {}
+          delete referenteEditors[loc];
+        }
+      }
+
+      try {
+        const ed = await createCustomEditor({
+          holder,
+          locale: loc,
+          initialHtml,
+          prefix: "referentes",
+          onChange: (html) => {
+            const textarea = document.getElementById(`ref-field-bio-html-${loc}`) as HTMLTextAreaElement | null;
+            if (textarea) textarea.value = html;
+          },
+        });
+        if (ed) {
+          referenteEditors[loc] = ed;
+          const textarea = document.getElementById(`ref-field-bio-html-${loc}`) as HTMLTextAreaElement | null;
+          if (textarea) textarea.value = initialHtml;
+        }
+      } catch (e) {
+        console.error("Error initializing EditorJS for referente locale", loc, e);
+      }
+    }
+
+    // Milestones UI Management
+    function renderMilestones(loc: string, milestones: { year: string; event: string }[]) {
+      const container = document.getElementById(`ref-milestones-container-${loc}`);
+      if (!container) return;
+      container.innerHTML = "";
+
+      if (!milestones.length) {
+        container.innerHTML = `<p class="text-xs text-base-content/50 italic py-1">No hay hitos definidos.</p>`;
+        syncMilestonesJson(loc);
+        return;
+      }
+
+      milestones.forEach((m, idx) => {
+        const row = document.createElement("div");
+        row.className = "flex items-center gap-2 bg-base-200/50 p-2 rounded-xl border border-base-300/60";
+        row.innerHTML = `
+          <input type="text" class="input input-bordered input-xs w-20 font-bold text-xs" placeholder="Año (1963)" value="${escapeHtml(m.year)}" data-m-year />
+          <input type="text" class="input input-bordered input-xs flex-1 text-xs" placeholder="Evento o logro histórico..." value="${escapeHtml(m.event)}" data-m-event />
+          <button type="button" class="btn btn-ghost btn-xs text-error btn-circle" data-remove-m>✕</button>
+        `;
+
+        row.querySelector("[data-remove-m]")?.addEventListener("click", () => {
+          row.remove();
+          syncMilestonesJson(loc);
+        });
+
+        row.querySelectorAll("input").forEach((inp) => {
+          inp.addEventListener("input", () => syncMilestonesJson(loc));
+        });
+
+        container.appendChild(row);
+      });
+
+      syncMilestonesJson(loc);
+    }
+
+    function syncMilestonesJson(loc: string) {
+      const container = document.getElementById(`ref-milestones-container-${loc}`);
+      const hiddenInput = document.getElementById(`ref-field-milestones-json-${loc}`) as HTMLInputElement | null;
+      if (!container || !hiddenInput) return;
+
+      const rows = container.querySelectorAll("div.flex");
+      const list: { year: string; event: string }[] = [];
+      rows.forEach((row) => {
+        const year = (row.querySelector("[data-m-year]") as HTMLInputElement)?.value.trim() || "";
+        const event = (row.querySelector("[data-m-event]") as HTMLInputElement)?.value.trim() || "";
+        if (year || event) {
+          list.push({ year, event });
+        }
+      });
+
+      hiddenInput.value = JSON.stringify(list);
+    }
+
+    function escapeHtml(str: string) {
+      return String(str || "").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    // Bind Add Milestone Buttons
+    root.querySelectorAll<HTMLButtonElement>("[data-add-milestone-btn]").forEach((btn) => {
+      if (btn.dataset.bound === "true") return;
+      btn.dataset.bound = "true";
+      btn.addEventListener("click", () => {
+        const loc = btn.getAttribute("data-add-milestone-btn");
+        if (!loc) return;
+        const container = document.getElementById(`ref-milestones-container-${loc}`);
+        if (!container) return;
+
+        // If placeholder exists, clear it
+        if (container.querySelector("p")) container.innerHTML = "";
+
+        const row = document.createElement("div");
+        row.className = "flex items-center gap-2 bg-base-200/50 p-2 rounded-xl border border-base-300/60";
+        row.innerHTML = `
+          <input type="text" class="input input-bordered input-xs w-20 font-bold text-xs" placeholder="Año" value="" data-m-year />
+          <input type="text" class="input input-bordered input-xs flex-1 text-xs" placeholder="Evento o logro histórico..." value="" data-m-event />
+          <button type="button" class="btn btn-ghost btn-xs text-error btn-circle" data-remove-m>✕</button>
+        `;
+
+        row.querySelector("[data-remove-m]")?.addEventListener("click", () => {
+          row.remove();
+          syncMilestonesJson(loc);
+        });
+
+        row.querySelectorAll("input").forEach((inp) => {
+          inp.addEventListener("input", () => syncMilestonesJson(loc));
+        });
+
+        container.appendChild(row);
+        (row.querySelector("[data-m-year]") as HTMLInputElement)?.focus();
+        syncMilestonesJson(loc);
+      });
+    });
+
+    // Drawer Setup
+    const drawerToggle = document.getElementById("referente-detail-drawer") as HTMLInputElement | null;
+    const form = root.querySelector<HTMLFormElement>("#referente-editor-form");
+    const drawerTitleHeader = root.querySelector("[data-drawer-title-header]");
+    const deleteBtn = root.querySelector<HTMLButtonElement>("[data-drawer-delete-referente-btn]");
+    let activeReferenteId: number | null = null;
+
+    if (drawerToggle && drawerToggle.dataset.boundScroll !== "true") {
+      drawerToggle.dataset.boundScroll = "true";
+      drawerToggle.addEventListener("change", () => {
+        if (drawerToggle.checked) {
+          document.body.style.overflow = "hidden";
+        } else {
+          document.body.style.overflow = "";
+        }
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && drawerToggle.checked) {
+          drawerToggle.checked = false;
+          document.body.style.overflow = "";
+        }
+      });
+    }
+
+    // Drawer Language Tabs
+    const langBtns = root.querySelectorAll<HTMLButtonElement>("[data-drawer-lang-btn]");
+    const langPanels = root.querySelectorAll<HTMLElement>("[data-drawer-locale-panel]");
+
+    langBtns.forEach((btn) => {
+      if (btn.dataset.bound === "true") return;
+      btn.dataset.bound = "true";
+      btn.addEventListener("click", () => {
+        const targetLang = btn.getAttribute("data-drawer-lang-btn");
+        langBtns.forEach((b) => {
+          const isActive = b.getAttribute("data-drawer-lang-btn") === targetLang;
+          b.classList.toggle("btn-active", isActive);
+          b.classList.toggle("btn-neutral", isActive);
+          b.classList.toggle("btn-ghost", !isActive);
+        });
+        langPanels.forEach((panel) => {
+          panel.classList.toggle("hidden", panel.getAttribute("data-drawer-locale-panel") !== targetLang);
+        });
+      });
+    });
+
+    // Auto-generate slug from Spanish name when creating
+    const nameEsInput = root.querySelector<HTMLInputElement>("#ref-field-name-es");
+    const slugInput = root.querySelector<HTMLInputElement>("#ref-field-slug");
+    if (nameEsInput && slugInput && nameEsInput.dataset.bound !== "true") {
+      nameEsInput.dataset.bound = "true";
+      nameEsInput.addEventListener("input", () => {
+        if (!activeReferenteId && (!slugInput.value || slugInput.dataset.touched !== "true")) {
+          slugInput.value = nameEsInput.value
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase()
+            .trim()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-+|-+$/g, "");
+        }
+      });
+      slugInput.addEventListener("input", () => {
+        slugInput.dataset.touched = "true";
+      });
+    }
+
+    // Open Drawer for Creating New Referente
+    if (createBtn && createBtn.dataset.bound !== "true") {
+      createBtn.dataset.bound = "true";
+      createBtn.addEventListener("click", () => {
+        activeReferenteId = null;
+        if (form) form.reset();
+        const idField = root.querySelector<HTMLInputElement>("#ref-field-id");
+        if (idField) idField.value = "";
+        if (slugInput) slugInput.dataset.touched = "false";
+        if (drawerTitleHeader) drawerTitleHeader.textContent = "Crear Nuevo Referente";
+        if (deleteBtn) deleteBtn.classList.add("hidden");
+
+        // Clear localized inputs and initialize clean Editor.js & Milestones
+        langBtns.forEach((btn) => {
+          const loc = btn.getAttribute("data-drawer-lang-btn");
+          if (!loc) return;
+          const nInput = root.querySelector<HTMLInputElement>(`#ref-field-name-${loc}`);
+          if (nInput) nInput.value = "";
+          const rInput = root.querySelector<HTMLInputElement>(`#ref-field-role-${loc}`);
+          if (rInput) rInput.value = "";
+          const yInput = root.querySelector<HTMLInputElement>(`#ref-field-years-label-${loc}`);
+          if (yInput) yInput.value = "";
+          const dInput = root.querySelector<HTMLTextAreaElement>(`#ref-field-dek-${loc}`);
+          if (dInput) dInput.value = "";
+          const bInput = root.querySelector<HTMLTextAreaElement>(`#ref-field-bio-html-${loc}`);
+          if (bInput) bInput.value = "";
+          const qInput = root.querySelector<HTMLTextAreaElement>(`#ref-field-quote-${loc}`);
+          if (qInput) qInput.value = "";
+          const ogT = root.querySelector<HTMLInputElement>(`#ref-field-og-title-${loc}`);
+          if (ogT) ogT.value = "";
+          const ogD = root.querySelector<HTMLTextAreaElement>(`#ref-field-og-desc-${loc}`);
+          if (ogD) ogD.value = "";
+
+          initEditorForLocale(loc, "");
+          renderMilestones(loc, []);
+        });
+
+        // Reset to Spanish panel
+        const esBtn = root.querySelector<HTMLButtonElement>("[data-drawer-lang-btn='es']");
+        if (esBtn) esBtn.click();
+
+        if (drawerToggle) {
+          drawerToggle.checked = true;
+          document.body.style.overflow = "hidden";
+        }
+      });
+    }
+
+    // Open Drawer for Editing Existing Referente
+    root.querySelectorAll<HTMLButtonElement>("[data-edit-referente]").forEach((btn) => {
+      if (btn.dataset.bound === "true") return;
+      btn.dataset.bound = "true";
+      btn.addEventListener("click", async () => {
+        const id = Number(btn.getAttribute("data-edit-referente"));
+        const ref = referentesMap.get(id);
+        if (!ref) return;
+
+        activeReferenteId = id;
+        if (drawerTitleHeader) drawerTitleHeader.textContent = `Editar: ${ref.name}`;
+        if (deleteBtn) deleteBtn.classList.remove("hidden");
+
+        // Populate common fields
+        const idField = root.querySelector<HTMLInputElement>("#ref-field-id");
+        if (idField) idField.value = String(ref.id);
+        if (slugInput) {
+          slugInput.value = ref.slug;
+          slugInput.dataset.touched = "true";
+        }
+
+        const catTagField = root.querySelector<HTMLSelectElement>("#ref-field-category-tag");
+        if (catTagField) catTagField.value = ref.category_tag || "Historia";
+
+        const badgeThemeField = root.querySelector<HTMLSelectElement>("#ref-field-badge-theme");
+        if (badgeThemeField) badgeThemeField.value = ref.badge_theme || "primary";
+
+        const yearsActiveField = root.querySelector<HTMLInputElement>("#ref-field-years-active");
+        if (yearsActiveField) yearsActiveField.value = ref.years_active || "";
+
+        const photoField = root.querySelector<HTMLInputElement>("#ref-field-photo-url");
+        if (photoField) photoField.value = ref.photo_url || "";
+
+        const statusField = root.querySelector<HTMLSelectElement>("#ref-field-status");
+        if (statusField) statusField.value = ref.status || "published";
+
+        const sortField = root.querySelector<HTMLInputElement>("#ref-field-sort-order");
+        if (sortField) sortField.value = String(ref.sort_order || 0);
+
+        const featField = root.querySelector<HTMLInputElement>("#ref-field-featured");
+        if (featField) featField.checked = Boolean(ref.featured);
+
+        // Populate complete localized referente data & Editor.js blocks
+        const itemData = referentesLocalesMap.get(id);
+        const locales = itemData?.locales || {};
+
+        langBtns.forEach((b) => {
+          const loc = b.getAttribute("data-drawer-lang-btn");
+          if (!loc) return;
+          const locData = locales[loc];
+
+          const nInput = root.querySelector<HTMLInputElement>(`#ref-field-name-${loc}`);
+          if (nInput) nInput.value = locData?.name || (loc === "es" ? ref.name : "");
+
+          const rInput = root.querySelector<HTMLInputElement>(`#ref-field-role-${loc}`);
+          if (rInput) rInput.value = locData?.role_label || (loc === "es" ? ref.role_label : "");
+
+          const yInput = root.querySelector<HTMLInputElement>(`#ref-field-years-label-${loc}`);
+          if (yInput) yInput.value = locData?.years_label || (loc === "es" ? ref.years_label : "");
+
+          const dInput = root.querySelector<HTMLTextAreaElement>(`#ref-field-dek-${loc}`);
+          if (dInput) dInput.value = locData?.dek || (loc === "es" ? ref.dek : "");
+
+          const qInput = root.querySelector<HTMLTextAreaElement>(`#ref-field-quote-${loc}`);
+          if (qInput) qInput.value = locData?.quote || (loc === "es" ? ref.quote : "");
+
+          let ogObj: any = {};
+          try {
+            if (locData?.og_json) ogObj = JSON.parse(locData.og_json);
+            else if (loc === "es" && ref.og) ogObj = ref.og;
+          } catch {}
+
+          const ogT = root.querySelector<HTMLInputElement>(`#ref-field-og-title-${loc}`);
+          if (ogT) ogT.value = ogObj?.title || "";
+
+          const ogD = root.querySelector<HTMLTextAreaElement>(`#ref-field-og-desc-${loc}`);
+          if (ogD) ogD.value = ogObj?.description || "";
+
+          const bioHtml = locData?.bio_html ?? (loc === "es" ? ref.bio_html : "");
+          initEditorForLocale(loc, bioHtml || "");
+
+          let milestonesList: any[] = [];
+          try {
+            if (locData?.milestones_json) milestonesList = JSON.parse(locData.milestones_json);
+            else if (loc === "es" && ref.milestones) milestonesList = ref.milestones;
+          } catch {}
+          renderMilestones(loc, milestonesList || []);
+        });
+
+        // Reset to Spanish panel
+        const esBtn = root.querySelector<HTMLButtonElement>("[data-drawer-lang-btn='es']");
+        if (esBtn) esBtn.click();
+
+        if (drawerToggle) {
+          drawerToggle.checked = true;
+          document.body.style.overflow = "hidden";
+        }
+      });
+    });
+
+    // Delete Referente Handler
+    if (deleteBtn && deleteBtn.dataset.bound !== "true") {
+      deleteBtn.dataset.bound = "true";
+      deleteBtn.addEventListener("click", async () => {
+        if (!activeReferenteId) return;
+        if (!confirm("¿Seguro que deseas eliminar este referente de la colección?")) return;
+
+        try {
+          const res = await fetch(`/api/admin/referentes?id=${activeReferenteId}`, { method: "DELETE" });
+          const result = await res.json();
+          if (result.ok) {
+            if ((window as any).AfroUpFeedback) {
+              (window as any).AfroUpFeedback.toast("Referente eliminado.", "success");
+            }
+            if (drawerToggle) {
+              drawerToggle.checked = false;
+              document.body.style.overflow = "";
+            }
+            setTimeout(() => window.location.reload(), 400);
+          } else {
+            if ((window as any).AfroUpFeedback) {
+              (window as any).AfroUpFeedback.toast(result.message || "Error al eliminar.", "error");
+            }
+          }
+        } catch {}
+      });
+    }
+
+    // Submit Referente Form
+    if (form && form.dataset.bound !== "true") {
+      form.dataset.bound = "true";
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const submitBtn = root.querySelector<HTMLButtonElement>("[data-drawer-submit-ref-btn]");
+        if (submitBtn) submitBtn.disabled = true;
+
+        // Save active Editor.js instances to hidden textareas
+        for (const [loc, ed] of Object.entries(referenteEditors)) {
+          try {
+            const data = await ed.save();
+            const html = blocksToHtml(data);
+            const textarea = document.getElementById(`ref-field-bio-html-${loc}`) as HTMLTextAreaElement | null;
+            if (textarea) textarea.value = html;
+          } catch (err) {
+            console.error("Error saving EditorJS blocks for locale", loc, err);
+          }
+          syncMilestonesJson(loc);
+        }
+
+        const data = new FormData(form);
+        try {
+          const res = await fetch(form.action, { method: "POST", body: data });
+          const result = await res.json();
+          if (result.ok) {
+            if ((window as any).AfroUpFeedback) {
+              (window as any).AfroUpFeedback.toast(result.message || "Referente guardado.", "success");
+            }
+            if (drawerToggle) {
+              drawerToggle.checked = false;
+              document.body.style.overflow = "";
+            }
+            setTimeout(() => window.location.reload(), 400);
+          } else {
+            if ((window as any).AfroUpFeedback) {
+              (window as any).AfroUpFeedback.toast(result.message || "Error al guardar.", "error");
+            }
+          }
+        } catch {
+          if ((window as any).AfroUpFeedback) {
+            (window as any).AfroUpFeedback.toast("Error de red al guardar.", "error");
+          }
+        } finally {
+          if (submitBtn) submitBtn.disabled = false;
+        }
+      });
+    }
+
+    // Submit Page Config Form
+    const pageConfigForm = root.querySelector<HTMLFormElement>("[data-page-config-form]");
+    if (pageConfigForm && pageConfigForm.dataset.bound !== "true") {
+      pageConfigForm.dataset.bound = "true";
+      pageConfigForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const submitBtn = root.querySelector<HTMLButtonElement>("[data-page-config-submit-btn]");
+        if (submitBtn) submitBtn.disabled = true;
+
+        const data = new FormData(pageConfigForm);
+        try {
+          const res = await fetch(pageConfigForm.action, { method: "POST", body: data });
+          const result = await res.json();
+          if (result.ok) {
+            if ((window as any).AfroUpFeedback) {
+              (window as any).AfroUpFeedback.toast(result.message || "Configuración de /referentes guardada.", "success");
+            }
+          } else {
+            if ((window as any).AfroUpFeedback) {
+              (window as any).AfroUpFeedback.toast(result.message || "Error al guardar.", "error");
+            }
+          }
+        } catch {
+          if ((window as any).AfroUpFeedback) {
+            (window as any).AfroUpFeedback.toast("Error de red al guardar.", "error");
+          }
+        } finally {
+          if (submitBtn) submitBtn.disabled = false;
+        }
+      });
+    }
+
+    // Filter toolbar in table
+    const categoryBtns = root.querySelectorAll<HTMLButtonElement>("[data-filter-category]");
+    const statusBtns = root.querySelectorAll<HTMLButtonElement>("[data-filter-status]");
+    const rows = root.querySelectorAll<HTMLTableRowElement>("[data-referente-row]");
+
+    let activeCategory = "all";
+    let activeStatus = "all";
+
+    function applyFilters() {
+      rows.forEach((row) => {
+        const cat = row.getAttribute("data-category") || "";
+        const stat = row.getAttribute("data-status") || "";
+        const isFeatured = row.getAttribute("data-featured") === "true";
+
+        let matchesCat = activeCategory === "all" || cat.toLowerCase() === activeCategory.toLowerCase();
+        let matchesStat = true;
+
+        if (activeStatus === "featured") matchesStat = isFeatured;
+        else if (activeStatus === "draft") matchesStat = stat === "draft";
+        else if (activeStatus === "published") matchesStat = stat === "published";
+
+        row.classList.toggle("hidden", !matchesCat || !matchesStat);
+      });
+    }
+
+    categoryBtns.forEach((btn) => {
+      if (btn.dataset.bound === "true") return;
+      btn.dataset.bound = "true";
+      btn.addEventListener("click", () => {
+        activeCategory = btn.getAttribute("data-filter-category") || "all";
+        categoryBtns.forEach((b) => b.classList.toggle("btn-active", b === btn));
+        applyFilters();
+      });
+    });
+
+    statusBtns.forEach((btn) => {
+      if (btn.dataset.bound === "true") return;
+      btn.dataset.bound = "true";
+      btn.addEventListener("click", () => {
+        const filter = btn.getAttribute("data-filter-status") || "all";
+        if (activeStatus === filter) {
+          activeStatus = "all";
+          btn.classList.remove("btn-active");
+        } else {
+          activeStatus = filter;
+          statusBtns.forEach((b) => b.classList.toggle("btn-active", b === btn));
+        }
+        applyFilters();
+      });
+    });
+
+    // Search filter in table
+    const searchInput = root.querySelector<HTMLInputElement>("[data-search-input]");
+    if (searchInput && searchInput.dataset.bound !== "true") {
+      searchInput.dataset.bound = "true";
+      searchInput.addEventListener("input", () => {
+        const query = searchInput.value.toLowerCase().trim();
+        rows.forEach((row) => {
+          const text = row.textContent?.toLowerCase() || "";
+          row.classList.toggle("hidden", query.length > 0 && !text.includes(query));
+        });
+      });
+    }
+
+    // Photo R2 Uploader Modal
+    const refR2Modal = document.getElementById("referente-photo-r2-modal") as HTMLDialogElement | null;
+    const openRefR2Btn = root.querySelector<HTMLButtonElement>("[data-open-ref-photo-uploader]");
+    const closeRefR2Btn = document.querySelector<HTMLButtonElement>("[data-close-ref-r2-modal]");
+
+    if (openRefR2Btn && refR2Modal && openRefR2Btn.dataset.bound !== "true") {
+      openRefR2Btn.dataset.bound = "true";
+      openRefR2Btn.addEventListener("click", () => {
+        refR2Modal.showModal();
+      });
+    }
+
+    if (closeRefR2Btn && refR2Modal && closeRefR2Btn.dataset.bound !== "true") {
+      closeRefR2Btn.dataset.bound = "true";
+      closeRefR2Btn.addEventListener("click", () => {
+        refR2Modal.close();
+      });
+    }
+
+    document.addEventListener("r2-upload-success", (e: any) => {
+      const files = e.detail?.files;
+      if (!files || !files.length || !refR2Modal || !refR2Modal.open) return;
+      const uploadedUrl = files[0].url || files[0].key;
+      const photoInput = root.querySelector<HTMLInputElement>("#ref-field-photo-url");
+      if (photoInput) photoInput.value = uploadedUrl;
+      refR2Modal.close();
+      if ((window as any).AfroUpFeedback) {
+        (window as any).AfroUpFeedback.toast("Retrato cargado desde R2.", "success");
+      }
+    });
+
+    // AI Translation inside Referente Drawer
+    const aiTransBtn = root.querySelector<HTMLButtonElement>("[data-drawer-ai-translate-btn]");
+    if (aiTransBtn && aiTransBtn.dataset.bound !== "true") {
+      aiTransBtn.dataset.bound = "true";
+      aiTransBtn.addEventListener("click", async () => {
+        const nameEs = root.querySelector<HTMLInputElement>("#ref-field-name-es")?.value || "";
+        const roleEs = root.querySelector<HTMLInputElement>("#ref-field-role-es")?.value || "";
+        const yearsLabelEs = root.querySelector<HTMLInputElement>("#ref-field-years-label-es")?.value || "";
+        const dekEs = root.querySelector<HTMLTextAreaElement>("#ref-field-dek-es")?.value || "";
+        const quoteEs = root.querySelector<HTMLTextAreaElement>("#ref-field-quote-es")?.value || "";
+
+        let bioHtmlEs = "";
+        if (referenteEditors["es"]) {
+          try {
+            const data = await referenteEditors["es"].save();
+            bioHtmlEs = blocksToHtml(data);
+          } catch {}
+        }
+        if (!bioHtmlEs) {
+          bioHtmlEs = root.querySelector<HTMLTextAreaElement>("#ref-field-bio-html-es")?.value || "";
+        }
+
+        const ogTitleEs = root.querySelector<HTMLInputElement>("#ref-field-og-title-es")?.value || "";
+        const ogDescEs = root.querySelector<HTMLTextAreaElement>("#ref-field-og-desc-es")?.value || "";
+
+        if (!nameEs) {
+          if ((window as any).AfroUpFeedback) {
+            (window as any).AfroUpFeedback.toast("Ingresa primero el nombre en español.", "warning");
+          }
+          return;
+        }
+
+        const originalBtnHtml = aiTransBtn.innerHTML;
+        aiTransBtn.disabled = true;
+        aiTransBtn.innerHTML = '<span class="loading loading-spinner loading-xs"></span> <span>Traduciendo...</span>';
+
+        const translateField = async (sourceText: string, targetLocale: string, targetInputId: string) => {
+          if (!sourceText.trim()) return;
+          const curVal = (root.querySelector(`#${targetInputId}`) as HTMLInputElement | HTMLTextAreaElement)?.value || "";
+          const fd = new FormData();
+          fd.append("module", "referentes");
+          fd.append("source", sourceText);
+          fd.append("current", curVal);
+          fd.append("target", targetLocale);
+
+          try {
+            const res = await fetch("/api/admin/translate", { method: "POST", body: fd });
+            const result = await res.json();
+            if (result.ok && result.text) {
+              const el = root.querySelector(`#${targetInputId}`) as HTMLInputElement | HTMLTextAreaElement;
+              if (el) el.value = result.text;
+              if (targetInputId === "ref-field-bio-html-en") {
+                initEditorForLocale("en", result.text);
+              }
+            }
+          } catch {}
+        };
+
+        const tasks: Promise<void>[] = [];
+        tasks.push(translateField(nameEs, "en", "ref-field-name-en"));
+        tasks.push(translateField(roleEs, "en", "ref-field-role-en"));
+        tasks.push(translateField(yearsLabelEs, "en", "ref-field-years-label-en"));
+        tasks.push(translateField(dekEs, "en", "ref-field-dek-en"));
+        tasks.push(translateField(bioHtmlEs, "en", "ref-field-bio-html-en"));
+        tasks.push(translateField(quoteEs, "en", "ref-field-quote-en"));
+        tasks.push(translateField(ogTitleEs, "en", "ref-field-og-title-en"));
+        tasks.push(translateField(ogDescEs, "en", "ref-field-og-desc-en"));
+
+        // Translate milestones
+        const esMilestonesJson = (document.getElementById("ref-field-milestones-json-es") as HTMLInputElement)?.value;
+        if (esMilestonesJson && esMilestonesJson !== "[]") {
+          try {
+            const list = JSON.parse(esMilestonesJson);
+            tasks.push(
+              (async () => {
+                const translatedList: { year: string; event: string }[] = [];
+                for (const item of list) {
+                  if (!item.event) {
+                    translatedList.push(item);
+                    continue;
+                  }
+                  const fd = new FormData();
+                  fd.append("module", "referentes");
+                  fd.append("source", item.event);
+                  fd.append("target", "en");
+                  try {
+                    const res = await fetch("/api/admin/translate", { method: "POST", body: fd });
+                    const resJson = await res.json();
+                    translatedList.push({ year: item.year, event: resJson.text || item.event });
+                  } catch {
+                    translatedList.push(item);
+                  }
+                }
+                renderMilestones("en", translatedList);
+              })()
+            );
+          } catch {}
+        }
+
+        await Promise.all(tasks);
+
+        aiTransBtn.disabled = false;
+        aiTransBtn.innerHTML = originalBtnHtml;
+
+        // Switch to EN panel to show results
+        const enBtn = root.querySelector<HTMLButtonElement>("[data-drawer-lang-btn='en']");
+        if (enBtn) enBtn.click();
+
+        if ((window as any).AfroUpFeedback) {
+          (window as any).AfroUpFeedback.toast("Referente traducido al inglés con IA.", "success");
+        }
+      });
+    }
+  }
+
+  setupReferentesAdmin();
+  document.addEventListener("astro:page-load", setupReferentesAdmin);
+</script>

@@ -2,7 +2,7 @@ import type { D1Database } from "@cloudflare/workers-types";
 
 const DEFAULT_LOCALE = "es";
 
-export type SearchModuleSlug = "categorias" | "articulos" | "recursos";
+export type SearchModuleSlug = "categorias" | "articulos" | "recursos" | "referentes";
 
 export interface SearchDocumentInput {
   moduleSlug: SearchModuleSlug;

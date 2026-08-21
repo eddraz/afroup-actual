@@ -1,0 +1,190 @@
+---
+import { env } from "cloudflare:workers";
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import { getLocaleFromUrl, localizedPath, t } from "../../../lib/i18n";
+import { routeIds } from "../../../lib/paths";
+import { loadReferenteBySlug, loadReferentes, type ReferenteItem } from "../../../lib/referentes";
+
+export const prerender = false;
+
+const { slug } = Astro.params;
+if (!slug) return Astro.redirect("/en/referentes");
+
+const locale = getLocaleFromUrl(Astro.url);
+const copy = t(locale);
+const homeHref = localizedPath(locale, routeIds.home);
+const referentesHref = localizedPath(locale, routeIds.people);
+
+let referente: ReferenteItem | null = null;
+let relatedReferentes: ReferenteItem[] = [];
+
+if (env?.DB) {
+  referente = await loadReferenteBySlug(env.DB, slug, locale);
+  if (referente) {
+    const all = await loadReferentes(env.DB, locale, { status: "published", limit: 4 });
+    relatedReferentes = all.filter((r) => r.slug !== slug).slice(0, 3);
+  }
+}
+
+if (!referente) {
+  return Astro.redirect(referentesHref);
+}
+
+const themeClass =
+  referente.badge_theme === "secondary"
+    ? "bg-secondary/30"
+    : referente.badge_theme === "accent"
+    ? "bg-accent/30"
+    : referente.badge_theme === "warning"
+    ? "bg-warning/30"
+    : referente.badge_theme === "info"
+    ? "bg-info/30"
+    : "bg-primary/20";
+---
+
+<BaseLayout title={`${referente.name} — AfroUp`} active="comunidad">
+  <div class="breadcrumbs text-sm mb-6">
+    <ul>
+      <li><a href={homeHref}>{copy.navHome}</a></li>
+      <li><a href={referentesHref}>{copy.footerPeople || "Role Models & Figures"}</a></li>
+      <li class="font-semibold text-base-content/80">{referente.name}</li>
+    </ul>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-8 lg:gap-12 items-start">
+    <!-- Left Column: Sticky Portrait -->
+    <div class="lg:sticky lg:top-24">
+      {referente.photo_url ? (
+        <div class="aspect-[4/5] rounded-3xl overflow-hidden shadow-xl border border-base-300 bg-base-200">
+          <img
+            src={referente.photo_url}
+            alt={referente.name}
+            class="size-full object-cover"
+          />
+        </div>
+      ) : (
+        <div class:list={["aspect-[4/5] rounded-3xl overflow-hidden shadow-xl border border-base-300 flex flex-col items-center justify-center p-6 text-center", themeClass]}>
+          <span class="text-7xl font-display font-extrabold opacity-30 mb-4">
+            {referente.name.slice(0, 2).toUpperCase()}
+          </span>
+          <span class="badge badge-neutral badge-sm font-semibold uppercase tracking-wider">
+            {referente.category_tag}
+          </span>
+        </div>
+      )}
+    </div>
+
+    <!-- Right Column: Biography & Milestones -->
+    <div class="space-y-6">
+      <div>
+        <span class="badge badge-accent badge-sm font-bold uppercase tracking-wider mb-2">
+          {referente.role_label || referente.category_tag}
+        </span>
+        <h1 class="font-display text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-base-content mt-1">
+          {referente.name}
+        </h1>
+        {referente.years_label || referente.years_active ? (
+          <div class="text-sm sm:text-base font-extrabold text-base-content/60 mt-2">
+            {referente.years_label || referente.years_active}
+          </div>
+        ) : null}
+      </div>
+
+      {referente.dek ? (
+        <p class="text-base sm:text-lg text-base-content/80 font-medium leading-relaxed border-l-2 border-primary pl-4 py-1">
+          {referente.dek}
+        </p>
+      ) : null}
+
+      <!-- Quote Box -->
+      {referente.quote ? (
+        <div class="bg-neutral text-neutral-content rounded-3xl p-6 sm:p-8 shadow-sm">
+          <blockquote class="font-display font-bold text-lg sm:text-2xl leading-snug">
+            {referente.quote}
+          </blockquote>
+        </div>
+      ) : null}
+
+      <!-- Extended HTML Biography from Editor.js -->
+      {referente.bio_html ? (
+        <div class="article-prose max-w-none text-base sm:text-lg leading-relaxed pt-2" set:html={referente.bio_html} />
+      ) : null}
+
+      <!-- Milestones Timeline -->
+      {referente.milestones && referente.milestones.length > 0 ? (
+        <div class="pt-6 border-t border-base-300 space-y-4">
+          <h2 class="font-display text-2xl font-bold text-base-content">
+            Key Milestones & Journey
+          </h2>
+          <div class="space-y-3">
+            {referente.milestones.map((m) => (
+              <div class="flex items-start gap-4 p-4 bg-base-200/50 rounded-2xl border border-base-300 hover:border-primary/40 transition-colors">
+                <div class="font-display font-extrabold text-base sm:text-lg text-primary shrink-0 w-20">
+                  {m.year}
+                </div>
+                <div class="text-sm sm:text-base text-base-content/80 leading-relaxed font-medium">
+                  {m.event}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  </div>
+
+  <!-- Related Referentes Section -->
+  {relatedReferentes.length > 0 ? (
+    <div class="mt-16 pt-10 border-t border-base-300 space-y-6">
+      <div class="flex items-center justify-between">
+        <h2 class="font-display text-2xl font-bold text-base-content">
+          Other Figures in the Collection
+        </h2>
+        <a href={referentesHref} class="btn btn-ghost btn-sm text-xs font-bold gap-1">
+          <span>View all</span>
+          <svg class="size-3.5"><use href="#ic-arrow"></use></svg>
+        </a>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        {relatedReferentes.map((r) => (
+          <a
+            href={`/en/referente/${r.slug}`}
+            class="card bg-base-200 shadow-xs hover:shadow-md transition-shadow group overflow-hidden"
+          >
+            {r.photo_url ? (
+              <figure class="relative aspect-[4/3] bg-base-300 overflow-hidden">
+                <img
+                  src={r.photo_url}
+                  alt={r.name}
+                  class="size-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  loading="lazy"
+                />
+                <span class="badge badge-sm absolute bottom-3 left-3 bg-base-100/90 font-medium">
+                  {r.category_tag}
+                </span>
+              </figure>
+            ) : (
+              <figure class="relative aspect-[4/3] bg-primary/20 flex items-center justify-center">
+                <span class="text-3xl font-display font-extrabold opacity-40">
+                  {r.name.slice(0, 2).toUpperCase()}
+                </span>
+                <span class="badge badge-sm absolute bottom-3 left-3 bg-base-100/90 font-medium">
+                  {r.category_tag}
+                </span>
+              </figure>
+            )}
+            <div class="card-body p-4">
+              <h3 class="card-title text-base font-display group-hover:text-primary transition-colors">
+                {r.name}
+              </h3>
+              <p class="text-xs opacity-70 font-medium truncate">
+                {r.role_label || r.category_tag}
+              </p>
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  ) : null}
+</BaseLayout>

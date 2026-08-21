@@ -1,87 +1,156 @@
 ---
+import { env } from "cloudflare:workers";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { getLocaleFromUrl, localizedPath, t } from "../../lib/i18n";
 import { routeIds } from "../../lib/paths";
+import { loadReferentes, loadReferentesPageConfig, type ReferenteItem, type ReferentesPageData } from "../../lib/referentes";
 
-export const prerender = true;
+export const prerender = false;
 
 const locale = getLocaleFromUrl(Astro.url);
 const copy = t(locale);
 const homeHref = localizedPath(locale, routeIds.home);
 const communityHref = localizedPath(locale, routeIds.community);
-const collaborateHref = localizedPath(locale, routeIds.collaborate);
-const personHref = routeIds.person;
+
+let pageConfig: ReferentesPageData;
+let referentesList: ReferenteItem[] = [];
+
+if (env?.DB) {
+  try {
+    pageConfig = await loadReferentesPageConfig(env.DB, locale);
+    referentesList = await loadReferentes(env.DB, locale, { status: "published" });
+  } catch {
+    pageConfig = {
+      eyebrow: copy.peopleEyebrow || "Community",
+      title: copy.peopleTitle || "Role Models & Figures",
+      lead: copy.peopleLead || "The people who paved the way — from history and the present. Knowing them is part of knowing ourselves.",
+      band_title: copy.peopleBandTitle || "Is someone missing?",
+      band_dek: copy.peopleBandDek || "Propose a role model or historical figure for the collection.",
+      band_cta_label: copy.peopleCta || "Propose",
+      band_cta_url: localizedPath(locale, routeIds.collaborate),
+    };
+  }
+} else {
+  pageConfig = {
+    eyebrow: copy.peopleEyebrow || "Community",
+    title: copy.peopleTitle || "Role Models & Figures",
+    lead: copy.peopleLead || "The people who paved the way — from history and the present. Knowing them is part of knowing ourselves.",
+    band_title: copy.peopleBandTitle || "Is someone missing?",
+    band_dek: copy.peopleBandDek || "Propose a role model or historical figure for the collection.",
+    band_cta_label: copy.peopleCta || "Propose",
+    band_cta_url: localizedPath(locale, routeIds.collaborate),
+  };
+}
+
 const chips = [
-  copy.peopleChipAll,
-  copy.peopleChipHistory,
-  copy.peopleChipActivism,
-  copy.peopleChipArt,
-  copy.peopleChipScience,
-  copy.peopleChipSport,
-] as const;
-const people = [
-  { name: "Martin Luther King Jr.", role: "Activismo · 1929–1968", figure: "bg-primary/20" },
-  { name: "Reina Nzinga", role: "Historia · 1583–1663", figure: "bg-secondary/30" },
-  { name: "Lélia Gonzalez", role: "Pensamiento · 1935–1994", figure: "bg-accent/30" },
-  { name: "Benkos Biohó", role: "Historia · s. XVII", figure: "bg-secondary/30" },
-  { name: "Nina Simone", role: "Arte · 1933–2003", figure: "bg-primary/20" },
-  { name: "Francia Márquez", role: "Activismo · Presente", figure: "bg-accent/30" },
+  copy.peopleChipAll || "All",
+  copy.peopleChipHistory || "History",
+  copy.peopleChipActivism || "Activism",
+  "Thought",
+  copy.peopleChipArt || "Art",
+  copy.peopleChipScience || "Science",
+  copy.peopleChipSport || "Sport",
 ] as const;
 ---
 
-<BaseLayout title={copy.titlePeople} active="comunidad">
+<BaseLayout title={pageConfig.title || copy.titlePeople} active="comunidad">
   <div class="breadcrumbs text-sm">
     <ul>
       <li><a href={homeHref}>{copy.navHome}</a></li>
       <li><a href={communityHref}>{copy.navCommunity}</a></li>
-      <li>{copy.footerPeople}</li>
+      <li>{pageConfig.title || copy.footerPeople}</li>
     </ul>
   </div>
 
   <section class="hero relative mt-6 overflow-hidden rounded-[24px] bg-neutral text-neutral-content shadow-lg">
     <div class="absolute inset-y-0 right-0 w-[200px] bg-[url('/assets/pattern.png')] bg-cover bg-center max-md:w-[90px]"></div>
     <div class="hero-content relative w-full flex-col items-start gap-3 px-6 py-8 lg:px-11 lg:py-11">
-      <p class="text-secondary text-xs font-extrabold tracking-[0.18em] uppercase">{copy.peopleEyebrow}</p>
-      <h1 class="font-display max-w-[18ch] text-[31px] font-bold lg:text-[44px]">{copy.peopleTitle}</h1>
-      <p class="max-w-[56ch] text-[17px] leading-[1.55] text-neutral-content/70">{copy.peopleLead}</p>
+      <p class="text-secondary text-xs font-extrabold tracking-[0.18em] uppercase">{pageConfig.eyebrow}</p>
+      <h1 class="font-display max-w-[18ch] text-[31px] font-bold lg:text-[44px]">{pageConfig.title}</h1>
+      <p class="max-w-[56ch] text-[17px] leading-[1.55] text-neutral-content/70">{pageConfig.lead}</p>
     </div>
   </section>
 
   <div class="mt-6 mb-6 flex flex-wrap gap-2" data-chips>
     {
       chips.map((chip, index) => (
-        <button class:list={["btn btn-sm", index === 0 ? undefined : "btn-dash"]} data-chip type="button">
+        <button
+          class:list={["btn btn-sm font-semibold", index === 0 ? "btn-neutral" : "btn-dash"]}
+          data-chip={index === 0 ? "all" : chip}
+          type="button"
+        >
           {chip}
         </button>
       ))
     }
   </div>
 
-  <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+  <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3" data-referentes-grid>
     {
-      people.map((person) => (
-        <a class="card bg-base-200 shadow" href={personHref}>
-          <figure class:list={["relative aspect-[4/3]", person.figure]}>
-            <span class="badge badge-sm absolute bottom-3 left-3">retrato</span>
-          </figure>
-          <div class="card-body">
-            <h3 class="card-title font-display">{person.name}</h3>
-            <p class="text-sm opacity-60">{person.role}</p>
-          </div>
-        </a>
-      ))
+      referentesList.map((person) => {
+        const detailHref = `/en/referente/${person.slug}`;
+        const themeClass =
+          person.badge_theme === "secondary"
+            ? "bg-secondary/30"
+            : person.badge_theme === "accent"
+            ? "bg-accent/30"
+            : person.badge_theme === "warning"
+            ? "bg-warning/30"
+            : person.badge_theme === "info"
+            ? "bg-info/30"
+            : "bg-primary/20";
+
+        return (
+          <a
+            class="card bg-base-200 shadow hover:shadow-md transition-shadow group overflow-hidden"
+            href={detailHref}
+            data-person-card
+            data-category={person.category_tag}
+          >
+            {person.photo_url ? (
+              <figure class="relative aspect-[4/3] bg-base-300 overflow-hidden">
+                <img
+                  src={person.photo_url}
+                  alt={person.name}
+                  class="size-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  loading="lazy"
+                />
+                <span class="badge badge-sm absolute bottom-3 left-3 bg-base-100/90 font-medium backdrop-blur-xs">
+                  {person.category_tag}
+                </span>
+              </figure>
+            ) : (
+              <figure class:list={["relative aspect-[4/3] flex items-center justify-center", themeClass]}>
+                <span class="text-3xl font-display font-extrabold opacity-40 group-hover:scale-110 transition-transform">
+                  {person.name.slice(0, 2).toUpperCase()}
+                </span>
+                <span class="badge badge-sm absolute bottom-3 left-3 bg-base-100/90 font-medium backdrop-blur-xs">
+                  {person.category_tag}
+                </span>
+              </figure>
+            )}
+            <div class="card-body">
+              <h3 class="card-title font-display group-hover:text-primary transition-colors">{person.name}</h3>
+              <p class="text-sm opacity-70 font-medium">
+                {person.role_label ? `${person.role_label}` : person.category_tag}
+                {person.years_label || person.years_active ? ` · ${person.years_label || person.years_active}` : ""}
+              </p>
+            </div>
+          </a>
+        );
+      })
     }
   </div>
 
   <div class="card bg-neutral text-neutral-content mt-9">
     <div class="card-body sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <h3 class="card-title">{copy.peopleBandTitle}</h3>
-        <p class="opacity-70">{copy.peopleBandDek}</p>
+        <h3 class="card-title">{pageConfig.band_title}</h3>
+        <p class="opacity-70">{pageConfig.band_dek}</p>
       </div>
       <div class="card-actions">
-        <a class="btn btn-accent" href={collaborateHref}>
-          {copy.peopleCta}
+        <a class="btn btn-accent" href={pageConfig.band_cta_url || localizedPath(locale, routeIds.collaborate)}>
+          {pageConfig.band_cta_label}
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <use href="#ic-arrow"></use>
           </svg>
@@ -92,11 +161,36 @@ const people = [
 </BaseLayout>
 
 <script>
-  const chips = document.querySelectorAll("[data-chip]");
-  chips.forEach((chip) => {
-    chip.addEventListener("click", () => {
-      chips.forEach((item) => item.classList.add("btn-dash"));
-      chip.classList.remove("btn-dash");
+  function setupReferentesFilter() {
+    const chips = document.querySelectorAll<HTMLButtonElement>("[data-chip]");
+    const cards = document.querySelectorAll<HTMLElement>("[data-person-card]");
+
+    chips.forEach((chip) => {
+      if (chip.dataset.bound === "true") return;
+      chip.dataset.bound = "true";
+      chip.addEventListener("click", () => {
+        chips.forEach((item) => {
+          item.classList.add("btn-dash");
+          item.classList.remove("btn-neutral");
+        });
+        chip.classList.remove("btn-dash");
+        chip.classList.add("btn-neutral");
+
+        const targetCat = chip.getAttribute("data-chip") || "all";
+
+        cards.forEach((card) => {
+          const cardCat = card.getAttribute("data-category") || "";
+          if (targetCat === "all" || targetCat === "Todos" || targetCat === "All") {
+            card.classList.remove("hidden");
+          } else {
+            const matches = cardCat.toLowerCase().includes(targetCat.toLowerCase()) || targetCat.toLowerCase().includes(cardCat.toLowerCase());
+            card.classList.toggle("hidden", !matches);
+          }
+        });
+      });
     });
-  });
+  }
+
+  setupReferentesFilter();
+  document.addEventListener("astro:page-load", setupReferentesFilter);
 </script>
