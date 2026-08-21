@@ -2,7 +2,9 @@
 import PageLocaleSwitch from "./PageLocaleSwitch.astro";
 import R2Uploader from "./R2Uploader.astro";
 import OgMetadataFields from "./OgMetadataFields.astro";
+import EditorialAiPrompt from "./EditorialAiPrompt.astro";
 import { emptyOgMetadata, type OpenGraphMetadata } from "../lib/og-metadata";
+import { pickEditorJsCopy } from "../lib/editorjs-i18n";
 import { defaultLocale, localizedPath } from "../lib/i18n";
 import type { BioTranslationAccess } from "../lib/bio-writes";
 import { getCategoryTheme } from "../lib/category-routes";
@@ -32,6 +34,7 @@ export interface Props {
   canDelete?: boolean;
   locale: string;
   copy: Record<string, string>;
+  editorCopyByLocale?: Record<string, Record<string, string>>;
   backHref: string;
   action?: string;
 }
@@ -50,6 +53,7 @@ const {
   canDelete = false,
   locale,
   copy,
+  editorCopyByLocale = {},
   backHref,
   action = "/api/admin/articles",
 } = Astro.props;
@@ -127,25 +131,34 @@ const publicPath = article?.slug && primaryCategorySlug
     <!-- Left Column: Primary Editorial Canvas (Col 8 on lg, Col 9 on xl) -->
     <div class="space-y-6 lg:col-span-8 xl:col-span-9">
       <!-- Language Selector Header -->
-      <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300 bg-base-100 p-4 shadow-xs">
-        <div class="flex items-center gap-2">
-          <span class="text-xs font-extrabold uppercase tracking-wider text-base-content/50">Idioma de Edición:</span>
-          <PageLocaleSwitch languages={languages} label={copy.adminLanguages} current={defaultLocale} />
-        </div>
+      <div class="flex flex-col gap-3 rounded-2xl border border-base-300 bg-base-100 p-4 shadow-xs">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-extrabold uppercase tracking-wider text-base-content/50">Idioma de Edición:</span>
+            <PageLocaleSwitch languages={languages} label={copy.adminLanguages} current={defaultLocale} />
+          </div>
 
-        {languages.map((language) => {
-          const isPrimary = language.code === defaultLocale;
-          return !isPrimary && translation.canUseAi ? (
-            <button
-              class="btn btn-ai btn-xs gap-1.5 font-bold"
-              type="button"
-              data-translate-all-btn={language.code}
-            >
-              <svg class="size-3.5"><use href="#ic-sparkles"></use></svg>
-              <span>Traducir al {language.native_name} con IA</span>
-            </button>
-          ) : null;
-        })}
+          {languages.map((language) => {
+            const isPrimary = language.code === defaultLocale;
+            return !isPrimary && translation.canUseAi ? (
+              <button
+                class="btn btn-ai btn-xs gap-1.5 font-bold"
+                type="button"
+                data-translate-all-btn={language.code}
+              >
+                <svg class="size-3.5"><use href="#ic-sparkles"></use></svg>
+                <span>Traducir al {language.native_name} con IA</span>
+              </button>
+            ) : null;
+          })}
+        </div>
+        <EditorialAiPrompt
+          kind="article"
+          moduleSlug="articulos"
+          canUseAi={translation.canUseAi}
+          copy={copy}
+          primaryLocale={defaultLocale}
+        />
       </div>
 
       <!-- Multilingual Editorial Panels -->
@@ -227,6 +240,7 @@ const publicPath = article?.slug && primaryCategorySlug
                     id={`editorjs-${language.code}`}
                     class="editorjs-holder min-h-[400px] article-prose max-w-none"
                     data-editorjs-locale={language.code}
+                    data-editorjs-copy={JSON.stringify(editorCopyByLocale[language.code] ?? pickEditorJsCopy(copy))}
                     data-disabled={locked ? "true" : "false"}
                   ></div>
                 </div>
@@ -257,8 +271,9 @@ const publicPath = article?.slug && primaryCategorySlug
               canUseAi={translation.canUseAi}
               kind="article"
               moduleSlug="articulos"
+              primaryLocale={defaultLocale}
+              locale={locale}
               copy={copy}
-              disabled={locked}
             />
           </div>
         );
@@ -505,13 +520,29 @@ const publicPath = article?.slug && primaryCategorySlug
 </form>
 
 <script>
-  import { initArticleEditors, destroyArticleEditors, blocksToHtml, htmlToBlocks } from "../lib/editorjs-client";
+  import { initArticleEditors, destroyArticleEditors, ensureArticleEditor, blocksToHtml, htmlToBlocks } from "../lib/editorjs-client";
 
   function setupArticleEditor() {
     const form = document.querySelector<HTMLFormElement>("form[data-article-form]");
     if (!form) return;
 
     const editors = initArticleEditors();
+
+    if (form.dataset.editorialAiBound !== "true") {
+      form.dataset.editorialAiBound = "true";
+      form.addEventListener("afroup:editorial-ai", async (event) => {
+        const detail = (event as CustomEvent<{ locale?: string; content?: string }>).detail || {};
+        const locale = detail.locale;
+        const content = detail.content;
+        if (!locale || !content) return;
+        const editor = ensureArticleEditor(locale) ?? editors[locale];
+        if (!editor) return;
+        const newBlocks = htmlToBlocks(content);
+        if (newBlocks.blocks.length) {
+          await editor.render(newBlocks);
+        }
+      });
+    }
 
     // Preview Toggle & Auto-update
     document.querySelectorAll<HTMLButtonElement>("[data-preview-toggle]").forEach((btn) => {
@@ -807,7 +838,7 @@ const publicPath = article?.slug && primaryCategorySlug
               .then((r) => r.json())
               .then(async (res: any) => {
                 if (res.ok && res.text) {
-                  const targetEditor = editors[targetLocale];
+                  const targetEditor = ensureArticleEditor(targetLocale) ?? editors[targetLocale];
                   if (targetEditor) {
                     const newBlocks = htmlToBlocks(res.text);
                     if (newBlocks.blocks.length) {

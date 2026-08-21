@@ -1,0 +1,219 @@
+---
+interface Props {
+  kind: "article" | "category";
+  moduleSlug: "articulos" | "categorias";
+  canUseAi?: boolean;
+  copy: Record<string, string>;
+  primaryLocale?: string;
+}
+
+const {
+  kind,
+  moduleSlug,
+  canUseAi = false,
+  copy,
+  primaryLocale = "es",
+} = Astro.props;
+
+const promptId = "editorial-ai-" + Math.random().toString(36).slice(2, 9);
+---
+
+{canUseAi ? (
+  <div
+    class="editorial-ai-root inline-flex items-center"
+    id={promptId}
+    data-editorial-ai
+    data-editorial-ai-kind={kind}
+    data-editorial-ai-module={moduleSlug}
+    data-editorial-ai-primary={primaryLocale}
+    data-editorial-ai-need={copy.adminEditorialAiNeedPrompt || "Escribe una indicación antes de generar."}
+    data-editorial-ai-done={copy.adminEditorialAiDone || "Contenido generado con éxito."}
+    data-editorial-ai-error={copy.adminEditorialAiError || "No pudimos generar el contenido."}
+    data-editorial-ai-generating={copy.adminOgGenerating || "Generando..."}
+  >
+    <!-- Trigger Button -->
+    <button
+      type="button"
+      class="btn btn-ai btn-sm gap-2 font-bold shadow-xs hover:shadow-md transition-all shrink-0"
+      data-editorial-ai-open
+    >
+      <svg class="size-4 shrink-0"><use href="#ic-sparkles"></use></svg>
+      <span>{copy.adminEditorialAiGenerate || "Generar contenido con IA"}</span>
+    </button>
+
+    <!-- AI Prompt Dialog Modal -->
+    <dialog class="modal" data-editorial-ai-dialog>
+      <div class="modal-box max-w-xl space-y-4 rounded-3xl border border-base-300 bg-base-100 p-6 shadow-2xl">
+        <div class="flex items-center justify-between gap-3 border-b border-base-200 pb-3">
+          <div class="flex items-center gap-2.5">
+            <div class="flex size-9 items-center justify-center rounded-xl bg-ai/15 text-ai shrink-0">
+              <svg class="size-5"><use href="#ic-sparkles"></use></svg>
+            </div>
+            <div>
+              <h3 class="font-display text-base font-bold text-base-content">
+                {copy.adminEditorialAiGenerate || "Generar contenido con IA"}
+              </h3>
+              <p class="text-xs text-base-content/60">
+                {kind === "article"
+                  ? (copy.adminEditorialAiArticleHint || "Genera título, descripción, slug, etiquetas, cuerpo y metadatos.")
+                  : (copy.adminEditorialAiCategoryHint || "Genera nombre, descripción temática, slug y metadatos.")}
+              </p>
+            </div>
+          </div>
+          <button type="button" class="btn btn-circle btn-ghost btn-xs text-base-content/70" data-editorial-ai-close>✕</button>
+        </div>
+
+        <p class="text-xs leading-relaxed text-base-content/70">
+          {copy.adminEditorialAiLead || "Escribe la indicación o contexto para generar automáticamente los campos con IA en el idioma seleccionado."}
+        </p>
+
+        <fieldset class="fieldset space-y-1.5">
+          <legend class="fieldset-legend text-[11px] font-mono uppercase tracking-wider text-base-content/70">
+            {copy.adminEditorialAiPrompt || "Indicación para la IA"}
+          </legend>
+          <textarea
+            class="textarea textarea-bordered w-full text-sm leading-relaxed focus:border-ai focus:outline-hidden"
+            data-editorial-ai-prompt
+            rows="4"
+            placeholder={kind === "article"
+              ? (copy.adminEditorialAiArticlePlaceholder || "Describe el tema o enfoque del artículo (ej. 'La herencia de los cabildos afrocolombianos en Cartagena y su rol de resistencia durante la colonia')...")
+              : (copy.adminEditorialAiCategoryPlaceholder || "Describe la temática de la categoría (ej. 'Tradiciones gastronómicas del Pacífico afrocolombiano y saberes ancestrales')...")}
+          ></textarea>
+        </fieldset>
+
+        <div class="modal-action flex items-center justify-end gap-2 pt-2 border-t border-base-200">
+          <button type="button" class="btn btn-ghost btn-sm" data-editorial-ai-close>
+            {copy.cancel || "Cancelar"}
+          </button>
+          <button type="button" class="btn btn-ai btn-sm gap-2 font-bold" data-editorial-ai-generate>
+            <svg class="size-4 shrink-0"><use href="#ic-sparkles"></use></svg>
+            <span>{copy.adminEditorialAiSubmit || "Generar contenido"}</span>
+          </button>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop"><button type="submit">close</button></form>
+    </dialog>
+  </div>
+) : null}
+
+<script is:inline>
+  (function () {
+    var readValue = function (form, name) {
+      var el = form.querySelector('[name="' + name + '"]');
+      return el ? String(el.value || "") : "";
+    };
+    var setValue = function (form, name, value) {
+      if (!value) return;
+      var el = form.querySelector('[name="' + name + '"]');
+      if (el) el.value = value;
+    };
+    var bind = function () {
+      document.querySelectorAll("[data-editorial-ai]").forEach(function (root) {
+        if (root.dataset.bound === "true") return;
+        root.dataset.bound = "true";
+
+        var openBtn = root.querySelector("[data-editorial-ai-open]");
+        var dialog = root.querySelector("[data-editorial-ai-dialog]");
+        var closeBtns = root.querySelectorAll("[data-editorial-ai-close]");
+        var generateBtn = root.querySelector("[data-editorial-ai-generate]");
+        var promptEl = root.querySelector("[data-editorial-ai-prompt]");
+
+        if (openBtn && dialog) {
+          openBtn.addEventListener("click", function () {
+            dialog.showModal();
+            if (promptEl) {
+              setTimeout(function () { promptEl.focus(); }, 60);
+            }
+          });
+        }
+
+        if (dialog && closeBtns.length) {
+          closeBtns.forEach(function (btn) {
+            btn.addEventListener("click", function () {
+              dialog.close();
+            });
+          });
+        }
+
+        if (generateBtn && dialog) {
+          generateBtn.addEventListener("click", function () {
+            var form = root.closest("form") || document.querySelector("form");
+            if (!form) return;
+            var prompt = promptEl ? String(promptEl.value || "").trim() : "";
+            if (!prompt) {
+              var need = root.getAttribute("data-editorial-ai-need") || "";
+              if (window.AfroUpFeedback) window.AfroUpFeedback.toast(need, "error");
+              if (promptEl) promptEl.focus();
+              return;
+            }
+            var localeSelect = document.querySelector("[data-page-locale]");
+            var locale = (localeSelect && localeSelect.value) || root.getAttribute("data-editorial-ai-primary") || "es";
+            var kind = root.getAttribute("data-editorial-ai-kind") || "article";
+            var data = new FormData();
+            data.set("module", root.getAttribute("data-editorial-ai-module") || "articulos");
+            data.set("kind", kind);
+            data.set("locale", locale);
+            data.set("prompt", prompt);
+            data.set("title", readValue(form, "title[" + locale + "]"));
+            data.set("description", readValue(form, "description[" + locale + "]"));
+            data.set("content", readValue(form, "content_html[" + locale + "]"));
+            data.set("tags", readValue(form, "tags"));
+            data.set("slug", readValue(form, "slug"));
+
+            var originalHtml = generateBtn.innerHTML;
+            generateBtn.disabled = true;
+            var genText = root.getAttribute("data-editorial-ai-generating") || "Generando...";
+            generateBtn.innerHTML = '<span class="loading loading-spinner loading-sm"></span> <span>' + genText + '</span>';
+
+            fetch("/api/admin/editorial-ai", { method: "POST", body: data })
+              .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
+              .then(function (result) {
+                generateBtn.disabled = false;
+                generateBtn.innerHTML = originalHtml;
+                if (!result.ok || !result.body || !result.body.result) {
+                  var err = root.getAttribute("data-editorial-ai-error") || "";
+                  if (window.AfroUpFeedback) window.AfroUpFeedback.toast((result.body && result.body.error) || err, "error");
+                  return;
+                }
+                var generated = result.body.result;
+                setValue(form, "title[" + locale + "]", generated.title);
+                setValue(form, "description[" + locale + "]", generated.description);
+                if (generated.slug) setValue(form, "slug", generated.slug);
+                if (kind === "article" && generated.tags) setValue(form, "tags", generated.tags);
+                if (kind === "article" && generated.content) setValue(form, "content_html[" + locale + "]", generated.content);
+                var og = generated.og || {};
+                var map = {
+                  url: "og_url",
+                  type: "og_type",
+                  title: "og_title",
+                  description: "og_description",
+                  image: "og_image",
+                  imageAlt: "og_image_alt",
+                  twitterCard: "og_twitter_card",
+                  twitterTitle: "og_twitter_title",
+                  twitterDescription: "og_twitter_description",
+                  twitterImage: "og_twitter_image",
+                };
+                Object.keys(map).forEach(function (key) {
+                  setValue(form, map[key] + "[" + locale + "]", og[key]);
+                });
+                form.dispatchEvent(new CustomEvent("afroup:editorial-ai", {
+                  bubbles: true,
+                  detail: { locale: locale, content: generated.content || "", result: generated },
+                }));
+                dialog.close();
+                if (window.AfroUpFeedback) window.AfroUpFeedback.toast(root.getAttribute("data-editorial-ai-done") || "", "success");
+              })
+              .catch(function () {
+                generateBtn.disabled = false;
+                generateBtn.innerHTML = originalHtml;
+                if (window.AfroUpFeedback) window.AfroUpFeedback.toast(root.getAttribute("data-editorial-ai-error") || "", "error");
+              });
+          });
+        }
+      });
+    };
+    bind();
+    document.addEventListener("astro:page-load", bind);
+  })();
+</script>

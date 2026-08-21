@@ -7,7 +7,7 @@ import { defaultLocale, joinPath, localizedPath } from "../../lib/i18n";
 import { resolveRequestCopy } from "../../lib/request-locale";
 import { translationAccess, visibleOwnerClause } from "../../lib/editorial";
 import { hasPermission } from "../../lib/rbac";
-import { listSiteLanguages } from "../../lib/site-languages";
+import { listSiteLanguages, loadEditorCopyByLocale } from "../../lib/site-languages";
 import { routeIds } from "../../lib/paths";
 import { getCategoryTheme } from "../../lib/category-routes";
 
@@ -22,6 +22,7 @@ const canCreate = await hasPermission(env.DB, actor.id, "articulos", "create");
 const canDelete = await hasPermission(env.DB, actor.id, "articulos", "delete");
 const translation = await translationAccess(env.DB, actor.id, "articulos", canCreate ? "create" : "update");
 const languages = await listSiteLanguages(env.DB);
+const editorCopyByLocale = await loadEditorCopyByLocale(env.DB, languages);
 
 interface ArticleRow {
   id: number;
@@ -336,6 +337,7 @@ function formatDate(dateStr?: string | null) {
         <ArticleEditor
           categories={categories}
           languages={languages}
+              editorCopyByLocale={editorCopyByLocale}
           translation={translation}
           locale={locale}
           copy={copy}

@@ -95,7 +95,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     access,
   );
   const primary = locales.find((row) => row.locale === defaultLocale);
-  if (!primary) return json({ ok: false, error: "title_required" }, 400);
+  if (!primary || !primary.title.trim()) return json({ ok: false, error: "title_required" }, 400);
+  if (!primary.description.trim()) return json({ ok: false, error: "description_required" }, 400);
 
   const requestedSlug = String(form.get("slug") ?? "").trim().toLowerCase();
   const slug = requestedSlug || slugify(primary.title);

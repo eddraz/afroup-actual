@@ -111,7 +111,7 @@ async function uploadVideoToR2(file: File, onProgress?: (percent: number) => voi
 export class CarouselTool {
   static get toolbox() {
     return {
-      title: "Carrusel de Imágenes",
+      title: "Image carousel",
       icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="m9 3 3 18"/><path d="m15 3 3 18"/><circle cx="6" cy="6" r="1"/></svg>`,
     };
   }
@@ -119,11 +119,18 @@ export class CarouselTool {
   private data: CarouselData;
   private wrapper: HTMLElement | null = null;
   private currentSlideIndex = 0;
+  private labels: { slideCaption: string; carouselCaption: string; uploadImages: string; addUrl: string };
 
-  constructor({ data }: { data: CarouselData }) {
+  constructor({ data, config }: { data: CarouselData; config?: Partial<{ slideCaption: string; carouselCaption: string; uploadImages: string; addUrl: string }> }) {
     this.data = {
       slides: Array.isArray(data?.slides) ? data.slides : [],
       caption: data?.caption || "",
+    };
+    this.labels = {
+      slideCaption: config?.slideCaption || "Pie de foto (opcional)...",
+      carouselCaption: config?.carouselCaption || "Pie de título general del carrusel (opcional)...",
+      uploadImages: config?.uploadImages || "Subir imágenes",
+      addUrl: config?.addUrl || "Agregar URL",
     };
   }
 
@@ -224,7 +231,7 @@ export class CarouselTool {
         const capInput = document.createElement("input");
         capInput.type = "text";
         capInput.className = "input input-bordered input-xs w-full text-xs";
-        capInput.placeholder = "Pie de foto (opcional)...";
+        capInput.placeholder = this.labels.slideCaption;
         capInput.value = slide.caption || "";
         capInput.oninput = () => {
           slide.caption = capInput.value;
@@ -279,7 +286,7 @@ export class CarouselTool {
     const addFilesBtn = document.createElement("button");
     addFilesBtn.type = "button";
     addFilesBtn.className = "btn btn-xs btn-primary gap-1.5 font-bold";
-    addFilesBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg><span>Subir Imágenes</span>`;
+    addFilesBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg><span>${this.labels.uploadImages}</span>`;
     addFilesBtn.onclick = () => fileInput.click();
     leftUpload.appendChild(addFilesBtn);
     leftUpload.appendChild(fileInput);
@@ -295,7 +302,7 @@ export class CarouselTool {
     const urlAddBtn = document.createElement("button");
     urlAddBtn.type = "button";
     urlAddBtn.className = "btn btn-xs btn-neutral join-item font-semibold";
-    urlAddBtn.textContent = "Agregar URL";
+    urlAddBtn.textContent = this.labels.addUrl;
     urlAddBtn.onclick = () => {
       const u = urlInput.value.trim();
       if (u) {
@@ -315,7 +322,7 @@ export class CarouselTool {
     const globalCap = document.createElement("input");
     globalCap.type = "text";
     globalCap.className = "input input-bordered input-xs w-full text-xs font-semibold";
-    globalCap.placeholder = "Pie de título general del carrusel (opcional)...";
+    globalCap.placeholder = this.labels.carouselCaption;
     globalCap.value = this.data.caption || "";
     globalCap.oninput = () => {
       this.data.caption = globalCap.value;
@@ -341,15 +348,16 @@ export class CarouselTool {
 export class VideoTool {
   static get toolbox() {
     return {
-      title: "Reproductor de Video",
+      title: "Video player",
       icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2"/></svg>`,
     };
   }
 
   private data: VideoData;
   private wrapper: HTMLElement | null = null;
+  private labels: { videoCaption: string; addUrl: string };
 
-  constructor({ data }: { data: VideoData }) {
+  constructor({ data, config }: { data: VideoData; config?: Partial<{ videoCaption: string; addUrl: string }> }) {
     this.data = {
       url: data?.url || "",
       caption: data?.caption || "",
@@ -357,6 +365,10 @@ export class VideoTool {
       loop: Boolean(data?.loop),
       muted: Boolean(data?.muted),
       controls: data?.controls !== false,
+    };
+    this.labels = {
+      videoCaption: config?.videoCaption || "Pie de video / descripción (opcional)...",
+      addUrl: config?.addUrl || "Agregar URL",
     };
   }
 
@@ -449,7 +461,7 @@ export class VideoTool {
       const capInput = document.createElement("input");
       capInput.type = "text";
       capInput.className = "input input-bordered input-xs w-full text-xs";
-      capInput.placeholder = "Pie de video / Descripción (opcional)...";
+      capInput.placeholder = this.labels.videoCaption;
       capInput.value = this.data.caption || "";
       capInput.oninput = () => {
         this.data.caption = capInput.value;

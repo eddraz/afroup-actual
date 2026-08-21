@@ -10,6 +10,7 @@ import { hasPermission } from "../../lib/rbac";
 import { listSiteLanguages } from "../../lib/site-languages";
 import { getCategoryTheme } from "../../lib/category-routes";
 import OgMetadataFields from "../../components/OgMetadataFields.astro";
+import EditorialAiPrompt from "../../components/EditorialAiPrompt.astro";
 
 export const prerender = false;
 
@@ -197,9 +198,18 @@ const categories = (await env.DB.prepare(
           data-error={copy.adminEditorialSaveError}
         >
           <div class="space-y-5">
-            <div class="flex items-center justify-between bg-base-200/50 p-3 rounded-2xl border border-base-300">
+            <div class="flex flex-wrap items-center justify-between gap-3 bg-base-200/50 p-3 rounded-2xl border border-base-300">
               <span class="text-xs font-bold uppercase tracking-wider text-base-content/70">Idioma de edición:</span>
-              <PageLocaleSwitch languages={languages} label={copy.adminLanguages} current={defaultLocale} />
+              <div class="flex items-center gap-2">
+                <PageLocaleSwitch languages={languages} label={copy.adminLanguages} current={defaultLocale} />
+                <EditorialAiPrompt
+                  kind="category"
+                  moduleSlug="categorias"
+                  canUseAi={translation.canUseAi}
+                  copy={copy}
+                  primaryLocale={defaultLocale}
+                />
+              </div>
             </div>
 
             {languages.map((language) => {
@@ -228,6 +238,7 @@ const categories = (await env.DB.prepare(
                       name={`description[${language.code}]`}
                       rows="3"
                       maxlength="400"
+                      required={language.code === defaultLocale}
                       disabled={locked}
                       placeholder="Descripción editorial de la temática..."
                     ></textarea>
@@ -237,8 +248,9 @@ const categories = (await env.DB.prepare(
                     canUseAi={translation.canUseAi}
                     kind="category"
                     moduleSlug="categorias"
+                    primaryLocale={defaultLocale}
+                    locale={locale}
                     copy={copy}
-                    disabled={locked}
                   />
                 </div>
               );

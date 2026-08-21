@@ -1,5 +1,6 @@
 import type { D1Database } from "@cloudflare/workers-types";
-import { defaultLocale, isLocale, localizedPath, type Locale } from "./i18n";
+import { defaultLocale, dictionaries, isLocale, localizedPath, type Locale } from "./i18n";
+import { pickEditorJsCopy, resolveEditorCopy } from "./editorjs-i18n";
 
 export interface SiteLanguage {
   code: string;
@@ -150,4 +151,23 @@ export async function loadLanguageDictionary(db: D1Database, code: string): Prom
   } catch {
     return null;
   }
+}
+
+export async function loadEditorCopyByLocale(
+  db: D1Database,
+  languages: Array<{ code: string }>,
+): Promise<Record<string, Record<string, string>>> {
+  const bundled = {
+    es: dictionaries.es as unknown as Record<string, string>,
+    en: dictionaries.en as unknown as Record<string, string>,
+  };
+  const out: Record<string, Record<string, string>> = {};
+  for (const language of languages) {
+    const stored =
+      language.code === "es" || language.code === "en"
+        ? null
+        : await loadLanguageDictionary(db, language.code);
+    out[language.code] = pickEditorJsCopy(resolveEditorCopy(language.code, bundled, stored));
+  }
+  return out;
 }

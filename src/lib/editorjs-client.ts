@@ -8,6 +8,7 @@ import Table from "@editorjs/table";
 import Embed from "@editorjs/embed";
 import { CarouselTool, VideoTool } from "./editorjs-tools";
 import { blocksToHtml, htmlToBlocks, type EditorOutputData } from "./editorjs";
+import { editorJsConfigFromCopy } from "./editorjs-i18n";
 
 declare global {
   interface Window {
@@ -25,6 +26,13 @@ export function destroyArticleEditors(): void {
       } catch {}
     }
     window.__afroupEditors = {};
+  }
+  if (typeof document !== "undefined") {
+    document.querySelectorAll<HTMLElement>("[data-editorjs-locale]").forEach((holder) => {
+      holder.dataset.editorInit = "";
+    });
+    const select = document.querySelector<HTMLSelectElement>("[data-page-locale]");
+    if (select) select.dataset.editorEnsureBound = "";
   }
 }
 
@@ -139,147 +147,180 @@ async function optimizeAndUploadUrlToR2(url: string, prefix = "articles"): Promi
   return await optimizeAndUploadToR2(file, prefix);
 }
 
+export function ensureArticleEditor(locale: string): EditorJS | undefined {
+  if (typeof window === "undefined") return undefined;
+  if (!window.__afroupEditors) window.__afroupEditors = {};
+  const existing = window.__afroupEditors[locale];
+  const holder = document.querySelector<HTMLElement>(`[data-editorjs-locale="${locale}"]`);
+  if (!holder) return existing;
+  if (holder.dataset.editorInit === "true" && existing) return existing;
+
+  holder.dataset.editorInit = "true";
+  holder.innerHTML = "";
+
+  const textarea = document.querySelector<HTMLTextAreaElement>(`[data-content-input='${locale}']`);
+  const initialHtml = textarea?.value || "";
+  const initialData: EditorOutputData = htmlToBlocks(initialHtml);
+  let copy: Record<string, string> = {};
+  try {
+    copy = JSON.parse(holder.dataset.editorjsCopy || "{}") as Record<string, string>;
+  } catch {
+    copy = {};
+  }
+  const i18n = editorJsConfigFromCopy(copy, locale);
+
+  try {
+    const editor = new EditorJS({
+      holder: holder.id,
+      placeholder: i18n.placeholder,
+      i18n: { messages: i18n.messages, direction: i18n.direction },
+      data: initialData.blocks.length ? initialData : undefined,
+      tools: {
+        header: {
+          class: Header as any,
+          inlineToolbar: ["link", "bold", "italic"],
+          config: {
+            placeholder: i18n.headerPlaceholder,
+            levels: [2, 3, 4],
+            defaultLevel: 2,
+          },
+        },
+        list: {
+          class: List as any,
+          inlineToolbar: true,
+          config: {
+            defaultStyle: "unordered",
+          },
+        },
+        quote: {
+          class: Quote as any,
+          inlineToolbar: true,
+          config: {
+            quotePlaceholder: i18n.quotePlaceholder,
+            captionPlaceholder: i18n.captionPlaceholder,
+          },
+        },
+        image: {
+          class: ImageTool as any,
+          config: {
+            captionPlaceholder: i18n.imageCaption,
+            uploader: {
+              async uploadByUrl(url: string) {
+                try {
+                  const streamUrl = await optimizeAndUploadUrlToR2(url, "articles");
+                  if (typeof window !== "undefined" && (window as any).AfroUpFeedback) {
+                    (window as any).AfroUpFeedback.toast("Imagen optimizada y subida a R2.", "success");
+                  }
+                  return {
+                    success: 1,
+                    file: { url: streamUrl },
+                  };
+                } catch (err: any) {
+                  console.error("EditorJS image upload from URL error", err);
+                  return {
+                    success: 1,
+                    file: { url },
+                  };
+                }
+              },
+              async uploadByFile(file: File) {
+                try {
+                  const streamUrl = await optimizeAndUploadToR2(file, "articles");
+                  if (typeof window !== "undefined" && (window as any).AfroUpFeedback) {
+                    (window as any).AfroUpFeedback.toast("Imagen optimizada a WebP y guardada en R2.", "success");
+                  }
+                  return {
+                    success: 1,
+                    file: { url: streamUrl },
+                  };
+                } catch (err: any) {
+                  console.error("EditorJS image upload error", err);
+                  if (typeof window !== "undefined" && (window as any).AfroUpFeedback) {
+                    (window as any).AfroUpFeedback.toast("Error al subir imagen a R2.", "error");
+                  }
+                  return { success: 0 };
+                }
+              },
+            },
+          },
+        },
+        delimiter: Delimiter as any,
+        carousel: {
+          class: CarouselTool as any,
+          config: {
+            slideCaption: i18n.slideCaption,
+            carouselCaption: i18n.carouselCaption,
+            uploadImages: i18n.uploadImages,
+            addUrl: i18n.addUrl,
+          },
+        },
+        video: {
+          class: VideoTool as any,
+          config: {
+            videoCaption: i18n.videoCaption,
+            addUrl: i18n.addUrl,
+          },
+        },
+        table: {
+          class: Table as any,
+          inlineToolbar: true,
+          config: {
+            rows: 2,
+            cols: 3,
+          },
+        },
+        embed: {
+          class: Embed as any,
+          config: {
+            services: {
+              youtube: true,
+              vimeo: true,
+              twitter: true,
+              instagram: true,
+            },
+          },
+        },
+      },
+      onChange: async () => {
+        try {
+          const output = await editor.save();
+          const html = blocksToHtml(output);
+          if (textarea) {
+            textarea.value = html;
+            textarea.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+          if (typeof document !== "undefined") {
+            document.dispatchEvent(new CustomEvent("editorjs-content-change", { detail: { locale, html } }));
+          }
+        } catch {}
+      },
+    });
+
+    window.__afroupEditors[locale] = editor;
+    return editor;
+  } catch (err) {
+    console.error("Failed to initialize EditorJS for locale", locale, err);
+    holder.dataset.editorInit = "";
+    return undefined;
+  }
+}
+
 export function initArticleEditors(): Record<string, EditorJS> {
   if (typeof window === "undefined") return {};
+  if (!window.__afroupEditors) window.__afroupEditors = {};
 
-  if (!window.__afroupEditors) {
-    window.__afroupEditors = {};
+  const select = document.querySelector<HTMLSelectElement>("[data-page-locale]");
+  const visible =
+    select?.value ||
+    document.querySelector<HTMLElement>("[data-editorjs-locale]")?.dataset.editorjsLocale;
+  if (visible) ensureArticleEditor(visible);
+
+  if (select && select.dataset.editorEnsureBound !== "true") {
+    select.dataset.editorEnsureBound = "true";
+    select.addEventListener("change", () => {
+      ensureArticleEditor(select.value);
+    });
   }
-
-  const holders = document.querySelectorAll<HTMLElement>("[data-editorjs-locale]");
-
-  holders.forEach((holder) => {
-    const locale = holder.dataset.editorjsLocale;
-    if (!locale) return;
-
-    // Prevent double initialization if already active on this element
-    if (holder.dataset.editorInit === "true" && window.__afroupEditors?.[locale]) {
-      return;
-    }
-
-    holder.dataset.editorInit = "true";
-    holder.innerHTML = "";
-
-    const textarea = document.querySelector<HTMLTextAreaElement>(`[data-content-input='${locale}']`);
-    const initialHtml = textarea?.value || "";
-    const initialData: EditorOutputData = htmlToBlocks(initialHtml);
-
-    try {
-      const editor = new EditorJS({
-        holder: holder.id,
-        placeholder: "Escribe aquí el contenido del artículo usando bloques (presiona Tab o clic en +)...",
-        data: initialData.blocks.length ? initialData : undefined,
-        tools: {
-          header: {
-            class: Header as any,
-            inlineToolbar: ["link", "bold", "italic"],
-            config: {
-              placeholder: "Encabezado...",
-              levels: [2, 3, 4],
-              defaultLevel: 2,
-            },
-          },
-          list: {
-            class: List as any,
-            inlineToolbar: true,
-            config: {
-              defaultStyle: "unordered",
-            },
-          },
-          quote: {
-            class: Quote as any,
-            inlineToolbar: true,
-            config: {
-              quotePlaceholder: "Cita destacada...",
-              captionPlaceholder: "Autor o pie de cita...",
-            },
-          },
-          image: {
-            class: ImageTool as any,
-            config: {
-              uploader: {
-                async uploadByUrl(url: string) {
-                  try {
-                    const streamUrl = await optimizeAndUploadUrlToR2(url, "articles");
-                    if (typeof window !== "undefined" && (window as any).AfroUpFeedback) {
-                      (window as any).AfroUpFeedback.toast("Imagen optimizada y subida a R2.", "success");
-                    }
-                    return {
-                      success: 1,
-                      file: { url: streamUrl },
-                    };
-                  } catch (err: any) {
-                    console.error("EditorJS image upload from URL error", err);
-                    return {
-                      success: 1,
-                      file: { url },
-                    };
-                  }
-                },
-                async uploadByFile(file: File) {
-                  try {
-                    const streamUrl = await optimizeAndUploadToR2(file, "articles");
-                    if (typeof window !== "undefined" && (window as any).AfroUpFeedback) {
-                      (window as any).AfroUpFeedback.toast("Imagen optimizada a WebP y guardada en R2.", "success");
-                    }
-                    return {
-                      success: 1,
-                      file: { url: streamUrl },
-                    };
-                  } catch (err: any) {
-                    console.error("EditorJS image upload error", err);
-                    if (typeof window !== "undefined" && (window as any).AfroUpFeedback) {
-                      (window as any).AfroUpFeedback.toast("Error al subir imagen a R2.", "error");
-                    }
-                    return { success: 0 };
-                  }
-                },
-              },
-            },
-          },
-          delimiter: Delimiter as any,
-          carousel: CarouselTool as any,
-          video: VideoTool as any,
-          table: {
-            class: Table as any,
-            inlineToolbar: true,
-            config: {
-              rows: 2,
-              cols: 3,
-            },
-          },
-          embed: {
-            class: Embed as any,
-            config: {
-              services: {
-                youtube: true,
-                vimeo: true,
-                twitter: true,
-                instagram: true,
-              },
-            },
-          },
-        },
-        onChange: async () => {
-          try {
-            const output = await editor.save();
-            const html = blocksToHtml(output);
-            if (textarea) {
-              textarea.value = html;
-              textarea.dispatchEvent(new Event("input", { bubbles: true }));
-            }
-            if (typeof document !== "undefined") {
-              document.dispatchEvent(new CustomEvent("editorjs-content-change", { detail: { locale, html } }));
-            }
-          } catch {}
-        },
-      });
-
-      window.__afroupEditors[locale] = editor;
-    } catch (err) {
-      console.error("Failed to initialize EditorJS for locale", locale, err);
-    }
-  });
 
   return window.__afroupEditors;
 }

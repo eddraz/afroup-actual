@@ -10,6 +10,7 @@ import { canManageOwnedRecord, translationAccess } from "../../../lib/editorial"
 import { routeIds } from "../../../lib/paths";
 import { listSiteLanguages } from "../../../lib/site-languages";
 import OgMetadataFields from "../../../components/OgMetadataFields.astro";
+import EditorialAiPrompt from "../../../components/EditorialAiPrompt.astro";
 import { parseOgMetadata } from "../../../lib/og-metadata";
 
 export const prerender = false;
@@ -85,7 +86,16 @@ const listHref = localizedPath(locale, joinPath(routeIds.admin, "categorias"));
           </h3>
           <p class="text-xs text-base-content/60 mt-0.5">Configura el nombre y la bajada temática en cada idioma activo.</p>
         </div>
-        <PageLocaleSwitch languages={languages} label={copy.adminLanguages} current={defaultLocale} />
+        <div class="flex items-center gap-3">
+          <PageLocaleSwitch languages={languages} label={copy.adminLanguages} current={defaultLocale} />
+          <EditorialAiPrompt
+            kind="category"
+            moduleSlug="categorias"
+            canUseAi={translation.canUseAi}
+            copy={copy}
+            primaryLocale={defaultLocale}
+          />
+        </div>
       </div>
 
       {languages.map((language) => {
@@ -99,11 +109,11 @@ const listHref = localizedPath(locale, joinPath(routeIds.admin, "categorias"));
               <input
                 class="input input-bordered w-full font-semibold text-lg py-3"
                 name={`title[${language.code}]`}
-                maxlength="160"
-                required={language.code === defaultLocale}
-                disabled={locked}
-                value={titles[language.code] ?? ""}
-                placeholder="Nombre de la categoría..."
+                    maxlength="160"
+                    required={language.code === defaultLocale}
+                    disabled={locked}
+                    value={titles[language.code] ?? ""}
+                    placeholder="Nombre de la categoría..."
               />
             </fieldset>
             <fieldset class="fieldset">
@@ -114,9 +124,10 @@ const listHref = localizedPath(locale, joinPath(routeIds.admin, "categorias"));
                 class="textarea textarea-bordered w-full text-base leading-relaxed"
                 name={`description[${language.code}]`}
                 rows="3"
-                maxlength="400"
-                disabled={locked}
-                placeholder="Descripción editorial de la temática..."
+                    maxlength="400"
+                    required={language.code === defaultLocale}
+                    disabled={locked}
+                    placeholder="Descripción editorial de la temática..."
               >{descriptions[language.code] ?? ""}</textarea>
             </fieldset>
             <OgMetadataFields
@@ -125,8 +136,9 @@ const listHref = localizedPath(locale, joinPath(routeIds.admin, "categorias"));
               canUseAi={translation.canUseAi}
               kind="category"
               moduleSlug="categorias"
+              primaryLocale={defaultLocale}
+              locale={locale}
               copy={copy}
-              disabled={locked}
             />
           </div>
         );

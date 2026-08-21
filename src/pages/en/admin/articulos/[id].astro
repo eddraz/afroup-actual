@@ -9,7 +9,7 @@ import { resolveRequestCopy } from "../../../../lib/request-locale";
 import { canManageOwnedRecord, translationAccess } from "../../../../lib/editorial";
 import { hasPermission } from "../../../../lib/rbac";
 import { routeIds } from "../../../../lib/paths";
-import { listSiteLanguages } from "../../../../lib/site-languages";
+import { listSiteLanguages, loadEditorCopyByLocale } from "../../../../lib/site-languages";
 import { parseOgMetadata } from "../../../../lib/og-metadata";
 
 export const prerender = false;
@@ -96,6 +96,7 @@ const categories = (await env.DB.prepare(
 const translation = await translationAccess(env.DB, actor.id, "articulos", "update");
 const canDelete = await hasPermission(env.DB, actor.id, "articulos", "delete");
 const languages = await listSiteLanguages(env.DB);
+const editorCopyByLocale = await loadEditorCopyByLocale(env.DB, languages);
 const backHref = localizedPath(locale, joinPath(routeIds.admin, "articulos"));
 ---
 
@@ -110,6 +111,7 @@ const backHref = localizedPath(locale, joinPath(routeIds.admin, "articulos"));
     tags={tags}
     categories={categories}
     languages={languages}
+        editorCopyByLocale={editorCopyByLocale}
     translation={translation}
     canDelete={canDelete}
     locale={locale}
