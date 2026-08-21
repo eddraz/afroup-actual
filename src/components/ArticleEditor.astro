@@ -558,6 +558,20 @@ const publicPath = article?.slug && primaryCategorySlug
       });
     }
 
+    if (form.dataset.syncEditorsBound !== "true") {
+      form.dataset.syncEditorsBound = "true";
+      form.addEventListener("afroup:sync-editors", async () => {
+        for (const [loc, editor] of Object.entries(editors)) {
+          try {
+            const data = await editor.save();
+            const html = blocksToHtml(data);
+            const input = document.querySelector<HTMLTextAreaElement>(`[data-content-input='${loc}']`);
+            if (input) input.value = html;
+          } catch {}
+        }
+      });
+    }
+
     // Preview Toggle & Auto-update
     document.querySelectorAll<HTMLButtonElement>("[data-preview-toggle]").forEach((btn) => {
       if (btn.dataset.bound === "true") return;
@@ -796,8 +810,14 @@ const publicPath = article?.slug && primaryCategorySlug
           sourceContent = document.querySelector<HTMLTextAreaElement>("[data-content-input='es']")?.value || "";
         }
 
-        if (!sourceTitle && !sourceDesc && !sourceContent) {
-          if ((window as any).AfroUpFeedback) (window as any).AfroUpFeedback.toast("Primero escribe el contenido en español.", "error");
+        const cleanContent = sourceContent.replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").trim();
+        if (!sourceTitle || !sourceDesc || !cleanContent) {
+          if ((window as any).AfroUpFeedback) {
+            (window as any).AfroUpFeedback.toast(
+              "Para traducir el artículo con IA, debes completar todos los campos en Español (título, bajada y cuerpo del artículo).",
+              "error"
+            );
+          }
           return;
         }
 

@@ -39,7 +39,11 @@ const primaryLangObj = languages.find((l) => l.code === primaryLocale) || {
     data-translate-kind={kind}
     data-translate-module={moduleSlug}
     data-translate-primary={primaryLocale}
-    data-translate-need-source={copy.adminTranslateNeedSource || "Primero escribe el contenido en el idioma original."}
+    data-translate-need-source={
+      kind === "article"
+        ? (copy.adminTranslateNeedSourceArticle || "Para traducir el artículo con IA, debes completar todos los campos en Español (título, bajada y cuerpo del artículo).")
+        : (copy.adminTranslateNeedSourceCategory || "Para traducir la categoría con IA, debes completar todos los campos en Español (título y descripción).")
+    }
     data-translate-success={copy.adminTranslateSuccess || "Contenido traducido con éxito."}
     data-translate-error={copy.adminTranslateError || "Ocurrió un error al traducir con IA."}
     data-translate-loading={copy.adminTranslating || "Traduciendo..."}
@@ -127,6 +131,35 @@ const primaryLangObj = languages.find((l) => l.code === primaryLocale) || {
       var el = form.querySelector('[name="' + name + '"]');
       if (el) el.value = value;
     };
+    var checkSourceComplete = function (form, kind, primary) {
+      var sourceTitle = readValue(form, "title[" + primary + "]").trim();
+      var sourceDesc = readValue(form, "description[" + primary + "]").trim();
+      if (!sourceTitle || !sourceDesc) return false;
+
+      if (kind === "article") {
+        var contentInput = form.querySelector('[name="content_html[' + primary + ']"]');
+        var rawContent = contentInput ? String(contentInput.value || "") : "";
+        var cleanContent = rawContent.replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").trim();
+        if (!cleanContent) return false;
+      }
+      return true;
+    };
+    var focusFirstMissing = function (form, kind, primary) {
+      var titleEl = form.querySelector('[name="title[' + primary + ']"]');
+      if (titleEl && !titleEl.value.trim()) {
+        titleEl.focus();
+        return;
+      }
+      var descEl = form.querySelector('[name="description[' + primary + ']"]');
+      if (descEl && !descEl.value.trim()) {
+        descEl.focus();
+        return;
+      }
+      if (kind === "article") {
+        var holder = document.getElementById("editorjs-" + primary);
+        if (holder) holder.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    };
     var bind = function () {
       document.querySelectorAll("[data-editorial-translate]").forEach(function (root) {
         if (root.dataset.bound === "true") return;
@@ -140,9 +173,29 @@ const primaryLangObj = languages.find((l) => l.code === primaryLocale) || {
 
         if (openBtn && dialog) {
           openBtn.addEventListener("click", function () {
+            var form = root.closest("form") || document.querySelector("form");
+            if (form) {
+              form.dispatchEvent(new CustomEvent("afroup:sync-editors", { bubbles: true }));
+            }
+            var primary = root.getAttribute("data-translate-primary") || "es";
+            var kind = root.getAttribute("data-translate-kind") || "article";
+
+            if (form && !checkSourceComplete(form, kind, primary)) {
+              var needMsg = root.getAttribute("data-translate-need-source") || "Primero escribe todos los campos en el idioma original.";
+              if (window.AfroUpFeedback) window.AfroUpFeedback.toast(needMsg, "error");
+
+              // Switch to primary locale tab
+              var localeSelect = document.querySelector("[data-page-locale]");
+              if (localeSelect && localeSelect.value !== primary) {
+                localeSelect.value = primary;
+                localeSelect.dispatchEvent(new Event("change", { bubbles: true }));
+              }
+              focusFirstMissing(form, kind, primary);
+              return;
+            }
+
             var localeSelect = document.querySelector("[data-page-locale]");
             var currentViewingLocale = localeSelect ? localeSelect.value : "";
-            var primary = root.getAttribute("data-translate-primary") || "es";
             if (targetSelect && currentViewingLocale && currentViewingLocale !== primary) {
               targetSelect.value = currentViewingLocale;
             }
@@ -169,6 +222,22 @@ const primaryLangObj = languages.find((l) => l.code === primaryLocale) || {
             var kind = root.getAttribute("data-translate-kind") || "article";
             var moduleSlug = root.getAttribute("data-translate-module") || "articulos";
 
+            form.dispatchEvent(new CustomEvent("afroup:sync-editors", { bubbles: true }));
+
+            if (!checkSourceComplete(form, kind, primary)) {
+              var needMsg = root.getAttribute("data-translate-need-source") || "Primero escribe todos los campos en el idioma original.";
+              if (window.AfroUpFeedback) window.AfroUpFeedback.toast(needMsg, "error");
+              dialog.close();
+
+              var localeSelect = document.querySelector("[data-page-locale]");
+              if (localeSelect && localeSelect.value !== primary) {
+                localeSelect.value = primary;
+                localeSelect.dispatchEvent(new Event("change", { bubbles: true }));
+              }
+              focusFirstMissing(form, kind, primary);
+              return;
+            }
+
             var sourceTitle = readValue(form, "title[" + primary + "]").trim();
             var sourceDesc = readValue(form, "description[" + primary + "]").trim();
             var sourceContent = "";
@@ -176,12 +245,6 @@ const primaryLangObj = languages.find((l) => l.code === primaryLocale) || {
             if (kind === "article") {
               var contentInput = form.querySelector('[name="content_html[' + primary + ']"]');
               sourceContent = contentInput ? String(contentInput.value || "").trim() : "";
-            }
-
-            if (!sourceTitle && !sourceDesc && !sourceContent) {
-              var needMsg = root.getAttribute("data-translate-need-source") || "Primero escribe el contenido en el idioma original.";
-              if (window.AfroUpFeedback) window.AfroUpFeedback.toast(needMsg, "error");
-              return;
             }
 
             var originalHtml = submitBtn.innerHTML;

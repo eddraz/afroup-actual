@@ -263,3 +263,49 @@ export function validateArticleInput(input: ArticleValidationInput): ArticleVali
   return { ok: true };
 }
 
+export interface EditorialTranslationSourceInput {
+  kind: "article" | "category" | string;
+  title?: string | null;
+  description?: string | null;
+  content?: string | null;
+}
+
+export interface EditorialTranslationCheckResult {
+  ok: boolean;
+  missingFields: ("title" | "description" | "content")[];
+  message?: string;
+}
+
+export function validateTranslationSource(input: EditorialTranslationSourceInput): EditorialTranslationCheckResult {
+  const missing: ("title" | "description" | "content")[] = [];
+  const title = String(input.title ?? "").trim();
+  const description = String(input.description ?? "").trim();
+
+  if (!title) missing.push("title");
+  if (!description) missing.push("description");
+
+  if (input.kind === "article") {
+    const cleanContent = String(input.content ?? "")
+      .replace(/<[^>]*>/g, " ")
+      .replace(/&nbsp;/g, " ")
+      .trim();
+    if (!cleanContent) missing.push("content");
+  }
+
+  if (missing.length === 0) {
+    return { ok: true, missingFields: [] };
+  }
+
+  const message =
+    input.kind === "article"
+      ? "Para traducir el artículo con IA, debes completar todos los campos en Español (título, bajada y cuerpo del artículo)."
+      : "Para traducir la categoría con IA, debes completar todos los campos en Español (título y descripción).";
+
+  return {
+    ok: false,
+    missingFields: missing,
+    message,
+  };
+}
+
+

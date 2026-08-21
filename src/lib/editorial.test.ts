@@ -5,6 +5,7 @@ import {
   plannedArticleLocales,
   plannedLocales,
   validateArticleInput,
+  validateTranslationSource,
   visibleOwnerClause,
 } from "./editorial";
 
@@ -236,4 +237,81 @@ describe("validateArticleInput", () => {
     expect(invalidSlug.error).toBe("slug_invalid");
   });
 });
+
+describe("validateTranslationSource", () => {
+  test("allows category translation when title and description are complete", () => {
+    const res = validateTranslationSource({
+      kind: "category",
+      title: "Cultura",
+      description: "Historias y tradiciones de la diáspora.",
+    });
+    expect(res.ok).toBe(true);
+    expect(res.missingFields).toEqual([]);
+  });
+
+  test("rejects category translation when title is missing", () => {
+    const res = validateTranslationSource({
+      kind: "category",
+      title: "   ",
+      description: "Descripción",
+    });
+    expect(res.ok).toBe(false);
+    expect(res.missingFields).toContain("title");
+  });
+
+  test("rejects category translation when description is missing", () => {
+    const res = validateTranslationSource({
+      kind: "category",
+      title: "Cultura",
+      description: "",
+    });
+    expect(res.ok).toBe(false);
+    expect(res.missingFields).toContain("description");
+  });
+
+  test("allows article translation when title, description, and content are complete", () => {
+    const res = validateTranslationSource({
+      kind: "article",
+      title: "Historia de los Palenques",
+      description: "Territorios de libertad.",
+      content: "<p>Comunidades cimarronas en el Caribe.</p>",
+    });
+    expect(res.ok).toBe(true);
+    expect(res.missingFields).toEqual([]);
+  });
+
+  test("rejects article translation when title is missing", () => {
+    const res = validateTranslationSource({
+      kind: "article",
+      title: "",
+      description: "Bajada",
+      content: "<p>Cuerpo del artículo</p>",
+    });
+    expect(res.ok).toBe(false);
+    expect(res.missingFields).toContain("title");
+  });
+
+  test("rejects article translation when description is missing", () => {
+    const res = validateTranslationSource({
+      kind: "article",
+      title: "Título",
+      description: "   ",
+      content: "<p>Cuerpo del artículo</p>",
+    });
+    expect(res.ok).toBe(false);
+    expect(res.missingFields).toContain("description");
+  });
+
+  test("rejects article translation when content is empty or contains only HTML tags/spaces", () => {
+    const res = validateTranslationSource({
+      kind: "article",
+      title: "Título",
+      description: "Bajada",
+      content: "<p>&nbsp;   </p>",
+    });
+    expect(res.ok).toBe(false);
+    expect(res.missingFields).toContain("content");
+  });
+});
+
 
