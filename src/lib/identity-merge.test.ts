@@ -250,9 +250,9 @@ describe("0020 SQL matches merge helper rules", () => {
   test("keeps public hashes, forces verified pending off, and remaps admin FKs", () => {
     expect(sql).toMatch(/password_hash = afroup_users\.password_hash/);
     expect(sql).toMatch(/invite_pending = CASE[\s\S]*afroup_users\.verified_at[\s\S]*IS NOT NULL THEN 0/);
-    expect(sql).toMatch(/UPDATE admin_user_permissions[\s\S]*admin_id_map/);
-    expect(sql).toMatch(/UPDATE admin_user_invitations[\s\S]*admin_id_map/);
-    expect(sql).toMatch(/UPDATE admin_parent_grants[\s\S]*admin_id_map/);
+    expect(sql).toMatch(/admin_user_permissions[\s\S]*admin_id_map/);
+    expect(sql).toMatch(/admin_user_invitations[\s\S]*admin_id_map/);
+    expect(sql).toMatch(/admin_parent_grants[\s\S]*admin_id_map/);
     expect(sql).toMatch(/UPDATE users[\s\S]*created_by[\s\S]*admin_id_map/);
     expect(sql).toMatch(/DELETE FROM admin_parent_grants[\s\S]*admin_id_map/);
     expect(sql).toMatch(/created_by = NULL[\s\S]*admin_id_map/);

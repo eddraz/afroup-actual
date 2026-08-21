@@ -5,6 +5,7 @@ import { DEFAULT_USER_GRANTS } from "./identity-merge";
 import {
   classifyLogin,
   permissionsFromRows,
+  planCompletePasswordReset,
   planInvite,
   planRegister,
 } from "./identity-auth";
@@ -259,4 +260,12 @@ describe("auth helpers join users, not the old identity tables", () => {
       expect(userBios).toContain("UPDATE users SET bio");
     },
   );
+});
+
+describe("planCompletePasswordReset", () => {
+  test("verifies the account and clears invite_pending so login can succeed", () => {
+    const plan = planCompletePasswordReset("2026-08-20T19:00:00.000Z");
+    expect(plan.verifiedAt).toBe("2026-08-20T19:00:00.000Z");
+    expect(plan.invitePending).toBe(0);
+  });
 });

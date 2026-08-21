@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { env } from "cloudflare:workers";
 import { hashPassword } from "../../lib/crypto";
+import { planCompletePasswordReset } from "../../lib/identity-auth";
 
 export const prerender = false;
 
@@ -36,8 +37,11 @@ export const POST: APIRoute = async ({ request }) => {
 
   const hash = await hashPassword(password);
   const now = new Date().toISOString();
+  const plan = planCompletePasswordReset(now);
   await env.DB.batch([
-    env.DB.prepare("UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?").bind(hash, now, row.id),
+    env.DB.prepare(
+      "UPDATE users SET password_hash = ?, verified_at = ?, invite_pending = ?, updated_at = ? WHERE id = ?",
+    ).bind(hash, plan.verifiedAt, plan.invitePending, now, row.id),
     env.DB.prepare("UPDATE afroup_password_resets SET consumed_at = ? WHERE token = ?").bind(now, token),
     env.DB.prepare("DELETE FROM afroup_sessions WHERE user_id = ?").bind(row.id),
   ]);

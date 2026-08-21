@@ -188,9 +188,13 @@ function tabClass(key: NavKey) {
                   <svg class="swap-on size-5"><use href="#ic-moon"></use></svg>
                 </label>
                 <div data-session-guest-nav>
-                  <div class="tooltip tooltip-bottom" data-tip={copy.navLogin}>
-                    <a class="btn btn-square btn-ghost overflow-hidden border border-base-300 bg-base-100 p-0" href={paths.login} aria-label={copy.navLogin}>
-                      <SessionAvatar guest />
+                  <div class="tooltip tooltip-bottom" data-tip={copy.navLogin || "Iniciar sesión"}>
+                    <a
+                      class="btn btn-ghost btn-circle border border-base-300 bg-base-200/80 hover:bg-base-300 text-base-content size-10 flex items-center justify-center shadow-xs transition-transform hover:scale-105"
+                      href={paths.login}
+                      aria-label={copy.navLogin || "Iniciar sesión"}
+                    >
+                      <svg class="size-5"><use href="#ic-user"></use></svg>
                     </a>
                   </div>
                 </div>
@@ -398,6 +402,24 @@ function tabClass(key: NavKey) {
               >
                 <LanguageSwitcher />
               </div>
+            </div>
+            <div data-session-guest-nav class="w-full">
+              <a class="btn btn-outline btn-sm btn-block gap-2 rounded-xl text-xs font-bold border-base-300" href={paths.login}>
+                <svg class="size-4 shrink-0"><use href="#ic-user"></use></svg>
+                <span>{copy.navLogin || "Iniciar sesión"}</span>
+              </a>
+            </div>
+            <div data-session-user-nav class="w-full hidden">
+              <SessionUser
+                showEmail
+                menu
+                accountHref={paths.account}
+                accountLabel={copy.navAccount}
+                extraHref={paths.home}
+                extraLabel={copy.navHome}
+                logoutHref={`/api/logout?next=${encodeURIComponent(paths.login)}`}
+                logoutLabel={copy.accountLogout}
+              />
             </div>
             <a class="btn btn-secondary btn-block site-donate" href={paths.donate} data-tip={copy.donateCta}>
               <svg class="size-4 shrink-0"><use href="#ic-heart"></use></svg>

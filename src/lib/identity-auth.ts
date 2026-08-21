@@ -135,6 +135,16 @@ export function permissionsFromNamedRows(
   );
 }
 
+export function planCompletePasswordReset(now: string): {
+  verifiedAt: string;
+  invitePending: 0;
+} {
+  return {
+    verifiedAt: now,
+    invitePending: 0,
+  };
+}
+
 export function planInvite(input: InviteInput): InvitePlan {
   if (!input.existing) {
     return {

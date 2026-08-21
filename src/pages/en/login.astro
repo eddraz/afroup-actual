@@ -143,7 +143,13 @@ const recoverHref = localizedPath(locale, routeIds.recover);
       <p class="text-[12.5px] opacity-60">{copy.loginAsideNote}</p>
     </aside>
   </div>
-  <script is:inline>
+  <script is:inline define:vars={{
+    copyUnverifiedTitle: copy.loginUnverifiedTitle,
+    copyUnverifiedLead: copy.loginUnverifiedLead,
+    copyUnverifiedResend: copy.loginUnverifiedResend,
+    copyUnverifiedSent: copy.loginUnverifiedSent,
+    copyUnverifiedFailed: copy.loginUnverifiedFailed,
+  }}>
     (function () {
       var bind = function () {
         var form = document.querySelector("form[data-login-form]");
@@ -180,6 +186,32 @@ const recoverHref = localizedPath(locale, routeIds.recover);
                 window.location.href = canEditAccount
                   ? (lang === "en" ? "/en/cuenta" : "/cuenta")
                   : (lang === "en" ? "/en/admin" : "/admin");
+                return;
+              }
+              if (result.body && result.body.error === "unverified") {
+                if (window.AfroUpFeedback && window.AfroUpFeedback.modal) {
+                  window.AfroUpFeedback.modal({
+                    title: copyUnverifiedTitle,
+                    message: copyUnverifiedLead,
+                    actionLabel: copyUnverifiedResend,
+                    onAction: function () {
+                      var recoverData = new FormData();
+                      recoverData.set("email", String(data.get("email") || ""));
+                      recoverData.set("locale", lang);
+                      fetch("/api/recover", { method: "POST", body: recoverData })
+                        .then(function (res) { return res.json().then(function (body) { return { ok: res.ok }; }); })
+                        .then(function (sent) {
+                          toast(sent.ok ? copyUnverifiedSent : copyUnverifiedFailed, sent.ok ? "success" : "error");
+                        })
+                        .catch(function () {
+                          toast(copyUnverifiedFailed, "error");
+                        });
+                    },
+                  });
+                } else {
+                  toast(messages.unverified, "error");
+                }
+                if (submit) submit.disabled = false;
                 return;
               }
               toast(messages[result.body && result.body.error] || (lang === "en" ? "Could not sign in." : "No pudimos iniciar sesión."), "error");

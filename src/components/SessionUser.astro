@@ -67,22 +67,22 @@ const {
       ]}
       style="position-anchor:--session-user"
     >
-      {accountHref && accountLabel ? (
-        <a class="btn btn-ghost btn-sm w-full justify-start" href={accountHref}>
-          <svg class="size-4"><use href="#ic-user"></use></svg>
-          {accountLabel}
+      {accountHref ? (
+        <a class="btn btn-ghost btn-sm w-full justify-start gap-2.5 font-semibold text-base-content/85 hover:text-base-content" href={accountHref}>
+          <svg class="size-4 shrink-0"><use href="#ic-user"></use></svg>
+          <span>{accountLabel || "Tu cuenta"}</span>
         </a>
       ) : null}
-      {extraHref && extraLabel ? (
-        <a class="btn btn-ghost btn-sm w-full justify-start" href={extraHref}>
-          <svg class="size-4"><use href="#ic-arrow"></use></svg>
-          {extraLabel}
+      {extraHref ? (
+        <a class="btn btn-ghost btn-sm w-full justify-start gap-2.5 font-semibold text-base-content/85 hover:text-base-content" href={extraHref}>
+          <svg class="size-4 shrink-0"><use href="#ic-arrow"></use></svg>
+          <span>{extraLabel || "Volver al sitio"}</span>
         </a>
       ) : null}
-      <form method="post" action={logoutHref}>
-        <button type="submit" class="btn btn-ghost btn-sm w-full justify-start" data-admin-signout>
-          <svg class="size-4"><use href="#ic-logout"></use></svg>
-          {logoutLabel}
+      <form method="post" action={logoutHref} class="w-full">
+        <button type="submit" class="btn btn-ghost btn-sm w-full justify-start gap-2.5 font-semibold text-error/85 hover:text-error hover:bg-error/10" data-admin-signout>
+          <svg class="size-4 shrink-0"><use href="#ic-logout"></use></svg>
+          <span>{logoutLabel}</span>
         </button>
       </form>
     </div>
