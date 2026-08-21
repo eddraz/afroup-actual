@@ -1,83 +1,31 @@
 ---
+import { env } from "cloudflare:workers";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { getLocaleFromUrl, localizedPath, t } from "../../lib/i18n";
 import { routeIds } from "../../lib/paths";
+import { loadResources, loadResourcesPageConfig } from "../../lib/resources";
 
-export const prerender = true;
+export const prerender = false;
 
 const locale = getLocaleFromUrl(Astro.url);
 const copy = t(locale);
 const homeHref = localizedPath(locale, routeIds.home);
 const collaborateHref = localizedPath(locale, routeIds.collaborate);
-const resourceHref = localizedPath(locale, routeIds.resource);
+
+const pageConfig = await loadResourcesPageConfig(env.DB, locale);
+const resources = await loadResources(env.DB, locale, { status: "published" });
+
 const chips = [
-  copy.resourcesChipAll,
-  copy.resourcesChipGuides,
-  copy.resourcesChipTeachers,
-  copy.resourcesChipReadings,
-  copy.resourcesChipGlossary,
-  copy.resourcesChipMaps,
-] as const;
-const items = [
-  {
-    figure: "bg-primary/20",
-    label: "PDF",
-    tag: "Guía PDF · Para docentes",
-    tagClass: "text-secondary",
-    swatch: "bg-secondary",
-    title: "Guía docente: cimarronaje en el aula",
-    dek: "Actividades, fuentes primarias y rúbricas para secundaria.",
-    meta: "PDF · 24 págs · ES/EN",
-    action: "download",
-  },
-  {
-    figure: "bg-secondary/30",
-    label: "PDF",
-    tag: "Guía PDF",
-    tagClass: "text-accent",
-    swatch: "bg-accent",
-    title: "Guía: cine afrolatino esencial",
-    dek: "30 películas para entender la diáspora, con fichas y dónde verlas.",
-    meta: "PDF · 18 págs",
-    action: "download",
-  },
-  {
-    figure: "bg-accent/30",
-    label: "web",
-    tag: "Glosario",
-    tagClass: "text-secondary",
-    swatch: "bg-secondary",
-    title: "Glosario antirracista",
-    dek: "Términos clave para hablar de raza, racismo e identidad con precisión.",
-    meta: "Web · actualizado 2026",
-    action: "consult",
-  },
-  {
-    figure: "bg-[url('/assets/pattern.png')] bg-cover bg-center",
-    label: "",
-    tag: "Mapa",
-    tagClass: "text-primary",
-    swatch: "bg-primary",
-    title: "Mapa interactivo de la diáspora",
-    dek: "Rutas, asentamientos y comunidades afro en América Latina.",
-    meta: "Web · interactivo",
-    action: "explore",
-  },
-  {
-    figure: "bg-primary/20",
-    label: "lista",
-    tag: "Lecturas",
-    tagClass: "text-accent",
-    swatch: "bg-accent",
-    title: "50 lecturas fundamentales",
-    dek: "Bibliografía comentada: de Fanon a Lélia Gonzalez.",
-    meta: "PDF · 12 págs",
-    action: "download",
-  },
-] as const;
+  { label: copy.resourcesChipAll || "All", key: "all" },
+  { label: copy.resourcesChipGuides || "PDF Guides", key: "guia" },
+  { label: copy.resourcesChipTeachers || "For Teachers", key: "docentes" },
+  { label: copy.resourcesChipReadings || "Readings", key: "lectura" },
+  { label: copy.resourcesChipGlossary || "Glossary", key: "glosario" },
+  { label: copy.resourcesChipMaps || "Maps", key: "mapa" },
+];
 ---
 
-<BaseLayout title={copy.titleResources} active="recursos">
+<BaseLayout title={pageConfig.title || copy.titleResources} active="recursos">
   <div class="breadcrumbs text-sm">
     <ul>
       <li><a href={homeHref}>{copy.navHome}</a></li>
@@ -87,69 +35,126 @@ const items = [
 
   <section class="hero relative mt-6 overflow-hidden rounded-[24px] border border-base-300 bg-base-200 shadow-lg">
     <div class="hero-content relative w-full flex-col items-start gap-3 px-6 py-8 lg:px-11 lg:py-11">
-      <p class="text-primary text-xs font-extrabold tracking-[0.18em] uppercase">{copy.resourcesEyebrow}</p>
-      <h1 class="font-display max-w-[18ch] text-[31px] font-bold lg:text-[44px]">{copy.resourcesTitle}</h1>
-      <p class="max-w-[56ch] text-[17px] leading-[1.55] opacity-70">{copy.resourcesLead}</p>
+      <p class="text-primary text-xs font-extrabold tracking-[0.18em] uppercase">{pageConfig.eyebrow || copy.resourcesEyebrow}</p>
+      <h1 class="font-display max-w-[18ch] text-[31px] font-bold lg:text-[44px]">{pageConfig.title || copy.resourcesTitle}</h1>
+      <p class="max-w-[56ch] text-[17px] leading-[1.55] opacity-70">{pageConfig.lead || copy.resourcesLead}</p>
     </div>
   </section>
 
-  <div class="mt-6 mb-6 flex flex-wrap gap-2" data-chips>
+  <div class="mt-6 mb-6 flex flex-wrap gap-2" data-chips-container>
     {
       chips.map((chip, index) => (
-        <button class:list={["btn btn-sm", index === 0 ? undefined : "btn-dash"]} data-chip type="button">
-          {chip}
+        <button
+          class:list={["btn btn-sm font-semibold", index === 0 ? "btn-neutral" : "btn-dash"]}
+          data-chip-filter={chip.key}
+          type="button"
+        >
+          {chip.label}
         </button>
       ))
     }
   </div>
 
-  <ul class="list">
+  <ul class="list" data-resources-list>
     {
-      items.map((item) => (
-        <li class="list-row">
-          <div class:list={["relative size-20 overflow-hidden rounded-box", item.figure]}>
-            {item.label ? <span class="badge badge-sm absolute bottom-1.5 left-1.5">{item.label}</span> : null}
-          </div>
-          <a class="list-col-grow" href={resourceHref}>
-            <span class:list={["inline-flex items-center gap-2 text-[11.5px] font-extrabold tracking-[0.1em] uppercase", item.tagClass]}>
-              <span class:list={["size-2.5 rounded-[3px]", item.swatch]}></span>
-              {item.tag}
-            </span>
-            <h3 class="font-display text-xl font-bold">{item.title}</h3>
-            <p class="opacity-70">{item.dek}</p>
-            <p class="text-sm opacity-50">{item.meta}</p>
-          </a>
-          {
-            item.action === "download" ? (
-              <a class="btn btn-accent btn-sm" href={resourceHref}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                  <use href="#ic-download"></use>
-                </svg>
-                {copy.resourcesDownload}
-              </a>
-            ) : (
-              <a class="btn btn-ghost btn-sm" href={resourceHref}>
-                {item.action === "consult" ? copy.resourcesConsult : copy.resourcesExplore}
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                  <use href="#ic-arrow"></use>
-                </svg>
-              </a>
-            )
-          }
+      resources.length === 0 ? (
+        <li class="p-8 text-center text-base-content/50 border border-base-300 rounded-3xl bg-base-200/40">
+          No resources currently available.
         </li>
-      ))
+      ) : (
+        resources.map((item) => {
+          const detailHref = `/en/recurso/${item.slug}`;
+          const isPdf = item.resource_type === "pdf" || item.format_label.toLowerCase().includes("pdf");
+          const isWeb = item.resource_type === "web" || item.resource_type === "mapa";
+
+          // Color accents
+          const tagColor = item.category_tag.toLowerCase().includes("docentes") || item.category_tag.toLowerCase().includes("teachers")
+            ? "text-secondary"
+            : item.category_tag.toLowerCase().includes("guía") || item.category_tag.toLowerCase().includes("guide")
+            ? "text-accent"
+            : item.category_tag.toLowerCase().includes("glosario") || item.category_tag.toLowerCase().includes("glossary")
+            ? "text-secondary"
+            : item.category_tag.toLowerCase().includes("mapa") || item.category_tag.toLowerCase().includes("map")
+            ? "text-primary"
+            : "text-accent";
+
+          const swatchColor = item.category_tag.toLowerCase().includes("docentes") || item.category_tag.toLowerCase().includes("teachers")
+            ? "bg-secondary"
+            : item.category_tag.toLowerCase().includes("guía") || item.category_tag.toLowerCase().includes("guide")
+            ? "bg-accent"
+            : item.category_tag.toLowerCase().includes("glosario") || item.category_tag.toLowerCase().includes("glossary")
+            ? "bg-secondary"
+            : item.category_tag.toLowerCase().includes("mapa") || item.category_tag.toLowerCase().includes("map")
+            ? "bg-primary"
+            : "bg-accent";
+
+          const figureBg = isPdf
+            ? "bg-primary/15 text-primary"
+            : item.resource_type === "mapa"
+            ? "bg-[url('/assets/pattern.png')] bg-cover bg-center"
+            : "bg-secondary/20 text-secondary";
+
+          return (
+            <li
+              class="list-row hover:bg-base-200/40 transition-colors rounded-2xl p-3"
+              data-res-category={item.category_tag.toLowerCase()}
+              data-res-type={item.resource_type.toLowerCase()}
+            >
+              <div class:list={["relative size-20 overflow-hidden rounded-box shrink-0 flex items-center justify-center font-bold text-xs", figureBg]}>
+                {item.format_label ? (
+                  <span class="badge badge-sm absolute bottom-1.5 left-1.5 font-bold uppercase">
+                    {item.format_label}
+                  </span>
+                ) : null}
+              </div>
+
+              <a class="list-col-grow min-w-0" href={detailHref}>
+                <span class:list={["inline-flex items-center gap-2 text-[11.5px] font-extrabold tracking-[0.1em] uppercase", tagColor]}>
+                  <span class:list={["size-2.5 rounded-[3px]", swatchColor]}></span>
+                  {item.category_tag}
+                </span>
+                <h3 class="font-display text-xl font-bold text-base-content mt-0.5">{item.title}</h3>
+                <p class="opacity-70 text-sm line-clamp-2 mt-0.5">{item.dek}</p>
+                <div class="text-xs opacity-50 font-mono mt-1 flex items-center gap-2">
+                  <span>{item.format_label}</span>
+                  {item.pages_count ? <span>· {item.pages_count}</span> : null}
+                  {item.languages_label ? <span>· {item.languages_label}</span> : null}
+                </div>
+              </a>
+
+              <div class="shrink-0 flex items-center gap-2">
+                {isPdf && item.file_url ? (
+                  <a class="btn btn-accent btn-sm font-bold gap-1.5" href={item.file_url} target="_blank" download>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <use href="#ic-download"></use>
+                    </svg>
+                    <span>{copy.resourcesDownload || "Download"}</span>
+                  </a>
+                ) : (
+                  <a class="btn btn-ghost btn-sm font-bold gap-1" href={detailHref}>
+                    <span>{isWeb ? (copy.resourcesExplore || "Explore") : (copy.resourcesConsult || "Consult")}</span>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <use href="#ic-arrow"></use>
+                    </svg>
+                  </a>
+                )}
+              </div>
+            </li>
+          );
+        })
+      )
     }
   </ul>
 
-  <div class="card bg-accent text-accent-content mt-9">
-    <div class="card-body sm:flex-row sm:items-center sm:justify-between">
+  <div class="card bg-accent text-accent-content mt-9 shadow-lg rounded-3xl">
+    <div class="card-body sm:flex-row sm:items-center sm:justify-between p-6 sm:p-8">
       <div>
-        <h3 class="card-title">{copy.resourcesBandTitle}</h3>
-        <p>{copy.resourcesBandDek}</p>
+        <h3 class="card-title font-display text-xl sm:text-2xl font-bold">{pageConfig.band_title || copy.resourcesBandTitle}</h3>
+        <p class="text-accent-content/80 text-sm mt-1">{pageConfig.band_dek || copy.resourcesBandDek}</p>
       </div>
-      <div class="card-actions">
-        <a class="btn btn-primary" href={collaborateHref}>
-          {copy.footerCollaborate}
+      <div class="card-actions shrink-0 mt-4 sm:mt-0">
+        <a class="btn btn-primary font-bold rounded-full gap-2 shadow-sm" href={pageConfig.band_cta_url || collaborateHref}>
+          <span>{pageConfig.band_cta_label || copy.footerCollaborate || "Collaborate"}</span>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <use href="#ic-arrow"></use>
           </svg>
@@ -160,11 +165,45 @@ const items = [
 </BaseLayout>
 
 <script>
-  const chips = document.querySelectorAll("[data-chip]");
-  chips.forEach((chip) => {
-    chip.addEventListener("click", () => {
-      chips.forEach((item) => item.classList.add("btn-dash"));
-      chip.classList.remove("btn-dash");
+  function setupPublicResourcesFilter() {
+    const chips = document.querySelectorAll<HTMLButtonElement>("[data-chip-filter]");
+    const rows = document.querySelectorAll<HTMLElement>("[data-resources-list] > li");
+
+    chips.forEach((chip) => {
+      if (chip.dataset.bound === "true") return;
+      chip.dataset.bound = "true";
+      chip.addEventListener("click", () => {
+        const filter = chip.getAttribute("data-chip-filter") || "all";
+
+        chips.forEach((c) => {
+          c.classList.toggle("btn-neutral", c === chip);
+          c.classList.toggle("btn-dash", c !== chip);
+        });
+
+        rows.forEach((row) => {
+          const cat = row.getAttribute("data-res-category") || "";
+          const type = row.getAttribute("data-res-type") || "";
+
+          if (filter === "all") {
+            row.classList.remove("hidden");
+          } else if (filter === "guia") {
+            row.classList.toggle("hidden", !cat.includes("guía") && !cat.includes("guide") && !type.includes("pdf"));
+          } else if (filter === "docentes") {
+            row.classList.toggle("hidden", !cat.includes("docentes") && !cat.includes("teachers"));
+          } else if (filter === "lectura") {
+            row.classList.toggle("hidden", !cat.includes("lectura") && !cat.includes("reading") && !type.includes("lectura"));
+          } else if (filter === "glosario") {
+            row.classList.toggle("hidden", !cat.includes("glosario") && !cat.includes("glossary") && !type.includes("glosario"));
+          } else if (filter === "mapa") {
+            row.classList.toggle("hidden", !cat.includes("mapa") && !cat.includes("map") && !type.includes("mapa"));
+          } else {
+            row.classList.toggle("hidden", !cat.includes(filter) && !type.includes(filter));
+          }
+        });
+      });
     });
-  });
+  }
+
+  setupPublicResourcesFilter();
+  document.addEventListener("astro:page-load", setupPublicResourcesFilter);
 </script>

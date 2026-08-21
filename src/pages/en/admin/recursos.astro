@@ -1,0 +1,39 @@
+---
+import { env } from "cloudflare:workers";
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import ResourcesAdmin from "../../../components/ResourcesAdmin.astro";
+import { requireModuleAccess } from "../../../lib/admin-scope";
+import { resolveRequestCopy } from "../../../lib/request-locale";
+import { translationAccess } from "../../../lib/editorial";
+import { listSiteLanguages } from "../../../lib/site-languages";
+import { loadResources, loadAllResourcesPageConfigs, getResourceStats } from "../../../lib/resources";
+import { localizedPath } from "../../../lib/i18n";
+import { routeIds } from "../../../lib/paths";
+
+export const prerender = false;
+
+const { locale, copy } = await resolveRequestCopy(env.DB, Astro.url);
+const access = await requireModuleAccess(env.DB, Astro.cookies, Astro.url, locale, "recursos");
+if (access instanceof Response) return access;
+const actor = access;
+
+const translation = await translationAccess(env.DB, actor.id, "recursos", "update");
+const languages = await listSiteLanguages(env.DB);
+const resources = await loadResources(env.DB, locale);
+const pageConfigByLocale = await loadAllResourcesPageConfigs(env.DB);
+const stats = await getResourceStats(env.DB);
+const publicHref = localizedPath(locale, routeIds.resources);
+---
+
+<AdminLayout title={copy.adminResources || "Resources"} active="resources">
+  <ResourcesAdmin
+    resources={resources}
+    pageConfigByLocale={pageConfigByLocale}
+    stats={stats}
+    languages={languages}
+    translation={translation}
+    locale={locale}
+    copy={copy}
+    publicHref={publicHref}
+  />
+</AdminLayout>

@@ -33,6 +33,7 @@ export const routeIds = {
   account: "cuenta",
   admin: "admin",
   adminContact: "admin/contacto",
+  adminResources: "admin/recursos",
   sitemap: "#",
 } as const;
 

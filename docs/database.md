@@ -202,6 +202,9 @@ Cero o un idioma visible oculta el selector público. Dos muestran un interrupto
 | `about_page_locales` | `locale` | Contenido editorial, misión, visión, equipo, estadísticas y CTA de `/nosotros` por idioma |
 | `contact_page_locales` | `locale` | Canales oficiales, hero, respuesta y metadatos de `/contacto` por idioma |
 | `contact_submissions` | `id` | Bandeja de mensajes de contacto recibidos con estado (`unread|read|replied|archived`) |
+| `resources` | `id` | Catálogo de recursos educativos con `slug` único, tipo (`pdf|web|mapa|lectura|audio`), `category_tag`, `file_url`, `status`, `featured`, `sort_order` |
+| `resource_locales` | `(resource_id, locale)` | Título, descripción (`dek`), contenido HTML y metadatos `og_json` por idioma |
+| `resources_page_locales` | `locale` | Configuración de cabecera (hero) y banner de colaboración de `/recursos` por idioma |
 | `search_documents` | `id` | Índice unificado para `/buscar` con `(module_slug, record_id, locale)` único |
 
 ## Ayuda de emergencia heredada

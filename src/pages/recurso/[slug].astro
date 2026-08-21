@@ -1,0 +1,131 @@
+---
+import { env } from "cloudflare:workers";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getLocaleFromUrl, localizedPath, t } from "../../lib/i18n";
+import { routeIds } from "../../lib/paths";
+import { loadResourceBySlug, loadResources } from "../../lib/resources";
+
+export const prerender = false;
+
+const locale = getLocaleFromUrl(Astro.url);
+const copy = t(locale);
+const homeHref = localizedPath(locale, routeIds.home);
+const resourcesHref = localizedPath(locale, routeIds.resources);
+
+const { slug } = Astro.params;
+if (!slug) {
+  return Astro.redirect(resourcesHref);
+}
+
+const item = await loadResourceBySlug(env.DB, slug, locale);
+if (!item) {
+  return Astro.redirect(resourcesHref);
+}
+
+const allResources = await loadResources(env.DB, locale, { status: "published" });
+const related = allResources.filter((r) => r.slug !== item.slug).slice(0, 3);
+
+const facts = [
+  { label: copy.resourceFormat || "Formato", value: item.format_label || "PDF" },
+  { label: copy.resourcePages || "Páginas", value: item.pages_count || "—" },
+  { label: copy.resourceLang || "Idiomas", value: item.languages_label || "ES" },
+  { label: copy.resourceUpdated || "Actualizado", value: new Date(item.updated_at).getFullYear().toString() },
+];
+---
+
+<BaseLayout title={`${item.title} · ${copy.titleResources}`} active="recursos">
+  <div class="breadcrumbs text-sm">
+    <ul>
+      <li><a href={homeHref}>{copy.navHome}</a></li>
+      <li><a href={resourcesHref}>{copy.navResources}</a></li>
+      <li class="font-bold text-base-content">{item.title}</li>
+    </ul>
+  </div>
+
+  <div class="mt-6 grid grid-cols-1 items-start gap-8 lg:grid-cols-[1.2fr_0.8fr]">
+    <section>
+      <span class="inline-flex items-center gap-2 text-[11.5px] font-extrabold tracking-[0.1em] text-secondary uppercase">
+        <span class="size-2.5 rounded-[3px] bg-secondary"></span>
+        {item.category_tag}
+      </span>
+      <h1 class="font-display mt-3 text-[32px] leading-[1.04] font-bold lg:text-[44px]">
+        {item.title}
+      </h1>
+      <p class="mt-4 max-w-[64ch] text-[17px] leading-[1.55] opacity-70">
+        {item.dek}
+      </p>
+
+      <div class="mt-6 flex flex-wrap gap-2.5">
+        {item.file_url ? (
+          <a class="btn btn-accent font-bold gap-2" href={item.file_url} target="_blank" download>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <use href="#ic-download"></use>
+            </svg>
+            <span>{copy.resourcesDownload || "Descargar"}</span>
+          </a>
+        ) : null}
+        <button class="btn btn-ghost border border-base-300 font-semibold gap-1.5" type="button" onclick="navigator.clipboard?.writeText(window.location.href); alert('Enlace copiado al portapapeles');">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <use href="#ic-share"></use>
+          </svg>
+          <span>{copy.resourceShare || "Compartir"}</span>
+        </button>
+      </div>
+
+      {item.cover_image_url ? (
+        <div class="card bg-base-200 mt-8 overflow-hidden shadow rounded-3xl border border-base-300">
+          <img src={item.cover_image_url} alt={item.title} class="w-full aspect-[16/9] object-cover" />
+        </div>
+      ) : null}
+
+      {item.content_html ? (
+        <article class="prose prose-sm sm:prose-base mt-8 max-w-[720px] text-base-content/85 leading-relaxed" set:html={item.content_html} />
+      ) : null}
+    </section>
+
+    <aside class="card bg-base-200 lg:sticky lg:top-[90px] shadow rounded-3xl border border-base-300">
+      <div class="card-body p-6">
+        <h2 class="card-title text-base font-bold">{copy.resourceEyebrow || "Ficha del material"}</h2>
+        <ul class="list divide-y divide-base-300/60 my-2">
+          {
+            facts.map((fact) => (
+              <li class="list-row py-2.5">
+                <div>
+                  <div class="text-[11px] font-extrabold tracking-[0.08em] uppercase opacity-60">{fact.label}</div>
+                  <div class="font-bold text-sm text-base-content mt-0.5">{fact.value}</div>
+                </div>
+              </li>
+            ))
+          }
+        </ul>
+        {item.file_url ? (
+          <div class="card-actions mt-3">
+            <a class="btn btn-accent btn-block font-bold gap-2" href={item.file_url} target="_blank" download>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <use href="#ic-download"></use>
+              </svg>
+              <span>{copy.resourcesDownload || "Descargar material"}</span>
+            </a>
+          </div>
+        ) : null}
+      </div>
+    </aside>
+  </div>
+
+  {related.length > 0 ? (
+    <div class="mt-14 pt-8 border-t border-base-300">
+      <h2 class="font-display text-[26px] font-bold text-base-content mb-5">
+        {copy.resourceRelated || "Otros materiales recomendados"}
+      </h2>
+      <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {related.map((rel) => (
+          <a class="card bg-base-200 hover:bg-base-300/60 transition-colors shadow rounded-2xl border border-base-300 p-5" href={`/recurso/${rel.slug}`}>
+            <span class="text-xs font-bold text-accent uppercase tracking-wider">{rel.category_tag}</span>
+            <h3 class="card-title font-display text-lg font-bold text-base-content mt-2">{rel.title}</h3>
+            <p class="text-xs opacity-60 mt-1 line-clamp-2">{rel.dek}</p>
+          </a>
+        ))}
+      </div>
+    </div>
+  ) : null}
+</BaseLayout>

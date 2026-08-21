@@ -1,0 +1,1138 @@
+---
+import type { ResourceItem, ResourcesPageData, ResourceStats } from "../lib/resources";
+import type { BioTranslationAccess } from "../lib/editorial";
+import type { LanguageItem } from "../lib/site-languages";
+import PageLocaleSwitch from "./PageLocaleSwitch.astro";
+import R2Uploader from "./R2Uploader.astro";
+
+interface Props {
+  resources: ResourceItem[];
+  pageConfigByLocale: Record<string, ResourcesPageData>;
+  stats: ResourceStats;
+  languages: LanguageItem[];
+  translation: BioTranslationAccess;
+  locale: string;
+  copy: Record<string, string>;
+  publicHref: string;
+}
+
+const {
+  resources,
+  pageConfigByLocale,
+  stats,
+  languages,
+  translation,
+  locale,
+  copy,
+  publicHref,
+} = Astro.props;
+
+const defaultLocale = "es";
+const primaryPageConfig = pageConfigByLocale[defaultLocale] || pageConfigByLocale[locale] || {};
+const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
+---
+
+<div class="drawer drawer-end" data-resources-admin-root>
+  <input id="resource-detail-drawer" type="checkbox" class="drawer-toggle" />
+
+  <div class="drawer-content space-y-6">
+    <!-- Page Header & Action Bar -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-base-300 pb-5">
+      <div>
+        <div class="flex items-center gap-2.5">
+          <h2 class="font-display text-2xl font-bold text-base-content">{copy.adminResources || "Biblioteca de Recursos"}</h2>
+          <span class="badge badge-accent badge-sm font-semibold">Biblioteca Libre</span>
+        </div>
+        <p class="text-xs sm:text-sm text-base-content/60 mt-1">
+          Gestiona guías PDF, lecturas, glosarios y herramientas educativas descargables.
+        </p>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2.5">
+        <!-- Public Preview Link -->
+        <a
+          href={publicHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="btn btn-ghost btn-sm border border-base-300 hover:bg-base-200 gap-1.5 text-base-content/80 hover:text-base-content"
+        >
+          <svg class="size-3.5"><use href="#ic-link"></use></svg>
+          <span>{copy.adminArticleViewPublic || "Ver biblioteca pública"}</span>
+        </a>
+
+        <!-- New Resource Button (active on Resources tab) -->
+        <button
+          type="button"
+          class="btn btn-primary btn-sm gap-2 font-bold shadow-sm"
+          data-open-create-resource-drawer
+        >
+          <svg class="size-4"><use href="#ic-plus"></use></svg>
+          <span>Nuevo Recurso</span>
+        </button>
+
+        <!-- Save Page Config Button (active on Config tab) -->
+        <button
+          type="submit"
+          form="resources-page-form"
+          class="btn btn-primary btn-sm gap-2 shadow-sm font-bold hidden"
+          data-page-config-submit-btn
+        >
+          <svg class="size-4"><use href="#ic-plus"></use></svg>
+          <span>Guardar Configuración</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Metric Badges Overview -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div class="card bg-base-100 border border-base-300 p-4 shadow-2xs">
+        <div class="text-xs font-semibold text-base-content/60">Total Recursos</div>
+        <div class="text-2xl font-display font-bold text-base-content mt-1">{stats.total}</div>
+      </div>
+      <div class="card bg-base-100 border border-base-300 p-4 shadow-2xs">
+        <div class="text-xs font-semibold text-success">Publicados</div>
+        <div class="text-2xl font-display font-bold text-success mt-1">{stats.published}</div>
+      </div>
+      <div class="card bg-base-100 border border-base-300 p-4 shadow-2xs">
+        <div class="text-xs font-semibold text-warning">Borradores</div>
+        <div class="text-2xl font-display font-bold text-warning mt-1">{stats.drafts}</div>
+      </div>
+      <div class="card bg-base-100 border border-base-300 p-4 shadow-2xs">
+        <div class="text-xs font-semibold text-accent">Destacados</div>
+        <div class="text-2xl font-display font-bold text-accent mt-1">{stats.featured}</div>
+      </div>
+    </div>
+
+    <!-- Main View Tabs (Recursos vs Configuración de la Página) -->
+    <div class="tabs tabs-box bg-base-200/60 p-1 rounded-2xl w-fit" role="tablist">
+      <button
+        type="button"
+        role="tab"
+        class="tab tab-active font-bold text-xs sm:text-sm gap-2"
+        data-view-tab="resources"
+      >
+        <svg class="size-4"><use href="#ic-books"></use></svg>
+        <span>Recursos ({stats.total})</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="tab font-bold text-xs sm:text-sm gap-2"
+        data-view-tab="config"
+      >
+        <svg class="size-4"><use href="#ic-pin"></use></svg>
+        <span>Cabecera & Banner Público</span>
+      </button>
+    </div>
+
+    <!-- TAB 1: Lista de Recursos -->
+    <section class="space-y-4" data-view-panel="resources">
+      <!-- Filter Toolbar -->
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-base-100 p-3.5 rounded-2xl border border-base-300">
+        <div class="flex flex-wrap items-center gap-1.5">
+          <button type="button" class="btn btn-xs btn-active font-semibold" data-filter-status="all">
+            Todos ({stats.total})
+          </button>
+          <button type="button" class="btn btn-xs btn-ghost text-success font-semibold" data-filter-status="published">
+            Publicados ({stats.published})
+          </button>
+          <button type="button" class="btn btn-xs btn-ghost text-warning font-semibold" data-filter-status="draft">
+            Borradores ({stats.drafts})
+          </button>
+          <button type="button" class="btn btn-xs btn-ghost text-accent font-semibold" data-filter-status="featured">
+            Destacados ({stats.featured})
+          </button>
+        </div>
+
+        <div class="relative min-w-[220px]">
+          <input
+            type="search"
+            placeholder="Buscar recurso por título, slug..."
+            class="input input-bordered input-xs w-full pl-8"
+            data-search-input
+          />
+          <svg class="size-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none">
+            <use href="#ic-search"></use>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Resources Data Table -->
+      <div class="rounded-3xl border border-base-300 bg-base-100 overflow-hidden shadow-xs">
+        <div class="overflow-x-auto">
+          <table class="table table-zebra w-full text-left" data-resources-table>
+            <thead class="bg-base-200/70 text-[11px] uppercase tracking-wider text-base-content/60">
+              <tr>
+                <th class="py-3 px-4">Formato / Estado</th>
+                <th class="py-3 px-4">Título del Recurso</th>
+                <th class="py-3 px-4">Categoría / Tipo</th>
+                <th class="py-3 px-4">Metadatos</th>
+                <th class="py-3 px-4 text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="text-xs divide-y divide-base-200" data-resources-tbody>
+              {resources.length === 0 ? (
+                <tr>
+                  <td colspan="5" class="py-8 text-center text-base-content/50">
+                    No hay recursos registrados aún. Haz clic en «Nuevo Recurso» para comenzar.
+                  </td>
+                </tr>
+              ) : (
+                resources.map((res) => {
+                  return (
+                    <tr class="hover:bg-base-200/50 transition-colors group" data-res-row={res.id} data-status={res.status} data-featured={res.featured ? "true" : "false"}>
+                      <td class="py-3 px-4 whitespace-nowrap">
+                        <div class="flex items-center gap-1.5">
+                          <span class="badge badge-neutral badge-xs font-bold py-1 px-2">
+                            {res.format_label || res.resource_type.toUpperCase()}
+                          </span>
+                          <span class:list={["badge badge-xs py-1 px-2 font-bold", res.status === "published" ? "badge-success" : "badge-warning"]}>
+                            {res.status === "published" ? "Publicado" : "Borrador"}
+                          </span>
+                          {res.featured ? <span class="text-warning text-xs font-bold" title="Destacado">★</span> : null}
+                        </div>
+                      </td>
+                      <td class="py-3 px-4 max-w-xs sm:max-w-md">
+                        <div class="font-bold text-sm text-base-content truncate">{res.title}</div>
+                        <div class="text-base-content/50 font-mono text-[11px] truncate">/{res.slug}</div>
+                      </td>
+                      <td class="py-3 px-4 whitespace-nowrap">
+                        <span class="badge badge-ghost badge-sm text-[11px] font-semibold border-base-300">
+                          {res.category_tag}
+                        </span>
+                      </td>
+                      <td class="py-3 px-4 whitespace-nowrap text-base-content/60 text-[11px]">
+                        <div class="flex items-center gap-2 font-mono">
+                          {res.pages_count ? <span>{res.pages_count}</span> : null}
+                          {res.languages_label ? <span class="badge badge-neutral badge-xs">{res.languages_label}</span> : null}
+                        </div>
+                      </td>
+                      <td class="py-3 px-4 text-right whitespace-nowrap">
+                        <div class="inline-flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            class="btn btn-xs btn-outline btn-primary font-bold gap-1"
+                            data-edit-resource={res.id}
+                          >
+                            <svg class="size-3"><use href="#ic-edit"></use></svg>
+                            <span>Editar</span>
+                          </button>
+                          <a
+                            href={`/recurso/${res.slug}`}
+                            target="_blank"
+                            class="btn btn-xs btn-ghost text-base-content/60"
+                            title="Ver en web"
+                          >
+                            <svg class="size-3"><use href="#ic-link"></use></svg>
+                          </a>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: Configuración de Cabecera y Banner de Recursos -->
+    <section class="space-y-6 hidden" data-view-panel="config">
+      <form
+        id="resources-page-form"
+        method="post"
+        action="/api/admin/resources-page"
+        class="space-y-8"
+        data-page-config-form
+      >
+        <div class="flex items-center justify-between bg-base-200/40 p-3.5 rounded-2xl border border-base-300">
+          <PageLocaleSwitch languages={languages} currentLocale={locale} />
+        </div>
+
+        {languages.map((lang) => {
+          const loc = lang.code;
+          const isDefault = loc === defaultLocale;
+          const data = pageConfigByLocale[loc] || pageConfigByLocale[defaultLocale] || primaryPageConfig;
+          const isHidden = loc !== locale;
+
+          return (
+            <div data-i18n-panel={loc} class:list={["space-y-6", { hidden: isHidden }]}>
+              <!-- Header Hero -->
+              <div class="rounded-3xl border border-base-300 bg-base-100 p-6 shadow-xs space-y-4">
+                <div class="border-b border-base-300/80 pb-3 flex items-center justify-between">
+                  <h3 class="font-display font-bold text-base text-base-content flex items-center gap-2">
+                    <span class="size-2 rounded-full bg-primary"></span>
+                    <span>1. Cabecera (Hero de /recursos)</span>
+                  </h3>
+                  <span class="text-xs text-base-content/50">Banner superior de la biblioteca</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div class="space-y-1.5 md:col-span-1">
+                    <label class="label-text font-bold text-xs">Antetítulo (Eyebrow)</label>
+                    <input
+                      type="text"
+                      name={`page_eyebrow_${loc}`}
+                      value={data.eyebrow}
+                      class="input input-bordered input-sm w-full font-medium"
+                      placeholder="Biblioteca libre"
+                      required={isDefault}
+                    />
+                  </div>
+
+                  <div class="space-y-1.5 md:col-span-2">
+                    <label class="label-text font-bold text-xs">Título Principal (H1)</label>
+                    <input
+                      type="text"
+                      name={`page_title_${loc}`}
+                      value={data.title}
+                      class="input input-bordered input-sm w-full font-bold text-sm"
+                      placeholder="Recursos para aprender y enseñar"
+                      required={isDefault}
+                    />
+                  </div>
+                </div>
+
+                <div class="space-y-1.5">
+                  <label class="label-text font-bold text-xs">Subtítulo / Lead Descriptivo</label>
+                  <textarea
+                    name={`page_lead_${loc}`}
+                    rows="2"
+                    class="textarea textarea-bordered textarea-sm w-full leading-relaxed"
+                    placeholder="Guías, lecturas y materiales descargables — gratuitos y listos para el aula, el círculo de lectura o el autoestudio."
+                  >{data.lead}</textarea>
+                </div>
+              </div>
+
+              <!-- Bottom Collaborate Band -->
+              <div class="rounded-3xl border border-base-300 bg-base-100 p-6 shadow-xs space-y-4">
+                <div class="border-b border-base-300/80 pb-3 flex items-center justify-between">
+                  <h3 class="font-display font-bold text-base text-base-content flex items-center gap-2">
+                    <span class="size-2 rounded-full bg-accent"></span>
+                    <span>2. Banda de Llamado a la Acción (CTA Inferior)</span>
+                  </h3>
+                  <span class="text-xs text-base-content/50">Banner azul de colaboración</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="space-y-1.5">
+                    <label class="label-text font-bold text-xs">Título de la Banda</label>
+                    <input
+                      type="text"
+                      name={`band_title_${loc}`}
+                      value={data.band_title}
+                      class="input input-bordered input-sm w-full font-bold text-sm"
+                      placeholder="¿Tienes un recurso para compartir?"
+                    />
+                  </div>
+
+                  <div class="space-y-1.5">
+                    <label class="label-text font-bold text-xs">Texto Descriptivo</label>
+                    <input
+                      type="text"
+                      name={`band_dek_${loc}`}
+                      value={data.band_dek}
+                      class="input input-bordered input-sm w-full text-xs"
+                      placeholder="Súmalo a la biblioteca libre de AfroUp."
+                    />
+                  </div>
+
+                  <div class="space-y-1.5">
+                    <label class="label-text font-bold text-xs">Etiqueta del Botón</label>
+                    <input
+                      type="text"
+                      name={`band_cta_label_${loc}`}
+                      value={data.band_cta_label}
+                      class="input input-bordered input-sm w-full text-xs"
+                      placeholder="Colabora"
+                    />
+                  </div>
+
+                  <div class="space-y-1.5">
+                    <label class="label-text font-bold text-xs">URL de Destino del Botón</label>
+                    <input
+                      type="text"
+                      name={`band_cta_url_${loc}`}
+                      value={data.band_cta_url}
+                      class="input input-bordered input-sm w-full font-mono text-xs"
+                      placeholder="/colabora"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </form>
+    </section>
+  </div>
+
+  <!-- Slide-in daisyUI Drawer for Creating / Editing Resources -->
+  <div class="drawer-side z-50">
+    <label for="resource-detail-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
+    <aside class="menu bg-base-100 text-base-content min-h-full w-full max-w-2xl p-6 space-y-5 border-l border-base-300 shadow-2xl flex flex-col justify-between overflow-y-auto">
+      <div class="space-y-6">
+        <!-- Drawer Header -->
+        <div class="flex items-center justify-between border-b border-base-300 pb-4">
+          <div class="flex items-center gap-2.5">
+            <div class="flex size-9 items-center justify-center rounded-xl bg-accent/15 text-accent shrink-0">
+              <svg class="size-5"><use href="#ic-books"></use></svg>
+            </div>
+            <div>
+              <h3 class="font-display font-bold text-base text-base-content" data-drawer-title-header>
+                Crear Nuevo Recurso
+              </h3>
+              <p class="text-xs text-base-content/60">
+                Completa los datos del material educativo y archivos asociados.
+              </p>
+            </div>
+          </div>
+          <label for="resource-detail-drawer" class="btn btn-circle btn-ghost btn-xs">✕</label>
+        </div>
+
+        <!-- Resource Form -->
+        <form
+          id="resource-editor-form"
+          method="post"
+          action="/api/admin/resources"
+          class="space-y-6"
+          data-resource-form
+        >
+          <input type="hidden" name="id" id="res-field-id" value="" />
+
+          <!-- Drawer Language Switcher + AI Translate Button -->
+          <div class="flex items-center justify-between bg-base-200/50 p-3 rounded-2xl border border-base-300">
+            <div class="flex items-center gap-1.5">
+              {languages.map((lang) => (
+                <button
+                  type="button"
+                  class:list={["btn btn-xs font-bold", lang.code === defaultLocale ? "btn-active btn-neutral" : "btn-ghost"]}
+                  data-drawer-lang-btn={lang.code}
+                >
+                  {lang.native_name} ({lang.code.toUpperCase()})
+                </button>
+              ))}
+            </div>
+
+            {translation.canUseAi && targetLanguages.length > 0 ? (
+              <button
+                type="button"
+                class="btn btn-xs btn-ai gap-1.5 shadow-xs font-semibold"
+                data-drawer-ai-translate-btn
+              >
+                <svg class="size-3.5"><use href="#ic-sparkles"></use></svg>
+                <span>Traducir con IA</span>
+              </button>
+            ) : null}
+          </div>
+
+          <!-- Common Global Resource Settings -->
+          <div class="rounded-2xl border border-base-300 bg-base-200/40 p-4 space-y-4">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-base-content/70">
+              Propiedades del Recurso & Archivo
+            </h4>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="space-y-1">
+                <label class="label-text font-bold text-xs">Slug URL</label>
+                <input
+                  type="text"
+                  name="slug"
+                  id="res-field-slug"
+                  class="input input-bordered input-sm w-full font-mono text-xs"
+                  placeholder="guia-docente-cimarronaje"
+                  required
+                />
+              </div>
+
+              <div class="space-y-1">
+                <label class="label-text font-bold text-xs">Categoría / Etiqueta</label>
+                <input
+                  type="text"
+                  name="category_tag"
+                  id="res-field-category-tag"
+                  class="input input-bordered input-sm w-full text-xs font-medium"
+                  placeholder="Guía PDF · Para docentes"
+                  list="category-tag-suggestions"
+                  required
+                />
+                <datalist id="category-tag-suggestions">
+                  <option value="Guía PDF · Para docentes" />
+                  <option value="Guía PDF" />
+                  <option value="Glosario" />
+                  <option value="Mapa" />
+                  <option value="Lecturas" />
+                  <option value="Herramientas" />
+                </datalist>
+              </div>
+
+              <div class="space-y-1">
+                <label class="label-text font-bold text-xs">Tipo de Recurso</label>
+                <select name="resource_type" id="res-field-resource-type" class="select select-bordered select-sm w-full text-xs">
+                  <option value="pdf">📄 Guía / Documento PDF</option>
+                  <option value="web">🌐 Enlace Web / Glosario</option>
+                  <option value="mapa">🗺️ Mapa Interactivo</option>
+                  <option value="lectura">📚 Lectura / Bibliografía</option>
+                  <option value="audio">🎧 Audio / Podcast</option>
+                </select>
+              </div>
+
+              <div class="space-y-1">
+                <label class="label-text font-bold text-xs">Etiqueta Formato (Badge)</label>
+                <input
+                  type="text"
+                  name="format_label"
+                  id="res-field-format-label"
+                  class="input input-bordered input-sm w-full text-xs"
+                  placeholder="PDF, Web, Lista..."
+                  required
+                />
+              </div>
+
+              <div class="space-y-1">
+                <label class="label-text font-bold text-xs">Páginas / Extensión</label>
+                <input
+                  type="text"
+                  name="pages_count"
+                  id="res-field-pages-count"
+                  class="input input-bordered input-sm w-full text-xs"
+                  placeholder="24 págs"
+                />
+              </div>
+
+              <div class="space-y-1">
+                <label class="label-text font-bold text-xs">Idiomas del Material</label>
+                <input
+                  type="text"
+                  name="languages_label"
+                  id="res-field-languages-label"
+                  class="input input-bordered input-sm w-full text-xs"
+                  placeholder="ES/EN"
+                />
+              </div>
+            </div>
+
+            <!-- Download File URL / R2 Document -->
+            <div class="space-y-2 pt-1 border-t border-base-300/80">
+              <div class="flex items-center justify-between">
+                <label class="label-text font-bold text-xs">Archivo Descargable (PDF / Doc en R2)</label>
+                <button
+                  type="button"
+                  class="btn btn-xs btn-outline btn-accent gap-1 font-semibold"
+                  data-open-res-file-uploader
+                >
+                  <svg class="size-3"><use href="#ic-cloud"></use></svg>
+                  <span>Subir archivo a R2</span>
+                </button>
+              </div>
+              <input
+                type="text"
+                name="file_url"
+                id="res-field-file-url"
+                class="input input-bordered input-sm w-full font-mono text-xs"
+                placeholder="https://media.afroup.org/documents/guia.pdf"
+              />
+            </div>
+
+            <!-- Status, Featured & Sort Order -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 border-t border-base-300/80">
+              <div class="space-y-1">
+                <label class="label-text font-bold text-xs">Estado</label>
+                <select name="status" id="res-field-status" class="select select-bordered select-sm w-full text-xs">
+                  <option value="published">🟢 Publicado</option>
+                  <option value="draft">🟡 Borrador</option>
+                </select>
+              </div>
+
+              <div class="space-y-1">
+                <label class="label-text font-bold text-xs">Orden</label>
+                <input
+                  type="number"
+                  name="sort_order"
+                  id="res-field-sort-order"
+                  value="0"
+                  class="input input-bordered input-sm w-full text-xs"
+                />
+              </div>
+
+              <div class="flex items-center gap-2 pt-6">
+                <input
+                  type="checkbox"
+                  name="featured"
+                  id="res-field-featured"
+                  class="checkbox checkbox-accent checkbox-sm"
+                />
+                <label for="res-field-featured" class="label-text font-bold text-xs cursor-pointer">
+                  Destacado ⭐
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Localized Fields per Language -->
+          {languages.map((lang) => {
+            const loc = lang.code;
+            const isDefault = loc === defaultLocale;
+
+            return (
+              <div data-drawer-locale-panel={loc} class:list={["space-y-4", { hidden: !isDefault }]}>
+                <div class="rounded-2xl border border-base-300 bg-base-100 p-4 space-y-3">
+                  <div class="space-y-1">
+                    <label class="label-text font-bold text-xs">
+                      Título ({lang.native_name}) <span class="text-error">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name={`title_${loc}`}
+                      id={`res-field-title-${loc}`}
+                      class="input input-bordered input-sm w-full font-bold text-sm"
+                      placeholder="Título del recurso..."
+                      required={isDefault}
+                    />
+                  </div>
+
+                  <div class="space-y-1">
+                    <label class="label-text font-bold text-xs">Subtítulo / Descripción Breve (Dek)</label>
+                    <textarea
+                      name={`dek_${loc}`}
+                      id={`res-field-dek-${loc}`}
+                      rows="2"
+                      class="textarea textarea-bordered textarea-sm w-full text-xs leading-relaxed"
+                      placeholder="Resumen del contenido y propósito pedagógico..."
+                    ></textarea>
+                  </div>
+
+                  <div class="space-y-1">
+                    <label class="label-text font-bold text-xs">Contenido Extendido / Detalle HTML</label>
+                    <textarea
+                      name={`content_html_${loc}`}
+                      id={`res-field-content-html-${loc}`}
+                      rows="5"
+                      class="textarea textarea-bordered textarea-sm w-full text-xs font-mono leading-relaxed"
+                      placeholder="<p>Descripción detallada...</p><h3>Contenido del material</h3><ul><li>Item 1</li></ul>"
+                    ></textarea>
+                  </div>
+                </div>
+
+                <!-- Open Graph SEO Metadata -->
+                <div class="rounded-2xl border border-base-300 bg-base-200/40 p-4 space-y-3">
+                  <h5 class="text-xs font-bold text-base-content/70">Metadatos SEO / Open Graph</h5>
+                  <div class="space-y-1">
+                    <label class="label-text font-bold text-xs">Título Social (og:title)</label>
+                    <input
+                      type="text"
+                      name={`og:title_${loc}`}
+                      id={`res-field-og-title-${loc}`}
+                      class="input input-bordered input-sm w-full text-xs"
+                      placeholder="Título para compartir..."
+                    />
+                  </div>
+                  <div class="space-y-1">
+                    <label class="label-text font-bold text-xs">Descripción Social (og:description)</label>
+                    <textarea
+                      name={`og:description_${loc}`}
+                      id={`res-field-og-desc-${loc}`}
+                      rows="2"
+                      class="textarea textarea-bordered textarea-sm w-full text-xs"
+                      placeholder="Descripción para redes sociales..."
+                    ></textarea>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </form>
+      </div>
+
+      <!-- Drawer Action Buttons -->
+      <div class="border-t border-base-300 pt-4 flex items-center justify-between">
+        <button
+          type="button"
+          class="btn btn-ghost btn-sm text-error gap-1 font-semibold hidden"
+          data-drawer-delete-resource-btn
+        >
+          <svg class="size-3.5"><use href="#ic-trash"></use></svg>
+          <span>Eliminar Recurso</span>
+        </button>
+
+        <div class="flex items-center gap-2 ml-auto">
+          <label for="resource-detail-drawer" class="btn btn-ghost btn-sm">
+            Cancelar
+          </label>
+          <button
+            type="submit"
+            form="resource-editor-form"
+            class="btn btn-primary btn-sm font-bold gap-1.5 shadow-sm"
+            data-drawer-submit-res-btn
+          >
+            <span>Guardar Recurso</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- Modal for uploading resource documents to R2 -->
+<dialog class="modal z-50" id="resource-file-r2-modal">
+  <div class="modal-box max-w-2xl p-6 bg-base-100 rounded-3xl border border-base-300 shadow-2xl space-y-4">
+    <div class="flex items-center justify-between border-b border-base-300 pb-3">
+      <div class="flex items-center gap-2">
+        <span class="size-2.5 rounded-full bg-accent animate-pulse"></span>
+        <h3 class="font-display font-bold text-base text-base-content">
+          Subir Archivo o Documento a Cloudflare R2
+        </h3>
+      </div>
+      <button type="button" class="btn btn-circle btn-ghost btn-xs" data-close-res-r2-modal>✕</button>
+    </div>
+
+    <R2Uploader
+      bucket="documents"
+      prefix="resources"
+      allowedTypes="*/*"
+      targetInputId="res-field-file-url"
+      locale={locale}
+      flat={true}
+      showBucketSelector={true}
+      allowAiGenerate={false}
+      canUseAi={false}
+    />
+  </div>
+  <form method="dialog" class="modal-backdrop"><button type="submit">close</button></form>
+</dialog>
+
+<!-- Embedded Resources JSON Data -->
+<script id="resources-data-script" type="application/json" set:html={JSON.stringify(resources)} />
+
+<script>
+  function setupResourcesAdmin() {
+    const root = document.querySelector("[data-resources-admin-root]");
+    if (!root) return;
+
+    // View Tabs Switching
+    const viewTabs = root.querySelectorAll<HTMLButtonElement>("[data-view-tab]");
+    const viewPanels = root.querySelectorAll<HTMLElement>("[data-view-panel]");
+    const createBtn = root.querySelector<HTMLButtonElement>("[data-open-create-resource-drawer]");
+    const savePageBtn = root.querySelector<HTMLButtonElement>("[data-page-config-submit-btn]");
+
+    viewTabs.forEach((tab) => {
+      if (tab.dataset.bound === "true") return;
+      tab.dataset.bound = "true";
+      tab.addEventListener("click", () => {
+        const view = tab.getAttribute("data-view-tab");
+        viewTabs.forEach((t) => t.classList.toggle("tab-active", t === tab));
+        viewPanels.forEach((panel) => {
+          panel.classList.toggle("hidden", panel.getAttribute("data-view-panel") !== view);
+        });
+        if (createBtn) createBtn.classList.toggle("hidden", view !== "resources");
+        if (savePageBtn) savePageBtn.classList.toggle("hidden", view !== "config");
+      });
+    });
+
+    // Submissions / Resources Data Map
+    const scriptEl = document.getElementById("resources-data-script");
+    let resourcesList: any[] = [];
+    try {
+      if (scriptEl && scriptEl.textContent) {
+        resourcesList = JSON.parse(scriptEl.textContent);
+      }
+    } catch (e) {
+      console.error("Error parsing resources JSON:", e);
+    }
+    const resourcesMap = new Map<number, any>(resourcesList.map((r) => [Number(r.id), r]));
+
+    // Drawer Setup
+    const drawerToggle = document.getElementById("resource-detail-drawer") as HTMLInputElement | null;
+    const form = root.querySelector<HTMLFormElement>("#resource-editor-form");
+    const drawerTitleHeader = root.querySelector("[data-drawer-title-header]");
+    const deleteBtn = root.querySelector<HTMLButtonElement>("[data-drawer-delete-resource-btn]");
+    let activeResourceId: number | null = null;
+
+    if (drawerToggle && drawerToggle.dataset.boundScroll !== "true") {
+      drawerToggle.dataset.boundScroll = "true";
+      drawerToggle.addEventListener("change", () => {
+        if (drawerToggle.checked) {
+          document.body.style.overflow = "hidden";
+        } else {
+          document.body.style.overflow = "";
+        }
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && drawerToggle.checked) {
+          drawerToggle.checked = false;
+          document.body.style.overflow = "";
+        }
+      });
+    }
+
+    // Drawer Language Tabs
+    const langBtns = root.querySelectorAll<HTMLButtonElement>("[data-drawer-lang-btn]");
+    const langPanels = root.querySelectorAll<HTMLElement>("[data-drawer-locale-panel]");
+
+    langBtns.forEach((btn) => {
+      if (btn.dataset.bound === "true") return;
+      btn.dataset.bound = "true";
+      btn.addEventListener("click", () => {
+        const targetLang = btn.getAttribute("data-drawer-lang-btn");
+        langBtns.forEach((b) => {
+          const isActive = b.getAttribute("data-drawer-lang-btn") === targetLang;
+          b.classList.toggle("btn-active", isActive);
+          b.classList.toggle("btn-neutral", isActive);
+          b.classList.toggle("btn-ghost", !isActive);
+        });
+        langPanels.forEach((panel) => {
+          panel.classList.toggle("hidden", panel.getAttribute("data-drawer-locale-panel") !== targetLang);
+        });
+      });
+    });
+
+    // Auto-generate slug from Spanish title when creating
+    const titleEsInput = root.querySelector<HTMLInputElement>("#res-field-title-es");
+    const slugInput = root.querySelector<HTMLInputElement>("#res-field-slug");
+    if (titleEsInput && slugInput && titleEsInput.dataset.bound !== "true") {
+      titleEsInput.dataset.bound = "true";
+      titleEsInput.addEventListener("input", () => {
+        if (!activeResourceId && (!slugInput.value || slugInput.dataset.touched !== "true")) {
+          slugInput.value = titleEsInput.value
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase()
+            .trim()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-+|-+$/g, "");
+        }
+      });
+      slugInput.addEventListener("input", () => {
+        slugInput.dataset.touched = "true";
+      });
+    }
+
+    // Open Drawer for Creating New Resource
+    if (createBtn && createBtn.dataset.bound !== "true") {
+      createBtn.dataset.bound = "true";
+      createBtn.addEventListener("click", () => {
+        activeResourceId = null;
+        if (form) form.reset();
+        const idField = root.querySelector<HTMLInputElement>("#res-field-id");
+        if (idField) idField.value = "";
+        if (slugInput) slugInput.dataset.touched = "false";
+        if (drawerTitleHeader) drawerTitleHeader.textContent = "Crear Nuevo Recurso";
+        if (deleteBtn) deleteBtn.classList.add("hidden");
+
+        // Reset to Spanish panel
+        const esBtn = root.querySelector<HTMLButtonElement>("[data-drawer-lang-btn='es']");
+        if (esBtn) esBtn.click();
+
+        if (drawerToggle) {
+          drawerToggle.checked = true;
+          document.body.style.overflow = "hidden";
+        }
+      });
+    }
+
+    // Open Drawer for Editing Existing Resource
+    root.querySelectorAll<HTMLButtonElement>("[data-edit-resource]").forEach((btn) => {
+      if (btn.dataset.bound === "true") return;
+      btn.dataset.bound = "true";
+      btn.addEventListener("click", async () => {
+        const id = Number(btn.getAttribute("data-edit-resource"));
+        const res = resourcesMap.get(id);
+        if (!res) return;
+
+        activeResourceId = id;
+        if (drawerTitleHeader) drawerTitleHeader.textContent = `Editar: ${res.title}`;
+        if (deleteBtn) deleteBtn.classList.remove("hidden");
+
+        // Populate common fields
+        const idField = root.querySelector<HTMLInputElement>("#res-field-id");
+        if (idField) idField.value = String(res.id);
+        if (slugInput) {
+          slugInput.value = res.slug;
+          slugInput.dataset.touched = "true";
+        }
+
+        const catTagField = root.querySelector<HTMLInputElement>("#res-field-category-tag");
+        if (catTagField) catTagField.value = res.category_tag || "";
+
+        const typeField = root.querySelector<HTMLSelectElement>("#res-field-resource-type");
+        if (typeField) typeField.value = res.resource_type || "pdf";
+
+        const fmtField = root.querySelector<HTMLInputElement>("#res-field-format-label");
+        if (fmtField) fmtField.value = res.format_label || "";
+
+        const pagesField = root.querySelector<HTMLInputElement>("#res-field-pages-count");
+        if (pagesField) pagesField.value = res.pages_count || "";
+
+        const langField = root.querySelector<HTMLInputElement>("#res-field-languages-label");
+        if (langField) langField.value = res.languages_label || "";
+
+        const fileField = root.querySelector<HTMLInputElement>("#res-field-file-url");
+        if (fileField) fileField.value = res.file_url || "";
+
+        const statusField = root.querySelector<HTMLSelectElement>("#res-field-status");
+        if (statusField) statusField.value = res.status || "published";
+
+        const sortField = root.querySelector<HTMLInputElement>("#res-field-sort-order");
+        if (sortField) sortField.value = String(res.sort_order || 0);
+
+        const featField = root.querySelector<HTMLInputElement>("#res-field-featured");
+        if (featField) featField.checked = Boolean(res.featured);
+
+        // Fetch complete localized resource data if needed or populate
+        const tEs = root.querySelector<HTMLInputElement>("#res-field-title-es");
+        if (tEs) tEs.value = res.title || "";
+        const dEs = root.querySelector<HTMLTextAreaElement>("#res-field-dek-es");
+        if (dEs) dEs.value = res.dek || "";
+        const cEs = root.querySelector<HTMLTextAreaElement>("#res-field-content-html-es");
+        if (cEs) cEs.value = res.content_html || "";
+        const ogTEs = root.querySelector<HTMLInputElement>("#res-field-og-title-es");
+        if (ogTEs) ogTEs.value = res.og?.title || "";
+        const ogDEs = root.querySelector<HTMLTextAreaElement>("#res-field-og-desc-es");
+        if (ogDEs) ogDEs.value = res.og?.description || "";
+
+        // Reset to Spanish panel
+        const esBtn = root.querySelector<HTMLButtonElement>("[data-drawer-lang-btn='es']");
+        if (esBtn) esBtn.click();
+
+        if (drawerToggle) {
+          drawerToggle.checked = true;
+          document.body.style.overflow = "hidden";
+        }
+      });
+    });
+
+    // Delete Resource Handler
+    if (deleteBtn && deleteBtn.dataset.bound !== "true") {
+      deleteBtn.dataset.bound = "true";
+      deleteBtn.addEventListener("click", async () => {
+        if (!activeResourceId) return;
+        if (!confirm("¿Seguro que deseas eliminar este recurso de la biblioteca?")) return;
+
+        try {
+          const res = await fetch(`/api/admin/resources?id=${activeResourceId}`, { method: "DELETE" });
+          const result = await res.json();
+          if (result.ok) {
+            if ((window as any).AfroUpFeedback) {
+              (window as any).AfroUpFeedback.toast("Recurso eliminado.", "success");
+            }
+            if (drawerToggle) {
+              drawerToggle.checked = false;
+              document.body.style.overflow = "";
+            }
+            setTimeout(() => window.location.reload(), 400);
+          } else {
+            if ((window as any).AfroUpFeedback) {
+              (window as any).AfroUpFeedback.toast(result.message || "Error al eliminar.", "error");
+            }
+          }
+        } catch {}
+      });
+    }
+
+    // Submit Resource Form
+    if (form && form.dataset.bound !== "true") {
+      form.dataset.bound = "true";
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const submitBtn = root.querySelector<HTMLButtonElement>("[data-drawer-submit-res-btn]");
+        if (submitBtn) submitBtn.disabled = true;
+
+        const data = new FormData(form);
+        try {
+          const res = await fetch(form.action, { method: "POST", body: data });
+          const result = await res.json();
+          if (result.ok) {
+            if ((window as any).AfroUpFeedback) {
+              (window as any).AfroUpFeedback.toast(result.message || "Recurso guardado.", "success");
+            }
+            if (drawerToggle) {
+              drawerToggle.checked = false;
+              document.body.style.overflow = "";
+            }
+            setTimeout(() => window.location.reload(), 400);
+          } else {
+            if ((window as any).AfroUpFeedback) {
+              (window as any).AfroUpFeedback.toast(result.message || "Error al guardar.", "error");
+            }
+          }
+        } catch {
+          if ((window as any).AfroUpFeedback) {
+            (window as any).AfroUpFeedback.toast("Error de red al guardar.", "error");
+          }
+        } finally {
+          if (submitBtn) submitBtn.disabled = false;
+        }
+      });
+    }
+
+    // Submit Page Config Form
+    const pageConfigForm = root.querySelector<HTMLFormElement>("[data-page-config-form]");
+    if (pageConfigForm && pageConfigForm.dataset.bound !== "true") {
+      pageConfigForm.dataset.bound = "true";
+      pageConfigForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const submitBtn = root.querySelector<HTMLButtonElement>("[data-page-config-submit-btn]");
+        if (submitBtn) submitBtn.disabled = true;
+
+        const data = new FormData(pageConfigForm);
+        try {
+          const res = await fetch(pageConfigForm.action, { method: "POST", body: data });
+          const result = await res.json();
+          if (result.ok) {
+            if ((window as any).AfroUpFeedback) {
+              (window as any).AfroUpFeedback.toast(result.message || "Configuración de /recursos guardada.", "success");
+            }
+          } else {
+            if ((window as any).AfroUpFeedback) {
+              (window as any).AfroUpFeedback.toast(result.message || "Error al guardar.", "error");
+            }
+          }
+        } catch {
+          if ((window as any).AfroUpFeedback) {
+            (window as any).AfroUpFeedback.toast("Error de red al guardar.", "error");
+          }
+        } finally {
+          if (submitBtn) submitBtn.disabled = false;
+        }
+      });
+    }
+
+    // Filter by status / featured in table
+    const filterBtns = root.querySelectorAll<HTMLButtonElement>("[data-filter-status]");
+    const rows = root.querySelectorAll<HTMLTableRowElement>("[data-res-row]");
+
+    filterBtns.forEach((btn) => {
+      if (btn.dataset.bound === "true") return;
+      btn.dataset.bound = "true";
+      btn.addEventListener("click", () => {
+        const filter = btn.getAttribute("data-filter-status");
+        filterBtns.forEach((b) => b.classList.toggle("btn-active", b === btn));
+
+        rows.forEach((row) => {
+          const rowStatus = row.getAttribute("data-status");
+          const isFeatured = row.getAttribute("data-featured") === "true";
+
+          if (filter === "all") {
+            row.classList.remove("hidden");
+          } else if (filter === "featured") {
+            row.classList.toggle("hidden", !isFeatured);
+          } else {
+            row.classList.toggle("hidden", rowStatus !== filter);
+          }
+        });
+      });
+    });
+
+    // Search filter in table
+    const searchInput = root.querySelector<HTMLInputElement>("[data-search-input]");
+    if (searchInput && searchInput.dataset.bound !== "true") {
+      searchInput.dataset.bound = "true";
+      searchInput.addEventListener("input", () => {
+        const query = searchInput.value.toLowerCase().trim();
+        rows.forEach((row) => {
+          const text = row.textContent?.toLowerCase() || "";
+          row.classList.toggle("hidden", query.length > 0 && !text.includes(query));
+        });
+      });
+    }
+
+    // Document R2 Uploader Modal
+    const resR2Modal = document.getElementById("resource-file-r2-modal") as HTMLDialogElement | null;
+    const openResR2Btn = root.querySelector<HTMLButtonElement>("[data-open-res-file-uploader]");
+    const closeResR2Btn = document.querySelector<HTMLButtonElement>("[data-close-res-r2-modal]");
+
+    if (openResR2Btn && resR2Modal && openResR2Btn.dataset.bound !== "true") {
+      openResR2Btn.dataset.bound = "true";
+      openResR2Btn.addEventListener("click", () => {
+        resR2Modal.showModal();
+      });
+    }
+
+    if (closeResR2Btn && resR2Modal && closeResR2Btn.dataset.bound !== "true") {
+      closeResR2Btn.dataset.bound = "true";
+      closeResR2Btn.addEventListener("click", () => {
+        resR2Modal.close();
+      });
+    }
+
+    document.addEventListener("r2-upload-success", (e: any) => {
+      const files = e.detail?.files;
+      if (!files || !files.length || !resR2Modal || !resR2Modal.open) return;
+      const uploadedUrl = files[0].url || files[0].key;
+      const fileUrlInput = root.querySelector<HTMLInputElement>("#res-field-file-url");
+      if (fileUrlInput) fileUrlInput.value = uploadedUrl;
+      resR2Modal.close();
+      if ((window as any).AfroUpFeedback) {
+        (window as any).AfroUpFeedback.toast("Documento cargado desde R2.", "success");
+      }
+    });
+
+    // AI Translation inside Resource Drawer
+    const aiTransBtn = root.querySelector<HTMLButtonElement>("[data-drawer-ai-translate-btn]");
+    if (aiTransBtn && aiTransBtn.dataset.bound !== "true") {
+      aiTransBtn.dataset.bound = "true";
+      aiTransBtn.addEventListener("click", async () => {
+        const titleEs = root.querySelector<HTMLInputElement>("#res-field-title-es")?.value || "";
+        const dekEs = root.querySelector<HTMLTextAreaElement>("#res-field-dek-es")?.value || "";
+        const contentEs = root.querySelector<HTMLTextAreaElement>("#res-field-content-html-es")?.value || "";
+        const ogTitleEs = root.querySelector<HTMLInputElement>("#res-field-og-title-es")?.value || "";
+        const ogDescEs = root.querySelector<HTMLTextAreaElement>("#res-field-og-desc-es")?.value || "";
+
+        if (!titleEs) {
+          if ((window as any).AfroUpFeedback) {
+            (window as any).AfroUpFeedback.toast("Ingresa primero el título en español.", "warning");
+          }
+          return;
+        }
+
+        const originalBtnHtml = aiTransBtn.innerHTML;
+        aiTransBtn.disabled = true;
+        aiTransBtn.innerHTML = '<span class="loading loading-spinner loading-xs"></span> <span>Traduciendo...</span>';
+
+        const translateField = async (sourceText: string, targetLocale: string, targetInputId: string) => {
+          if (!sourceText.trim()) return;
+          const curVal = (root.querySelector(`#${targetInputId}`) as HTMLInputElement | HTMLTextAreaElement)?.value || "";
+          const fd = new FormData();
+          fd.append("module", "recursos");
+          fd.append("source", sourceText);
+          fd.append("current", curVal);
+          fd.append("target", targetLocale);
+
+          try {
+            const res = await fetch("/api/admin/translate", { method: "POST", body: fd });
+            const result = await res.json();
+            if (result.ok && result.text) {
+              const el = root.querySelector(`#${targetInputId}`) as HTMLInputElement | HTMLTextAreaElement;
+              if (el) el.value = result.text;
+            }
+          } catch {}
+        };
+
+        const tasks: Promise<void>[] = [];
+        tasks.push(translateField(titleEs, "en", "res-field-title-en"));
+        tasks.push(translateField(dekEs, "en", "res-field-dek-en"));
+        tasks.push(translateField(contentEs, "en", "res-field-content-html-en"));
+        tasks.push(translateField(ogTitleEs, "en", "res-field-og-title-en"));
+        tasks.push(translateField(ogDescEs, "en", "res-field-og-desc-en"));
+
+        await Promise.all(tasks);
+
+        aiTransBtn.disabled = false;
+        aiTransBtn.innerHTML = originalBtnHtml;
+
+        // Switch to EN panel to show results
+        const enBtn = root.querySelector<HTMLButtonElement>("[data-drawer-lang-btn='en']");
+        if (enBtn) enBtn.click();
+
+        if ((window as any).AfroUpFeedback) {
+          (window as any).AfroUpFeedback.toast("Recurso traducido al inglés con IA.", "success");
+        }
+      });
+    }
+  }
+
+  setupResourcesAdmin();
+  document.addEventListener("astro:page-load", setupResourcesAdmin);
+</script>
