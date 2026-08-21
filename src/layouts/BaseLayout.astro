@@ -46,7 +46,8 @@ const { title = copy.titleHome, active = "inicio" } = Astro.props;
 const currentQuery = Astro.url.searchParams.get("q") ?? "";
 
 function navClass(key: NavKey) {
-  const base = "min-h-[42px] rounded-xl px-3 py-[9px] text-[15.5px] font-semibold";
+  const base =
+    "min-h-[42px] rounded-xl px-3 py-[9px] text-[15.5px] font-semibold";
   return key === active ? `${base} menu-active` : base;
 }
 
@@ -55,11 +56,14 @@ function tabClass(key: NavKey) {
 }
 ---
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang={locale} data-theme="afroup">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
     <title>{title}</title>
     <link rel="icon" href="/assets/mark-black.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -68,96 +72,526 @@ function tabClass(key: NavKey) {
       href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Mulish:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap"
       rel="stylesheet"
     />
-        <script is:inline>
-          (function () {
-            var applyTheme = function (doc) {
-              try {
-                var stored = localStorage.getItem("afroup-theme");
-                var theme = stored === "afroup-dark" || stored === "afroup"
-                  ? stored
-                  : window.matchMedia("(prefers-color-scheme: dark)").matches
-                    ? "afroup-dark"
-                    : "afroup";
-                (doc || document).documentElement.setAttribute("data-theme", theme);
-              } catch (error) {}
-            };
-            var applySidebar = function (doc) {
-              try {
-                var collapsed = localStorage.getItem("afroup-site-collapsed") === "true";
-                var root = (doc || document).documentElement;
-                if (collapsed) {
-                  root.setAttribute("data-site-collapsed", "true");
-                } else {
-                  root.removeAttribute("data-site-collapsed");
-                }
-              } catch (error) {}
-            };
-            applyTheme(document);
-            applySidebar(document);
-            document.addEventListener("astro:before-swap", function (event) {
-              applyTheme(event.newDocument);
-              applySidebar(event.newDocument);
-            });
-            document.addEventListener("astro:after-swap", function () {
-              applyTheme(document);
-              applySidebar(document);
-            });
-          })();
-        </script>
-        <ClientRouter />
-        <slot name="head" />
+    <script is:inline>
+      (function () {
+        var applyTheme = function (doc) {
+          try {
+            var stored = localStorage.getItem("afroup-theme");
+            var theme =
+              stored === "afroup-dark" || stored === "afroup"
+                ? stored
+                : window.matchMedia("(prefers-color-scheme: dark)").matches
+                  ? "afroup-dark"
+                  : "afroup";
+            (doc || document).documentElement.setAttribute("data-theme", theme);
+          } catch (error) {}
+        };
+        var applySidebar = function (doc) {
+          try {
+            var collapsed =
+              localStorage.getItem("afroup-site-collapsed") === "true";
+            var root = (doc || document).documentElement;
+            if (collapsed) {
+              root.setAttribute("data-site-collapsed", "true");
+            } else {
+              root.removeAttribute("data-site-collapsed");
+            }
+          } catch (error) {}
+        };
+        applyTheme(document);
+        applySidebar(document);
+        document.addEventListener("astro:before-swap", function (event) {
+          applyTheme(event.newDocument);
+          applySidebar(event.newDocument);
+        });
+        document.addEventListener("astro:after-swap", function () {
+          applyTheme(document);
+          applySidebar(document);
+        });
+      })();
+    </script>
+    <ClientRouter />
+    <slot name="head" />
   </head>
   <body>
     <svg class="absolute" width="0" height="0" aria-hidden="true">
       <defs>
-        <symbol id="ic-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0"></path><path d="M21 21l-6 -6"></path></symbol>
-            <symbol id="ic-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l-2 0l9 -9l9 9l-2 0"></path><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7"></path><path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6"></path></symbol>
-            <symbol id="ic-bag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.331 8h11.339a2 2 0 0 1 1.977 2.304l-1.255 8.152a3 3 0 0 1 -2.966 2.544h-6.852a3 3 0 0 1 -2.965 -2.544l-1.255 -8.152a2 2 0 0 1 1.977 -2.304"></path><path d="M9 11v-5a3 3 0 0 1 6 0v5"></path></symbol>
-            <symbol id="ic-book2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 4v16h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12"></path><path d="M19 16h-12a2 2 0 0 0 -2 2"></path><path d="M9 8h6"></path></symbol>
-            <symbol id="ic-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"></path><path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path><path d="M21 21v-2a4 4 0 0 0 -3 -3.85"></path></symbol>
-            <symbol id="ic-bookmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 7v14l-6 -4l-6 4v-14a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4"></path></symbol>
-            <symbol id="ic-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12.572l-7.5 7.428l-7.5 -7.428a5 5 0 1 1 7.5 -6.566a5 5 0 1 1 7.5 6.572"></path></symbol>
-            <symbol id="ic-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l14 0"></path><path d="M13 18l6 -6"></path><path d="M13 6l6 6"></path></symbol>
-            <symbol id="ic-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l16 0"></path><path d="M4 12l16 0"></path><path d="M4 18l16 0"></path></symbol>
-            <symbol id="ic-sidebar-collapse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path><path d="M9 4v16"></path><path d="M15 10l-2 2l2 2"></path></symbol>
-            <symbol id="ic-sidebar-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path><path d="M9 4v16"></path><path d="M13 10l2 2l-2 2"></path></symbol>
-            <symbol id="ic-language" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h7"></path><path d="M9 3v2c0 4.418 -2.239 8 -5 8"></path><path d="M5 9c0 2.144 2.952 3.908 6.7 4"></path><path d="M12 20l4 -9l4 9"></path><path d="M19.1 18h-6.2"></path></symbol>
-            <symbol id="ic-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16l13 -8l-13 -8"></path></symbol>
-            <symbol id="ic-ig" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a4 4 0 0 1 4 -4h8a4 4 0 0 1 4 4v8a4 4 0 0 1 -4 4h-8a4 4 0 0 1 -4 -4l0 -8"></path><path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"></path><path d="M16.5 7.5v.01"></path></symbol>
-            <symbol id="ic-tiktok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 7.917v4.034a9.948 9.948 0 0 1 -5 -1.951v4.5a6.5 6.5 0 1 1 -8 -6.326v4.326a2.5 2.5 0 1 0 4 2v-11.5h4.083a6.005 6.005 0 0 0 4.917 4.917"></path></symbol>
-            <symbol id="ic-youtube" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8a4 4 0 0 1 4 -4h12a4 4 0 0 1 4 4v8a4 4 0 0 1 -4 4h-12a4 4 0 0 1 -4 -4v-8"></path><path d="M10 9l5 3l-5 3l0 -6"></path></symbol>
-            <symbol id="ic-facebook" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v4h3v7h4v-7h3l1 -4h-4v-2a1 1 0 0 1 1 -1h3v-4h-3a5 5 0 0 0 -5 5v2h-3"></path></symbol>
-            <symbol id="ic-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l11.733 16h4.267l-11.733 -16l-4.267 0"></path><path d="M4 20l6.768 -6.768m2.46 -2.46l6.772 -6.772"></path></symbol>
-            <symbol id="ic-threads" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7.5c-1.333 -3 -3.667 -4.5 -7 -4.5c-5 0 -8 2.5 -8 9s3.5 9 8 9s7 -3 7 -5s-1 -5 -7 -5c-2.5 0 -3 1.25 -3 2.5c0 1.5 1 2.5 2.5 2.5c2.5 0 3.5 -1.5 3.5 -5s-2 -4 -3 -4s-1.833 .333 -2.5 1"></path></symbol>
-            <symbol id="ic-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"></path><path d="M3 12h1m8 -9v1m8 8h1m-9 8v1m-6.4 -15.4l.7 .7m12.1 -.7l-.7 .7m0 11.4l.7 .7m-12.1 -.7l-.7 .7"></path></symbol>
-            <symbol id="ic-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454l0 .008"></path></symbol>
-            <symbol id="ic-share" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 4v4c-6.575 1.028 -9.02 6.788 -10 12c-.037 .206 5.384 -5.962 10 -6v4l8 -7l-8 -7"></path></symbol>
-            <symbol id="ic-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 15l6 -6"></path><path d="M11 6l.463 -.536a5 5 0 0 1 7.071 7.072l-.534 .464"></path><path d="M13 18l-.397 .534a5.068 5.068 0 0 1 -7.127 0a4.972 4.972 0 0 1 0 -7.071l.524 -.463"></path></symbol>
-            <symbol id="ic-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"></path><path d="M17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0"></path></symbol>
-            <symbol id="ic-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-10"></path><path d="M3 7l9 6l9 -6"></path></symbol>
-            <symbol id="ic-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"></path><path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"></path></symbol>
-            <symbol id="ic-camera" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h1a2 2 0 0 0 2 -2a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1a2 2 0 0 0 2 2h1a2 2 0 0 1 2 2v9a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-9a2 2 0 0 1 2 -2"></path><path d="M9 13a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"></path></symbol>
-            <symbol id="ic-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-6"></path><path d="M11 16a1 1 0 1 0 2 0a1 1 0 0 0 -2 0"></path><path d="M8 11v-4a4 4 0 1 1 8 0v4"></path></symbol>
-            <symbol id="ic-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7l16 0"></path><path d="M10 11l0 6"></path><path d="M14 11l0 6"></path><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"></path><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"></path></symbol>
-            <symbol id="ic-logout" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2"></path><path d="M9 12h12l-3 -3"></path><path d="M18 15l3 -3"></path></symbol>
-            <symbol id="ic-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a12 12 0 0 0 8.5 3a12 12 0 0 1 -8.5 15a12 12 0 0 1 -8.5 -15a12 12 0 0 0 8.5 -3"></path></symbol>
-            <symbol id="ic-key" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16.555 3.843l3.602 3.602a2.877 2.877 0 0 1 0 4.069l-2.643 2.643a2.877 2.877 0 0 1 -4.069 0l-.301 -.301l-6.558 6.558a2 2 0 0 1 -1.239 .578l-.175 .008h-1.172a1 1 0 0 1 -.993 -.883l-.007 -.117v-1.172a2 2 0 0 1 .467 -1.284l.119 -.13l.414 -.414h2v-2h2v-2l2.144 -2.144l-.301 -.301a2.877 2.877 0 0 1 0 -4.069l2.643 -2.643a2.877 2.877 0 0 1 4.069 0"></path><path d="M15 9h.01"></path></symbol>
-            <symbol id="ic-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5l0 14"></path><path d="M5 12l14 0"></path></symbol>
-            <symbol id="ic-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"></path><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415"></path><path d="M16 5l3 3"></path></symbol>
-            <symbol id="ic-stack" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 5l-9 5l-9 -5l9 -5"></path><path d="M3 12l9 5l9 -5"></path><path d="M3 17l9 5l9 -5"></path></symbol>
-            <symbol id="ic-login" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2"></path><path d="M21 12h-13l3 -3"></path><path d="M11 15l-3 -3"></path></symbol>
-            <symbol id="ic-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2"></path><path d="M7 11l5 5l5 -5"></path><path d="M12 4l0 12"></path></symbol>
-            <symbol id="ic-sparkles-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 6a9.3 9.3 0 0 0 1.516 -.546c.911 -.438 1.494 -1.015 1.937 -1.932c.207 -.428 .382 -.928 .547 -1.522c.165 .595 .34 1.095 .547 1.521c.443 .918 1.026 1.495 1.937 1.933c.426 .205 .925 .38 1.516 .546a9.3 9.3 0 0 0 -1.516 .547c-.911 .438 -1.494 1.015 -1.937 1.932a9 9 0 0 0 -.547 1.521c-.165 -.594 -.34 -1.095 -.547 -1.521c-.443 -.918 -1.026 -1.494 -1.937 -1.932a9 9 0 0 0 -1.516 -.547"></path><path d="M3 14a21 21 0 0 0 1.652 -.532c2.542 -.953 3.853 -2.238 4.816 -4.806a20 20 0 0 0 .532 -1.662a20 20 0 0 0 .532 1.662c.963 2.567 2.275 3.853 4.816 4.806q .75 .28 1.652 .532a21 21 0 0 0 -1.652 .532c-2.542 .953 -3.854 2.238 -4.816 4.806a20 20 0 0 0 -.532 1.662a20 20 0 0 0 -.532 -1.662c-.963 -2.568 -2.275 -3.853 -4.816 -4.806a21 21 0 0 0 -1.652 -.532"></path></symbol>
-          </defs>
+        <symbol
+          id="ic-search"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><path d="M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0"></path><path
+            d="M21 21l-6 -6"></path></symbol
+        >
+        <symbol
+          id="ic-home"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><path d="M5 12l-2 0l9 -9l9 9l-2 0"></path><path
+            d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7"></path><path
+            d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6"></path></symbol
+        >
+        <symbol
+          id="ic-bag"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><path
+            d="M6.331 8h11.339a2 2 0 0 1 1.977 2.304l-1.255 8.152a3 3 0 0 1 -2.966 2.544h-6.852a3 3 0 0 1 -2.965 -2.544l-1.255 -8.152a2 2 0 0 1 1.977 -2.304"
+          ></path><path d="M9 11v-5a3 3 0 0 1 6 0v5"></path></symbol
+        >
+        <symbol
+          id="ic-book2"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><path d="M19 4v16h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12"
+          ></path><path d="M19 16h-12a2 2 0 0 0 -2 2"></path><path d="M9 8h6"
+          ></path></symbol
+        >
+        <symbol
+          id="ic-users"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><path d="M5 7a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"></path><path
+            d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"></path><path
+            d="M16 3.13a4 4 0 0 1 0 7.75"></path><path
+            d="M21 21v-2a4 4 0 0 0 -3 -3.85"></path></symbol
+        >
+        <symbol
+          id="ic-bookmark"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><path d="M18 7v14l-6 -4l-6 4v-14a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4"
+          ></path></symbol
+        >
+        <symbol
+          id="ic-heart"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><path
+            d="M19.5 12.572l-7.5 7.428l-7.5 -7.428a5 5 0 1 1 7.5 -6.566a5 5 0 1 1 7.5 6.572"
+          ></path></symbol
+        >
+        <symbol
+          id="ic-arrow"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><path d="M5 12l14 0"></path><path d="M13 18l6 -6"></path><path
+            d="M13 6l6 6"></path></symbol
+        >
+        <symbol
+          id="ic-menu"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><path d="M4 6l16 0"></path><path d="M4 12l16 0"></path><path
+            d="M4 18l16 0"></path></symbol
+        >
+        <symbol
+          id="ic-sidebar-collapse"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><path
+            d="M4 4m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"
+          ></path><path d="M9 4v16"></path><path d="M15 10l-2 2l2 2"
+          ></path></symbol
+        >
+        <symbol
+          id="ic-sidebar-expand"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><path
+            d="M4 4m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"
+          ></path><path d="M9 4v16"></path><path d="M13 10l2 2l-2 2"
+          ></path></symbol
+        >
+        <symbol
+          id="ic-language"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><path d="M4 5h7"></path><path d="M9 3v2c0 4.418 -2.239 8 -5 8"
+          ></path><path d="M5 9c0 2.144 2.952 3.908 6.7 4"></path><path
+            d="M12 20l4 -9l4 9"></path><path d="M19.1 18h-6.2"></path></symbol
+        >
+        <symbol
+          id="ic-play"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"><path d="M7 4v16l13 -8l-13 -8"></path></symbol
+        >
+        <symbol
+          id="ic-ig"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><path
+            d="M4 8a4 4 0 0 1 4 -4h8a4 4 0 0 1 4 4v8a4 4 0 0 1 -4 4h-8a4 4 0 0 1 -4 -4l0 -8"
+          ></path><path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"></path><path
+            d="M16.5 7.5v.01"></path></symbol
+        >
+        <symbol
+          id="ic-tiktok"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><path
+            d="M21 7.917v4.034a9.948 9.948 0 0 1 -5 -1.951v4.5a6.5 6.5 0 1 1 -8 -6.326v4.326a2.5 2.5 0 1 0 4 2v-11.5h4.083a6.005 6.005 0 0 0 4.917 4.917"
+          ></path></symbol
+        >
+        <symbol
+          id="ic-youtube"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><path
+            d="M2 8a4 4 0 0 1 4 -4h12a4 4 0 0 1 4 4v8a4 4 0 0 1 -4 4h-12a4 4 0 0 1 -4 -4v-8"
+          ></path><path d="M10 9l5 3l-5 3l0 -6"></path></symbol
+        >
+        <symbol
+          id="ic-facebook"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><path
+            d="M7 10v4h3v7h4v-7h3l1 -4h-4v-2a1 1 0 0 1 1 -1h3v-4h-3a5 5 0 0 0 -5 5v2h-3"
+          ></path></symbol
+        >
+        <symbol
+          id="ic-x"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><path d="M4 4l11.733 16h4.267l-11.733 -16l-4.267 0"></path><path
+            d="M4 20l6.768 -6.768m2.46 -2.46l6.772 -6.772"></path></symbol
+        >
+        <symbol
+          id="ic-threads"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><path
+            d="M19 7.5c-1.333 -3 -3.667 -4.5 -7 -4.5c-5 0 -8 2.5 -8 9s3.5 9 8 9s7 -3 7 -5s-1 -5 -7 -5c-2.5 0 -3 1.25 -3 2.5c0 1.5 1 2.5 2.5 2.5c2.5 0 3.5 -1.5 3.5 -5s-2 -4 -3 -4s-1.833 .333 -2.5 1"
+          ></path></symbol
+        >
+        <symbol
+          id="ic-sun"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><path d="M8 12a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"></path><path
+            d="M3 12h1m8 -9v1m8 8h1m-9 8v1m-6.4 -15.4l.7 .7m12.1 -.7l-.7 .7m0 11.4l.7 .7m-12.1 -.7l-.7 .7"
+          ></path></symbol
+        >
+        <symbol
+          id="ic-moon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><path
+            d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454l0 .008"
+          ></path></symbol
+        >
+        <symbol
+          id="ic-share"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><path
+            d="M13 4v4c-6.575 1.028 -9.02 6.788 -10 12c-.037 .206 5.384 -5.962 10 -6v4l8 -7l-8 -7"
+          ></path></symbol
+        >
+        <symbol
+          id="ic-link"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><path d="M9 15l6 -6"></path><path
+            d="M11 6l.463 -.536a5 5 0 0 1 7.071 7.072l-.534 .464"></path><path
+            d="M13 18l-.397 .534a5.068 5.068 0 0 1 -7.127 0a4.972 4.972 0 0 1 0 -7.071l.524 -.463"
+          ></path></symbol
+        >
+        <symbol
+          id="ic-pin"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><path d="M9 11a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"></path><path
+            d="M17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0"
+          ></path></symbol
+        >
+        <symbol
+          id="ic-mail"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><path
+            d="M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-10"
+          ></path><path d="M3 7l9 6l9 -6"></path></symbol
+        >
+        <symbol
+          id="ic-user"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"></path><path
+            d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"></path></symbol
+        >
+        <symbol
+          id="ic-camera"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><path
+            d="M5 7h1a2 2 0 0 0 2 -2a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1a2 2 0 0 0 2 2h1a2 2 0 0 1 2 2v9a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-9a2 2 0 0 1 2 -2"
+          ></path><path d="M9 13a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"></path></symbol
+        >
+        <symbol
+          id="ic-lock"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><path
+            d="M5 13a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-6"
+          ></path><path d="M11 16a1 1 0 1 0 2 0a1 1 0 0 0 -2 0"></path><path
+            d="M8 11v-4a4 4 0 1 1 8 0v4"></path></symbol
+        >
+        <symbol
+          id="ic-trash"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><path d="M4 7l16 0"></path><path d="M10 11l0 6"></path><path
+            d="M14 11l0 6"></path><path
+            d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"></path><path
+            d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"></path></symbol
+        >
+        <symbol
+          id="ic-logout"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><path
+            d="M14 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2"
+          ></path><path d="M9 12h12l-3 -3"></path><path d="M18 15l3 -3"
+          ></path></symbol
+        >
+        <symbol
+          id="ic-shield"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><path
+            d="M12 3a12 12 0 0 0 8.5 3a12 12 0 0 1 -8.5 15a12 12 0 0 1 -8.5 -15a12 12 0 0 0 8.5 -3"
+          ></path></symbol
+        >
+        <symbol
+          id="ic-key"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><path
+            d="M16.555 3.843l3.602 3.602a2.877 2.877 0 0 1 0 4.069l-2.643 2.643a2.877 2.877 0 0 1 -4.069 0l-.301 -.301l-6.558 6.558a2 2 0 0 1 -1.239 .578l-.175 .008h-1.172a1 1 0 0 1 -.993 -.883l-.007 -.117v-1.172a2 2 0 0 1 .467 -1.284l.119 -.13l.414 -.414h2v-2h2v-2l2.144 -2.144l-.301 -.301a2.877 2.877 0 0 1 0 -4.069l2.643 -2.643a2.877 2.877 0 0 1 4.069 0"
+          ></path><path d="M15 9h.01"></path></symbol
+        >
+        <symbol
+          id="ic-plus"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><path d="M12 5l0 14"></path><path d="M5 12l14 0"></path></symbol
+        >
+        <symbol
+          id="ic-edit"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"
+          ></path><path
+            d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415"
+          ></path><path d="M16 5l3 3"></path></symbol
+        >
+        <symbol
+          id="ic-stack"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><path d="M12 3l9 5l-9 5l-9 -5l9 -5"></path><path d="M3 12l9 5l9 -5"
+          ></path><path d="M3 17l9 5l9 -5"></path></symbol
+        >
+        <symbol
+          id="ic-login"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><path
+            d="M15 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2"
+          ></path><path d="M21 12h-13l3 -3"></path><path d="M11 15l-3 -3"
+          ></path></symbol
+        >
+        <symbol
+          id="ic-download"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2"></path><path
+            d="M7 11l5 5l5 -5"></path><path d="M12 4l0 12"></path></symbol
+        >
+        <symbol
+          id="ic-sparkles-2"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><path
+            d="M14 6a9.3 9.3 0 0 0 1.516 -.546c.911 -.438 1.494 -1.015 1.937 -1.932c.207 -.428 .382 -.928 .547 -1.522c.165 .595 .34 1.095 .547 1.521c.443 .918 1.026 1.495 1.937 1.933c.426 .205 .925 .38 1.516 .546a9.3 9.3 0 0 0 -1.516 .547c-.911 .438 -1.494 1.015 -1.937 1.932a9 9 0 0 0 -.547 1.521c-.165 -.594 -.34 -1.095 -.547 -1.521c-.443 -.918 -1.026 -1.494 -1.937 -1.932a9 9 0 0 0 -1.516 -.547"
+          ></path><path
+            d="M3 14a21 21 0 0 0 1.652 -.532c2.542 -.953 3.853 -2.238 4.816 -4.806a20 20 0 0 0 .532 -1.662a20 20 0 0 0 .532 1.662c.963 2.567 2.275 3.853 4.816 4.806q .75 .28 1.652 .532a21 21 0 0 0 -1.652 .532c-2.542 .953 -3.854 2.238 -4.816 4.806a20 20 0 0 0 -.532 1.662a20 20 0 0 0 -.532 -1.662c-.963 -2.568 -2.275 -3.853 -4.816 -4.806a21 21 0 0 0 -1.652 -.532"
+          ></path></symbol
+        >
+      </defs>
     </svg>
 
-    <div class="drawer lg:drawer-open h-screen h-dvh max-h-screen overflow-hidden" id="site-layout-drawer">
+    <div
+      class="drawer lg:drawer-open h-screen h-dvh max-h-screen overflow-hidden"
+      id="site-layout-drawer"
+    >
       <input id="site-drawer" type="checkbox" class="drawer-toggle" />
 
-      <div class="drawer-content flex h-screen h-dvh max-h-screen flex-col overflow-hidden">
-        <div class="navbar shrink-0 min-h-[74px] border-b border-base-300 bg-base-100/85 px-4 backdrop-blur lg:px-[38px]">
+      <div
+        class="drawer-content flex h-screen h-dvh max-h-screen flex-col overflow-hidden"
+      >
+        <div
+          class="navbar shrink-0 min-h-[74px] border-b border-base-300 bg-base-100/85 px-4 backdrop-blur lg:px-[38px]"
+        >
           <div class="navbar-start flex-1 gap-2">
-            <label for="site-drawer" class="btn btn-square btn-ghost drawer-button lg:hidden" aria-label={copy.menuAria}>
+            <label
+              for="site-drawer"
+              class="btn btn-square btn-ghost drawer-button lg:hidden"
+              aria-label={copy.menuAria}
+            >
               <svg class="size-5"><use href="#ic-menu"></use></svg>
             </label>
             <button
@@ -167,108 +601,147 @@ function tabClass(key: NavKey) {
               aria-label={copy.navToggleSidebar}
               title={copy.navToggleSidebar}
             >
-              <svg class="size-5 sidebar-icon-collapse"><use href="#ic-sidebar-collapse"></use></svg>
-              <svg class="size-5 sidebar-icon-expand hidden"><use href="#ic-sidebar-expand"></use></svg>
+              <svg class="size-5 sidebar-icon-collapse"
+                ><use href="#ic-sidebar-collapse"></use></svg
+              >
+              <svg class="size-5 sidebar-icon-expand hidden"
+                ><use href="#ic-sidebar-expand"></use></svg
+              >
             </button>
-            <form class="w-full max-w-[440px]" action={paths.search} method="get">
+            <form
+              class="w-full max-w-[440px]"
+              action={paths.search}
+              method="get"
+            >
               <label class="input h-11 min-h-11 w-full bg-base-200">
-                <svg class="h-[1em] shrink-0 opacity-50" viewBox="0 0 24 24" aria-hidden="true">
+                <svg
+                  class="h-[1em] shrink-0 opacity-50"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
                   <use href="#ic-search"></use>
                 </svg>
-                <input class="grow" type="search" name="q" value={currentQuery} placeholder={copy.searchPlaceholder} aria-label={copy.searchAria} />
-                    <button class="btn btn-neutral btn-xs" type="submit">Buscar</button>
+                <input
+                  class="grow"
+                  type="search"
+                  name="q"
+                  value={currentQuery}
+                  placeholder={copy.searchPlaceholder}
+                  aria-label={copy.searchAria}
+                />
+                <button class="btn btn-neutral btn-xs" type="submit"
+                  >Buscar</button
+                >
               </label>
             </form>
           </div>
           <div class="navbar-end gap-3">
-            <span class="font-display hidden text-[15px] font-semibold text-primary sm:inline">{copy.mantra}</span>
-                <label class="swap swap-rotate" aria-label={copy.themeAria}>
-                  <input type="checkbox" class="theme-controller" value="afroup-dark" />
-                  <svg class="swap-off size-5"><use href="#ic-sun"></use></svg>
-                  <svg class="swap-on size-5"><use href="#ic-moon"></use></svg>
-                </label>
-                <div data-session-guest-nav>
-                  <div class="tooltip tooltip-bottom" data-tip={copy.navLogin || "Iniciar sesión"}>
-                    <a
-                      class="btn btn-ghost btn-circle border border-base-300 bg-base-200/80 hover:bg-base-300 text-base-content size-10 flex items-center justify-center shadow-xs transition-transform hover:scale-105"
-                      href={paths.login}
-                      aria-label={copy.navLogin || "Iniciar sesión"}
-                    >
-                      <svg class="size-5"><use href="#ic-user"></use></svg>
-                    </a>
-                  </div>
-                </div>
-                <div class="hidden" data-session-user-nav>
-                  <SessionUser
-                    menu
-                    compact
-                    accountHref={paths.account}
-                    accountLabel={copy.navAccount}
-                    logoutHref={`/api/logout?next=${encodeURIComponent(paths.login)}`}
-                    logoutLabel={copy.accountLogout}
-                  />
-                </div>
+            <span
+              class="font-display hidden text-[15px] font-semibold text-primary sm:inline"
+              >{copy.mantra}</span
+            >
+            <label class="swap swap-rotate" aria-label={copy.themeAria}>
+              <input
+                type="checkbox"
+                class="theme-controller"
+                value="afroup-dark"
+              />
+              <svg class="swap-off size-5"><use href="#ic-sun"></use></svg>
+              <svg class="swap-on size-5"><use href="#ic-moon"></use></svg>
+            </label>
           </div>
         </div>
 
-        <div class="site-content-scroll sidebar-scroll min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto">
-        <main class="mx-auto w-full max-w-[1180px] px-4 pb-10 pt-[30px] sm:px-[18px] lg:px-[38px]">
-          <slot />
-        </main>
+        <div
+          class="site-content-scroll sidebar-scroll min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto"
+        >
+          <main
+            class="mx-auto w-full max-w-[1180px] px-4 pb-10 pt-[30px] sm:px-[18px] lg:px-[38px]"
+          >
+            <slot />
+          </main>
 
-        <div class="bg-neutral text-neutral-content">
-          <div class="h-3 w-full bg-[url('/assets/pattern.png')] bg-left bg-[length:300px]"></div>
-          <div class="mx-auto w-full max-w-[1180px] px-4 py-10 sm:px-[18px] lg:px-[38px]">
-            <div class="mb-7 flex flex-col items-start justify-between gap-4 border-b border-white/10 pb-6 sm:flex-row sm:items-center">
-              <AfroUpLogo height={30} class="text-neutral-content" />
-              <a class="btn btn-secondary max-sm:btn-block" href={paths.donate}>
-                <svg class="size-4"><use href="#ic-heart"></use></svg>
-                {copy.donateCta}
-              </a>
+          <div class="bg-neutral text-neutral-content">
+            <div
+              class="h-3 w-full bg-[url('/assets/pattern.png')] bg-left bg-[length:300px]"
+            >
             </div>
-            <footer class="footer sm:footer-horizontal">
-              <nav>
-                <h6 class="footer-title">{copy.navLearn}</h6>
-                <a href={paths.africa}>{copy.navAfrica}</a>
-                <a href={paths.diaspora}>{copy.navDiaspora}</a>
-                <a href={paths.antirracismo}>{copy.navAntiracism}</a>
-                <a href={paths.historia}>{copy.navHistory}</a>
-                <a href={paths.estetica}>{copy.navAesthetics}</a>
-                <a href={paths.actualidad}>{copy.navCurrent}</a>
-              </nav>
-              <nav>
-                <h6 class="footer-title">{copy.footerAfroup}</h6>
-                <a href={paths.store}>{copy.navStore}</a>
-                <a href={paths.resources}>{copy.navResources}</a>
-                <a href={paths.about}>{copy.footerAbout}</a>
-                <a href={paths.contact}>{copy.footerContact}</a>
-                <a href={paths.support}>{copy.footerSupport}</a>
-              </nav>
-              <nav>
-                <h6 class="footer-title">{copy.navCommunity}</h6>
-                <a href={paths.projects}>{copy.footerProjects}</a>
-                <a href={paths.entrepreneurs}>{copy.footerEntrepreneurs}</a>
-                <a href={paths.people}>{copy.footerPeople}</a>
-                <a href={paths.collaborate}>{copy.footerCollaborate}</a>
-              </nav>
-              <nav>
-                <h6 class="footer-title">{copy.footerContactUs}</h6>
-                <a href={`mailto:info@afroup.com?subject=${encodeURIComponent(copy.footerMailSubject)}`}>info@afroup.com</a>
-              </nav>
-              <nav>
-                <h6 class="footer-title">{copy.footerFollow}</h6>
-                {socials.map((social) => (
-                  <a class="inline-flex items-center gap-2" href={social.href} target="_blank" rel="noreferrer">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                      <use href={`#${social.icon}`}></use>
-                    </svg>
-                    {social.label}
-                  </a>
-                ))}
-              </nav>
-            </footer>
+            <div
+              class="mx-auto w-full max-w-[1180px] px-4 py-10 sm:px-[18px] lg:px-[38px]"
+            >
+              <div
+                class="mb-7 flex flex-col items-start justify-between gap-4 border-b border-white/10 pb-6 sm:flex-row sm:items-center"
+              >
+                <AfroUpLogo height={30} class="text-neutral-content" />
+                <a
+                  class="btn btn-secondary max-sm:btn-block"
+                  href={paths.donate}
+                >
+                  <svg class="size-4"><use href="#ic-heart"></use></svg>
+                  {copy.donateCta}
+                </a>
+              </div>
+              <footer class="footer sm:footer-horizontal">
+                <nav>
+                  <h6 class="footer-title">{copy.navLearn}</h6>
+                  <a href={paths.africa}>{copy.navAfrica}</a>
+                  <a href={paths.diaspora}>{copy.navDiaspora}</a>
+                  <a href={paths.antirracismo}>{copy.navAntiracism}</a>
+                  <a href={paths.historia}>{copy.navHistory}</a>
+                  <a href={paths.estetica}>{copy.navAesthetics}</a>
+                  <a href={paths.actualidad}>{copy.navCurrent}</a>
+                </nav>
+                <nav>
+                  <h6 class="footer-title">{copy.footerAfroup}</h6>
+                  <a href={paths.store}>{copy.navStore}</a>
+                  <a href={paths.resources}>{copy.navResources}</a>
+                  <a href={paths.about}>{copy.footerAbout}</a>
+                  <a href={paths.contact}>{copy.footerContact}</a>
+                  <a href={paths.support}>{copy.footerSupport}</a>
+                </nav>
+                <nav>
+                  <h6 class="footer-title">{copy.navCommunity}</h6>
+                  <a href={paths.projects}>{copy.footerProjects}</a>
+                  <a href={paths.entrepreneurs}>{copy.footerEntrepreneurs}</a>
+                  <a href={paths.people}>{copy.footerPeople}</a>
+                  <a href={paths.collaborate}>{copy.footerCollaborate}</a>
+                </nav>
+                <nav>
+                  <h6 class="footer-title">{copy.footerContactUs}</h6>
+                  <a
+                    href={`mailto:info@afroup.com?subject=${encodeURIComponent(copy.footerMailSubject)}`}
+                    >info@afroup.com</a
+                  >
+                </nav>
+                <nav>
+                  <h6 class="footer-title">{copy.footerFollow}</h6>
+                  {
+                    socials.map((social) => (
+                      <a
+                        class="inline-flex items-center gap-2"
+                        href={social.href}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          aria-hidden="true"
+                        >
+                          <use href={`#${social.icon}`} />
+                        </svg>
+                        {social.label}
+                      </a>
+                    ))
+                  }
+                </nav>
+              </footer>
+            </div>
           </div>
-        </div>
         </div>
 
         <nav class="dock lg:hidden shrink-0">
@@ -292,9 +765,19 @@ function tabClass(key: NavKey) {
       </div>
 
       <div class="drawer-side z-30 h-screen h-dvh max-h-screen overflow-hidden">
-        <label for="site-drawer" aria-label={copy.closeMenuAria} class="drawer-overlay"></label>
-        <aside id="site-sidebar" class="flex h-screen h-dvh max-h-screen w-[264px] flex-col border-r border-base-300 bg-base-200 text-base-content overflow-hidden">
-          <a href={paths.home} class="site-logo-link shrink-0 px-[30px] pt-[30px] pb-[21px] text-base-content" aria-label="AfroUp">
+        <label
+          for="site-drawer"
+          aria-label={copy.closeMenuAria}
+          class="drawer-overlay"></label>
+        <aside
+          id="site-sidebar"
+          class="flex h-screen h-dvh max-h-screen w-[264px] flex-col border-r border-base-300 bg-base-200 text-base-content overflow-hidden"
+        >
+          <a
+            href={paths.home}
+            class="site-logo-link shrink-0 px-[30px] pt-[30px] pb-[21px] text-base-content"
+            aria-label="AfroUp"
+          >
             <span class="site-logo-full block">
               <AfroUpLogo height={30} variant="wordmark" />
             </span>
@@ -302,85 +785,105 @@ function tabClass(key: NavKey) {
               <AfroUpLogo height={28} variant="mark" />
             </span>
           </a>
-          <div class="sidebar-scroll min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto">
-          <ul class="menu w-full px-5 py-0">
-            <li data-tip={copy.navHome}>
-              <a class={navClass("inicio")} href={paths.home}>
-                <svg class="size-5 shrink-0"><use href="#ic-home"></use></svg>
-                <span class="site-nav-label">{copy.navHome}</span>
-              </a>
-            </li>
-            <li data-tip={copy.navSearch}>
-              <a class={navClass("buscar")} href={paths.search}>
-                <svg class="size-5 shrink-0"><use href="#ic-search"></use></svg>
-                <span class="site-nav-label">{copy.navSearch}</span>
-              </a>
-            </li>
-            <li class="menu-title text-[11.5px] font-extrabold tracking-[0.16em] text-[#a9a496] uppercase">{copy.navLearn}</li>
-            <li data-tip={copy.navAfrica}>
-              <a class={navClass("africa")} href={paths.africa}>
-                <span class="size-2 shrink-0 rounded-full bg-primary"></span>
-                <span class="site-nav-label">{copy.navAfrica}</span>
-              </a>
-            </li>
-            <li data-tip={copy.navDiaspora}>
-              <a class={navClass("diaspora")} href={paths.diaspora}>
-                <span class="size-2 shrink-0 rounded-full bg-accent"></span>
-                <span class="site-nav-label">{copy.navDiaspora}</span>
-              </a>
-            </li>
-            <li data-tip={copy.navAntiracism}>
-              <a class={navClass("antirracismo")} href={paths.antirracismo}>
-                <span class="size-2 shrink-0 rounded-full bg-secondary"></span>
-                <span class="site-nav-label">{copy.navAntiracism}</span>
-              </a>
-            </li>
-            <li data-tip={copy.navHistory}>
-              <a class={navClass("historia")} href={paths.historia}>
-                <span class="size-2 shrink-0 rounded-full bg-secondary"></span>
-                <span class="site-nav-label">{copy.navHistory}</span>
-              </a>
-            </li>
-            <li data-tip={copy.navAesthetics}>
-              <a class={navClass("estetica")} href={paths.estetica}>
-                <span class="size-2 shrink-0 rounded-full bg-accent"></span>
-                <span class="site-nav-label">{copy.navAesthetics}</span>
-              </a>
-            </li>
-            <li data-tip={copy.navCurrent}>
-              <a class={navClass("actualidad")} href={paths.actualidad}>
-                <span class="size-2 shrink-0 rounded-full bg-primary"></span>
-                <span class="site-nav-label">{copy.navCurrent}</span>
-              </a>
-            </li>
-            <li class="menu-title text-[11.5px] font-extrabold tracking-[0.16em] text-[#a9a496] uppercase">{copy.navCommunity}</li>
-            <li data-tip={copy.navStore}>
-              <a class={navClass("tienda")} href={paths.store}>
-                <svg class="size-5 shrink-0"><use href="#ic-bag"></use></svg>
-                <span class="site-nav-label">{copy.navStore}</span>
-              </a>
-            </li>
-            <li data-tip={copy.navResources}>
-              <a class={navClass("recursos")} href={paths.resources}>
-                <svg class="size-5 shrink-0"><use href="#ic-book2"></use></svg>
-                <span class="site-nav-label">{copy.navResources}</span>
-              </a>
-            </li>
-            <li data-tip={copy.navCommunity}>
-              <a class={navClass("comunidad")} href={paths.community}>
-                <svg class="size-5 shrink-0"><use href="#ic-users"></use></svg>
-                <span class="site-nav-label">{copy.navCommunity}</span>
-              </a>
-            </li>
-            <li data-tip={copy.navSaved}>
-              <a class={navClass("guardados")} href={paths.saved}>
-                <svg class="size-5 shrink-0"><use href="#ic-bookmark"></use></svg>
-                <span class="site-nav-label">{copy.navSaved}</span>
-              </a>
-            </li>
-          </ul>
+          <div
+            class="sidebar-scroll min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto"
+          >
+            <ul class="menu w-full px-5 py-0">
+              <li data-tip={copy.navHome}>
+                <a class={navClass("inicio")} href={paths.home}>
+                  <svg class="size-5 shrink-0"><use href="#ic-home"></use></svg>
+                  <span class="site-nav-label">{copy.navHome}</span>
+                </a>
+              </li>
+              <li data-tip={copy.navSearch}>
+                <a class={navClass("buscar")} href={paths.search}>
+                  <svg class="size-5 shrink-0"
+                    ><use href="#ic-search"></use></svg
+                  >
+                  <span class="site-nav-label">{copy.navSearch}</span>
+                </a>
+              </li>
+              <li
+                class="menu-title text-[11.5px] font-extrabold tracking-[0.16em] text-[#a9a496] uppercase"
+              >
+                {copy.navLearn}
+              </li>
+              <li data-tip={copy.navAfrica}>
+                <a class={navClass("africa")} href={paths.africa}>
+                  <span class="size-2 shrink-0 rounded-full bg-primary"></span>
+                  <span class="site-nav-label">{copy.navAfrica}</span>
+                </a>
+              </li>
+              <li data-tip={copy.navDiaspora}>
+                <a class={navClass("diaspora")} href={paths.diaspora}>
+                  <span class="size-2 shrink-0 rounded-full bg-accent"></span>
+                  <span class="site-nav-label">{copy.navDiaspora}</span>
+                </a>
+              </li>
+              <li data-tip={copy.navAntiracism}>
+                <a class={navClass("antirracismo")} href={paths.antirracismo}>
+                  <span class="size-2 shrink-0 rounded-full bg-secondary"
+                  ></span>
+                  <span class="site-nav-label">{copy.navAntiracism}</span>
+                </a>
+              </li>
+              <li data-tip={copy.navHistory}>
+                <a class={navClass("historia")} href={paths.historia}>
+                  <span class="size-2 shrink-0 rounded-full bg-secondary"
+                  ></span>
+                  <span class="site-nav-label">{copy.navHistory}</span>
+                </a>
+              </li>
+              <li data-tip={copy.navAesthetics}>
+                <a class={navClass("estetica")} href={paths.estetica}>
+                  <span class="size-2 shrink-0 rounded-full bg-accent"></span>
+                  <span class="site-nav-label">{copy.navAesthetics}</span>
+                </a>
+              </li>
+              <li data-tip={copy.navCurrent}>
+                <a class={navClass("actualidad")} href={paths.actualidad}>
+                  <span class="size-2 shrink-0 rounded-full bg-primary"></span>
+                  <span class="site-nav-label">{copy.navCurrent}</span>
+                </a>
+              </li>
+              <li
+                class="menu-title text-[11.5px] font-extrabold tracking-[0.16em] text-[#a9a496] uppercase"
+              >
+                {copy.navCommunity}
+              </li>
+              <li data-tip={copy.navStore}>
+                <a class={navClass("tienda")} href={paths.store}>
+                  <svg class="size-5 shrink-0"><use href="#ic-bag"></use></svg>
+                  <span class="site-nav-label">{copy.navStore}</span>
+                </a>
+              </li>
+              <li data-tip={copy.navResources}>
+                <a class={navClass("recursos")} href={paths.resources}>
+                  <svg class="size-5 shrink-0"><use href="#ic-book2"></use></svg
+                  >
+                  <span class="site-nav-label">{copy.navResources}</span>
+                </a>
+              </li>
+              <li data-tip={copy.navCommunity}>
+                <a class={navClass("comunidad")} href={paths.community}>
+                  <svg class="size-5 shrink-0"><use href="#ic-users"></use></svg
+                  >
+                  <span class="site-nav-label">{copy.navCommunity}</span>
+                </a>
+              </li>
+              <li data-tip={copy.navSaved}>
+                <a class={navClass("guardados")} href={paths.saved}>
+                  <svg class="size-5 shrink-0"
+                    ><use href="#ic-bookmark"></use></svg
+                  >
+                  <span class="site-nav-label">{copy.navSaved}</span>
+                </a>
+              </li>
+            </ul>
           </div>
-          <div class="site-sidebar-footer mt-auto flex shrink-0 flex-col gap-3 p-4 pt-0">
+          <div
+            class="site-sidebar-footer mt-auto flex shrink-0 flex-col gap-3 p-4 pt-0"
+          >
             <div class="site-lang-expanded w-full">
               <LanguageSwitcher />
             </div>
@@ -404,9 +907,15 @@ function tabClass(key: NavKey) {
               </div>
             </div>
             <div data-session-guest-nav class="w-full">
-              <a class="btn btn-outline btn-sm btn-block gap-2 rounded-xl text-xs font-bold border-base-300 site-guest-btn" href={paths.login} data-tip={copy.navLogin || "Iniciar sesión"}>
+              <a
+                class="btn btn-outline btn-sm btn-block gap-2 rounded-xl text-xs font-bold border-base-300 site-guest-btn"
+                href={paths.login}
+                data-tip={copy.navLogin || "Iniciar sesión"}
+              >
                 <svg class="size-4 shrink-0"><use href="#ic-user"></use></svg>
-                <span class="site-guest-label">{copy.navLogin || "Iniciar sesión"}</span>
+                <span class="site-guest-label"
+                  >{copy.navLogin || "Iniciar sesión"}</span
+                >
               </a>
             </div>
             <div data-session-user-nav class="w-full hidden">
@@ -421,7 +930,11 @@ function tabClass(key: NavKey) {
                 logoutLabel={copy.accountLogout}
               />
             </div>
-            <a class="btn btn-secondary btn-block site-donate" href={paths.donate} data-tip={copy.donateCta}>
+            <a
+              class="btn btn-secondary btn-block site-donate"
+              href={paths.donate}
+              data-tip={copy.donateCta}
+            >
               <svg class="size-4 shrink-0"><use href="#ic-heart"></use></svg>
               <span class="site-donate-label">{copy.donateCta}</span>
             </a>
@@ -429,267 +942,298 @@ function tabClass(key: NavKey) {
         </aside>
       </div>
     </div>
-        <script is:inline>
-          (function () {
-            var bindThemeController = function () {
-              var controller = document.querySelector(".theme-controller");
-              if (!controller || controller.dataset.bound === "true") return;
-              controller.dataset.bound = "true";
-              var apply = function (theme) {
-                document.documentElement.setAttribute("data-theme", theme);
-                controller.checked = theme === "afroup-dark";
-                try { localStorage.setItem("afroup-theme", theme); } catch (error) {}
-              };
+    <script is:inline>
+      (function () {
+        var bindThemeController = function () {
+          var controller = document.querySelector(".theme-controller");
+          if (!controller || controller.dataset.bound === "true") return;
+          controller.dataset.bound = "true";
+          var apply = function (theme) {
+            document.documentElement.setAttribute("data-theme", theme);
+            controller.checked = theme === "afroup-dark";
+            try {
+              localStorage.setItem("afroup-theme", theme);
+            } catch (error) {}
+          };
+          try {
+            var stored = localStorage.getItem("afroup-theme");
+            apply(
+              stored === "afroup-dark" || stored === "afroup"
+                ? stored
+                : window.matchMedia("(prefers-color-scheme: dark)").matches
+                  ? "afroup-dark"
+                  : "afroup",
+            );
+          } catch (error) {
+            apply("afroup");
+          }
+          controller.addEventListener("change", function () {
+            apply(controller.checked ? "afroup-dark" : "afroup");
+          });
+        };
+        bindThemeController();
+        document.addEventListener("astro:page-load", bindThemeController);
+
+        var bindSiteSidebar = function () {
+          var toggle = document.getElementById("site-sidebar-toggle");
+          if (!toggle || toggle.dataset.bound === "true") return;
+          toggle.dataset.bound = "true";
+          toggle.addEventListener("click", function () {
+            var tip = document.getElementById("site-sidebar-tip");
+            if (tip) {
+              tip.classList.add("hidden");
+              tip.textContent = "";
+            }
+            var next =
+              document.documentElement.getAttribute("data-site-collapsed") !==
+              "true";
+            if (next) {
+              document.documentElement.setAttribute(
+                "data-site-collapsed",
+                "true",
+              );
               try {
-                var stored = localStorage.getItem("afroup-theme");
-                apply(
-                  stored === "afroup-dark" || stored === "afroup"
-                    ? stored
-                    : window.matchMedia("(prefers-color-scheme: dark)").matches
-                      ? "afroup-dark"
-                      : "afroup"
-                );
-              } catch (error) {
-                apply("afroup");
-              }
-              controller.addEventListener("change", function () {
-                apply(controller.checked ? "afroup-dark" : "afroup");
-              });
-            };
-            bindThemeController();
-            document.addEventListener("astro:page-load", bindThemeController);
+                localStorage.setItem("afroup-site-collapsed", "true");
+              } catch (e) {}
+            } else {
+              document.documentElement.removeAttribute("data-site-collapsed");
+              try {
+                localStorage.setItem("afroup-site-collapsed", "false");
+              } catch (e) {}
+            }
+          });
+        };
+        bindSiteSidebar();
+        document.addEventListener("astro:page-load", bindSiteSidebar);
 
-            var bindSiteSidebar = function () {
-              var toggle = document.getElementById("site-sidebar-toggle");
-              if (!toggle || toggle.dataset.bound === "true") return;
-              toggle.dataset.bound = "true";
-              toggle.addEventListener("click", function () {
-                var tip = document.getElementById("site-sidebar-tip");
-                if (tip) {
-                  tip.classList.add("hidden");
-                  tip.textContent = "";
-                }
-                var next = document.documentElement.getAttribute("data-site-collapsed") !== "true";
-                if (next) {
-                  document.documentElement.setAttribute("data-site-collapsed", "true");
-                  try { localStorage.setItem("afroup-site-collapsed", "true"); } catch (e) {}
-                } else {
-                  document.documentElement.removeAttribute("data-site-collapsed");
-                  try { localStorage.setItem("afroup-site-collapsed", "false"); } catch (e) {}
-                }
-              });
-            };
-            bindSiteSidebar();
-            document.addEventListener("astro:page-load", bindSiteSidebar);
-
-            var bindSiteTips = function () {
-              var tip = document.getElementById("site-sidebar-tip");
-              var sidebar = document.getElementById("site-sidebar");
-              if (!tip || !sidebar || tip.dataset.bound === "true") return;
-              tip.dataset.bound = "true";
-              var hide = function () {
-                tip.classList.add("hidden");
-                tip.textContent = "";
-              };
-              var show = function (el) {
-                if (document.documentElement.getAttribute("data-site-collapsed") !== "true") return;
-                if (!window.matchMedia("(min-width: 1024px)").matches) return;
-                var text = el.getAttribute("data-tip");
-                if (!text) return;
-                var rect = el.getBoundingClientRect();
-                tip.textContent = text;
-                tip.style.top = rect.top + rect.height / 2 + "px";
-                tip.style.left = rect.right + 8 + "px";
-                tip.classList.remove("hidden");
-              };
-              sidebar.addEventListener("pointerover", function (event) {
-                var el = event.target.closest("[data-tip]");
-                if (!el || !sidebar.contains(el)) return;
-                show(el);
-              });
-              sidebar.addEventListener("pointerout", function (event) {
-                var el = event.target.closest("[data-tip]");
-                if (!el) return;
-                if (event.relatedTarget && el.contains(event.relatedTarget)) return;
-                hide();
-              });
-              var scroller = sidebar.querySelector(".sidebar-scroll");
-              if (scroller) scroller.addEventListener("scroll", hide, { passive: true });
-            };
-            bindSiteTips();
-            document.addEventListener("astro:page-load", bindSiteTips);
-          })();
-        </script>
-        <div
-          id="site-sidebar-tip"
-          role="tooltip"
-          class="pointer-events-none fixed z-[100] hidden -translate-y-1/2 rounded-field bg-neutral px-2 py-1 text-xs leading-5 text-neutral-content shadow"
-        ></div>
-        <style is:global>
-          html, body {
-            height: 100%;
-            overflow: hidden;
-          }
-          #site-layout-drawer {
-            height: 100vh;
-            height: 100dvh;
-            max-height: 100dvh;
-            overflow: hidden;
-          }
-          #site-layout-drawer > .drawer-content,
-          #site-layout-drawer > .drawer-side {
-            height: 100vh;
-            height: 100dvh;
-            max-height: 100dvh;
-            overflow: hidden;
-          }
-          #site-sidebar {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            height: 100dvh;
-            max-height: 100dvh;
-            overflow: hidden;
-            transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-          }
-          #site-sidebar .sidebar-scroll {
-            flex: 1 1 0%;
-            min-height: 0;
-            overflow-x: hidden;
-            overflow-y: auto;
-            flex-wrap: nowrap;
-            overscroll-behavior: contain;
-          }
-          .site-content-scroll {
-            overscroll-behavior: contain;
-          }
-          #site-sidebar .sidebar-scroll,
-          .site-content-scroll {
-            scrollbar-width: thin;
-            scrollbar-color: #111111 transparent;
-          }
-          #site-sidebar .sidebar-scroll::-webkit-scrollbar,
-          .site-content-scroll::-webkit-scrollbar {
-            width: 5px;
-            height: 5px;
-          }
-          #site-sidebar .sidebar-scroll::-webkit-scrollbar-track,
-          .site-content-scroll::-webkit-scrollbar-track {
-            background: transparent;
-          }
-          #site-sidebar .sidebar-scroll::-webkit-scrollbar-thumb,
-          .site-content-scroll::-webkit-scrollbar-thumb {
-            background: #111111;
-            border-radius: 9999px;
-          }
-          #site-sidebar .sidebar-scroll::-webkit-scrollbar-thumb:hover,
-          .site-content-scroll::-webkit-scrollbar-thumb:hover {
-            background: #000000;
-          }
-          [data-theme="afroup-dark"] #site-sidebar .sidebar-scroll,
-          [data-theme="afroup-dark"] .site-content-scroll {
-            scrollbar-color: #2e2c26 transparent;
-          }
-          [data-theme="afroup-dark"] #site-sidebar .sidebar-scroll::-webkit-scrollbar-thumb,
-          [data-theme="afroup-dark"] .site-content-scroll::-webkit-scrollbar-thumb {
-            background: #2e2c26;
-          }
-          html[data-site-collapsed="true"] .sidebar-icon-collapse {
-            display: none;
-          }
-          html[data-site-collapsed="true"] .sidebar-icon-expand {
-            display: block;
-          }
-          @media (min-width: 1024px) {
-            html[data-site-collapsed="true"] .drawer-side,
-            html[data-site-collapsed="true"] #site-sidebar {
-              width: 80px;
-            }
-            html[data-site-collapsed="true"] .site-logo-link {
-              display: flex;
-              justify-content: center;
-              padding-left: 0.5rem;
-              padding-right: 0.5rem;
-            }
-            html[data-site-collapsed="true"] .site-logo-full {
-              display: none;
-            }
-            html[data-site-collapsed="true"] .site-logo-mark {
-              display: flex;
-              justify-content: center;
-            }
-            html[data-site-collapsed="true"] #site-sidebar .menu {
-              width: 100%;
-              flex-wrap: nowrap;
-              align-items: stretch;
-              padding: 0.25rem;
-            }
-            html[data-site-collapsed="true"] #site-sidebar .menu > li {
-              width: 100%;
-            }
-            html[data-site-collapsed="true"] #site-sidebar .menu > li > a {
-              display: flex;
-              width: 2.5rem;
-              height: 2.5rem;
-              margin-inline: auto;
-              justify-content: center;
-              align-items: center;
-              padding: 0;
-              gap: 0;
-            }
-            html[data-site-collapsed="true"] #site-sidebar .site-nav-label,
-            html[data-site-collapsed="true"] #site-sidebar .menu-title,
-            html[data-site-collapsed="true"] .site-lang-expanded,
-            html[data-site-collapsed="true"] .site-donate-label,
-            html[data-site-collapsed="true"] .site-guest-label,
-            html[data-site-collapsed="true"] #site-sidebar [data-session-user] .leading-tight {
-              display: none !important;
-            }
-            html[data-site-collapsed="true"] .site-sidebar-footer {
-              padding: 0.5rem;
-              align-items: center;
-            }
-            html[data-site-collapsed="true"] .site-lang-collapsed {
-              display: flex;
-              justify-content: center;
-              width: 100%;
-            }
-            html[data-site-collapsed="true"] #site-sidebar [data-session-guest-nav],
-            html[data-site-collapsed="true"] #site-sidebar [data-session-user-nav] {
-              display: flex;
-              justify-content: center;
-              width: 100%;
-            }
-            html[data-site-collapsed="true"] #site-sidebar [data-session-guest-nav].hidden,
-            html[data-site-collapsed="true"] #site-sidebar [data-session-user-nav].hidden {
-              display: none !important;
-            }
-            html[data-site-collapsed="true"] .site-guest-btn {
-              width: 2.5rem;
-              min-height: 2.5rem;
-              height: 2.5rem;
-              padding: 0;
-              justify-content: center;
-            }
-            html[data-site-collapsed="true"] #site-sidebar [data-session-user] {
-              justify-content: center;
-              width: 100%;
-            }
-            html[data-site-collapsed="true"] #site-sidebar button[data-session-user-btn],
-            html[data-site-collapsed="true"] #site-sidebar button[popovertarget*="session-user"] {
-              display: flex;
-              justify-content: center;
-              width: 100%;
-              padding: 0.25rem;
-            }
-            html[data-site-collapsed="true"] .site-donate {
-              width: 2.5rem;
-              min-height: 2.5rem;
-              padding-inline: 0;
-            }
-          }
-        </style>
-        <script is:inline src="/form-feedback.js"></script>
-        <script is:inline src="/session-user.js"></script>
+        var bindSiteTips = function () {
+          var tip = document.getElementById("site-sidebar-tip");
+          var sidebar = document.getElementById("site-sidebar");
+          if (!tip || !sidebar || tip.dataset.bound === "true") return;
+          tip.dataset.bound = "true";
+          var hide = function () {
+            tip.classList.add("hidden");
+            tip.textContent = "";
+          };
+          var show = function (el) {
+            if (
+              document.documentElement.getAttribute("data-site-collapsed") !==
+              "true"
+            )
+              return;
+            if (!window.matchMedia("(min-width: 1024px)").matches) return;
+            var text = el.getAttribute("data-tip");
+            if (!text) return;
+            var rect = el.getBoundingClientRect();
+            tip.textContent = text;
+            tip.style.top = rect.top + rect.height / 2 + "px";
+            tip.style.left = rect.right + 8 + "px";
+            tip.classList.remove("hidden");
+          };
+          sidebar.addEventListener("pointerover", function (event) {
+            var el = event.target.closest("[data-tip]");
+            if (!el || !sidebar.contains(el)) return;
+            show(el);
+          });
+          sidebar.addEventListener("pointerout", function (event) {
+            var el = event.target.closest("[data-tip]");
+            if (!el) return;
+            if (event.relatedTarget && el.contains(event.relatedTarget)) return;
+            hide();
+          });
+          var scroller = sidebar.querySelector(".sidebar-scroll");
+          if (scroller)
+            scroller.addEventListener("scroll", hide, { passive: true });
+        };
+        bindSiteTips();
+        document.addEventListener("astro:page-load", bindSiteTips);
+      })();
+    </script>
+    <div
+      id="site-sidebar-tip"
+      role="tooltip"
+      class="pointer-events-none fixed z-[100] hidden -translate-y-1/2 rounded-field bg-neutral px-2 py-1 text-xs leading-5 text-neutral-content shadow"
+    >
+    </div>
+    <style is:global>
+      html,
+      body {
+        height: 100%;
+        overflow: hidden;
+      }
+      #site-layout-drawer {
+        height: 100vh;
+        height: 100dvh;
+        max-height: 100dvh;
+        overflow: hidden;
+      }
+      #site-layout-drawer > .drawer-content,
+      #site-layout-drawer > .drawer-side {
+        height: 100vh;
+        height: 100dvh;
+        max-height: 100dvh;
+        overflow: hidden;
+      }
+      #site-sidebar {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        height: 100dvh;
+        max-height: 100dvh;
+        overflow: hidden;
+        transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      #site-sidebar .sidebar-scroll {
+        flex: 1 1 0%;
+        min-height: 0;
+        overflow-x: hidden;
+        overflow-y: auto;
+        flex-wrap: nowrap;
+        overscroll-behavior: contain;
+      }
+      .site-content-scroll {
+        overscroll-behavior: contain;
+      }
+      #site-sidebar .sidebar-scroll,
+      .site-content-scroll {
+        scrollbar-width: thin;
+        scrollbar-color: #111111 transparent;
+      }
+      #site-sidebar .sidebar-scroll::-webkit-scrollbar,
+      .site-content-scroll::-webkit-scrollbar {
+        width: 5px;
+        height: 5px;
+      }
+      #site-sidebar .sidebar-scroll::-webkit-scrollbar-track,
+      .site-content-scroll::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      #site-sidebar .sidebar-scroll::-webkit-scrollbar-thumb,
+      .site-content-scroll::-webkit-scrollbar-thumb {
+        background: #111111;
+        border-radius: 9999px;
+      }
+      #site-sidebar .sidebar-scroll::-webkit-scrollbar-thumb:hover,
+      .site-content-scroll::-webkit-scrollbar-thumb:hover {
+        background: #000000;
+      }
+      [data-theme="afroup-dark"] #site-sidebar .sidebar-scroll,
+      [data-theme="afroup-dark"] .site-content-scroll {
+        scrollbar-color: #2e2c26 transparent;
+      }
+      [data-theme="afroup-dark"]
+        #site-sidebar
+        .sidebar-scroll::-webkit-scrollbar-thumb,
+      [data-theme="afroup-dark"] .site-content-scroll::-webkit-scrollbar-thumb {
+        background: #2e2c26;
+      }
+      html[data-site-collapsed="true"] .sidebar-icon-collapse {
+        display: none;
+      }
+      html[data-site-collapsed="true"] .sidebar-icon-expand {
+        display: block;
+      }
+      @media (min-width: 1024px) {
+        html[data-site-collapsed="true"] .drawer-side,
+        html[data-site-collapsed="true"] #site-sidebar {
+          width: 80px;
+        }
+        html[data-site-collapsed="true"] .site-logo-link {
+          display: flex;
+          justify-content: center;
+          padding-left: 0.5rem;
+          padding-right: 0.5rem;
+        }
+        html[data-site-collapsed="true"] .site-logo-full {
+          display: none;
+        }
+        html[data-site-collapsed="true"] .site-logo-mark {
+          display: flex;
+          justify-content: center;
+        }
+        html[data-site-collapsed="true"] #site-sidebar .menu {
+          width: 100%;
+          flex-wrap: nowrap;
+          align-items: stretch;
+          padding: 0.25rem;
+        }
+        html[data-site-collapsed="true"] #site-sidebar .menu > li {
+          width: 100%;
+        }
+        html[data-site-collapsed="true"] #site-sidebar .menu > li > a {
+          display: flex;
+          width: 2.5rem;
+          height: 2.5rem;
+          margin-inline: auto;
+          justify-content: center;
+          align-items: center;
+          padding: 0;
+          gap: 0;
+        }
+        html[data-site-collapsed="true"] #site-sidebar .site-nav-label,
+        html[data-site-collapsed="true"] #site-sidebar .menu-title,
+        html[data-site-collapsed="true"] .site-lang-expanded,
+        html[data-site-collapsed="true"] .site-donate-label,
+        html[data-site-collapsed="true"] .site-guest-label,
+        html[data-site-collapsed="true"]
+          #site-sidebar
+          [data-session-user]
+          .leading-tight {
+          display: none !important;
+        }
+        html[data-site-collapsed="true"] .site-sidebar-footer {
+          padding: 0.5rem;
+          align-items: center;
+        }
+        html[data-site-collapsed="true"] .site-lang-collapsed {
+          display: flex;
+          justify-content: center;
+          width: 100%;
+        }
+        html[data-site-collapsed="true"] #site-sidebar [data-session-guest-nav],
+        html[data-site-collapsed="true"] #site-sidebar [data-session-user-nav] {
+          display: flex;
+          justify-content: center;
+          width: 100%;
+        }
+        html[data-site-collapsed="true"]
+          #site-sidebar
+          [data-session-guest-nav].hidden,
+        html[data-site-collapsed="true"]
+          #site-sidebar
+          [data-session-user-nav].hidden {
+          display: none !important;
+        }
+        html[data-site-collapsed="true"] .site-guest-btn {
+          width: 2.5rem;
+          min-height: 2.5rem;
+          height: 2.5rem;
+          padding: 0;
+          justify-content: center;
+        }
+        html[data-site-collapsed="true"] #site-sidebar [data-session-user] {
+          justify-content: center;
+          width: 100%;
+        }
+        html[data-site-collapsed="true"]
+          #site-sidebar
+          button[data-session-user-btn],
+        html[data-site-collapsed="true"]
+          #site-sidebar
+          button[popovertarget*="session-user"] {
+          display: flex;
+          justify-content: center;
+          width: 100%;
+          padding: 0.25rem;
+        }
+        html[data-site-collapsed="true"] .site-donate {
+          width: 2.5rem;
+          min-height: 2.5rem;
+          padding-inline: 0;
+        }
+      }
+    </style>
+    <script is:inline src="/form-feedback.js"></script>
+    <script is:inline src="/session-user.js"></script>
   </body>
 </html>
