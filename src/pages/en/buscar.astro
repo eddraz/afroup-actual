@@ -1,9 +1,10 @@
 ---
+import { env } from "cloudflare:workers";
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import { getLocaleFromUrl, localizedPath, t } from "../../lib/i18n";
+import { getLocaleFromUrl, localizedPath, t, defaultLocale } from "../../lib/i18n";
 import { paths as staticPaths, routeIds } from "../../lib/paths";
 
-export const prerender = true;
+export const prerender = false;
 
 const locale = getLocaleFromUrl(Astro.url);
 const copy = t(locale);
@@ -11,69 +12,148 @@ const paths = {
   ...staticPaths,
   search: localizedPath(locale, routeIds.search),
   article: localizedPath(locale, routeIds.article),
-    resource: localizedPath(locale, routeIds.resource),
-    project: localizedPath(locale, routeIds.project),
-    product: localizedPath(locale, routeIds.product),
+  resource: localizedPath(locale, routeIds.resource),
+  project: localizedPath(locale, routeIds.project),
+  product: localizedPath(locale, routeIds.product),
 };
-const query = Astro.url.searchParams.get("q")?.trim() || "palenques";
-const results = [
+
+const query = Astro.url.searchParams.get("q")?.trim() || Astro.url.searchParams.get("tag")?.trim() || "";
+
+interface SearchDocRow {
+  module_slug: string;
+  record_id: number;
+  locale: string;
+  title: string;
+  summary: string;
+  tags: string;
+  kind: string;
+  path: string;
+  extra: string | null;
+  published_at: string;
+}
+
+let dbResults: SearchDocRow[] = [];
+if (env?.DB) {
+  try {
+    if (query) {
+      const pattern = `%${query}%`;
+      const stmt = env.DB.prepare(
+        `SELECT module_slug, record_id, locale, title, summary, tags, kind, path, extra, published_at
+           FROM search_documents
+          WHERE (locale = ? OR locale = ?)
+            AND (title LIKE ? OR summary LIKE ? OR tags LIKE ? OR path LIKE ?)
+          ORDER BY CASE WHEN locale = ? THEN 0 ELSE 1 END, published_at DESC
+          LIMIT 50`,
+      ).bind(locale, defaultLocale, pattern, pattern, pattern, pattern, locale);
+      dbResults = (await stmt.all<SearchDocRow>()).results ?? [];
+    } else {
+      const stmt = env.DB.prepare(
+        `SELECT module_slug, record_id, locale, title, summary, tags, kind, path, extra, published_at
+           FROM search_documents
+          WHERE locale = ? OR locale = ?
+          ORDER BY CASE WHEN locale = ? THEN 0 ELSE 1 END, published_at DESC
+          LIMIT 20`,
+      ).bind(locale, defaultLocale, locale);
+      dbResults = (await stmt.all<SearchDocRow>()).results ?? [];
+    }
+  } catch (err) {
+    console.error("Search query error", err);
+  }
+}
+
+const fallbackResults = [
   {
     href: paths.article,
-    kind: "Artículo · Historia",
+    kind: "Article · History",
     badge: "badge-secondary",
     figure: "bg-warning/30",
-    label: "grabado",
-    title: "Quilombos y palenques: territorios de libertad",
-    dek: "Cómo las comunidades cimarronas construyeron autonomía, lengua y memoria en toda Abya Yala…",
-    meta: "Jenniffer M. · 12 mar 2026 · 8 min",
+    label: "engraving",
+    title: "Quilombos and palenques: territories of freedom",
+    dek: "How Maroon communities built autonomy, language, and memory across Abya Yala…",
+    meta: "Jenniffer M. · 12 Mar 2026 · 8 min",
+    module: "articulos",
     end: "arrow",
   },
   {
     href: paths.article,
-    kind: "Artículo · Diáspora",
+    kind: "Article · Diaspora",
     badge: "badge-accent",
     figure: "bg-accent/30",
-    label: "retrato",
-    title: "San Basilio de Palenque: la lengua que sobrevivió",
-    dek: "El criollo palenquero, patrimonio vivo de la resistencia afrocolombiana.",
-    meta: "Equipo AfroUp · 28 feb 2026 · 6 min",
+    label: "portrait",
+    title: "San Basilio de Palenque: the language that survived",
+    dek: "Palenquero creole, living heritage of Afro-Colombian resistance.",
+    meta: "AfroUp Team · 28 Feb 2026 · 6 min",
+    module: "articulos",
     end: "arrow",
   },
   {
     href: paths.product,
-    kind: "Tienda · eBook",
+    kind: "Store · eBook",
     badge: "badge-secondary",
     figure: "bg-[url('/assets/pattern.png')] bg-cover bg-center",
     label: "",
-    title: "Raíces: historia afro de Abya Yala",
-    dek: "Capítulo 4 dedicado a los palenques del Gran Caribe. PDF + EPUB.",
+    title: "Roots: Afro History of Abya Yala",
+    dek: "Chapter 4 dedicated to the palenques of the Greater Caribbean. PDF + EPUB.",
     meta: "⭐ 4.9 (38)",
+    module: "tienda",
     end: "price",
     price: "US$ 12",
   },
   {
     href: paths.resource,
-    kind: "Recurso · Guía PDF",
+    kind: "Resource · PDF Guide",
     badge: "badge-primary",
     figure: "bg-primary/20",
     label: "PDF",
-    title: "Guía docente: cimarronaje en el aula",
-    dek: "Actividades y fuentes primarias para secundaria. Descarga gratuita.",
-    meta: "PDF · 24 págs · Gratis",
+    title: "Teacher's Guide: Maroonage in the Classroom",
+    dek: "Activities and primary sources for secondary school. Free download.",
+    meta: "PDF · 24 pgs · Free",
+    module: "recursos",
     end: "download",
   },
   {
     href: paths.project,
-    kind: "Proyecto · Comunidad",
+    kind: "Project · Community",
     badge: "badge-accent",
     figure: "bg-warning/30",
-    label: "foto · taller",
-    title: "Memoria viva: rutas del cimarronaje",
-    dek: "Proyecto comunitario de cartografía histórica en el Caribe colombiano.",
-    meta: "En curso · Cartagena, Colombia",
+    label: "photo · workshop",
+    title: "Living Memory: Routes of Maroonage",
+    dek: "Community project of historical cartography in the Colombian Caribbean.",
+    meta: "Ongoing · Cartagena, Colombia",
+    module: "proyectos",
     end: "arrow",
   },
-] as const;
+];
+
+function formatResultDate(dateStr: string) {
+  if (!dateStr) return "";
+  try {
+    const d = new Date(dateStr.endsWith("Z") ? dateStr : `${dateStr}Z`);
+    return new Intl.DateTimeFormat(locale === "en" ? "en-US" : "es-ES", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }).format(d);
+  } catch {
+    return dateStr.slice(0, 10);
+  }
+}
+
+const results = dbResults.length > 0
+  ? dbResults.map((doc) => ({
+      href: doc.path,
+      kind: doc.kind || (doc.module_slug === "categorias" ? "Category" : "Article"),
+      badge: doc.module_slug === "categorias" ? "badge-accent" : "badge-secondary",
+      figure: doc.module_slug === "categorias" ? "bg-accent/20" : "bg-primary/20",
+      label: doc.module_slug === "categorias" ? "category" : "article",
+      title: doc.title,
+      dek: doc.summary,
+      meta: `AfroUp · ${formatResultDate(doc.published_at)}`,
+      module: doc.module_slug,
+      end: "arrow",
+      price: undefined,
+    }))
+  : (query ? [] : fallbackResults);
 ---
 
 <BaseLayout title={copy.titleSearch} active="buscar">
@@ -82,57 +162,73 @@ const results = [
       <svg class="size-[22px] shrink-0 opacity-50" viewBox="0 0 24 24" aria-hidden="true">
         <use href="#ic-search"></use>
       </svg>
-      <input class="grow" type="search" name="q" value={query} aria-label={copy.searchAria} />
+      <input class="grow" type="search" name="q" value={query} placeholder={copy.searchAria || "Search articles, categories, tags..."} aria-label={copy.searchAria} />
       <button class="btn btn-neutral btn-sm" type="submit">{copy.searchSubmit}</button>
     </label>
   </form>
 
   <div class="mt-4 mb-4 flex flex-wrap gap-2" data-chips>
-    <button class="btn btn-sm" data-chip type="button">{copy.searchChipAll}</button>
-    <button class="btn btn-dash btn-sm" data-chip type="button">{copy.searchChipArticles}</button>
-    <button class="btn btn-dash btn-sm" data-chip type="button">{copy.searchChipStore}</button>
-    <button class="btn btn-dash btn-sm" data-chip type="button">{copy.searchChipResources}</button>
-    <button class="btn btn-dash btn-sm" data-chip type="button">{copy.searchChipProjects}</button>
+    <button class="btn btn-sm" data-chip="all" type="button">{copy.searchChipAll}</button>
+    <button class="btn btn-dash btn-sm" data-chip="articulos" type="button">{copy.searchChipArticles}</button>
+    <button class="btn btn-dash btn-sm" data-chip="tienda" type="button">{copy.searchChipStore}</button>
+    <button class="btn btn-dash btn-sm" data-chip="recursos" type="button">{copy.searchChipResources}</button>
+    <button class="btn btn-dash btn-sm" data-chip="proyectos" type="button">{copy.searchChipProjects}</button>
   </div>
 
-  <p class="mb-4 font-bold text-base-content/60">
-    <span class="text-base-content">14 {copy.searchResultsFor}</span> {copy.searchResultsPreposition} “{query}”
-  </p>
+  {query ? (
+    <p class="mb-4 font-bold text-base-content/60">
+      <span class="text-base-content">{results.length} {copy.searchResultsFor}</span> {copy.searchResultsPreposition} “{query}”
+    </p>
+  ) : (
+    <p class="mb-4 font-bold text-base-content/60">
+      <span class="text-base-content">{results.length} recent results</span>
+    </p>
+  )}
 
-  <ul class="list">
-    {
-      results.map((item) => (
-        <li class="list-row">
-          <div class:list={["relative size-20 overflow-hidden rounded-box", item.figure]}>
-            {item.label ? (
-                  <div class="tooltip tooltip-top absolute bottom-1.5 left-1.5 max-w-[calc(100%-0.75rem)]" data-tip={item.label}>
-                    <span class="badge badge-sm max-w-full truncate">{item.label}</span>
-                  </div>
-                ) : null}
-          </div>
-          <a class="list-col-grow" href={item.href}>
-            <span class:list={["badge badge-soft badge-sm", item.badge]}>{item.kind}</span>
-            <h3 class="font-display text-xl font-bold">{item.title}</h3>
-            <p class="text-base-content/70">{item.dek}</p>
-            <p class="text-sm text-base-content/50">{item.meta}</p>
-          </a>
-          {
-            item.end === "price" ? (
-              <span class="font-display text-xl font-extrabold">{item.price}</span>
-            ) : item.end === "download" ? (
-              <a class="btn btn-accent btn-sm" href={item.href}>{copy.searchDownload}</a>
-            ) : (
-              <a class="btn btn-ghost btn-square btn-sm" href={item.href} aria-label={item.title}>
-                <svg class="size-5" aria-hidden="true">
-                  <use href="#ic-arrow"></use>
-                </svg>
-              </a>
-            )
-          }
-        </li>
-      ))
-    }
-  </ul>
+  {results.length === 0 ? (
+    <div class="rounded-3xl border border-dashed border-base-300 p-12 text-center my-6 bg-base-100/50">
+      <p class="text-base-content/70 font-medium">
+        {locale === "en"
+          ? `No results found for “${query}”. Try another keyword or browse our categories.`
+          : `No encontramos resultados para “${query}”. Intenta con otra palabra clave o explora las categorías.`}
+      </p>
+    </div>
+  ) : (
+    <ul class="list">
+      {
+        results.map((item) => (
+          <li class="list-row" data-search-item data-item-module={item.module}>
+            <div class:list={["relative size-20 overflow-hidden rounded-box", item.figure]}>
+              {item.label ? (
+                <div class="tooltip tooltip-top absolute bottom-1.5 left-1.5 max-w-[calc(100%-0.75rem)]" data-tip={item.label}>
+                  <span class="badge badge-sm max-w-full truncate">{item.label}</span>
+                </div>
+              ) : null}
+            </div>
+            <a class="list-col-grow" href={item.href}>
+              <span class:list={["badge badge-soft badge-sm", item.badge]}>{item.kind}</span>
+              <h3 class="font-display text-xl font-bold">{item.title}</h3>
+              <p class="text-base-content/70">{item.dek}</p>
+              <p class="text-sm text-base-content/50">{item.meta}</p>
+            </a>
+            {
+              item.end === "price" ? (
+                <span class="font-display text-xl font-extrabold">{item.price}</span>
+              ) : item.end === "download" ? (
+                <a class="btn btn-accent btn-sm" href={item.href}>{copy.searchDownload}</a>
+              ) : (
+                <a class="btn btn-ghost btn-square btn-sm" href={item.href} aria-label={item.title}>
+                  <svg class="size-5" aria-hidden="true">
+                    <use href="#ic-arrow"></use>
+                  </svg>
+                </a>
+              )
+            }
+          </li>
+        ))
+      }
+    </ul>
+  )}
 
   <div class="mt-8 text-center">
     <button class="btn btn-ghost" type="button">{copy.searchLoadMore}</button>
@@ -140,11 +236,31 @@ const results = [
 </BaseLayout>
 
 <script>
-  const chips = document.querySelectorAll("[data-chip]");
-  chips.forEach((chip) => {
-    chip.addEventListener("click", () => {
-      chips.forEach((item) => item.classList.add("btn-dash"));
-      chip.classList.remove("btn-dash");
+  function setupSearchFilters() {
+    const chips = document.querySelectorAll<HTMLButtonElement>("[data-chip]");
+    const items = document.querySelectorAll<HTMLElement>("[data-search-item]");
+
+    chips.forEach((chip) => {
+      if (chip.dataset.bound === "true") return;
+      chip.dataset.bound = "true";
+
+      chip.addEventListener("click", () => {
+        chips.forEach((item) => item.classList.add("btn-dash"));
+        chip.classList.remove("btn-dash");
+
+        const targetModule = chip.getAttribute("data-chip") || "all";
+        items.forEach((item) => {
+          const itemMod = item.getAttribute("data-item-module") || "";
+          if (targetModule === "all" || itemMod === targetModule) {
+            item.style.display = "";
+          } else {
+            item.style.display = "none";
+          }
+        });
+      });
     });
-  });
+  }
+
+  setupSearchFilters();
+  document.addEventListener("astro:page-load", setupSearchFilters);
 </script>

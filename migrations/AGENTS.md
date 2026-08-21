@@ -61,7 +61,9 @@
 - `0029_storage_ai_permission.sql` turns on `translate_ai` for Administrador on the `almacenamiento` module so cover/image generation can run.
 - `0030_grant_full_admin_ai_permissions.sql` grants full permissions across all modules with AI enabled to the `Administrador` role and ensures active administrator accounts for `tantaorth@gmail.com`, `tantaroth@gmail.com`, and `jenniffer@afroup.com`.
 - `0031_seed_category_open_graph_metadata.sql` populates complete structured Open Graph and Twitter Card JSON metadata (`og_json`) for all seeded categories in Spanish and English.
+- `0032_global_tags.sql` creates the global `tags` table for global tag indexing, autocomplete in admin editors, and public cross-article discovery.
 
 ## Manual D1 apply notes
 
 - If `wrangler d1 migrations apply` fails on `0010_admin_rbac.sql` with "near (": syntax error", the cause is D1's lack of support for `VALUES (...)` as a derived table. The fix lives in the migration file itself (`UNION ALL` of `SELECT` literals). On a stuck production DB you can (1) mark `0010_admin_rbac.sql` as applied in `d1_migrations` if its schema is already in place, or (2) re-run the schema blocks via `wrangler d1 execute --file` and re-apply.
+

@@ -84,6 +84,8 @@ const categories = (await env.DB.prepare(
   .bind(locale, defaultLocale)
   .all<CategoryOption>()).results ?? [];
 
+const existingTags = (await env.DB.prepare("SELECT name FROM tags ORDER BY name ASC").all<{ name: string }>()).results?.map((r) => r.name) ?? [];
+
 const listHref = localizedPath(locale, joinPath(routeIds.admin, "articulos"));
 const publishedCount = items.filter((i) => i.status === "published").length;
 const draftsCount = items.length - publishedCount;
@@ -336,6 +338,7 @@ function formatDate(dateStr?: string | null) {
         <!-- Article Editor Component inside 90% drawer -->
         <ArticleEditor
           categories={categories}
+          existingTags={existingTags}
           languages={languages}
               editorCopyByLocale={editorCopyByLocale}
           translation={translation}

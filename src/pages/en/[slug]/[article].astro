@@ -352,11 +352,14 @@ const ogRow = await env.DB.prepare(
 
   <!-- Tags Row -->
   {tags.length ? (
-    <div class="tagrow">
+    <div class="tagrow flex flex-wrap gap-2 items-center">
       {tags.map((item) => (
-        <span class="badge badge-outline badge-md font-semibold text-base-content/80 hover:badge-primary transition-colors cursor-default">
+        <a
+          href={`${localizedPath(locale, routeIds.search)}?q=${encodeURIComponent(item.tag)}`}
+          class="badge badge-outline badge-md font-semibold text-base-content/80 hover:badge-primary hover:text-primary-content transition-all cursor-pointer shadow-2xs hover:scale-105"
+        >
           #{item.tag}
-        </span>
+        </a>
       ))}
     </div>
   ) : null}

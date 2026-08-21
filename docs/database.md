@@ -197,7 +197,8 @@ Cero o un idioma visible oculta el selector público. Dos muestran un interrupto
 | `articles` | `id` | `slug`, `created_by`, `status` (`draft\|published`), `published_at`, `cover_image_url`, `reading_time_minutes`, `created_at`, `updated_at` |
 | `article_locales` | `(article_id, locale)` | `title`, `description` (corta/dek), `content_html` (rich text) y `og_json` por idioma |
 | `article_category_map` | `(article_id, category_id)` | Relación muchos a muchos con `sort_order` |
-| `article_tags` | `(article_id, tag)` | Etiquetas buscables por artículo |
+| `article_tags` | `(article_id, tag)` | Etiquetas asociadas por artículo |
+| `tags` | `id` | Catálogo global de etiquetas con `name` y `slug` únicos para autocompletado y búsqueda |
 | `search_documents` | `id` | Índice unificado para `/buscar` con `(module_slug, record_id, locale)` único |
 
 ## Ayuda de emergencia heredada

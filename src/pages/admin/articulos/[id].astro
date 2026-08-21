@@ -81,6 +81,8 @@ const tagRows = (await env.DB.prepare(
   .all<{ tag: string }>()).results ?? [];
 const tags = tagRows.map((r) => r.tag);
 
+const existingTags = (await env.DB.prepare("SELECT name FROM tags ORDER BY name ASC").all<{ name: string }>()).results?.map((r) => r.name) ?? [];
+
 const categories = (await env.DB.prepare(
   `SELECT c.id, c.slug,
           COALESCE(
@@ -109,6 +111,7 @@ const backHref = localizedPath(locale, joinPath(routeIds.admin, "articulos"));
     ogs={ogs}
     categoryIds={categoryIds}
     tags={tags}
+    existingTags={existingTags}
     categories={categories}
     languages={languages}
         editorCopyByLocale={editorCopyByLocale}

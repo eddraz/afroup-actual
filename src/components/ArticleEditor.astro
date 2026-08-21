@@ -29,6 +29,7 @@ export interface Props {
   ogs?: Record<string, OpenGraphMetadata>;
   categoryIds?: number[];
   tags?: string[];
+  existingTags?: string[];
   categories: Array<{ id: number; title: string; slug: string }>;
   languages: Array<{ code: string; name: string; native_name: string }>;
   translation: BioTranslationAccess;
@@ -48,6 +49,7 @@ const {
   ogs = {},
   categoryIds = [],
   tags = [],
+  existingTags = [],
   categories = [],
   languages = [],
   translation,
@@ -491,21 +493,64 @@ const publicPath = article?.slug && primaryCategorySlug
         </div>
       </div>
 
-      <!-- Card: Etiquetas (Tags) -->
-      <div class="rounded-3xl border border-base-300 bg-base-100 p-5 shadow-xs space-y-4">
-        <h3 class="font-display font-bold text-sm text-base-content flex items-center gap-2 border-b border-base-300/80 pb-3">
-          <svg class="size-4 text-warning"><use href="#ic-pin"></use></svg>
-          <span>{copy.adminArticleTags || "Etiquetas"}</span>
-        </h3>
+      <!-- Card: Etiquetas (Tags) con autocompletado global -->
+      <div class="rounded-3xl border border-base-300 bg-base-100 p-5 shadow-xs space-y-3.5" data-tags-manager data-existing-tags={JSON.stringify(existingTags)}>
+        <div class="flex items-center justify-between border-b border-base-300/80 pb-3">
+          <h3 class="font-display font-bold text-sm text-base-content flex items-center gap-2">
+            <svg class="size-4 text-warning"><use href="#ic-pin"></use></svg>
+            <span>{copy.adminArticleTags || "Etiquetas"}</span>
+          </h3>
+          <span class="badge badge-neutral badge-xs font-mono py-1 px-2" data-tag-count>{tags.length}</span>
+        </div>
 
-        <textarea
-          class="textarea textarea-bordered textarea-sm w-full text-xs leading-relaxed"
-          name="tags"
-          rows="2"
-          maxlength="240"
-          placeholder="cultura, musica, historia, diaspora"
-        >{tagsString}</textarea>
-        <span class="text-[11px] text-base-content/50 block">Separadas por comas.</span>
+        <!-- Hidden Input for Form Submission -->
+        <input type="hidden" name="tags" value={tagsString} data-tags-hidden-input />
+
+        <!-- Interactive Tag Chips Box -->
+        <div class="min-h-[44px] p-2 rounded-2xl border border-base-300 bg-base-200/50 flex flex-wrap items-center gap-1.5 focus-within:border-primary focus-within:bg-base-100 transition-all" data-tag-chips-box>
+          <div class="flex flex-wrap items-center gap-1.5" data-tag-chips-container>
+            {tags.map((tag) => (
+              <span class="badge badge-neutral gap-1.5 py-1 px-2.5 text-xs font-semibold" data-tag-chip={tag}>
+                <span>#{tag}</span>
+                <button type="button" class="btn btn-ghost btn-xs size-3.5 p-0 min-h-0 text-neutral-content/70 hover:text-white" data-remove-tag={tag} aria-label={`Eliminar etiqueta ${tag}`}>✕</button>
+              </span>
+            ))}
+          </div>
+          <div class="relative flex-1 min-w-[150px]">
+            <input
+              type="text"
+              class="input input-ghost input-xs w-full text-xs font-medium focus:outline-none placeholder:text-base-content/40"
+              placeholder={tags.length === 0 ? "Escribe y presiona Enter o elige una sugerencia..." : "Añadir más..."}
+              data-tag-input-field
+              autocomplete="off"
+            />
+            <!-- Autocomplete suggestions dropdown -->
+            <div class="absolute left-0 top-full mt-1.5 z-30 hidden w-64 max-h-48 overflow-y-auto rounded-2xl border border-base-300 bg-base-100 p-1.5 shadow-xl" data-tag-suggestions-dropdown>
+              <ul class="menu menu-xs p-0 gap-0.5" data-tag-suggestions-list>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Existing Global Tags Cloud -->
+        {existingTags.length > 0 ? (
+          <div class="space-y-1.5 pt-1">
+            <span class="text-[11px] font-bold text-base-content/60 flex items-center gap-1">
+              <span>Etiquetas globales sugeridas:</span>
+            </span>
+            <div class="flex flex-wrap gap-1 max-h-24 overflow-y-auto pr-1">
+              {existingTags.slice(0, 20).map((t) => (
+                <button
+                  type="button"
+                  class="badge badge-outline badge-sm text-[11px] font-medium text-base-content/70 hover:badge-primary hover:text-primary-content transition-colors cursor-pointer"
+                  data-quick-tag={t}
+                >
+                  +{t}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </div>
 
       <!-- Card: Metadatos de Autoría (si es edición) -->
@@ -935,12 +980,175 @@ const publicPath = article?.slug && primaryCategorySlug
       }
     };
 
-    if (statusSelect && statusSelect.dataset.bound !== "true") {
-      statusSelect.dataset.bound = "true";
-      statusSelect.addEventListener("change", () => {
-        updateStatusUi(statusSelect.value);
+      if (statusSelect && statusSelect.dataset.bound !== "true") {
+        statusSelect.dataset.bound = "true";
+        statusSelect.addEventListener("change", () => {
+          updateStatusUi(statusSelect.value);
+        });
+      }
+
+    // Tags Manager with Global Autocomplete
+    form.querySelectorAll("[data-tags-manager]").forEach((manager) => {
+      if ((manager as HTMLElement).dataset.bound === "true") return;
+      (manager as HTMLElement).dataset.bound = "true";
+
+      const hiddenInput = manager.querySelector<HTMLInputElement>("[data-tags-hidden-input]");
+      const chipsContainer = manager.querySelector<HTMLElement>("[data-tag-chips-container]");
+      const inputField = manager.querySelector<HTMLInputElement>("[data-tag-input-field]");
+      const dropdown = manager.querySelector<HTMLElement>("[data-tag-suggestions-dropdown]");
+      const suggestionsList = manager.querySelector<HTMLElement>("[data-tag-suggestions-list]");
+      const countBadge = manager.querySelector<HTMLElement>("[data-tag-count]");
+
+      let allGlobalTags: string[] = [];
+      try {
+        allGlobalTags = JSON.parse((manager as HTMLElement).getAttribute("data-existing-tags") || "[]");
+      } catch {}
+
+      const currentTags = new Set<string>(
+        (hiddenInput?.value || "")
+          .split(/[,#\n]+/)
+          .map((t) => t.trim().toLowerCase())
+          .filter(Boolean)
+      );
+
+      const updateHiddenAndCount = () => {
+        const arr = Array.from(currentTags);
+        if (hiddenInput) hiddenInput.value = arr.join(", ");
+        if (countBadge) countBadge.textContent = String(arr.length);
+        if (inputField) {
+          inputField.placeholder = arr.length === 0 ? "Escribe y presiona Enter o elige una sugerencia..." : "Añadir más...";
+        }
+      };
+
+      const renderChips = () => {
+        if (!chipsContainer) return;
+        chipsContainer.innerHTML = "";
+        currentTags.forEach((tag) => {
+          const span = document.createElement("span");
+          span.className = "badge badge-neutral gap-1.5 py-1 px-2.5 text-xs font-semibold";
+          span.setAttribute("data-tag-chip", tag);
+          span.innerHTML = `<span>#${tag}</span><button type="button" class="btn btn-ghost btn-xs size-3.5 p-0 min-h-0 text-neutral-content/70 hover:text-white" data-remove-tag="${tag}" aria-label="Eliminar etiqueta ${tag}">✕</button>`;
+          span.querySelector("[data-remove-tag]")?.addEventListener("click", () => {
+            currentTags.delete(tag);
+            renderChips();
+            updateHiddenAndCount();
+          });
+          chipsContainer.appendChild(span);
+        });
+      };
+
+      const showSuggestions = async (query: string) => {
+        const q = query.trim().toLowerCase();
+        let matches: string[] = [];
+
+        if (allGlobalTags.length > 0) {
+          matches = allGlobalTags.filter((t) => (!q || t.includes(q)) && !currentTags.has(t)).slice(0, 8);
+        }
+
+        if (q && matches.length < 5) {
+          try {
+            const res = await fetch(`/api/admin/tags?q=${encodeURIComponent(q)}`);
+            const data = await res.json();
+            if (data.ok && Array.isArray(data.tags)) {
+              data.tags.forEach((t: string) => {
+                if (!allGlobalTags.includes(t)) allGlobalTags.push(t);
+                if (!currentTags.has(t) && !matches.includes(t)) matches.push(t);
+              });
+            }
+          } catch {}
+        }
+
+        if (!suggestionsList || !dropdown) return;
+        suggestionsList.innerHTML = "";
+
+        if (matches.length === 0 && !q) {
+          dropdown.classList.add("hidden");
+          return;
+        }
+
+        if (q && !currentTags.has(q) && !matches.includes(q)) {
+          const createLi = document.createElement("li");
+          createLi.innerHTML = `<button type="button" class="font-bold text-primary flex items-center gap-1.5"><svg class="size-3.5"><use href="#ic-plus"></use></svg> <span>Crear «#${q}»</span></button>`;
+          createLi.querySelector("button")?.addEventListener("click", () => {
+            currentTags.add(q);
+            if (!allGlobalTags.includes(q)) allGlobalTags.push(q);
+            renderChips();
+            updateHiddenAndCount();
+            if (inputField) inputField.value = "";
+            dropdown.classList.add("hidden");
+          });
+          suggestionsList.appendChild(createLi);
+        }
+
+        matches.forEach((tag) => {
+          const li = document.createElement("li");
+          li.innerHTML = `<button type="button" class="flex items-center justify-between py-1 px-2 font-medium"><span>#${tag}</span> <span class="badge badge-ghost badge-xs text-[10px]">existente</span></button>`;
+          li.querySelector("button")?.addEventListener("click", () => {
+            currentTags.add(tag);
+            renderChips();
+            updateHiddenAndCount();
+            if (inputField) inputField.value = "";
+            dropdown.classList.add("hidden");
+          });
+          suggestionsList.appendChild(li);
+        });
+
+        dropdown.classList.remove("hidden");
+      };
+
+      if (inputField) {
+        inputField.addEventListener("input", () => {
+          showSuggestions(inputField.value);
+        });
+
+        inputField.addEventListener("focus", () => {
+          showSuggestions(inputField.value);
+        });
+
+        inputField.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === ",") {
+            e.preventDefault();
+            const val = inputField.value.trim().toLowerCase().replace(/^[#\s,]+|[,\s]+$/g, "");
+            if (val) {
+              currentTags.add(val);
+              if (!allGlobalTags.includes(val)) allGlobalTags.push(val);
+              renderChips();
+              updateHiddenAndCount();
+              inputField.value = "";
+              if (dropdown) dropdown.classList.add("hidden");
+            }
+          } else if (e.key === "Backspace" && !inputField.value && currentTags.size > 0) {
+            const arr = Array.from(currentTags);
+            const last = arr[arr.length - 1];
+            currentTags.delete(last);
+            renderChips();
+            updateHiddenAndCount();
+          } else if (e.key === "Escape") {
+            if (dropdown) dropdown.classList.add("hidden");
+          }
+        });
+      }
+
+      manager.querySelectorAll<HTMLButtonElement>("[data-quick-tag]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const t = (btn.getAttribute("data-quick-tag") || "").trim().toLowerCase();
+          if (t) {
+            currentTags.add(t);
+            renderChips();
+            updateHiddenAndCount();
+          }
+        });
       });
-    }
+
+      document.addEventListener("click", (e) => {
+        if (!manager.contains(e.target as Node)) {
+          if (dropdown) dropdown.classList.add("hidden");
+        }
+      });
+
+      renderChips();
+      updateHiddenAndCount();
+    });
 
     // Form submit with draft vs published validation
     if (form.dataset.bound !== "true") {
@@ -1027,13 +1235,14 @@ const publicPath = article?.slug && primaryCategorySlug
             return;
           }
 
-          const tagsInput = form.querySelector<HTMLTextAreaElement>("textarea[name='tags']");
+          const tagsInput = form.querySelector<HTMLInputElement>("[data-tags-hidden-input]");
           const tagsVal = (tagsInput?.value || "").trim();
           if (!tagsVal) {
             if ((window as any).AfroUpFeedback) {
               (window as any).AfroUpFeedback.toast("Debes incluir al menos una etiqueta para publicar el artículo.", "error");
             }
-            tagsInput?.focus();
+            const tagInputField = form.querySelector<HTMLInputElement>("[data-tag-input-field]");
+            if (tagInputField) tagInputField.focus();
             if (submitBtn) submitBtn.disabled = false;
             return;
           }

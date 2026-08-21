@@ -228,8 +228,15 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     await env.DB.batch(categoryIds.map((categoryId, index) => mapStmt.bind(articleId, categoryId, index)));
   }
   if (tags.length) {
-    const tagStmt = env.DB.prepare("INSERT INTO article_tags (article_id, tag) VALUES (?, ?)");
-    await env.DB.batch(tags.map((tag) => tagStmt.bind(articleId, tag)));
+    const cleanTags = tags.map((t) => t.trim().toLowerCase()).filter(Boolean);
+    if (cleanTags.length) {
+      const globalTagStmt = env.DB.prepare("INSERT OR IGNORE INTO tags (name, slug) VALUES (?, ?)");
+      const tagStmt = env.DB.prepare("INSERT INTO article_tags (article_id, tag) VALUES (?, ?)");
+      await env.DB.batch([
+        ...cleanTags.map((tag) => globalTagStmt.bind(tag, tag)),
+        ...cleanTags.map((tag) => tagStmt.bind(articleId, tag)),
+      ]);
+    }
   }
   await syncIndex(articleId, slug, status === "published");
   let categorySlug = "cultura";
