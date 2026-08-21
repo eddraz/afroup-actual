@@ -1,0 +1,181 @@
+---
+import {
+  OG_FORM_NAMES,
+  emptyOgMetadata,
+  type OpenGraphMetadata,
+} from "../lib/og-metadata";
+
+interface Props {
+  localeCode: string;
+  values?: OpenGraphMetadata;
+  canUseAi?: boolean;
+  kind: "article" | "category";
+  moduleSlug: "articulos" | "categorias";
+  copy: Record<string, string>;
+  disabled?: boolean;
+}
+
+const {
+  localeCode,
+  values = emptyOgMetadata(),
+  canUseAi = false,
+  kind,
+  moduleSlug,
+  copy,
+  disabled = false,
+} = Astro.props;
+
+const fields: Array<{ key: keyof typeof OG_FORM_NAMES; label: string; multiline?: boolean }> = [
+  { key: "url", label: copy.adminOgUrl || "og:url" },
+  { key: "type", label: copy.adminOgType || "og:type" },
+  { key: "title", label: copy.adminOgTitle || "og:title" },
+  { key: "description", label: copy.adminOgDescription || "og:description", multiline: true },
+  { key: "image", label: copy.adminOgImage || "og:image" },
+  { key: "imageAlt", label: copy.adminOgImageAlt || "og:image:alt" },
+  { key: "twitterCard", label: copy.adminOgTwitterCard || "twitter:card" },
+  { key: "twitterTitle", label: copy.adminOgTwitterTitle || "twitter:title" },
+  { key: "twitterDescription", label: copy.adminOgTwitterDescription || "twitter:description", multiline: true },
+  { key: "twitterImage", label: copy.adminOgTwitterImage || "twitter:image" },
+];
+---
+
+<div class="collapse collapse-arrow rounded-2xl border border-base-300 bg-base-200/40">
+  <input type="checkbox" />
+  <div class="collapse-title font-display text-sm font-bold min-h-0 py-3">
+    {copy.adminMetadata || "Opciones avanzadas"}
+    <p class="text-xs font-normal text-base-content/60 mt-0.5">{copy.adminMetadataLead || "Metadatos Open Graph y Twitter."}</p>
+  </div>
+  <div class="collapse-content space-y-3">
+    {canUseAi ? (
+      <button
+        type="button"
+        class="btn btn-ai btn-sm gap-2"
+        data-og-generate
+        data-og-locale={localeCode}
+        data-og-kind={kind}
+        data-og-module={moduleSlug}
+        data-og-need-fields={kind === "article" ? (copy.adminOgGenerateNeedFields || "") : (copy.adminOgGenerateNeedCategoryFields || "")}
+      >
+        {copy.adminOgGenerate || "Generar con IA"}
+      </button>
+    ) : null}
+    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      {fields.map((field) => (
+        <fieldset class:list={["fieldset", field.multiline && "sm:col-span-2"]}>
+          <legend class="fieldset-legend text-[11px] font-mono uppercase tracking-wide text-base-content/60">
+            {field.label}
+          </legend>
+          {field.multiline ? (
+            <textarea
+              class="textarea textarea-bordered w-full text-sm"
+              name={`${OG_FORM_NAMES[field.key]}[${localeCode}]`}
+              rows="2"
+              disabled={disabled}
+            >{values[field.key]}</textarea>
+          ) : (
+            <input
+              class="input input-bordered w-full text-sm font-mono"
+              name={`${OG_FORM_NAMES[field.key]}[${localeCode}]`}
+              value={values[field.key]}
+              disabled={disabled}
+            />
+          )}
+        </fieldset>
+      ))}
+    </div>
+  </div>
+</div>
+
+<script is:inline>
+  (function () {
+    var bind = function () {
+      document.querySelectorAll("[data-og-generate]").forEach(function (button) {
+        if (button.dataset.bound === "true") return;
+        button.dataset.bound = "true";
+        button.addEventListener("click", function () {
+          var locale = button.getAttribute("data-og-locale") || "es";
+          var panel = button.closest("[data-i18n-panel]");
+          var form = button.closest("form");
+          if (!form) return;
+          var kind = button.getAttribute("data-og-kind") || "article";
+          var titleInput = form.querySelector('[name="title[' + locale + ']"]');
+          var descInput = form.querySelector('[name="description[' + locale + ']"]');
+          var contentInput = form.querySelector('[name="content_html[' + locale + ']"]');
+          var tagsInput = form.querySelector('[name="tags"]');
+          var categoryBoxes = form.querySelectorAll('input[name="categoryIds"]:checked');
+          var coverInput = form.querySelector("[data-cover-input], #article-cover-image-input");
+          var title = titleInput ? String(titleInput.value || "").trim() : "";
+          var description = descInput ? String(descInput.value || "") : "";
+          var content = contentInput ? String(contentInput.value || "") : "";
+          var tags = tagsInput ? String(tagsInput.value || "").trim() : "";
+          var categories = [];
+          categoryBoxes.forEach(function (box) {
+            var label = box.closest("label");
+            var name = label ? String(label.textContent || "").replace(/\s+/g, " ").trim() : "";
+            categories.push(name || String(box.value || ""));
+          });
+          var strip = function (value) { return String(value || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim(); };
+          var missing = [];
+          if (!title) missing.push("title");
+          if (!strip(description)) missing.push("description");
+          if (kind !== "category") {
+            if (!strip(content)) missing.push("content");
+            if (!tags) missing.push("tags");
+            if (!categories.length) missing.push("categories");
+          }
+          if (missing.length) {
+            var need = button.getAttribute("data-og-need-fields") || "";
+            if (window.AfroUpFeedback) window.AfroUpFeedback.toast(need, "error");
+            return;
+          }
+          var data = new FormData();
+          data.set("module", button.getAttribute("data-og-module") || "articulos");
+          data.set("kind", kind);
+          data.set("locale", locale);
+          data.set("title", title);
+          data.set("description", description);
+          data.set("content", content);
+          data.set("tags", tags);
+          data.set("categories", categories.join(","));
+          data.set("image", coverInput ? String(coverInput.value || "") : "");
+          var urlField = form.querySelector('[name="og_url[' + locale + ']"]');
+          data.set("url", urlField ? String(urlField.value || "") : "");
+          button.disabled = true;
+          fetch("/api/admin/og", { method: "POST", body: data })
+            .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
+            .then(function (result) {
+              button.disabled = false;
+              if (!result.ok || !result.body || !result.body.metadata) {
+                if (window.AfroUpFeedback) window.AfroUpFeedback.toast((result.body && result.body.error) || "No pudimos generar la metadata.", "error");
+                return;
+              }
+              var meta = result.body.metadata;
+              var map = {
+                url: "og_url",
+                type: "og_type",
+                title: "og_title",
+                description: "og_description",
+                image: "og_image",
+                imageAlt: "og_image_alt",
+                twitterCard: "og_twitter_card",
+                twitterTitle: "og_twitter_title",
+                twitterDescription: "og_twitter_description",
+                twitterImage: "og_twitter_image",
+              };
+              Object.keys(map).forEach(function (key) {
+                var field = form.querySelector('[name="' + map[key] + "[" + locale + ']"]');
+                if (field && meta[key]) field.value = meta[key];
+              });
+              if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Metadata generada.", "success");
+            })
+            .catch(function () {
+              button.disabled = false;
+              if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Error de red.", "error");
+            });
+        });
+      });
+    };
+    bind();
+    document.addEventListener("astro:page-load", bind);
+  })();
+</script>

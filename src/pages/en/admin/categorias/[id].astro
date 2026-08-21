@@ -9,6 +9,8 @@ import { resolveRequestCopy } from "../../../../lib/request-locale";
 import { canManageOwnedRecord, translationAccess } from "../../../../lib/editorial";
 import { routeIds } from "../../../../lib/paths";
 import { listSiteLanguages } from "../../../../lib/site-languages";
+import OgMetadataFields from "../../../../components/OgMetadataFields.astro";
+import { parseOgMetadata } from "../../../../lib/og-metadata";
 
 export const prerender = false;
 
@@ -29,12 +31,13 @@ const category = await env.DB.prepare("SELECT id, slug FROM article_categories W
 if (!category) return new Response(null, { status: 404 });
 
 const localeRows = (await env.DB.prepare(
-  "SELECT locale, title, description FROM article_category_locales WHERE category_id = ?",
+  "SELECT locale, title, description, og_json FROM article_category_locales WHERE category_id = ?",
 )
   .bind(id)
-  .all<{ locale: string; title: string; description: string }>()).results ?? [];
+  .all<{ locale: string; title: string; description: string; og_json: string }>()).results ?? [];
 const titles = Object.fromEntries(localeRows.map((row) => [row.locale, row.title]));
 const descriptions = Object.fromEntries(localeRows.map((row) => [row.locale, row.description]));
+const ogs = Object.fromEntries(localeRows.map((row) => [row.locale, parseOgMetadata(row.og_json)]));
 const translation = await translationAccess(env.DB, actor.id, "categorias", "update");
 const languages = await listSiteLanguages(env.DB);
 const listHref = localizedPath(locale, joinPath(routeIds.admin, "categorias"));
@@ -116,6 +119,15 @@ const listHref = localizedPath(locale, joinPath(routeIds.admin, "categorias"));
                 placeholder="Editorial description of the theme..."
               >{descriptions[language.code] ?? ""}</textarea>
             </fieldset>
+            <OgMetadataFields
+              localeCode={language.code}
+              values={ogs[language.code]}
+              canUseAi={translation.canUseAi}
+              kind="category"
+              moduleSlug="categorias"
+              copy={copy}
+              disabled={locked}
+            />
           </div>
         );
       })}

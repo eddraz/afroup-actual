@@ -1,0 +1,30 @@
+---
+import { mergeOgMetadata, parseOgMetadata, seedOgMetadata, type OpenGraphMetadata } from "../lib/og-metadata";
+
+interface Props {
+  title?: string;
+  description?: string;
+  image?: string | null;
+  url?: string;
+  type?: string;
+  stored?: string | OpenGraphMetadata | null;
+}
+
+const { title = "", description = "", image = "", url = "", type = "article", stored = null } = Astro.props;
+const og = mergeOgMetadata(
+  seedOgMetadata({ title, description, image: image || "", url, type }),
+  parseOgMetadata(stored),
+);
+---
+
+{og.title ? <meta property="og:title" content={og.title} /> : null}
+{og.type ? <meta property="og:type" content={og.type} /> : null}
+{og.url ? <meta property="og:url" content={og.url} /> : null}
+{og.description ? <meta property="og:description" content={og.description} /> : null}
+{og.image ? <meta property="og:image" content={og.image} /> : null}
+{og.imageAlt ? <meta property="og:image:alt" content={og.imageAlt} /> : null}
+{og.twitterCard ? <meta name="twitter:card" content={og.twitterCard} /> : null}
+{og.twitterTitle ? <meta name="twitter:title" content={og.twitterTitle} /> : null}
+{og.twitterDescription ? <meta name="twitter:description" content={og.twitterDescription} /> : null}
+{og.twitterImage ? <meta name="twitter:image" content={og.twitterImage} /> : null}
+{og.description ? <meta name="description" content={og.description} /> : null}

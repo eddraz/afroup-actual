@@ -10,6 +10,7 @@ import { canManageOwnedRecord, translationAccess } from "../../../lib/editorial"
 import { hasPermission } from "../../../lib/rbac";
 import { routeIds } from "../../../lib/paths";
 import { listSiteLanguages } from "../../../lib/site-languages";
+import { parseOgMetadata } from "../../../lib/og-metadata";
 
 export const prerender = false;
 
@@ -50,18 +51,20 @@ LEFT JOIN users u ON u.id = a.created_by
 if (!article) return new Response(null, { status: 404 });
 
 const localeRows = (await env.DB.prepare(
-  "SELECT locale, title, description, content_html FROM article_locales WHERE article_id = ?",
+  "SELECT locale, title, description, content_html, og_json FROM article_locales WHERE article_id = ?",
 )
   .bind(id)
-  .all<{ locale: string; title: string; description: string; content_html: string }>()).results ?? [];
+  .all<{ locale: string; title: string; description: string; content_html: string; og_json: string }>()).results ?? [];
 
 const titles: Record<string, string> = {};
 const descriptions: Record<string, string> = {};
 const contents: Record<string, string> = {};
+const ogs: Record<string, ReturnType<typeof parseOgMetadata>> = {};
 for (const row of localeRows) {
   titles[row.locale] = row.title;
   descriptions[row.locale] = row.description;
   contents[row.locale] = row.content_html ?? "";
+  ogs[row.locale] = parseOgMetadata(row.og_json);
 }
 
 const categoryMapRows = (await env.DB.prepare(
@@ -102,6 +105,7 @@ const backHref = localizedPath(locale, joinPath(routeIds.admin, "articulos"));
     titles={titles}
     descriptions={descriptions}
     contents={contents}
+    ogs={ogs}
     categoryIds={categoryIds}
     tags={tags}
     categories={categories}

@@ -17,6 +17,7 @@ import {
 import { isReservedCategorySlug } from "../../../lib/category-routes";
 import { applySearchDocument, removeSearchDocuments, searchDocumentPath } from "../../../lib/search-documents";
 import { hasPermission } from "../../../lib/rbac";
+import { parseOgFromForm, serializeOgMetadata } from "../../../lib/og-metadata";
 
 export const prerender = false;
 
@@ -128,9 +129,13 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   }
 
   const stmt = env.DB.prepare(
-    "INSERT INTO article_category_locales (category_id, locale, title, description) VALUES (?, ?, ?, ?)",
+    "INSERT INTO article_category_locales (category_id, locale, title, description, og_json) VALUES (?, ?, ?, ?, ?)",
   );
-  await env.DB.batch(locales.map((row) => stmt.bind(categoryId, row.locale, row.title, row.description)));
+  await env.DB.batch(
+    locales.map((row) =>
+      stmt.bind(categoryId, row.locale, row.title, row.description, serializeOgMetadata(parseOgFromForm(form, row.locale))),
+    ),
+  );
   await syncIndex(categoryId, slug);
   return json({ ok: true, id: categoryId });
 };

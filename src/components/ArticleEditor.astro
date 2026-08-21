@@ -1,6 +1,8 @@
 ---
 import PageLocaleSwitch from "./PageLocaleSwitch.astro";
 import R2Uploader from "./R2Uploader.astro";
+import OgMetadataFields from "./OgMetadataFields.astro";
+import { emptyOgMetadata, type OpenGraphMetadata } from "../lib/og-metadata";
 import { defaultLocale, localizedPath } from "../lib/i18n";
 import type { BioTranslationAccess } from "../lib/bio-writes";
 import { getCategoryTheme } from "../lib/category-routes";
@@ -21,6 +23,7 @@ export interface Props {
   titles?: Record<string, string>;
   descriptions?: Record<string, string>;
   contents?: Record<string, string>;
+  ogs?: Record<string, OpenGraphMetadata>;
   categoryIds?: number[];
   tags?: string[];
   categories: Array<{ id: number; title: string; slug: string }>;
@@ -38,6 +41,7 @@ const {
   titles = {},
   descriptions = {},
   contents = {},
+  ogs = {},
   categoryIds = [],
   tags = [],
   categories = [],
@@ -246,6 +250,16 @@ const publicPath = article?.slug && primaryCategorySlug
                 </div>
               </div>
             </fieldset>
+
+            <OgMetadataFields
+              localeCode={language.code}
+              values={ogs[language.code] ?? emptyOgMetadata()}
+              canUseAi={translation.canUseAi}
+              kind="article"
+              moduleSlug="articulos"
+              copy={copy}
+              disabled={locked}
+            />
           </div>
         );
       })}
@@ -403,6 +417,16 @@ const publicPath = article?.slug && primaryCategorySlug
               targetInputId="article-cover-image-input"
               locale={locale}
               flat={true}
+              showBucketSelector={false}
+              allowAiGenerate={true}
+              allowFormContext={true}
+              canUseAi={translation.canUseAi}
+              promptModel="@cf/deepseek-ai/deepseek-v4-flash-0731"
+              imageModel="xai/grok-imagine-image-2.0"
+              videoModel="bytedance/seedance-2.5"
+              musicModel="minimax/music-2.6"
+              textModel="@cf/deepseek-ai/deepseek-v4-flash-0731"
+              prompt=""
             />
           </div>
         </dialog>

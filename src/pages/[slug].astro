@@ -1,6 +1,7 @@
 ---
 import { env } from "cloudflare:workers";
 import BaseLayout from "../layouts/BaseLayout.astro";
+import OgHead from "../components/OgHead.astro";
 import { getCategoryTheme, isReservedCategorySlug } from "../lib/category-routes";
 import { defaultLocale, localizedPath } from "../lib/i18n";
 import { resolveRequestCopy } from "../lib/request-locale";
@@ -33,6 +34,12 @@ const category = await env.DB.prepare(
 
 if (!category?.title) return new Response(null, { status: 404 });
 
+const ogRow = await env.DB.prepare(
+  "SELECT og_json FROM article_category_locales WHERE category_id = ? AND locale IN (?, ?) ORDER BY CASE locale WHEN ? THEN 0 ELSE 1 END LIMIT 1",
+)
+  .bind(category.id, locale, defaultLocale, locale)
+  .first<{ og_json: string }>();
+
 const homeHref = localizedPath(locale, routeIds.home);
 const articles = (await env.DB.prepare(
   `SELECT a.slug,
@@ -54,6 +61,14 @@ const articles = (await env.DB.prepare(
 ---
 
 <BaseLayout title={`AfroUp — ${category.title}`} active={slug}>
+  <OgHead
+    slot="head"
+    title={category.title}
+    description={category.description ?? ""}
+    url={Astro.url.href}
+    type="website"
+    stored={ogRow?.og_json}
+  />
   <div class="breadcrumbs text-sm">
     <ul>
       <li><a href={homeHref}>{copy.navHome}</a></li>

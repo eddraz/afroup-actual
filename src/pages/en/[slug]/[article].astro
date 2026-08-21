@@ -2,6 +2,7 @@
 import { env } from "cloudflare:workers";
 import { Image } from "astro:assets";
 import BaseLayout from "../../../layouts/BaseLayout.astro";
+import OgHead from "../../../components/OgHead.astro";
 import { getCurrentUser, sessionTokenFrom } from "../../../lib/admin-scope";
 import { getCategoryTheme, isReservedCategorySlug } from "../../../lib/category-routes";
 import { defaultLocale, joinPath, localizedPath } from "../../../lib/i18n";
@@ -167,9 +168,23 @@ const donateHref = localizedPath(locale, routeIds.donate);
 const authorDisplayName = row.author_name || "AfroUp Team";
 const authorRole = copy.articleDefaultRole;
 const authorBioText = plainBioText(row.author_bio) || copy.articleDefaultBio;
+const ogRow = await env.DB.prepare(
+  "SELECT og_json FROM article_locales WHERE article_id = ? AND locale IN (?, ?) ORDER BY CASE locale WHEN ? THEN 0 ELSE 1 END LIMIT 1",
+)
+  .bind(row.id, locale, defaultLocale, locale)
+  .first<{ og_json: string }>();
 ---
 
 <BaseLayout title={`AfroUp — ${row.title}`} active={categorySlug}>
+  <OgHead
+    slot="head"
+    title={row.title ?? ""}
+    description={row.description ?? ""}
+    image={row.cover_image_url}
+    url={Astro.url.href}
+    type="article"
+    stored={ogRow?.og_json}
+  />
   {isPreviewMode ? (
     <aside class="sticky top-0 z-50 bg-amber-500 text-neutral-950 px-4 py-2.5 shadow-md border-b border-amber-600/50 backdrop-blur-md">
       <div class="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-3 text-xs font-semibold">

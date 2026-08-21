@@ -17,6 +17,7 @@ import {
 } from "../../../lib/editorial";
 import { applySearchDocument, removeSearchDocuments, searchDocumentPath } from "../../../lib/search-documents";
 import { hasPermission } from "../../../lib/rbac";
+import { parseOgFromForm, serializeOgMetadata } from "../../../lib/og-metadata";
 
 export const prerender = false;
 
@@ -37,7 +38,7 @@ function parseCategoryIds(form: FormData): number[] {
 
 async function loadLocales(articleId: number) {
   const rows = (await env.DB.prepare(
-    "SELECT locale, title, description, content_html FROM article_locales WHERE article_id = ?",
+    "SELECT locale, title, description, content_html, og_json FROM article_locales WHERE article_id = ?",
   )
     .bind(articleId)
     .all<{ locale: string; title: string; description: string; content_html: string }>()).results ?? [];
@@ -192,10 +193,19 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   }
 
   const localeStmt = env.DB.prepare(
-    "INSERT INTO article_locales (article_id, locale, title, description, content_html) VALUES (?, ?, ?, ?, ?)",
+    "INSERT INTO article_locales (article_id, locale, title, description, content_html, og_json) VALUES (?, ?, ?, ?, ?, ?)",
   );
   await env.DB.batch(
-    locales.map((row) => localeStmt.bind(articleId, row.locale, row.title, row.description, row.content_html)),
+    locales.map((row) =>
+      localeStmt.bind(
+        articleId,
+        row.locale,
+        row.title,
+        row.description,
+        row.content_html,
+        serializeOgMetadata(parseOgFromForm(form, row.locale)),
+      ),
+    ),
   );
   if (categoryIds.length) {
     const mapStmt = env.DB.prepare(

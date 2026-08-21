@@ -9,6 +9,7 @@ import { translationAccess } from "../../lib/editorial";
 import { hasPermission } from "../../lib/rbac";
 import { listSiteLanguages } from "../../lib/site-languages";
 import { getCategoryTheme } from "../../lib/category-routes";
+import OgMetadataFields from "../../components/OgMetadataFields.astro";
 
 export const prerender = false;
 
@@ -231,6 +232,14 @@ const categories = (await env.DB.prepare(
                       placeholder="Descripción editorial de la temática..."
                     ></textarea>
                   </fieldset>
+                  <OgMetadataFields
+                    localeCode={language.code}
+                    canUseAi={translation.canUseAi}
+                    kind="category"
+                    moduleSlug="categorias"
+                    copy={copy}
+                    disabled={locked}
+                  />
                 </div>
               );
             })}

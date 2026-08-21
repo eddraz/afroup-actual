@@ -193,9 +193,9 @@ Cero o un idioma visible oculta el selector público. Dos muestran un interrupto
 | Tabla | PK | Notas |
 |---|---|---|
 | `article_categories` | `id` | Categoría con `slug`, `created_by` y timestamps |
-| `article_category_locales` | `(category_id, locale)` | Título y descripción por idioma |
+| `article_category_locales` | `(category_id, locale)` | Título, descripción y `og_json` (Open Graph / Twitter) por idioma |
 | `articles` | `id` | `slug`, `created_by`, `status` (`draft\|published`), `published_at`, `cover_image_url`, `reading_time_minutes`, `created_at`, `updated_at` |
-| `article_locales` | `(article_id, locale)` | `title`, `description` (corta/dek) y `content_html` (rich text) por idioma |
+| `article_locales` | `(article_id, locale)` | `title`, `description` (corta/dek), `content_html` (rich text) y `og_json` por idioma |
 | `article_category_map` | `(article_id, category_id)` | Relación muchos a muchos con `sort_order` |
 | `article_tags` | `(article_id, tag)` | Etiquetas buscables por artículo |
 | `search_documents` | `id` | Índice unificado para `/buscar` con `(module_slug, record_id, locale)` único |
