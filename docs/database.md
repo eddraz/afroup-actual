@@ -200,6 +200,8 @@ Cero o un idioma visible oculta el selector público. Dos muestran un interrupto
 | `article_tags` | `(article_id, tag)` | Etiquetas asociadas por artículo |
 | `tags` | `id` | Catálogo global de etiquetas con `name` y `slug` únicos para autocompletado y búsqueda |
 | `about_page_locales` | `locale` | Contenido editorial, misión, visión, equipo, estadísticas y CTA de `/nosotros` por idioma |
+| `contact_page_locales` | `locale` | Canales oficiales, hero, respuesta y metadatos de `/contacto` por idioma |
+| `contact_submissions` | `id` | Bandeja de mensajes de contacto recibidos con estado (`unread|read|replied|archived`) |
 | `search_documents` | `id` | Índice unificado para `/buscar` con `(module_slug, record_id, locale)` único |
 
 ## Ayuda de emergencia heredada

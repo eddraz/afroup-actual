@@ -1,22 +1,26 @@
 ---
+import { env } from "cloudflare:workers";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { getLocaleFromUrl, localizedPath, t } from "../../lib/i18n";
 import { routeIds } from "../../lib/paths";
+import { loadContactPageLocale } from "../../lib/contact";
 
-export const prerender = true;
+export const prerender = false;
 
 const locale = getLocaleFromUrl(Astro.url);
 const copy = t(locale);
 const homeHref = localizedPath(locale, routeIds.home);
+const contactData = await loadContactPageLocale(env.DB, locale);
+
 const details = [
-  { icon: "ic-mail", title: copy.contactInfoEmail, value: "hello@afroup.org" },
-  { icon: "ic-users", title: copy.contactInfoWhatsapp, value: "+57 320 7146 · +31 20 211 7146" },
-  { icon: "ic-pin", title: copy.contactInfoBase, value: copy.contactInfoBaseValue },
-  { icon: "ic-ig", title: copy.contactInfoSocial, value: copy.contactInfoSocialValue },
-] as const;
+  { icon: "ic-mail", title: copy.contactInfoEmail || "Email", value: contactData.email },
+  { icon: "ic-users", title: copy.contactInfoWhatsapp || "WhatsApp", value: contactData.whatsapp },
+  { icon: "ic-pin", title: copy.contactInfoBase || "Base", value: contactData.base_location },
+  { icon: "ic-ig", title: copy.contactInfoSocial || "Social", value: contactData.social_channels },
+];
 ---
 
-<BaseLayout title={copy.titleContact}>
+<BaseLayout title={contactData.title || copy.titleContact}>
   <div class="breadcrumbs text-sm">
     <ul>
       <li><a href={homeHref}>{copy.navHome}</a></li>
@@ -26,23 +30,36 @@ const details = [
 
   <section class="hero relative mt-6 overflow-hidden rounded-[24px] border border-base-300 bg-base-200 shadow-lg">
     <div class="hero-content relative w-full flex-col items-start gap-3 px-6 py-8 lg:px-11 lg:py-11">
-      <p class="text-primary text-xs font-extrabold tracking-[0.18em] uppercase">{copy.contactEyebrow}</p>
-      <h1 class="font-display max-w-[18ch] text-[31px] font-bold lg:text-[44px]">{copy.contactTitle}</h1>
-      <p class="max-w-[56ch] text-[17px] leading-[1.55] opacity-70">{copy.contactLead}</p>
+      <p class="text-primary text-xs font-extrabold tracking-[0.18em] uppercase">{contactData.eyebrow || copy.contactEyebrow}</p>
+      <h1 class="font-display max-w-[18ch] text-[31px] font-bold lg:text-[44px]">{contactData.title || copy.contactTitle}</h1>
+      <p class="max-w-[56ch] text-[17px] leading-[1.55] opacity-70">{contactData.lead || copy.contactLead}</p>
     </div>
   </section>
 
   <div class="mt-[30px] grid grid-cols-1 items-start gap-8 lg:grid-cols-[1.2fr_0.8fr]">
-    <form class="card bg-base-200 shadow" onsubmit="return false">
+    <form class="card bg-base-200 shadow" method="post" action="/api/contact" data-public-contact-form>
+      <input type="hidden" name="locale" value={locale} />
       <div class="card-body">
+        <!-- Success Alert Container -->
+        <div class="alert alert-success hidden text-xs font-semibold" data-contact-success-alert>
+          <svg class="size-4"><use href="#ic-plus"></use></svg>
+          <span data-contact-success-msg></span>
+        </div>
+
+        <!-- Error Alert Container -->
+        <div class="alert alert-error hidden text-xs font-semibold" data-contact-error-alert>
+          <span>✕</span>
+          <span data-contact-error-msg></span>
+        </div>
+
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <fieldset class="fieldset">
             <legend class="fieldset-legend">{copy.contactName}</legend>
-            <input class="input w-full" type="text" name="name" placeholder={copy.contactNamePlaceholder} />
+            <input class="input w-full" type="text" name="name" placeholder={copy.contactNamePlaceholder} required />
           </fieldset>
           <fieldset class="fieldset">
             <legend class="fieldset-legend">{copy.contactEmail}</legend>
-            <input class="input w-full" type="email" name="email" placeholder={copy.contactEmailPlaceholder} />
+            <input class="input w-full" type="email" name="email" placeholder={copy.contactEmailPlaceholder} required />
           </fieldset>
         </div>
         <fieldset class="fieldset">
@@ -57,11 +74,11 @@ const details = [
         </fieldset>
         <fieldset class="fieldset">
           <legend class="fieldset-legend">{copy.contactMessage}</legend>
-          <textarea class="textarea w-full" name="message" rows="5" placeholder={copy.contactMessagePlaceholder}></textarea>
+          <textarea class="textarea w-full" name="message" rows="5" placeholder={copy.contactMessagePlaceholder} required></textarea>
         </fieldset>
         <div class="card-actions">
-          <button class="btn btn-primary" type="submit">
-            {copy.contactSubmit}
+          <button class="btn btn-primary font-bold" type="submit" data-contact-submit-btn>
+            <span>{copy.contactSubmit}</span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <use href="#ic-arrow"></use>
             </svg>
@@ -72,26 +89,90 @@ const details = [
 
     <aside class="card bg-base-200 shadow">
       <div class="card-body">
-        <h2 class="card-title">{copy.contactInfoTitle}</h2>
-        <ul class="list">
+        <div class="flex items-center justify-between border-b border-base-300/80 pb-3">
+          <h2 class="card-title text-base font-bold">{copy.contactInfoTitle}</h2>
+          {contactData.response_time ? (
+            <span class="badge badge-accent badge-sm font-semibold text-[11px]">
+              {contactData.response_time}
+            </span>
+          ) : null}
+        </div>
+        <ul class="list divide-y divide-base-300/60">
           {
             details.map((item) => (
-              <li class="list-row">
-                <span class="btn btn-square pointer-events-none no-animation border-0 bg-base-100 text-primary shadow-none">
+              <li class="list-row py-3">
+                <span class="btn btn-square pointer-events-none no-animation border-0 bg-base-100 text-primary shadow-none shrink-0">
                   <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                     <use href={`#${item.icon}`}></use>
                   </svg>
                 </span>
-                <div>
-                  <div class="font-bold">{item.title}</div>
-                  <div class="text-sm opacity-60">{item.value}</div>
+                <div class="min-w-0 flex-1">
+                  <div class="font-bold text-xs text-base-content">{item.title}</div>
+                  <div class="text-xs opacity-75 break-words font-medium mt-0.5">{item.value}</div>
                 </div>
               </li>
             ))
           }
         </ul>
-        <div class="h-[90px] rounded-box bg-[url('/assets/pattern.png')] bg-cover bg-center"></div>
+        <div class="h-[90px] rounded-box bg-[url('/assets/pattern.png')] bg-cover bg-center mt-2"></div>
       </div>
     </aside>
   </div>
 </BaseLayout>
+
+<script>
+  function setupPublicContactForm() {
+    const form = document.querySelector<HTMLFormElement>("[data-public-contact-form]");
+    if (!form || form.dataset.bound === "true") return;
+    form.dataset.bound = "true";
+
+    const submitBtn = form.querySelector<HTMLButtonElement>("[data-contact-submit-btn]");
+    const successAlert = form.querySelector<HTMLElement>("[data-contact-success-alert]");
+    const successMsg = form.querySelector<HTMLElement>("[data-contact-success-msg]");
+    const errorAlert = form.querySelector<HTMLElement>("[data-contact-error-alert]");
+    const errorMsg = form.querySelector<HTMLElement>("[data-contact-error-msg]");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (successAlert) successAlert.classList.add("hidden");
+      if (errorAlert) errorAlert.classList.add("hidden");
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="loading loading-spinner loading-xs"></span> <span>Sending...</span>';
+      }
+
+      const fd = new FormData(form);
+      try {
+        const res = await fetch(form.action, { method: "POST", body: fd });
+        const result = await res.json();
+
+        if (result.ok) {
+          if (successAlert && successMsg) {
+            successMsg.textContent = result.message || "Message sent successfully.";
+            successAlert.classList.remove("hidden");
+          }
+          form.reset();
+        } else {
+          if (errorAlert && errorMsg) {
+            errorMsg.textContent = result.message || "Failed to send message.";
+            errorAlert.classList.remove("hidden");
+          }
+        }
+      } catch {
+        if (errorAlert && errorMsg) {
+          errorMsg.textContent = "Network error. Please try again.";
+          errorAlert.classList.remove("hidden");
+        }
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<span>Send message</span> <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#ic-arrow"></use></svg>';
+        }
+      }
+    });
+  }
+
+  setupPublicContactForm();
+  document.addEventListener("astro:page-load", setupPublicContactForm);
+</script>

@@ -32,6 +32,7 @@ export const routeIds = {
   recover: "recuperar",
   account: "cuenta",
   admin: "admin",
+  adminContact: "admin/contacto",
   sitemap: "#",
 } as const;
 
