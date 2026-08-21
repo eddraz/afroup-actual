@@ -6,7 +6,7 @@ import { requireModuleAccess } from "../../lib/admin-scope";
 import { resolveRequestCopy } from "../../lib/request-locale";
 import { translationAccess } from "../../lib/editorial";
 import { listSiteLanguages } from "../../lib/site-languages";
-import { loadResources, loadAllResourcesPageConfigs, getResourceStats } from "../../lib/resources";
+import { loadResources, loadAllResourcesWithLocales, loadAllResourcesPageConfigs, getResourceStats } from "../../lib/resources";
 import { localizedPath } from "../../lib/i18n";
 import { routeIds } from "../../lib/paths";
 
@@ -20,6 +20,7 @@ const actor = access;
 const translation = await translationAccess(env.DB, actor.id, "recursos", "update");
 const languages = await listSiteLanguages(env.DB);
 const resources = await loadResources(env.DB, locale);
+const allResourcesWithLocales = await loadAllResourcesWithLocales(env.DB);
 const pageConfigByLocale = await loadAllResourcesPageConfigs(env.DB);
 const stats = await getResourceStats(env.DB);
 const publicHref = localizedPath(locale, routeIds.resources);
@@ -28,6 +29,7 @@ const publicHref = localizedPath(locale, routeIds.resources);
 <AdminLayout title={copy.adminResources || "Recursos"} active="resources">
   <ResourcesAdmin
     resources={resources}
+    allResourcesWithLocales={allResourcesWithLocales}
     pageConfigByLocale={pageConfigByLocale}
     stats={stats}
     languages={languages}

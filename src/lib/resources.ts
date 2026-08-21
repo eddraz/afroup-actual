@@ -204,6 +204,26 @@ export async function loadResourceById(
   return { resource, locales };
 }
 
+export async function loadAllResourcesWithLocales(
+  db: D1Database
+): Promise<{ resource: ResourceRow; locales: Record<string, ResourceLocaleRow> }[]> {
+  const resources = (await db.prepare("SELECT * FROM resources ORDER BY featured DESC, sort_order ASC, created_at DESC").all<ResourceRow>()).results ?? [];
+  const locales = (await db.prepare("SELECT * FROM resource_locales").all<ResourceLocaleRow>()).results ?? [];
+
+  const localesMap = new Map<number, Record<string, ResourceLocaleRow>>();
+  for (const l of locales) {
+    if (!localesMap.has(l.resource_id)) {
+      localesMap.set(l.resource_id, {});
+    }
+    localesMap.get(l.resource_id)![l.locale] = l;
+  }
+
+  return resources.map((r) => ({
+    resource: r,
+    locales: localesMap.get(r.id) ?? {},
+  }));
+}
+
 export async function loadResourcesPageConfig(db: D1Database, locale: string): Promise<ResourcesPageData> {
   const row = await db
     .prepare("SELECT * FROM resources_page_locales WHERE locale = ?")

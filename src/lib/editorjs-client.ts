@@ -325,4 +325,110 @@ export function initArticleEditors(): Record<string, EditorJS> {
   return window.__afroupEditors;
 }
 
+export async function createCustomEditor({
+  holder,
+  locale = "es",
+  initialHtml = "",
+  copy = {},
+  prefix = "resources",
+  onChange,
+}: {
+  holder: HTMLElement | string;
+  locale?: string;
+  initialHtml?: string;
+  copy?: Record<string, string>;
+  prefix?: string;
+  onChange?: (html: string, data: EditorOutputData) => void;
+}): Promise<EditorJS | undefined> {
+  if (typeof window === "undefined") return undefined;
+  const holderEl = typeof holder === "string" ? document.getElementById(holder) : holder;
+  if (!holderEl) return undefined;
+
+  holderEl.innerHTML = "";
+  const initialData: EditorOutputData = htmlToBlocks(initialHtml);
+  const i18n = editorJsConfigFromCopy(copy, locale);
+
+  try {
+    const editor = new EditorJS({
+      holder: holderEl,
+      placeholder: i18n.placeholder || "Escribe el contenido en bloques (presiona Tab o clic en +)...",
+      i18n: { messages: i18n.messages, direction: i18n.direction },
+      data: initialData.blocks.length ? initialData : undefined,
+      tools: {
+        header: {
+          class: Header as any,
+          inlineToolbar: ["link", "bold", "italic"],
+          config: {
+            placeholder: i18n.headerPlaceholder,
+            levels: [2, 3, 4],
+            defaultLevel: 2,
+          },
+        },
+        list: {
+          class: List as any,
+          inlineToolbar: true,
+          config: { defaultStyle: "unordered" },
+        },
+        quote: {
+          class: Quote as any,
+          inlineToolbar: true,
+          config: {
+            quotePlaceholder: i18n.quotePlaceholder,
+            captionPlaceholder: i18n.captionPlaceholder,
+          },
+        },
+        image: {
+          class: ImageTool as any,
+          config: {
+            captionPlaceholder: i18n.imageCaption,
+            uploader: {
+              async uploadByUrl(url: string) {
+                try {
+                  const streamUrl = await optimizeAndUploadUrlToR2(url, prefix);
+                  return { success: 1, file: { url: streamUrl } };
+                } catch {
+                  return { success: 1, file: { url } };
+                }
+              },
+              async uploadByFile(file: File) {
+                try {
+                  const streamUrl = await optimizeAndUploadToR2(file, prefix);
+                  return { success: 1, file: { url: streamUrl } };
+                } catch {
+                  return { success: 0 };
+                }
+              },
+            },
+          },
+        },
+        delimiter: Delimiter as any,
+        table: {
+          class: Table as any,
+          inlineToolbar: true,
+          config: { rows: 2, cols: 3 },
+        },
+        embed: {
+          class: Embed as any,
+          config: {
+            services: { youtube: true, vimeo: true, twitter: true, instagram: true },
+          },
+        },
+      },
+      onChange: async () => {
+        try {
+          const output = await editor.save();
+          const html = blocksToHtml(output);
+          if (onChange) onChange(html, output);
+        } catch {}
+      },
+    });
+
+    await editor.isReady;
+    return editor;
+  } catch (err) {
+    console.error("Failed to initialize custom EditorJS:", err);
+    return undefined;
+  }
+}
+
 export { blocksToHtml, htmlToBlocks };
