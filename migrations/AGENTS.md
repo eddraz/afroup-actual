@@ -66,6 +66,7 @@
 - `0034_about_cta_urls.sql` adds `collaborate_url` and `donate_url` to `about_page_locales` so both CTA buttons have custom destination URLs per locale.
 - `0035_contact_module.sql` registers the `contacto` admin module, creates `contact_page_locales` for per-locale contact details and `contact_submissions` for the received messages inbox with status management.
 - `0036_resources_module.sql` registers the `recursos` admin module, creates `resources` with unique slugs, `resource_locales` for localized content/OG, and `resources_page_locales` for `/recursos` hero and banner.
+- `0037_collaborate_module.sql` registers the `colabora` admin module, creates `collaborate_skills` and `collaborate_skill_locales` for dynamic skill roles, `collaborate_page_locales` for `/colabora` hero/form copy, and `collaborate_submissions` for volunteer applications with status and admin notes.
 
 ## Manual D1 apply notes
 

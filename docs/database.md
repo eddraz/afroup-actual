@@ -205,6 +205,10 @@ Cero o un idioma visible oculta el selector público. Dos muestran un interrupto
 | `resources` | `id` | Catálogo de recursos educativos con `slug` único, tipo (`pdf|web|mapa|lectura|audio`), `category_tag`, `file_url`, `status`, `featured`, `sort_order` |
 | `resource_locales` | `(resource_id, locale)` | Título, descripción (`dek`), contenido HTML y metadatos `og_json` por idioma |
 | `resources_page_locales` | `locale` | Configuración de cabecera (hero) y banner de colaboración de `/recursos` por idioma |
+| `collaborate_skills` | `id` | Perfiles y habilidades para voluntariado comunitario con `slug`, `icon`, `badge_color`, `status` y `sort_order` |
+| `collaborate_skill_locales` | `(skill_id, locale)` | Título y descripción breve de la habilidad por idioma |
+| `collaborate_page_locales` | `locale` | Hero, títulos y notas del formulario de `/colabora` por idioma |
+| `collaborate_submissions` | `id` | Bandeja de postulaciones recibidas con datos del candidato, rol deseado, mensaje, notas y estado (`unread|read|contacted|archived`) |
 | `search_documents` | `id` | Índice unificado para `/buscar` con `(module_slug, record_id, locale)` único |
 
 ## Ayuda de emergencia heredada

@@ -1,0 +1,1107 @@
+---
+import type {
+  CollaborateSkillItem,
+  CollaborateSkillRow,
+  CollaborateSkillLocaleRow,
+  CollaboratePageData,
+  CollaborateSubmissionRow,
+  CollaborateSubmissionStats,
+} from "../lib/collaborate";
+import type { BioTranslationAccess } from "../lib/editorial";
+import type { LanguageItem } from "../lib/site-languages";
+import PageLocaleSwitch from "./PageLocaleSwitch.astro";
+
+interface Props {
+  skills: CollaborateSkillItem[];
+  allSkillsWithLocales: { skill: CollaborateSkillRow; locales: Record<string, CollaborateSkillLocaleRow> }[];
+  submissions: CollaborateSubmissionRow[];
+  stats: CollaborateSubmissionStats;
+  pageConfigByLocale: Record<string, CollaboratePageData>;
+  languages: LanguageItem[];
+  translation: BioTranslationAccess;
+  locale: string;
+  copy: Record<string, string>;
+  publicHref: string;
+}
+
+const {
+  skills,
+  allSkillsWithLocales,
+  submissions,
+  stats,
+  pageConfigByLocale,
+  languages,
+  translation,
+  locale,
+  copy,
+  publicHref,
+} = Astro.props;
+
+const defaultLocale = "es";
+const primaryPageConfig = pageConfigByLocale[defaultLocale] || pageConfigByLocale[locale] || {};
+const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
+
+const iconOptions = [
+  { value: "ic-book2", label: "📖 Libro / Redacción (ic-book2)" },
+  { value: "ic-share", label: "🌐 Redes / Traducción (ic-share)" },
+  { value: "ic-search", label: "🔍 Investigación / Lupa (ic-search)" },
+  { value: "ic-play", label: "▶️ Multimedia / Video (ic-play)" },
+  { value: "ic-sparkles", label: "✨ Creatividad / Diseño (ic-sparkles)" },
+  { value: "ic-world", label: "🌍 Comunidad / Global (ic-world)" },
+];
+
+const colorOptions = [
+  { value: "accent", label: "Cian / Accent" },
+  { value: "secondary", label: "Amarillo Oro / Secondary" },
+  { value: "primary", label: "Azul Profundo / Primary" },
+  { value: "warning", label: "Naranja / Warning" },
+  { value: "info", label: "Celeste / Info" },
+];
+---
+
+<div class="drawer drawer-end" data-collaborate-admin-root>
+  <input id="collab-detail-drawer" type="checkbox" class="drawer-toggle" />
+
+  <div class="drawer-content space-y-6">
+    <!-- Header & Action Bar -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-base-300 pb-5">
+      <div>
+        <div class="flex items-center gap-2.5">
+          <h2 class="font-display text-2xl font-bold text-base-content">{copy.adminCollaborate || "Colabora & Comunidad"}</h2>
+          <span class="badge badge-accent badge-sm font-semibold">Postulaciones</span>
+        </div>
+        <p class="text-xs sm:text-sm text-base-content/60 mt-1">
+          Gestiona las convocatorias de talento, perfiles/skills de colaboración y postulaciones recibidas.
+        </p>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2.5">
+        <!-- Public Preview -->
+        <a
+          href={publicHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="btn btn-ghost btn-sm border border-base-300 hover:bg-base-200 gap-1.5 text-base-content/80 hover:text-base-content"
+        >
+          <svg class="size-3.5"><use href="#ic-link"></use></svg>
+          <span>Ver página pública</span>
+        </a>
+
+        <!-- New Skill Button (Visible on Skills Tab) -->
+        <button
+          type="button"
+          class="btn btn-primary btn-sm gap-2 font-bold shadow-sm hidden"
+          data-open-create-skill-btn
+        >
+          <svg class="size-4"><use href="#ic-plus"></use></svg>
+          <span>Nuevo Skill</span>
+        </button>
+
+        <!-- Save Page Config Button (Visible on Config Tab) -->
+        <button
+          type="submit"
+          form="collaborate-page-form"
+          class="btn btn-primary btn-sm gap-2 shadow-sm font-bold hidden"
+          data-page-config-submit-btn
+        >
+          <svg class="size-4"><use href="#ic-plus"></use></svg>
+          <span>Guardar Configuración</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Metrics Cards -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div class="card bg-base-100 border border-base-300 p-4 shadow-2xs">
+        <div class="text-xs font-semibold text-base-content/60">Total Postulaciones</div>
+        <div class="text-2xl font-display font-bold text-base-content mt-1">{stats.total}</div>
+      </div>
+      <div class="card bg-base-100 border border-base-300 p-4 shadow-2xs">
+        <div class="text-xs font-semibold text-warning">Por revisar (No leídas)</div>
+        <div class="text-2xl font-display font-bold text-warning mt-1">{stats.unread}</div>
+      </div>
+      <div class="card bg-base-100 border border-base-300 p-4 shadow-2xs">
+        <div class="text-xs font-semibold text-success">Contactados</div>
+        <div class="text-2xl font-display font-bold text-success mt-1">{stats.contacted}</div>
+      </div>
+      <div class="card bg-base-100 border border-base-300 p-4 shadow-2xs">
+        <div class="text-xs font-semibold text-accent">Skills / Perfiles Activos</div>
+        <div class="text-2xl font-display font-bold text-accent mt-1">{skills.length}</div>
+      </div>
+    </div>
+
+    <!-- View Tabs -->
+    <div class="tabs tabs-box bg-base-200/60 p-1 rounded-2xl w-fit" role="tablist">
+      <button
+        type="button"
+        role="tab"
+        class="tab tab-active font-bold text-xs sm:text-sm gap-2"
+        data-view-tab="submissions"
+      >
+        <svg class="size-4"><use href="#ic-message-report"></use></svg>
+        <span>Bandeja de Postulantes ({stats.total})</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="tab font-bold text-xs sm:text-sm gap-2"
+        data-view-tab="skills"
+      >
+        <svg class="size-4"><use href="#ic-sparkles"></use></svg>
+        <span>Skills & Perfiles ({skills.length})</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="tab font-bold text-xs sm:text-sm gap-2"
+        data-view-tab="config"
+      >
+        <svg class="size-4"><use href="#ic-pin"></use></svg>
+        <span>Textos de la Página</span>
+      </button>
+    </div>
+
+    <!-- TAB 1: Bandeja de Postulaciones -->
+    <section class="space-y-4" data-view-panel="submissions">
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-base-100 p-3.5 rounded-2xl border border-base-300">
+        <div class="flex flex-wrap items-center gap-1.5">
+          <button type="button" class="btn btn-xs btn-active font-semibold" data-filter-status="all">
+            Todos ({stats.total})
+          </button>
+          <button type="button" class="btn btn-xs btn-ghost text-warning font-semibold" data-filter-status="unread">
+            No leídos ({stats.unread})
+          </button>
+          <button type="button" class="btn btn-xs btn-ghost text-info font-semibold" data-filter-status="read">
+            Leídos ({stats.read})
+          </button>
+          <button type="button" class="btn btn-xs btn-ghost text-success font-semibold" data-filter-status="contacted">
+            Contactados ({stats.contacted})
+          </button>
+          <button type="button" class="btn btn-xs btn-ghost text-base-content/40 font-semibold" data-filter-status="archived">
+            Archivados ({stats.archived})
+          </button>
+        </div>
+
+        <div class="relative min-w-[220px]">
+          <input
+            type="search"
+            placeholder="Buscar por nombre, email o rol..."
+            class="input input-bordered input-xs w-full pl-8"
+            data-search-submissions-input
+          />
+          <svg class="size-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none">
+            <use href="#ic-search"></use>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Submissions Table -->
+      <div class="rounded-3xl border border-base-300 bg-base-100 overflow-hidden shadow-xs">
+        <div class="overflow-x-auto">
+          <table class="table table-zebra w-full text-left">
+            <thead class="bg-base-200/70 text-[11px] uppercase tracking-wider text-base-content/60">
+              <tr>
+                <th class="py-3 px-4">Estado</th>
+                <th class="py-3 px-4">Postulante</th>
+                <th class="py-3 px-4">Rol / Skill deseado</th>
+                <th class="py-3 px-4">Mensaje</th>
+                <th class="py-3 px-4">Fecha</th>
+                <th class="py-3 px-4 text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="text-xs divide-y divide-base-200" data-submissions-tbody>
+              {submissions.length === 0 ? (
+                <tr>
+                  <td colspan="6" class="py-8 text-center text-base-content/50">
+                    No hay postulaciones registradas en la bandeja.
+                  </td>
+                </tr>
+              ) : (
+                submissions.map((sub) => {
+                  const statusMap: Record<string, { label: string; class: string }> = {
+                    unread: { label: "No leído", class: "badge-warning" },
+                    read: { label: "Leído", class: "badge-info" },
+                    contacted: { label: "Contactado", class: "badge-success" },
+                    archived: { label: "Archivado", class: "badge-ghost opacity-60" },
+                  };
+                  const currentBadge = statusMap[sub.status] || statusMap.unread;
+
+                  return (
+                    <tr class="hover:bg-base-200/50 transition-colors" data-sub-row={sub.id} data-status={sub.status}>
+                      <td class="py-3 px-4 whitespace-nowrap">
+                        <span class:list={["badge badge-xs font-bold py-1 px-2", currentBadge.class]}>
+                          {currentBadge.label}
+                        </span>
+                      </td>
+                      <td class="py-3 px-4 whitespace-nowrap">
+                        <div class="font-bold text-base-content">{sub.name}</div>
+                        <a href={`mailto:${sub.email}`} class="text-base-content/60 text-[11px] hover:text-primary">
+                          {sub.email}
+                        </a>
+                      </td>
+                      <td class="py-3 px-4 whitespace-nowrap">
+                        <span class="badge badge-accent badge-outline badge-sm font-semibold">
+                          {sub.role_wanted}
+                        </span>
+                      </td>
+                      <td class="py-3 px-4 max-w-xs">
+                        <p class="truncate text-base-content/80 font-normal">{sub.message}</p>
+                      </td>
+                      <td class="py-3 px-4 whitespace-nowrap text-base-content/60 font-mono text-[11px]">
+                        {new Date(sub.created_at).toLocaleDateString(locale, { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                      </td>
+                      <td class="py-3 px-4 text-right whitespace-nowrap">
+                        <button
+                          type="button"
+                          class="btn btn-xs btn-outline btn-primary font-bold gap-1"
+                          data-inspect-submission={sub.id}
+                        >
+                          <svg class="size-3"><use href="#ic-search"></use></svg>
+                          <span>Ver Detalle</span>
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: Gestión de Skills / Roles de Colaboración -->
+    <section class="space-y-4 hidden" data-view-panel="skills">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {skills.map((skill) => (
+          <article class="card bg-base-100 border border-base-300 shadow-xs hover:border-primary transition-colors p-5 flex flex-col justify-between">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="size-10 rounded-full bg-base-200 flex items-center justify-center text-primary">
+                  <svg class="size-5"><use href={`#${skill.icon}`}></use></svg>
+                </div>
+                <span class:list={["badge badge-xs font-bold", skill.status === "active" ? "badge-success" : "badge-ghost opacity-60"]}>
+                  {skill.status === "active" ? "Activo" : "Oculto"}
+                </span>
+              </div>
+              <div>
+                <h4 class="font-display font-bold text-base text-base-content">{skill.title}</h4>
+                <div class="text-[11px] font-mono text-base-content/40">/{skill.slug}</div>
+                <p class="text-xs text-base-content/70 mt-1.5 leading-relaxed line-clamp-3">{skill.dek}</p>
+              </div>
+            </div>
+
+            <div class="pt-4 mt-3 border-t border-base-300/80 flex items-center justify-end">
+              <button
+                type="button"
+                class="btn btn-xs btn-outline btn-primary font-bold gap-1"
+                data-edit-skill={skill.id}
+              >
+                <svg class="size-3"><use href="#ic-edit"></use></svg>
+                <span>Editar Skill</span>
+              </button>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <!-- TAB 3: Configuración de Textos Públicos -->
+    <section class="space-y-6 hidden" data-view-panel="config">
+      <form
+        id="collaborate-page-form"
+        method="post"
+        action="/api/admin/collaborate-page"
+        class="space-y-8"
+        data-collaborate-page-form
+      >
+        <div class="flex items-center justify-between bg-base-200/40 p-3.5 rounded-2xl border border-base-300">
+          <PageLocaleSwitch languages={languages} currentLocale={locale} />
+        </div>
+
+        {languages.map((lang) => {
+          const loc = lang.code;
+          const isDefault = loc === defaultLocale;
+          const data = pageConfigByLocale[loc] || pageConfigByLocale[defaultLocale] || primaryPageConfig;
+          const isHidden = loc !== locale;
+
+          return (
+            <div data-i18n-panel={loc} class:list={["space-y-6", { hidden: isHidden }]}>
+              <!-- Hero Banner -->
+              <div class="rounded-3xl border border-base-300 bg-base-100 p-6 shadow-xs space-y-4">
+                <div class="border-b border-base-300/80 pb-3 flex items-center justify-between">
+                  <h3 class="font-display font-bold text-base text-base-content flex items-center gap-2">
+                    <span class="size-2 rounded-full bg-accent"></span>
+                    <span>1. Cabecera (Hero de /colabora)</span>
+                  </h3>
+                  <span class="text-xs text-base-content/50">Banner superior cian</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div class="space-y-1.5 md:col-span-1">
+                    <label class="label-text font-bold text-xs">Antetítulo (Eyebrow)</label>
+                    <input
+                      type="text"
+                      name={`page_eyebrow_${loc}`}
+                      value={data.eyebrow}
+                      class="input input-bordered input-sm w-full font-medium"
+                      placeholder="Colabora"
+                      required={isDefault}
+                    />
+                  </div>
+
+                  <div class="space-y-1.5 md:col-span-2">
+                    <label class="label-text font-bold text-xs">Título Principal (H1)</label>
+                    <input
+                      type="text"
+                      name={`page_title_${loc}`}
+                      value={data.title}
+                      class="input input-bordered input-sm w-full font-bold text-sm"
+                      placeholder="AfroUp se construye en comunidad"
+                      required={isDefault}
+                    />
+                  </div>
+                </div>
+
+                <div class="space-y-1.5">
+                  <label class="label-text font-bold text-xs">Subtítulo / Lead Descriptivo</label>
+                  <textarea
+                    name={`page_lead_${loc}`}
+                    rows="2"
+                    class="textarea textarea-bordered textarea-sm w-full leading-relaxed"
+                    placeholder="Aporta tu talento: cada artículo, traducción o ilustración amplía el acceso al conocimiento afro."
+                  >{data.lead}</textarea>
+                </div>
+              </div>
+
+              <!-- Form Texts -->
+              <div class="rounded-3xl border border-base-300 bg-base-100 p-6 shadow-xs space-y-4">
+                <div class="border-b border-base-300/80 pb-3 flex items-center justify-between">
+                  <h3 class="font-display font-bold text-base text-base-content flex items-center gap-2">
+                    <span class="size-2 rounded-full bg-primary"></span>
+                    <span>2. Textos del Formulario de Postulación</span>
+                  </h3>
+                  <span class="text-xs text-base-content/50">Encabezado y nota al pie del formulario</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="space-y-1.5">
+                    <label class="label-text font-bold text-xs">Título del Formulario</label>
+                    <input
+                      type="text"
+                      name={`form_title_${loc}`}
+                      value={data.form_title}
+                      class="input input-bordered input-sm w-full font-bold text-sm"
+                      placeholder="Cuéntanos de ti"
+                    />
+                  </div>
+
+                  <div class="space-y-1.5">
+                    <label class="label-text font-bold text-xs">Nota de Respuesta / Remuneración</label>
+                    <input
+                      type="text"
+                      name={`form_note_${loc}`}
+                      value={data.form_note}
+                      class="input input-bordered input-sm w-full text-xs"
+                      placeholder="Te respondemos en menos de 72 horas. Las colaboraciones publicadas se remuneran."
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </form>
+    </section>
+  </div>
+
+  <!-- Slide-in Drawer: Inspect Candidate Submission OR Edit Skill -->
+  <div class="drawer-side z-50">
+    <label for="collab-detail-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
+    <aside class="menu bg-base-100 text-base-content min-h-full w-full max-w-xl p-6 space-y-5 border-l border-base-300 shadow-2xl flex flex-col justify-between overflow-y-auto">
+      
+      <!-- SUBMISSION INSPECTOR VIEW -->
+      <div id="drawer-view-submission" class="space-y-6">
+        <div class="flex items-center justify-between border-b border-base-300 pb-4">
+          <div class="flex items-center gap-2.5">
+            <div class="flex size-9 items-center justify-center rounded-xl bg-accent/15 text-accent shrink-0">
+              <svg class="size-5"><use href="#ic-message-report"></use></svg>
+            </div>
+            <div>
+              <h3 class="font-display font-bold text-base text-base-content" data-sub-name-header>
+                Detalle de Postulación
+              </h3>
+              <p class="text-xs text-base-content/60" data-sub-date-header></p>
+            </div>
+          </div>
+          <label for="collab-detail-drawer" class="btn btn-circle btn-ghost btn-xs">✕</label>
+        </div>
+
+        <form id="submission-status-form" class="space-y-4">
+          <input type="hidden" id="sub-id-field" />
+
+          <!-- Candidate Contact Card -->
+          <div class="rounded-2xl border border-base-300 bg-base-200/50 p-4 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold uppercase tracking-wider text-base-content/60">Postulante</span>
+              <a id="sub-email-link" href="#" class="btn btn-xs btn-primary gap-1 font-bold">
+                <svg class="size-3"><use href="#ic-mail"></use></svg>
+                <span>Enviar Email</span>
+              </a>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div>
+                <span class="text-base-content/50 font-medium">Nombre:</span>
+                <div id="sub-name-val" class="font-bold text-sm text-base-content mt-0.5"></div>
+              </div>
+              <div>
+                <span class="text-base-content/50 font-medium">Correo electrónico:</span>
+                <div id="sub-email-val" class="font-bold text-sm text-base-content mt-0.5 font-mono"></div>
+              </div>
+              <div class="sm:col-span-2">
+                <span class="text-base-content/50 font-medium">Rol o área deseada:</span>
+                <div class="mt-1">
+                  <span id="sub-role-val" class="badge badge-accent badge-sm font-bold"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Proposal Message -->
+          <div class="rounded-2xl border border-base-300 bg-base-100 p-4 space-y-2">
+            <label class="label-text font-bold text-xs">Propuesta / Experiencia del Candidato</label>
+            <div id="sub-message-val" class="p-3 bg-base-200/60 rounded-xl text-xs sm:text-sm leading-relaxed text-base-content whitespace-pre-wrap"></div>
+          </div>
+
+          <!-- Status & Internal Admin Notes -->
+          <div class="rounded-2xl border border-base-300 bg-base-100 p-4 space-y-3">
+            <div class="space-y-1">
+              <label class="label-text font-bold text-xs">Estado de la Postulación</label>
+              <select id="sub-status-select" class="select select-bordered select-sm w-full text-xs">
+                <option value="unread">🟡 No leído</option>
+                <option value="read">🔵 Leído / En evaluación</option>
+                <option value="contacted">🟢 Contactado / Aceptado</option>
+                <option value="archived">⚪ Archivado</option>
+              </select>
+            </div>
+
+            <div class="space-y-1">
+              <label class="label-text font-bold text-xs">Notas Internas del Equipo</label>
+              <textarea
+                id="sub-notes-textarea"
+                rows="3"
+                class="textarea textarea-bordered textarea-sm w-full text-xs"
+                placeholder="Anotaciones privadas sobre la entrevista, portafolio o remuneración acordada..."
+              ></textarea>
+            </div>
+          </div>
+        </form>
+
+        <div class="border-t border-base-300 pt-4 flex items-center justify-between">
+          <button type="button" class="btn btn-ghost btn-sm text-error gap-1 font-semibold" data-delete-submission-btn>
+            <svg class="size-3.5"><use href="#ic-trash"></use></svg>
+            <span>Eliminar</span>
+          </button>
+          <div class="flex items-center gap-2 ml-auto">
+            <label for="collab-detail-drawer" class="btn btn-ghost btn-sm">Cerrar</label>
+            <button type="button" class="btn btn-primary btn-sm font-bold" data-save-submission-btn>
+              Guardar Cambios
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SKILL EDITOR VIEW -->
+      <div id="drawer-view-skill" class="space-y-6 hidden">
+        <div class="flex items-center justify-between border-b border-base-300 pb-4">
+          <div class="flex items-center gap-2.5">
+            <div class="flex size-9 items-center justify-center rounded-xl bg-primary/15 text-primary shrink-0">
+              <svg class="size-5"><use href="#ic-sparkles"></use></svg>
+            </div>
+            <div>
+              <h3 class="font-display font-bold text-base text-base-content" data-skill-title-header>
+                Crear Nuevo Skill
+              </h3>
+              <p class="text-xs text-base-content/60">
+                Define el perfil de colaboración y su descripción pedagógica.
+              </p>
+            </div>
+          </div>
+          <label for="collab-detail-drawer" class="btn btn-circle btn-ghost btn-xs">✕</label>
+        </div>
+
+        <form id="skill-editor-form" method="post" action="/api/admin/collaborate-skills" class="space-y-5">
+          <input type="hidden" name="id" id="skill-field-id" value="" />
+
+          <!-- Drawer Language Tabs -->
+          <div class="flex items-center justify-between bg-base-200/50 p-2.5 rounded-2xl border border-base-300">
+            <div class="flex items-center gap-1.5">
+              {languages.map((lang) => (
+                <button
+                  type="button"
+                  class:list={["btn btn-xs font-bold", lang.code === defaultLocale ? "btn-active btn-neutral" : "btn-ghost"]}
+                  data-skill-lang-btn={lang.code}
+                >
+                  {lang.native_name} ({lang.code.toUpperCase()})
+                </button>
+              ))}
+            </div>
+
+            {translation.canUseAi && targetLanguages.length > 0 ? (
+              <button
+                type="button"
+                class="btn btn-xs btn-ai gap-1.5 shadow-xs font-semibold"
+                data-skill-ai-translate-btn
+              >
+                <svg class="size-3.5"><use href="#ic-sparkles"></use></svg>
+                <span>Traducir con IA</span>
+              </button>
+            ) : null}
+          </div>
+
+          <!-- Common Skill Settings -->
+          <div class="rounded-2xl border border-base-300 bg-base-200/40 p-4 space-y-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="space-y-1">
+                <label class="label-text font-bold text-xs">Slug URL</label>
+                <input
+                  type="text"
+                  name="slug"
+                  id="skill-field-slug"
+                  class="input input-bordered input-sm w-full font-mono text-xs"
+                  placeholder="escribe"
+                  required
+                />
+              </div>
+
+              <div class="space-y-1">
+                <label class="label-text font-bold text-xs">Icono</label>
+                <select name="icon" id="skill-field-icon" class="select select-bordered select-sm w-full text-xs">
+                  {iconOptions.map((opt) => (
+                    <option value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div class="space-y-1">
+                <label class="label-text font-bold text-xs">Color Badge</label>
+                <select name="badge_color" id="skill-field-badge-color" class="select select-bordered select-sm w-full text-xs">
+                  {colorOptions.map((opt) => (
+                    <option value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div class="space-y-1">
+                <label class="label-text font-bold text-xs">Estado</label>
+                <select name="status" id="skill-field-status" class="select select-bordered select-sm w-full text-xs">
+                  <option value="active">🟢 Activo</option>
+                  <option value="hidden">⚪ Oculto</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Localized Titles & Descriptions -->
+          {languages.map((lang) => {
+            const loc = lang.code;
+            const isDefault = loc === defaultLocale;
+
+            return (
+              <div data-skill-locale-panel={loc} class:list={["space-y-3", { hidden: !isDefault }]}>
+                <div class="rounded-2xl border border-base-300 bg-base-100 p-4 space-y-3">
+                  <div class="space-y-1">
+                    <label class="label-text font-bold text-xs">
+                      Título ({lang.native_name}) <span class="text-error">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name={`title_${loc}`}
+                      id={`skill-field-title-${loc}`}
+                      class="input input-bordered input-sm w-full font-bold text-sm"
+                      placeholder="Escribe, Traduce, Diseña..."
+                      required={isDefault}
+                    />
+                  </div>
+
+                  <div class="space-y-1">
+                    <label class="label-text font-bold text-xs">Descripción / Qué se busca</label>
+                    <textarea
+                      name={`dek_${loc}`}
+                      id={`skill-field-dek-${loc}`}
+                      rows="3"
+                      class="textarea textarea-bordered textarea-sm w-full text-xs leading-relaxed"
+                      placeholder="Artículos, reseñas y crónicas sobre cultura afro..."
+                    ></textarea>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </form>
+
+        <div class="border-t border-base-300 pt-4 flex items-center justify-between">
+          <button type="button" class="btn btn-ghost btn-sm text-error gap-1 font-semibold hidden" data-delete-skill-btn>
+            <svg class="size-3.5"><use href="#ic-trash"></use></svg>
+            <span>Eliminar Skill</span>
+          </button>
+          <div class="flex items-center gap-2 ml-auto">
+            <label for="collab-detail-drawer" class="btn btn-ghost btn-sm">Cancelar</label>
+            <button type="submit" form="skill-editor-form" class="btn btn-primary btn-sm font-bold" data-submit-skill-btn>
+              Guardar Skill
+            </button>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- Embedded JSON Data for submissions and skills -->
+<script id="collab-submissions-data" type="application/json" set:html={JSON.stringify(submissions)} />
+<script id="collab-skills-data" type="application/json" set:html={JSON.stringify(allSkillsWithLocales)} />
+
+<script>
+  function setupCollaborateAdmin() {
+    const root = document.querySelector("[data-collaborate-admin-root]");
+    if (!root) return;
+
+    // Tab Switching
+    const viewTabs = root.querySelectorAll<HTMLButtonElement>("[data-view-tab]");
+    const viewPanels = root.querySelectorAll<HTMLElement>("[data-view-panel]");
+    const createSkillBtn = root.querySelector<HTMLButtonElement>("[data-open-create-skill-btn]");
+    const savePageBtn = root.querySelector<HTMLButtonElement>("[data-page-config-submit-btn]");
+
+    viewTabs.forEach((tab) => {
+      if (tab.dataset.bound === "true") return;
+      tab.dataset.bound = "true";
+      tab.addEventListener("click", () => {
+        const view = tab.getAttribute("data-view-tab");
+        viewTabs.forEach((t) => t.classList.toggle("tab-active", t === tab));
+        viewPanels.forEach((panel) => {
+          panel.classList.toggle("hidden", panel.getAttribute("data-view-panel") !== view);
+        });
+
+        if (createSkillBtn) createSkillBtn.classList.toggle("hidden", view !== "skills");
+        if (savePageBtn) savePageBtn.classList.toggle("hidden", view !== "config");
+      });
+    });
+
+    // Submissions and Skills Data Maps
+    const subScript = document.getElementById("collab-submissions-data");
+    let submissionsList: any[] = [];
+    try {
+      if (subScript && subScript.textContent) submissionsList = JSON.parse(subScript.textContent);
+    } catch {}
+    const submissionsMap = new Map<number, any>(submissionsList.map((s) => [Number(s.id), s]));
+
+    const skillsScript = document.getElementById("collab-skills-data");
+    let skillsList: any[] = [];
+    try {
+      if (skillsScript && skillsScript.textContent) skillsList = JSON.parse(skillsScript.textContent);
+    } catch {}
+    const skillsMap = new Map<number, any>(skillsList.map((item) => [Number(item.skill.id), item]));
+
+    // Drawer Setup
+    const drawerToggle = document.getElementById("collab-detail-drawer") as HTMLInputElement | null;
+    const drawerViewSub = root.querySelector<HTMLElement>("#drawer-view-submission");
+    const drawerViewSkill = root.querySelector<HTMLElement>("#drawer-view-skill");
+
+    if (drawerToggle && drawerToggle.dataset.boundScroll !== "true") {
+      drawerToggle.dataset.boundScroll = "true";
+      drawerToggle.addEventListener("change", () => {
+        if (drawerToggle.checked) {
+          document.body.style.overflow = "hidden";
+        } else {
+          document.body.style.overflow = "";
+        }
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && drawerToggle.checked) {
+          drawerToggle.checked = false;
+          document.body.style.overflow = "";
+        }
+      });
+    }
+
+    // Inspect Submission
+    let activeSubId: number | null = null;
+    root.querySelectorAll<HTMLButtonElement>("[data-inspect-submission]").forEach((btn) => {
+      if (btn.dataset.bound === "true") return;
+      btn.dataset.bound = "true";
+      btn.addEventListener("click", () => {
+        const id = Number(btn.getAttribute("data-inspect-submission"));
+        const sub = submissionsMap.get(id);
+        if (!sub) return;
+
+        activeSubId = id;
+        if (drawerViewSub) drawerViewSub.classList.remove("hidden");
+        if (drawerViewSkill) drawerViewSkill.classList.add("hidden");
+
+        const nameHeader = root.querySelector("[data-sub-name-header]");
+        if (nameHeader) nameHeader.textContent = `Postulación: ${sub.name}`;
+        const dateHeader = root.querySelector("[data-sub-date-header]");
+        if (dateHeader) dateHeader.textContent = `Recibido el ${new Date(sub.created_at).toLocaleString()}`;
+
+        const nameVal = root.querySelector("#sub-name-val");
+        if (nameVal) nameVal.textContent = sub.name;
+        const emailVal = root.querySelector("#sub-email-val");
+        if (emailVal) emailVal.textContent = sub.email;
+        const emailLink = root.querySelector<HTMLAnchorElement>("#sub-email-link");
+        if (emailLink) emailLink.href = `mailto:${sub.email}?subject=AfroUp:%20Tu%20postulación%20como%20${encodeURIComponent(sub.role_wanted)}`;
+        const roleVal = root.querySelector("#sub-role-val");
+        if (roleVal) roleVal.textContent = sub.role_wanted;
+        const msgVal = root.querySelector("#sub-message-val");
+        if (msgVal) msgVal.textContent = sub.message;
+
+        const statusSelect = root.querySelector<HTMLSelectElement>("#sub-status-select");
+        if (statusSelect) statusSelect.value = sub.status;
+        const notesTextarea = root.querySelector<HTMLTextAreaElement>("#sub-notes-textarea");
+        if (notesTextarea) notesTextarea.value = sub.notes || "";
+
+        if (drawerToggle) {
+          drawerToggle.checked = true;
+          document.body.style.overflow = "hidden";
+        }
+      });
+    });
+
+    // Save Submission Status & Notes
+    const saveSubBtn = root.querySelector<HTMLButtonElement>("[data-save-submission-btn]");
+    if (saveSubBtn && saveSubBtn.dataset.bound !== "true") {
+      saveSubBtn.dataset.bound = "true";
+      saveSubBtn.addEventListener("click", async () => {
+        if (!activeSubId) return;
+        saveSubBtn.disabled = true;
+
+        const status = (root.querySelector("#sub-status-select") as HTMLSelectElement)?.value || "unread";
+        const notes = (root.querySelector("#sub-notes-textarea") as HTMLTextAreaElement)?.value || "";
+
+        try {
+          const res = await fetch("/api/admin/collaborate-submissions", {
+            method: "PATCH",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ id: activeSubId, status, notes }),
+          });
+          const result = await res.json();
+          if (result.ok) {
+            if ((window as any).AfroUpFeedback) (window as any).AfroUpFeedback.toast("Postulación actualizada.", "success");
+            if (drawerToggle) {
+              drawerToggle.checked = false;
+              document.body.style.overflow = "";
+            }
+            setTimeout(() => window.location.reload(), 400);
+          } else {
+            if ((window as any).AfroUpFeedback) (window as any).AfroUpFeedback.toast(result.message || "Error al actualizar.", "error");
+          }
+        } catch {
+          if ((window as any).AfroUpFeedback) (window as any).AfroUpFeedback.toast("Error de red.", "error");
+        } finally {
+          saveSubBtn.disabled = false;
+        }
+      });
+    }
+
+    // Delete Submission
+    const deleteSubBtn = root.querySelector<HTMLButtonElement>("[data-delete-submission-btn]");
+    if (deleteSubBtn && deleteSubBtn.dataset.bound !== "true") {
+      deleteSubBtn.dataset.bound = "true";
+      deleteSubBtn.addEventListener("click", async () => {
+        if (!activeSubId) return;
+        if (!confirm("¿Seguro que deseas eliminar esta postulación?")) return;
+
+        try {
+          const res = await fetch(`/api/admin/collaborate-submissions?id=${activeSubId}`, { method: "DELETE" });
+          const result = await res.json();
+          if (result.ok) {
+            if ((window as any).AfroUpFeedback) (window as any).AfroUpFeedback.toast("Postulación eliminada.", "success");
+            if (drawerToggle) {
+              drawerToggle.checked = false;
+              document.body.style.overflow = "";
+            }
+            setTimeout(() => window.location.reload(), 400);
+          }
+        } catch {}
+      });
+    }
+
+    // Filter Submissions
+    const filterBtns = root.querySelectorAll<HTMLButtonElement>("[data-filter-status]");
+    const subRows = root.querySelectorAll<HTMLTableRowElement>("[data-sub-row]");
+    filterBtns.forEach((btn) => {
+      if (btn.dataset.bound === "true") return;
+      btn.dataset.bound = "true";
+      btn.addEventListener("click", () => {
+        const filter = btn.getAttribute("data-filter-status");
+        filterBtns.forEach((b) => b.classList.toggle("btn-active", b === btn));
+        subRows.forEach((row) => {
+          const s = row.getAttribute("data-status");
+          row.classList.toggle("hidden", filter !== "all" && s !== filter);
+        });
+      });
+    });
+
+    const searchSubInput = root.querySelector<HTMLInputElement>("[data-search-submissions-input]");
+    if (searchSubInput && searchSubInput.dataset.bound !== "true") {
+      searchSubInput.dataset.bound = "true";
+      searchSubInput.addEventListener("input", () => {
+        const q = searchSubInput.value.toLowerCase().trim();
+        subRows.forEach((row) => {
+          const text = row.textContent?.toLowerCase() || "";
+          row.classList.toggle("hidden", q.length > 0 && !text.includes(q));
+        });
+      });
+    }
+
+    // Skill Form Setup
+    const skillForm = root.querySelector<HTMLFormElement>("#skill-editor-form");
+    const skillTitleHeader = root.querySelector("[data-skill-title-header]");
+    const deleteSkillBtn = root.querySelector<HTMLButtonElement>("[data-delete-skill-btn]");
+    let activeSkillId: number | null = null;
+
+    // Create New Skill
+    if (createSkillBtn && createSkillBtn.dataset.bound !== "true") {
+      createSkillBtn.dataset.bound = "true";
+      createSkillBtn.addEventListener("click", () => {
+        activeSkillId = null;
+        if (drawerViewSub) drawerViewSub.classList.add("hidden");
+        if (drawerViewSkill) drawerViewSkill.classList.remove("hidden");
+        if (skillForm) skillForm.reset();
+        const idField = root.querySelector<HTMLInputElement>("#skill-field-id");
+        if (idField) idField.value = "";
+        if (skillTitleHeader) skillTitleHeader.textContent = "Crear Nuevo Skill";
+        if (deleteSkillBtn) deleteSkillBtn.classList.add("hidden");
+
+        const esBtn = root.querySelector<HTMLButtonElement>("[data-skill-lang-btn='es']");
+        if (esBtn) esBtn.click();
+
+        if (drawerToggle) {
+          drawerToggle.checked = true;
+          document.body.style.overflow = "hidden";
+        }
+      });
+    }
+
+    // Edit Skill
+    root.querySelectorAll<HTMLButtonElement>("[data-edit-skill]").forEach((btn) => {
+      if (btn.dataset.bound === "true") return;
+      btn.dataset.bound = "true";
+      btn.addEventListener("click", () => {
+        const id = Number(btn.getAttribute("data-edit-skill"));
+        const data = skillsMap.get(id);
+        if (!data) return;
+
+        activeSkillId = id;
+        if (drawerViewSub) drawerViewSub.classList.add("hidden");
+        if (drawerViewSkill) drawerViewSkill.classList.remove("hidden");
+        if (deleteSkillBtn) deleteSkillBtn.classList.remove("hidden");
+
+        const sk = data.skill;
+        const locales = data.locales;
+
+        const idField = root.querySelector<HTMLInputElement>("#skill-field-id");
+        if (idField) idField.value = String(sk.id);
+        const slugField = root.querySelector<HTMLInputElement>("#skill-field-slug");
+        if (slugField) slugField.value = sk.slug;
+        const iconField = root.querySelector<HTMLSelectElement>("#skill-field-icon");
+        if (iconField) iconField.value = sk.icon || "ic-book2";
+        const colorField = root.querySelector<HTMLSelectElement>("#skill-field-badge-color");
+        if (colorField) colorField.value = sk.badge_color || "accent";
+        const statusField = root.querySelector<HTMLSelectElement>("#skill-field-status");
+        if (statusField) statusField.value = sk.status || "active";
+
+        // Fill locale titles & deks
+        const tEs = root.querySelector<HTMLInputElement>("#skill-field-title-es");
+        if (tEs) tEs.value = locales["es"]?.title || "";
+        const dEs = root.querySelector<HTMLTextAreaElement>("#skill-field-dek-es");
+        if (dEs) dEs.value = locales["es"]?.dek || "";
+
+        const tEn = root.querySelector<HTMLInputElement>("#skill-field-title-en");
+        if (tEn) tEn.value = locales["en"]?.title || "";
+        const dEn = root.querySelector<HTMLTextAreaElement>("#skill-field-dek-en");
+        if (dEn) dEn.value = locales["en"]?.dek || "";
+
+        if (skillTitleHeader) skillTitleHeader.textContent = `Editar Skill: ${locales["es"]?.title || sk.slug}`;
+
+        const esBtn = root.querySelector<HTMLButtonElement>("[data-skill-lang-btn='es']");
+        if (esBtn) esBtn.click();
+
+        if (drawerToggle) {
+          drawerToggle.checked = true;
+          document.body.style.overflow = "hidden";
+        }
+      });
+    });
+
+    // Auto-generate skill slug
+    const titleEsInput = root.querySelector<HTMLInputElement>("#skill-field-title-es");
+    const slugInput = root.querySelector<HTMLInputElement>("#skill-field-slug");
+    if (titleEsInput && slugInput && titleEsInput.dataset.bound !== "true") {
+      titleEsInput.dataset.bound = "true";
+      titleEsInput.addEventListener("input", () => {
+        if (!activeSkillId) {
+          slugInput.value = titleEsInput.value
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase()
+            .trim()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-+|-+$/g, "");
+        }
+      });
+    }
+
+    // Drawer Skill Language Tabs
+    const skillLangBtns = root.querySelectorAll<HTMLButtonElement>("[data-skill-lang-btn]");
+    const skillLangPanels = root.querySelectorAll<HTMLElement>("[data-skill-locale-panel]");
+    skillLangBtns.forEach((btn) => {
+      if (btn.dataset.bound === "true") return;
+      btn.dataset.bound = "true";
+      btn.addEventListener("click", () => {
+        const loc = btn.getAttribute("data-skill-lang-btn");
+        skillLangBtns.forEach((b) => {
+          const isActive = b.getAttribute("data-skill-lang-btn") === loc;
+          b.classList.toggle("btn-active", isActive);
+          b.classList.toggle("btn-neutral", isActive);
+          b.classList.toggle("btn-ghost", !isActive);
+        });
+        skillLangPanels.forEach((p) => {
+          p.classList.toggle("hidden", p.getAttribute("data-skill-locale-panel") !== loc);
+        });
+      });
+    });
+
+    // AI Translation for Skills
+    const skillAiBtn = root.querySelector<HTMLButtonElement>("[data-skill-ai-translate-btn]");
+    if (skillAiBtn && skillAiBtn.dataset.bound !== "true") {
+      skillAiBtn.dataset.bound = "true";
+      skillAiBtn.addEventListener("click", async () => {
+        const titleEs = root.querySelector<HTMLInputElement>("#skill-field-title-es")?.value || "";
+        const dekEs = root.querySelector<HTMLTextAreaElement>("#skill-field-dek-es")?.value || "";
+
+        if (!titleEs) {
+          if ((window as any).AfroUpFeedback) (window as any).AfroUpFeedback.toast("Ingresa primero el título en español.", "warning");
+          return;
+        }
+
+        const origHtml = skillAiBtn.innerHTML;
+        skillAiBtn.disabled = true;
+        skillAiBtn.innerHTML = '<span class="loading loading-spinner loading-xs"></span> <span>Traduciendo...</span>';
+
+        const translateField = async (sourceText: string, targetLocale: string, targetInputId: string) => {
+          if (!sourceText.trim()) return;
+          const curVal = (root.querySelector(`#${targetInputId}`) as HTMLInputElement | HTMLTextAreaElement)?.value || "";
+          const fd = new FormData();
+          fd.append("module", "colabora");
+          fd.append("source", sourceText);
+          fd.append("current", curVal);
+          fd.append("target", targetLocale);
+
+          try {
+            const res = await fetch("/api/admin/translate", { method: "POST", body: fd });
+            const result = await res.json();
+            if (result.ok && result.text) {
+              const el = root.querySelector(`#${targetInputId}`) as HTMLInputElement | HTMLTextAreaElement;
+              if (el) el.value = result.text;
+            }
+          } catch {}
+        };
+
+        await Promise.all([
+          translateField(titleEs, "en", "skill-field-title-en"),
+          translateField(dekEs, "en", "skill-field-dek-en"),
+        ]);
+
+        skillAiBtn.disabled = false;
+        skillAiBtn.innerHTML = origHtml;
+
+        const enBtn = root.querySelector<HTMLButtonElement>("[data-skill-lang-btn='en']");
+        if (enBtn) enBtn.click();
+
+        if ((window as any).AfroUpFeedback) (window as any).AfroUpFeedback.toast("Skill traducido con IA.", "success");
+      });
+    }
+
+    // Submit Skill Form
+    if (skillForm && skillForm.dataset.bound !== "true") {
+      skillForm.dataset.bound = "true";
+      skillForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const submitBtn = root.querySelector<HTMLButtonElement>("[data-submit-skill-btn]");
+        if (submitBtn) submitBtn.disabled = true;
+
+        const data = new FormData(skillForm);
+        try {
+          const res = await fetch(skillForm.action, { method: "POST", body: data });
+          const result = await res.json();
+          if (result.ok) {
+            if ((window as any).AfroUpFeedback) (window as any).AfroUpFeedback.toast(result.message || "Skill guardado.", "success");
+            if (drawerToggle) {
+              drawerToggle.checked = false;
+              document.body.style.overflow = "";
+            }
+            setTimeout(() => window.location.reload(), 400);
+          } else {
+            if ((window as any).AfroUpFeedback) (window as any).AfroUpFeedback.toast(result.message || "Error al guardar.", "error");
+          }
+        } catch {
+          if ((window as any).AfroUpFeedback) (window as any).AfroUpFeedback.toast("Error de red.", "error");
+        } finally {
+          if (submitBtn) submitBtn.disabled = false;
+        }
+      });
+    }
+
+    // Delete Skill
+    if (deleteSkillBtn && deleteSkillBtn.dataset.bound !== "true") {
+      deleteSkillBtn.dataset.bound = "true";
+      deleteSkillBtn.addEventListener("click", async () => {
+        if (!activeSkillId) return;
+        if (!confirm("¿Seguro que deseas eliminar este skill de colaboración?")) return;
+
+        try {
+          const res = await fetch(`/api/admin/collaborate-skills?id=${activeSkillId}`, { method: "DELETE" });
+          const result = await res.json();
+          if (result.ok) {
+            if ((window as any).AfroUpFeedback) (window as any).AfroUpFeedback.toast("Skill eliminado.", "success");
+            if (drawerToggle) {
+              drawerToggle.checked = false;
+              document.body.style.overflow = "";
+            }
+            setTimeout(() => window.location.reload(), 400);
+          }
+        } catch {}
+      });
+    }
+
+    // Submit Page Config Form
+    const pageConfigForm = root.querySelector<HTMLFormElement>("[data-collaborate-page-form]");
+    if (pageConfigForm && pageConfigForm.dataset.bound !== "true") {
+      pageConfigForm.dataset.bound = "true";
+      pageConfigForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const submitBtn = root.querySelector<HTMLButtonElement>("[data-page-config-submit-btn]");
+        if (submitBtn) submitBtn.disabled = true;
+
+        const data = new FormData(pageConfigForm);
+        try {
+          const res = await fetch(pageConfigForm.action, { method: "POST", body: data });
+          const result = await res.json();
+          if (result.ok) {
+            if ((window as any).AfroUpFeedback) (window as any).AfroUpFeedback.toast(result.message || "Configuración guardada.", "success");
+          } else {
+            if ((window as any).AfroUpFeedback) (window as any).AfroUpFeedback.toast(result.message || "Error al guardar.", "error");
+          }
+        } catch {
+          if ((window as any).AfroUpFeedback) (window as any).AfroUpFeedback.toast("Error de red.", "error");
+        } finally {
+          if (submitBtn) submitBtn.disabled = false;
+        }
+      });
+    }
+  }
+
+  setupCollaborateAdmin();
+  document.addEventListener("astro:page-load", setupCollaborateAdmin);
+</script>

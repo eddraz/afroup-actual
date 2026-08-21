@@ -34,6 +34,7 @@ export const routeIds = {
   admin: "admin",
   adminContact: "admin/contacto",
   adminResources: "admin/recursos",
+  adminCollaborate: "admin/colabora",
   sitemap: "#",
 } as const;
 
