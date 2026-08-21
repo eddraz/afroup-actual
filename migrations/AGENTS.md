@@ -59,6 +59,8 @@
 - `0027_storage_module.sql` registers the `almacenamiento` admin module and grants its permissions to the `Administrador` role.
 - `0028_open_graph_metadata.sql` adds per-locale `og_json` on `article_locales` and `article_category_locales` for Open Graph / Twitter Card fields.
 - `0029_storage_ai_permission.sql` turns on `translate_ai` for Administrador on the `almacenamiento` module so cover/image generation can run.
+- `0030_grant_full_admin_ai_permissions.sql` grants full permissions across all modules with AI enabled to the `Administrador` role and ensures active administrator accounts for `tantaorth@gmail.com`, `tantaroth@gmail.com`, and `jenniffer@afroup.com`.
+- `0031_seed_category_open_graph_metadata.sql` populates complete structured Open Graph and Twitter Card JSON metadata (`og_json`) for all seeded categories in Spanish and English.
 
 ## Manual D1 apply notes
 
