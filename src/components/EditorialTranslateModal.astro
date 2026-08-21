@@ -1,0 +1,289 @@
+---
+interface LanguageItem {
+  code: string;
+  name?: string;
+  native_name: string;
+}
+
+interface Props {
+  kind: "article" | "category";
+  moduleSlug: "articulos" | "categorias";
+  languages: LanguageItem[];
+  canUseAi?: boolean;
+  copy: Record<string, string>;
+  primaryLocale?: string;
+}
+
+const {
+  kind,
+  moduleSlug,
+  languages = [],
+  canUseAi = false,
+  copy,
+  primaryLocale = "es",
+} = Astro.props;
+
+const targetLanguages = languages.filter((l) => l.code !== primaryLocale);
+const componentId = "editorial-translate-" + Math.random().toString(36).slice(2, 9);
+const primaryLangObj = languages.find((l) => l.code === primaryLocale) || {
+  code: primaryLocale,
+  native_name: "Español",
+};
+---
+
+{canUseAi && targetLanguages.length > 0 ? (
+  <div
+    class="editorial-translate-root inline-flex items-center"
+    id={componentId}
+    data-editorial-translate
+    data-translate-kind={kind}
+    data-translate-module={moduleSlug}
+    data-translate-primary={primaryLocale}
+    data-translate-need-source={copy.adminTranslateNeedSource || "Primero escribe el contenido en el idioma original."}
+    data-translate-success={copy.adminTranslateSuccess || "Contenido traducido con éxito."}
+    data-translate-error={copy.adminTranslateError || "Ocurrió un error al traducir con IA."}
+    data-translate-loading={copy.adminTranslating || "Traduciendo..."}
+  >
+    <!-- Trigger Button -->
+    <button
+      type="button"
+      class="btn btn-outline btn-ai btn-sm gap-2 font-bold shadow-xs hover:shadow-md transition-all shrink-0"
+      data-editorial-translate-open
+      title={copy.adminTranslateContent || "Traducir contenido con IA"}
+    >
+      <svg class="size-4 shrink-0"><use href="#ic-language"></use></svg>
+      <span>{copy.adminTranslateWithAi || "Traducir con IA"}</span>
+    </button>
+
+    <!-- Modal Dialog -->
+    <dialog class="modal" data-editorial-translate-dialog>
+      <div class="modal-box max-w-lg space-y-4 rounded-3xl border border-base-300 bg-base-100 p-6 shadow-2xl">
+        <div class="flex items-center justify-between gap-3 border-b border-base-200 pb-3">
+          <div class="flex items-center gap-2.5">
+            <div class="flex size-9 items-center justify-center rounded-xl bg-ai/15 text-ai shrink-0">
+              <svg class="size-5"><use href="#ic-language"></use></svg>
+            </div>
+            <div>
+              <h3 class="font-display text-base font-bold text-base-content">
+                {copy.adminTranslateModalTitle || "Traducir contenido con IA"}
+              </h3>
+              <p class="text-xs text-base-content/60">
+                {kind === "article"
+                  ? (copy.adminEditorialAiArticleHint || "Traduce título, descripción, contenido y metadatos.")
+                  : (copy.adminEditorialAiCategoryHint || "Traduce nombre, descripción temática y metadatos.")}
+              </p>
+            </div>
+          </div>
+          <button type="button" class="btn btn-circle btn-ghost btn-xs text-base-content/70" data-editorial-translate-close>✕</button>
+        </div>
+
+        <p class="text-xs leading-relaxed text-base-content/70">
+          {copy.adminTranslateModalLead || "Traduce automáticamente el contenido desde el idioma original al idioma que elijas."}
+        </p>
+
+        <div class="space-y-3 rounded-2xl bg-base-200/60 p-3.5 border border-base-300/60">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-semibold text-base-content/60">{copy.adminTranslateSourceLang || "Idioma de origen"}:</span>
+            <span class="badge badge-neutral badge-sm font-bold uppercase">{primaryLangObj.native_name} ({primaryLocale})</span>
+          </div>
+
+          <fieldset class="fieldset space-y-1.5">
+            <legend class="fieldset-legend text-[11px] font-mono uppercase tracking-wider text-base-content/70">
+              {copy.adminTranslateTargetLang || "Idioma de destino"}
+            </legend>
+            <select class="select select-bordered select-sm w-full font-medium" data-editorial-translate-target>
+              {targetLanguages.map((lang) => (
+                <option value={lang.code}>
+                  {lang.native_name} ({lang.code.toUpperCase()})
+                </option>
+              ))}
+            </select>
+          </fieldset>
+        </div>
+
+        <div class="modal-action flex items-center justify-end gap-2 pt-2 border-t border-base-200">
+          <button type="button" class="btn btn-ghost btn-sm" data-editorial-translate-close>
+            {copy.cancel || "Cancelar"}
+          </button>
+          <button type="button" class="btn btn-ai btn-sm gap-2 font-bold" data-editorial-translate-submit>
+            <svg class="size-4 shrink-0"><use href="#ic-sparkles"></use></svg>
+            <span>{copy.adminTranslateAction || "Traducir ahora"}</span>
+          </button>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop"><button type="submit">close</button></form>
+    </dialog>
+  </div>
+) : null}
+
+<script is:inline>
+  (function () {
+    var readValue = function (form, name) {
+      var el = form.querySelector('[name="' + name + '"]');
+      return el ? String(el.value || "") : "";
+    };
+    var setValue = function (form, name, value) {
+      if (!value) return;
+      var el = form.querySelector('[name="' + name + '"]');
+      if (el) el.value = value;
+    };
+    var bind = function () {
+      document.querySelectorAll("[data-editorial-translate]").forEach(function (root) {
+        if (root.dataset.bound === "true") return;
+        root.dataset.bound = "true";
+
+        var openBtn = root.querySelector("[data-editorial-translate-open]");
+        var dialog = root.querySelector("[data-editorial-translate-dialog]");
+        var closeBtns = root.querySelectorAll("[data-editorial-translate-close]");
+        var submitBtn = root.querySelector("[data-editorial-translate-submit]");
+        var targetSelect = root.querySelector("[data-editorial-translate-target]");
+
+        if (openBtn && dialog) {
+          openBtn.addEventListener("click", function () {
+            var localeSelect = document.querySelector("[data-page-locale]");
+            var currentViewingLocale = localeSelect ? localeSelect.value : "";
+            var primary = root.getAttribute("data-translate-primary") || "es";
+            if (targetSelect && currentViewingLocale && currentViewingLocale !== primary) {
+              targetSelect.value = currentViewingLocale;
+            }
+            dialog.showModal();
+          });
+        }
+
+        if (dialog && closeBtns.length) {
+          closeBtns.forEach(function (btn) {
+            btn.addEventListener("click", function () {
+              dialog.close();
+            });
+          });
+        }
+
+        if (submitBtn && dialog) {
+          submitBtn.addEventListener("click", function () {
+            var form = root.closest("form") || document.querySelector("form");
+            if (!form) return;
+            var targetLocale = targetSelect ? targetSelect.value : "";
+            if (!targetLocale) return;
+
+            var primary = root.getAttribute("data-translate-primary") || "es";
+            var kind = root.getAttribute("data-translate-kind") || "article";
+            var moduleSlug = root.getAttribute("data-translate-module") || "articulos";
+
+            var sourceTitle = readValue(form, "title[" + primary + "]").trim();
+            var sourceDesc = readValue(form, "description[" + primary + "]").trim();
+            var sourceContent = "";
+
+            if (kind === "article") {
+              var contentInput = form.querySelector('[name="content_html[' + primary + ']"]');
+              sourceContent = contentInput ? String(contentInput.value || "").trim() : "";
+            }
+
+            if (!sourceTitle && !sourceDesc && !sourceContent) {
+              var needMsg = root.getAttribute("data-translate-need-source") || "Primero escribe el contenido en el idioma original.";
+              if (window.AfroUpFeedback) window.AfroUpFeedback.toast(needMsg, "error");
+              return;
+            }
+
+            var originalHtml = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            var loadText = root.getAttribute("data-translate-loading") || "Traduciendo...";
+            submitBtn.innerHTML = '<span class="loading loading-spinner loading-sm"></span> <span>' + loadText + '</span>';
+
+            var tasks = [];
+
+            // 1. Translate Title
+            if (sourceTitle) {
+              var curTitle = readValue(form, "title[" + targetLocale + "]");
+              var fdTitle = new FormData();
+              fdTitle.append("module", moduleSlug);
+              fdTitle.append("source", sourceTitle);
+              fdTitle.append("current", curTitle);
+              fdTitle.append("target", targetLocale);
+              tasks.push(
+                fetch("/api/admin/translate", { method: "POST", body: fdTitle })
+                  .then(function (r) { return r.json(); })
+                  .then(function (res) {
+                    if (res.ok && res.text) {
+                      setValue(form, "title[" + targetLocale + "]", res.text);
+                      setValue(form, "og_title[" + targetLocale + "]", res.text);
+                      setValue(form, "og_twitter_title[" + targetLocale + "]", res.text);
+                    }
+                  })
+              );
+            }
+
+            // 2. Translate Description
+            if (sourceDesc) {
+              var curDesc = readValue(form, "description[" + targetLocale + "]");
+              var fdDesc = new FormData();
+              fdDesc.append("module", moduleSlug);
+              fdDesc.append("source", sourceDesc);
+              fdDesc.append("current", curDesc);
+              fdDesc.append("target", targetLocale);
+              tasks.push(
+                fetch("/api/admin/translate", { method: "POST", body: fdDesc })
+                  .then(function (r) { return r.json(); })
+                  .then(function (res) {
+                    if (res.ok && res.text) {
+                      setValue(form, "description[" + targetLocale + "]", res.text);
+                      setValue(form, "og_description[" + targetLocale + "]", res.text);
+                      setValue(form, "og_twitter_description[" + targetLocale + "]", res.text);
+                    }
+                  })
+              );
+            }
+
+            // 3. Translate HTML Content (for articles)
+            if (kind === "article" && sourceContent) {
+              var curContent = readValue(form, "content_html[" + targetLocale + "]");
+              var fdContent = new FormData();
+              fdContent.append("module", moduleSlug);
+              fdContent.append("source", sourceContent);
+              fdContent.append("current", curContent);
+              fdContent.append("target", targetLocale);
+              fdContent.append("is_html", "1");
+              tasks.push(
+                fetch("/api/admin/translate", { method: "POST", body: fdContent })
+                  .then(function (r) { return r.json(); })
+                  .then(function (res) {
+                    if (res.ok && res.text) {
+                      setValue(form, "content_html[" + targetLocale + "]", res.text);
+                      form.dispatchEvent(new CustomEvent("afroup:editorial-ai", {
+                        bubbles: true,
+                        detail: { locale: targetLocale, content: res.text },
+                      }));
+                    }
+                  })
+              );
+            }
+
+            Promise.all(tasks)
+              .then(function () {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalHtml;
+                dialog.close();
+
+                // Switch UI to translated locale tab
+                var localeSelect = document.querySelector("[data-page-locale]");
+                if (localeSelect) {
+                  localeSelect.value = targetLocale;
+                  localeSelect.dispatchEvent(new Event("change", { bubbles: true }));
+                }
+
+                var successMsg = root.getAttribute("data-translate-success") || "Contenido traducido con éxito.";
+                if (window.AfroUpFeedback) window.AfroUpFeedback.toast(successMsg, "success");
+              })
+              .catch(function () {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalHtml;
+                var errMsg = root.getAttribute("data-translate-error") || "Ocurrió un error al traducir con IA.";
+                if (window.AfroUpFeedback) window.AfroUpFeedback.toast(errMsg, "error");
+              });
+          });
+        }
+      });
+    };
+    bind();
+    document.addEventListener("astro:page-load", bind);
+  })();
+</script>

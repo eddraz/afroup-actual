@@ -1,0 +1,409 @@
+---
+import PageLocaleSwitch from "./PageLocaleSwitch.astro";
+import OgMetadataFields from "./OgMetadataFields.astro";
+import EditorialAiPrompt from "./EditorialAiPrompt.astro";
+import EditorialTranslateModal from "./EditorialTranslateModal.astro";
+import { emptyOgMetadata, type OpenGraphMetadata } from "../lib/og-metadata";
+import { defaultLocale, localizedPath } from "../lib/i18n";
+import type { BioTranslationAccess } from "../lib/bio-writes";
+import { getCategoryTheme } from "../lib/category-routes";
+
+export interface Props {
+  category?: {
+    id?: number;
+    slug?: string;
+  } | null;
+  titles?: Record<string, string>;
+  descriptions?: Record<string, string>;
+  ogs?: Record<string, OpenGraphMetadata>;
+  languages?: Array<{ code: string; name?: string; native_name: string }>;
+  translation: BioTranslationAccess;
+  locale: string;
+  copy: Record<string, string>;
+  backHref?: string;
+  action?: string;
+  layoutMode?: "full" | "drawer";
+}
+
+const {
+  category,
+  titles = {},
+  descriptions = {},
+  ogs = {},
+  languages = [],
+  translation,
+  locale,
+  copy,
+  backHref,
+  action = "/api/admin/categories",
+  layoutMode = "full",
+} = Astro.props;
+
+const isEdit = Boolean(category?.id);
+const currentSlug = category?.slug ?? "";
+const theme = getCategoryTheme(currentSlug);
+const publicPath = currentSlug ? localizedPath(locale, currentSlug) : null;
+---
+
+<form
+  method="post"
+  action={action}
+  data-category-form
+  data-success={copy.adminEditorialSaved}
+  data-error={copy.adminEditorialSaveError}
+  class={layoutMode === "drawer" ? "space-y-6 flex-1 flex flex-col justify-between" : "space-y-6"}
+>
+  {isEdit ? <input type="hidden" name="id" value={category?.id} /> : null}
+
+  {layoutMode === "full" ? (
+    <div class="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300 bg-base-100/95 p-3.5 backdrop-blur-md shadow-xs">
+      <div class="flex items-center gap-3 min-w-0">
+        <a class="btn btn-ghost btn-sm gap-1.5 text-xs font-bold" href={backHref}>
+          <svg class="size-4"><use href="#ic-arrow"></use></svg>
+          <span>{copy.adminCategories}</span>
+        </a>
+        <span class="text-base-content/30 hidden sm:inline">/</span>
+        <span class="font-display font-bold text-sm text-base-content truncate hidden sm:inline max-w-[320px]">
+          {isEdit ? (titles[defaultLocale] || category?.slug) : copy.adminNewCategory}
+        </span>
+        {isEdit ? (
+          <span class="badge badge-neutral badge-xs py-1 px-2 font-mono hidden md:inline-flex">#{category?.id}</span>
+        ) : null}
+      </div>
+
+      <div class="flex items-center gap-2">
+        {publicPath ? (
+          <a
+            class="btn btn-ghost btn-sm gap-1.5 text-xs border border-base-300 hover:bg-base-200"
+            href={publicPath}
+            target="_blank"
+            title="Ver categoría en el sitio público"
+          >
+            <svg class="size-3.5"><use href="#ic-eye"></use></svg>
+            <span>{copy.adminArticleViewPublic || "Ver en el sitio"}</span>
+          </a>
+        ) : null}
+
+        <button class="btn btn-primary btn-sm px-6 font-bold shadow-sm hover:scale-[1.02] transition-transform" type="submit">
+          <svg class="size-4"><use href="#ic-check"></use></svg>
+          <span>{copy.adminSave || "Guardar Categoría"}</span>
+        </button>
+      </div>
+    </div>
+  ) : null}
+
+  {layoutMode === "full" ? (
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-12 items-start">
+      <div class="space-y-6 lg:col-span-8 xl:col-span-9">
+        <div class="flex flex-col gap-3 rounded-2xl border border-base-300 bg-base-100 p-4 shadow-xs">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-extrabold uppercase tracking-wider text-base-content/50">Idioma de Edición:</span>
+              <PageLocaleSwitch languages={languages} label={copy.adminLanguages} current={defaultLocale} />
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+              <EditorialTranslateModal
+                kind="category"
+                moduleSlug="categorias"
+                languages={languages}
+                canUseAi={translation.canUseAi}
+                copy={copy}
+                primaryLocale={defaultLocale}
+              />
+              <EditorialAiPrompt
+                kind="category"
+                moduleSlug="categorias"
+                canUseAi={translation.canUseAi}
+                copy={copy}
+                primaryLocale={defaultLocale}
+              />
+            </div>
+          </div>
+        </div>
+
+        {languages.map((language) => {
+          const isPrimary = language.code === defaultLocale;
+          const locked = !isPrimary && !translation.canWrite && !translation.canUseAi;
+          const titleVal = titles[language.code] ?? "";
+          const descVal = descriptions[language.code] ?? "";
+
+          return (
+            <div
+              class:list={["space-y-6 rounded-3xl border border-base-300 bg-base-100 p-6 sm:p-8 shadow-xs", !isPrimary && "hidden"]}
+              data-i18n-panel={language.code}
+              data-locale={language.code}
+            >
+              <div class="flex items-center justify-between border-b border-base-300 pb-3">
+                <span class="badge badge-outline badge-md font-bold gap-1.5 py-1 px-3">
+                  <span class="size-2 rounded-full bg-primary animate-pulse"></span>
+                  {language.native_name} ({language.code.toUpperCase()})
+                </span>
+                <span class="text-xs font-medium text-base-content/50">
+                  {isPrimary ? "Contenido principal de referencia" : "Versión traducida"}
+                </span>
+              </div>
+
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend font-bold text-xs uppercase tracking-wider text-base-content/60">
+                  {copy.adminCategoryTitle || "Nombre de la Categoría"} · {language.native_name}
+                </legend>
+                <input
+                  class="input input-bordered w-full font-display text-2xl sm:text-3xl font-extrabold h-auto py-4 px-5 focus:border-primary placeholder:opacity-40"
+                  name={`title[${language.code}]`}
+                  data-title-input={language.code}
+                  maxlength="160"
+                  required={isPrimary}
+                  disabled={locked}
+                  value={titleVal}
+                  placeholder={isPrimary ? "Nombre de la categoría..." : `Nombre traducido al ${language.native_name}...`}
+                />
+              </fieldset>
+
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend font-bold text-xs uppercase tracking-wider text-base-content/60">
+                  {copy.adminCategoryDescription || "Descripción o Bajada Temática"} · {language.native_name}
+                </legend>
+                <textarea
+                  class="textarea textarea-bordered w-full text-base leading-relaxed p-4 focus:border-primary placeholder:opacity-40"
+                  name={`description[${language.code}]`}
+                  data-desc-input={language.code}
+                  rows="3"
+                  maxlength="500"
+                  required={isPrimary}
+                  disabled={locked}
+                  placeholder={isPrimary ? "Descripción editorial y enfoque de la categoría..." : `Descripción traducida al ${language.native_name}...`}
+                >{descVal}</textarea>
+              </fieldset>
+
+              <OgMetadataFields
+                localeCode={language.code}
+                values={ogs[language.code] ?? emptyOgMetadata()}
+                canUseAi={translation.canUseAi}
+                kind="category"
+                moduleSlug="categorias"
+                primaryLocale={defaultLocale}
+                locale={locale}
+                copy={copy}
+              />
+            </div>
+          );
+        })}
+      </div>
+
+      <div class="space-y-6 lg:col-span-4 xl:col-span-3">
+        <div class="rounded-3xl border border-base-300 bg-base-100 p-5 shadow-xs space-y-4">
+          <h3 class="font-display font-bold text-sm text-base-content flex items-center gap-2 border-b border-base-300/80 pb-3">
+            <svg class="size-4 text-primary"><use href="#ic-pin"></use></svg>
+            <span>{copy.adminCategorySlug || "Slug & Enlace URL"}</span>
+          </h3>
+
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend font-semibold text-xs text-base-content/70">{copy.adminCategorySlug || "Slug URL"}</legend>
+            <input
+              class="input input-bordered input-sm w-full font-mono text-xs"
+              name="slug"
+              pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
+              maxlength="80"
+              value={category?.slug ?? ""}
+              placeholder="ejemplo-slug-categoria"
+            />
+            <p class="text-[11px] text-base-content/50 mt-1">Identificador de URL único utilizado para la navegación pública.</p>
+          </fieldset>
+        </div>
+
+        <div class="rounded-3xl border border-base-300 bg-base-100 p-5 shadow-xs space-y-4">
+          <h3 class="font-display font-bold text-sm text-base-content flex items-center gap-2 border-b border-base-300/80 pb-3">
+            <svg class="size-4 text-primary"><use href="#ic-sparkles"></use></svg>
+            <span>Tema Visual en Menú</span>
+          </h3>
+
+          <div class="flex items-center gap-2.5 p-3 rounded-2xl bg-base-200/70 border border-base-300">
+            <span class:list={["size-3 rounded-full shrink-0", theme.dotClass]}></span>
+            <span class:list={["font-bold text-sm truncate", theme.textClass]}>
+              {titles[defaultLocale] || category?.slug || "Categoría"}
+            </span>
+          </div>
+          <p class="text-[11px] text-base-content/50">El color y estilo se asignan de acuerdo con las guías de marca de AfroUp.</p>
+        </div>
+
+        {isEdit ? (
+          <div class="rounded-3xl border border-base-300 bg-base-100 p-5 shadow-xs space-y-3 text-xs">
+            <h3 class="font-display font-bold text-sm text-base-content flex items-center gap-2 border-b border-base-300/80 pb-2">
+              <svg class="size-4 text-primary"><use href="#ic-database"></use></svg>
+              <span>Información del Registro</span>
+            </h3>
+            <div class="flex items-center justify-between text-base-content/70">
+              <span>ID:</span>
+              <span class="font-mono font-bold">#{category?.id}</span>
+            </div>
+            <div class="flex items-center justify-between text-base-content/70">
+              <span>Módulo:</span>
+              <span class="font-semibold">Categorías Editoriales</span>
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  ) : (
+    <div class="space-y-5">
+      <div class="flex flex-wrap items-center justify-between gap-3 bg-base-200/60 p-3.5 rounded-2xl border border-base-300">
+        <span class="text-xs font-bold uppercase tracking-wider text-base-content/70">Idioma de edición:</span>
+        <div class="flex flex-wrap items-center gap-2">
+          <PageLocaleSwitch languages={languages} label={copy.adminLanguages} current={defaultLocale} />
+          <EditorialTranslateModal
+            kind="category"
+            moduleSlug="categorias"
+            languages={languages}
+            canUseAi={translation.canUseAi}
+            copy={copy}
+            primaryLocale={defaultLocale}
+          />
+          <EditorialAiPrompt
+            kind="category"
+            moduleSlug="categorias"
+            canUseAi={translation.canUseAi}
+            copy={copy}
+            primaryLocale={defaultLocale}
+          />
+        </div>
+      </div>
+
+      {languages.map((language) => {
+        const isPrimary = language.code === defaultLocale;
+        const locked = !isPrimary && !translation.canWrite && !translation.canUseAi;
+        const titleVal = titles[language.code] ?? "";
+        const descVal = descriptions[language.code] ?? "";
+
+        return (
+          <div
+            class:list={["space-y-4 rounded-3xl border border-base-300 bg-base-100 p-5 sm:p-6 shadow-xs", !isPrimary && "hidden"]}
+            data-i18n-panel={language.code}
+            data-locale={language.code}
+          >
+            <div class="flex items-center justify-between border-b border-base-200 pb-2.5">
+              <span class="badge badge-outline badge-sm font-bold gap-1.5 py-1 px-2.5">
+                <span class="size-2 rounded-full bg-primary animate-pulse"></span>
+                {language.native_name} ({language.code.toUpperCase()})
+              </span>
+              <span class="text-[11px] font-medium text-base-content/50">
+                {isPrimary ? "Principal" : "Traducción"}
+              </span>
+            </div>
+
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">
+                {copy.adminCategoryTitle || "Nombre de la categoría"} · {language.native_name}
+              </legend>
+              <input
+                class="input input-bordered w-full font-display text-lg font-bold py-3 focus:border-primary"
+                name={`title[${language.code}]`}
+                data-title-input={language.code}
+                maxlength="160"
+                required={isPrimary}
+                disabled={locked}
+                value={titleVal}
+                placeholder={isPrimary ? "Nombre de la categoría..." : `Nombre traducido al ${language.native_name}...`}
+              />
+            </fieldset>
+
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">
+                {copy.adminCategoryDescription || "Descripción o bajada temática"} · {language.native_name}
+              </legend>
+              <textarea
+                class="textarea textarea-bordered w-full text-sm leading-relaxed focus:border-primary"
+                name={`description[${language.code}]`}
+                data-desc-input={language.code}
+                rows="3"
+                maxlength="500"
+                required={isPrimary}
+                disabled={locked}
+                placeholder={isPrimary ? "Descripción editorial de la temática..." : `Descripción traducida al ${language.native_name}...`}
+              >{descVal}</textarea>
+            </fieldset>
+
+            <OgMetadataFields
+              localeCode={language.code}
+              values={ogs[language.code] ?? emptyOgMetadata()}
+              canUseAi={translation.canUseAi}
+              kind="category"
+              moduleSlug="categorias"
+              primaryLocale={defaultLocale}
+              locale={locale}
+              copy={copy}
+            />
+          </div>
+        );
+      })}
+
+      <fieldset class="fieldset rounded-2xl border border-base-300 bg-base-100 p-4 shadow-xs">
+        <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminCategorySlug || "Slug URL"}</legend>
+        <input
+          class="input input-bordered input-sm w-full font-mono text-xs"
+          name="slug"
+          pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
+          maxlength="80"
+          value={category?.slug ?? ""}
+          placeholder="ejemplo-slug-categoria"
+        />
+        <p class="text-[11px] text-base-content/50 mt-1">Identificador de URL único utilizado para la navegación pública.</p>
+      </fieldset>
+
+      <div class="flex items-center justify-end gap-2 pt-4 border-t border-base-300">
+        <label for="category-drawer" class="btn btn-ghost btn-sm">
+          {copy.cancel || "Cancelar"}
+        </label>
+        <button class="btn btn-primary btn-sm px-6 font-bold shadow-sm hover:scale-[1.02] transition-transform" type="submit">
+          <svg class="size-4"><use href="#ic-check"></use></svg>
+          <span>{copy.adminSave || "Guardar Categoría"}</span>
+        </button>
+      </div>
+    </div>
+  )}
+</form>
+
+<script is:inline>
+  (function () {
+    var bind = function () {
+      document.querySelectorAll("form[data-category-form]").forEach(function (form) {
+        if (form.dataset.bound === "true") return;
+        form.dataset.bound = "true";
+
+        form.addEventListener("submit", function (event) {
+          event.preventDefault();
+          var btn = form.querySelector("button[type='submit']");
+          var originalHtml = btn ? btn.innerHTML : "";
+          if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading loading-spinner loading-xs"></span> Guardando...';
+          }
+
+          fetch(form.action, { method: "POST", body: new FormData(form) })
+            .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
+            .then(function (result) {
+              if (result.ok) {
+                if (window.AfroUpFeedback) window.AfroUpFeedback.toast(form.getAttribute("data-success") || "Guardado.", "success");
+                setTimeout(function () { window.location.reload(); }, 600);
+                return;
+              }
+              if (window.AfroUpFeedback) window.AfroUpFeedback.toast(form.getAttribute("data-error") || "No pudimos guardar.", "error");
+              if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+              }
+            })
+            .catch(function () {
+              if (window.AfroUpFeedback) window.AfroUpFeedback.toast("Error de red.", "error");
+              if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+              }
+            });
+        });
+      });
+    };
+    bind();
+    document.addEventListener("astro:page-load", bind);
+  })();
+</script>

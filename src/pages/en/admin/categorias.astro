@@ -9,8 +9,7 @@ import { translationAccess } from "../../../lib/editorial";
 import { hasPermission } from "../../../lib/rbac";
 import { listSiteLanguages } from "../../../lib/site-languages";
 import { getCategoryTheme } from "../../../lib/category-routes";
-import OgMetadataFields from "../../../components/OgMetadataFields.astro";
-import EditorialAiPrompt from "../../../components/EditorialAiPrompt.astro";
+import CategoryEditor from "../../../components/CategoryEditor.astro";
 
 export const prerender = false;
 
@@ -189,91 +188,13 @@ const categories = (await env.DB.prepare(
           <label for="category-drawer" class="btn btn-circle btn-ghost btn-xs">✕</label>
         </div>
 
-        <form
-          method="post"
-          action="/api/admin/categories"
-          class="space-y-6 flex-1 flex flex-col justify-between"
-          data-editorial-form
-          data-success={copy.adminEditorialSaved}
-          data-error={copy.adminEditorialSaveError}
-        >
-          <div class="space-y-5">
-            <div class="flex flex-wrap items-center justify-between gap-3 bg-base-200/50 p-3 rounded-2xl border border-base-300">
-              <span class="text-xs font-bold uppercase tracking-wider text-base-content/70">Editing language:</span>
-              <div class="flex items-center gap-2">
-                <PageLocaleSwitch languages={languages} label={copy.adminLanguages} current={defaultLocale} />
-                <EditorialAiPrompt
-                  kind="category"
-                  moduleSlug="categorias"
-                  canUseAi={translation.canUseAi}
-                  copy={copy}
-                  primaryLocale={defaultLocale}
-                />
-              </div>
-            </div>
-
-            {languages.map((language) => {
-              const locked = language.code !== defaultLocale && !translation.canWrite && !translation.canUseAi;
-              return (
-                <div class:list={["grid grid-cols-1 gap-4", language.code !== defaultLocale && "hidden"]} data-i18n-panel={language.code}>
-                  <fieldset class="fieldset">
-                    <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">
-                      {copy.adminCategoryTitle} · {language.native_name}
-                    </legend>
-                    <input
-                      class="input input-bordered w-full font-semibold"
-                      name={`title[${language.code}]`}
-                      maxlength="160"
-                      required={language.code === defaultLocale}
-                      disabled={locked}
-                      placeholder="Category name..."
-                    />
-                  </fieldset>
-                  <fieldset class="fieldset">
-                    <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">
-                      {copy.adminCategoryDescription} · {language.native_name}
-                    </legend>
-                    <textarea
-                      class="textarea textarea-bordered w-full text-sm leading-relaxed"
-                      name={`description[${language.code}]`}
-                      rows="3"
-                      maxlength="400"
-                      required={language.code === defaultLocale}
-                      disabled={locked}
-                      placeholder="Editorial description of the theme..."
-                    ></textarea>
-                  </fieldset>
-                  <OgMetadataFields
-                    localeCode={language.code}
-                    canUseAi={translation.canUseAi}
-                    kind="category"
-                    moduleSlug="categorias"
-                    primaryLocale={defaultLocale}
-                    locale={locale}
-                    copy={copy}
-                  />
-                </div>
-              );
-            })}
-
-            <fieldset class="fieldset border-t border-base-300/80 pt-4">
-              <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminCategorySlug}</legend>
-              <input
-                class="input input-bordered w-full font-mono text-xs"
-                name="slug"
-                pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
-                maxlength="80"
-                placeholder="category-slug-example"
-              />
-              <p class="text-[11px] text-base-content/50 mt-1">Unique URL identifier (lowercase letters and hyphens).</p>
-            </fieldset>
-          </div>
-
-          <div class="flex justify-end gap-2 pt-4 border-t border-base-300 mt-6 shrink-0">
-            <label for="category-drawer" class="btn btn-ghost btn-sm cursor-pointer">{copy.adminDeleteCancel || "Cancel"}</label>
-            <button class="btn btn-primary btn-sm px-6 font-bold" type="submit">{copy.adminSave}</button>
-          </div>
-        </form>
+        <CategoryEditor
+          languages={languages}
+          translation={translation}
+          locale={locale}
+          copy={copy}
+          layoutMode="drawer"
+        />
       </aside>
     </div>
   </div>
