@@ -417,3 +417,27 @@
     color: var(--color-base-content) !important;
   }
 }
+
+/* Explicit CSS Anchor Positioning for popover dropdowns */
+@supports (position-anchor: --test) {
+  .dropdown-top[popover] {
+    inset: auto;
+    bottom: anchor(top);
+    left: anchor(left);
+    margin-bottom: 0.5rem;
+  }
+  .dropdown-bottom[popover] {
+    inset: auto;
+    top: anchor(bottom);
+    right: anchor(right);
+    margin-top: 0.5rem;
+  }
+  .dropdown-right.dropdown-top[popover] {
+    inset: auto;
+    bottom: anchor(top);
+    left: anchor(right);
+    margin-left: 0.5rem;
+    margin-bottom: 0;
+  }
+}
+

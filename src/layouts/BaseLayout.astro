@@ -675,7 +675,8 @@ function tabClass(key: NavKey) {
               justify-content: center;
               width: 100%;
             }
-            html[data-site-collapsed="true"] #site-sidebar button[popovertarget="session-user-menu"] {
+            html[data-site-collapsed="true"] #site-sidebar button[data-session-user-btn],
+            html[data-site-collapsed="true"] #site-sidebar button[popovertarget*="session-user"] {
               display: flex;
               justify-content: center;
               width: 100%;

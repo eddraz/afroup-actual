@@ -569,7 +569,8 @@ function navClass(key: NonNullable<Props["active"]>) {
         html[data-admin-collapsed="true"] aside [data-session-user] {
           justify-content: center;
         }
-        html[data-admin-collapsed="true"] aside button[popovertarget="session-user-menu"] {
+        html[data-admin-collapsed="true"] aside button[data-session-user-btn],
+        html[data-admin-collapsed="true"] aside button[popovertarget*="session-user"] {
           display: flex;
           justify-content: center;
           width: 100%;
