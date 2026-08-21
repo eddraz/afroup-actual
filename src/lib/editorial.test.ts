@@ -4,6 +4,7 @@ import {
   parseLocaleFields,
   plannedArticleLocales,
   plannedLocales,
+  validateArticleInput,
   visibleOwnerClause,
 } from "./editorial";
 
@@ -78,3 +79,161 @@ describe("visibleOwnerClause", () => {
     );
   });
 });
+
+describe("validateArticleInput", () => {
+  test("allows saving a draft with only the title", () => {
+    const res = validateArticleInput({
+      status: "draft",
+      primaryTitle: "Mi primer borrador",
+      primaryDescription: "",
+      primaryContent: "",
+      categoryIds: [],
+      tags: [],
+      coverImageUrl: null,
+      slug: "mi-primer-borrador",
+    });
+    expect(res.ok).toBe(true);
+  });
+
+  test("rejects saving a draft without a title", () => {
+    const res = validateArticleInput({
+      status: "draft",
+      primaryTitle: "   ",
+    });
+    expect(res.ok).toBe(false);
+    expect(res.error).toBe("title_required");
+  });
+
+  test("allows publishing when all fields are complete", () => {
+    const res = validateArticleInput({
+      status: "published",
+      primaryTitle: "Historia de los Palenques",
+      primaryDescription: "Territorios de libertad en el Caribe y América Latina.",
+      primaryContent: "<p>Los palenques fueron comunidades organizadas...</p>",
+      categoryIds: [1],
+      tags: ["historia", "resistencia"],
+      coverImageUrl: "/api/media/covers/palenques.webp",
+      slug: "historia-de-los-palenques",
+    });
+    expect(res.ok).toBe(true);
+  });
+
+  test("rejects publishing when title is missing", () => {
+    const res = validateArticleInput({
+      status: "published",
+      primaryTitle: "",
+      primaryDescription: "Descripción",
+      primaryContent: "<p>Contenido</p>",
+      categoryIds: [1],
+      tags: ["historia"],
+      coverImageUrl: "https://example.com/cover.jpg",
+      slug: "slug-valido",
+    });
+    expect(res.ok).toBe(false);
+    expect(res.error).toBe("title_required");
+  });
+
+  test("rejects publishing when description is missing", () => {
+    const res = validateArticleInput({
+      status: "published",
+      primaryTitle: "Título",
+      primaryDescription: "   ",
+      primaryContent: "<p>Contenido</p>",
+      categoryIds: [1],
+      tags: ["historia"],
+      coverImageUrl: "https://example.com/cover.jpg",
+      slug: "slug-valido",
+    });
+    expect(res.ok).toBe(false);
+    expect(res.error).toBe("description_required");
+  });
+
+  test("rejects publishing when content is empty or contains only HTML tags/spaces", () => {
+    const res = validateArticleInput({
+      status: "published",
+      primaryTitle: "Título",
+      primaryDescription: "Descripción",
+      primaryContent: "<p>&nbsp;   </p>",
+      categoryIds: [1],
+      tags: ["historia"],
+      coverImageUrl: "https://example.com/cover.jpg",
+      slug: "slug-valido",
+    });
+    expect(res.ok).toBe(false);
+    expect(res.error).toBe("content_required");
+  });
+
+  test("rejects publishing when no categories are selected", () => {
+    const res = validateArticleInput({
+      status: "published",
+      primaryTitle: "Título",
+      primaryDescription: "Descripción",
+      primaryContent: "<p>Contenido</p>",
+      categoryIds: [],
+      tags: ["historia"],
+      coverImageUrl: "https://example.com/cover.jpg",
+      slug: "slug-valido",
+    });
+    expect(res.ok).toBe(false);
+    expect(res.error).toBe("category_required");
+  });
+
+  test("rejects publishing when no tags are provided", () => {
+    const res = validateArticleInput({
+      status: "published",
+      primaryTitle: "Título",
+      primaryDescription: "Descripción",
+      primaryContent: "<p>Contenido</p>",
+      categoryIds: [1],
+      tags: [],
+      coverImageUrl: "https://example.com/cover.jpg",
+      slug: "slug-valido",
+    });
+    expect(res.ok).toBe(false);
+    expect(res.error).toBe("tags_required");
+  });
+
+  test("rejects publishing when cover image is missing", () => {
+    const res = validateArticleInput({
+      status: "published",
+      primaryTitle: "Título",
+      primaryDescription: "Descripción",
+      primaryContent: "<p>Contenido</p>",
+      categoryIds: [1],
+      tags: ["historia"],
+      coverImageUrl: "",
+      slug: "slug-valido",
+    });
+    expect(res.ok).toBe(false);
+    expect(res.error).toBe("cover_image_required");
+  });
+
+  test("rejects publishing when slug is missing or invalid", () => {
+    const emptySlug = validateArticleInput({
+      status: "published",
+      primaryTitle: "Título",
+      primaryDescription: "Descripción",
+      primaryContent: "<p>Contenido</p>",
+      categoryIds: [1],
+      tags: ["historia"],
+      coverImageUrl: "https://example.com/cover.jpg",
+      slug: "",
+    });
+    expect(emptySlug.ok).toBe(false);
+    expect(emptySlug.error).toBe("slug_required");
+
+    const invalidSlug = validateArticleInput({
+      status: "published",
+      primaryTitle: "Título",
+      primaryDescription: "Descripción",
+      primaryContent: "<p>Contenido</p>",
+      categoryIds: [1],
+      tags: ["historia"],
+      coverImageUrl: "https://example.com/cover.jpg",
+      slug: "slug_invalido_con_underscores!",
+    });
+    expect(invalidSlug.ok).toBe(false);
+    expect(invalidSlug.error).toBe("slug_invalid");
+  });
+});
+

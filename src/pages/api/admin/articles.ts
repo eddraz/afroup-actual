@@ -14,6 +14,7 @@ import {
   plannedArticleLocales,
   slugify,
   translationAccess,
+  validateArticleInput,
 } from "../../../lib/editorial";
 import { applySearchDocument, removeSearchDocuments, searchDocumentPath } from "../../../lib/search-documents";
 import { hasPermission } from "../../../lib/rbac";
@@ -137,29 +138,42 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     access,
   );
   const primary = locales.find((row) => row.locale === defaultLocale);
-  if (!primary) return json({ ok: false, error: "title_required" }, 400);
-
-  const requestedSlug = String(form.get("slug") ?? "").trim().toLowerCase();
-  const slug = requestedSlug || slugify(primary.title);
-  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) return json({ ok: false, error: "slug_invalid" }, 400);
   const status = form.get("status") === "published" ? "published" : "draft";
   const categoryIds = parseCategoryIds(form);
   const tags = parseTagList(String(form.get("tags") ?? ""));
-  if (status === "published" && categoryIds.length === 0) {
-    return json({ ok: false, error: "category_required" }, 400);
+  const coverImageUrl = String(form.get("cover_image_url") ?? "").trim() || null;
+
+  const requestedSlug = String(form.get("slug") ?? "").trim().toLowerCase();
+  let slug = requestedSlug || (primary?.title ? slugify(primary.title) : "");
+  if (!slug && status === "draft") {
+    slug = `borrador-${action === "update" ? id : Date.now()}`;
   }
 
-  const coverImageUrl = String(form.get("cover_image_url") ?? "").trim() || null;
+  const validation = validateArticleInput({
+    status,
+    primaryTitle: primary?.title,
+    primaryDescription: primary?.description,
+    primaryContent: primary?.content_html,
+    categoryIds,
+    tags,
+    coverImageUrl,
+    slug,
+  });
+
+  if (!validation.ok) {
+    return json({ ok: false, error: validation.error, message: validation.message }, 400);
+  }
+
   const rawReadingTime = Number(form.get("reading_time_minutes"));
   const readingTimeMinutes =
     Number.isFinite(rawReadingTime) && rawReadingTime > 0
       ? Math.round(rawReadingTime)
-      : Math.max(1, Math.ceil((primary.content_html || primary.description).replace(/<[^>]*>/g, " ").trim().split(/\s+/).filter(Boolean).length / 200));
+      : Math.max(1, Math.ceil(((primary?.content_html || primary?.description || "").replace(/<[^>]*>/g, " ").trim().split(/\s+/).filter(Boolean).length) / 200));
 
   const taken = await env.DB.prepare("SELECT id FROM articles WHERE slug = ? AND id != ? LIMIT 1")
     .bind(slug, action === "update" ? id : 0)
     .first<{ id: number }>();
-  if (taken) return json({ ok: false, error: "slug_taken" }, 409);
+  if (taken) return json({ ok: false, error: "slug_taken", message: "El slug URL ya está en uso por otro artículo." }, 409);
 
   let articleId = id;
   if (action === "create") {

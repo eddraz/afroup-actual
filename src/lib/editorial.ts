@@ -146,3 +146,120 @@ export function visibleOwnerClause(ownerColumn = "created_by", idColumn?: string
   const resolvedId = idColumn ?? (tableAlias ? `${tableAlias}.id` : "id");
   return `(${ownerColumn} = ? OR ${ownerColumn} IS NULL OR ${resolvedId} IN (SELECT record_id FROM record_shares WHERE module_slug = ? AND shared_with_id = ?))`;
 }
+
+export interface ArticleValidationInput {
+  status: "draft" | "published" | string;
+  primaryTitle?: string | null;
+  primaryDescription?: string | null;
+  primaryContent?: string | null;
+  categoryIds?: number[];
+  tags?: string[];
+  coverImageUrl?: string | null;
+  slug?: string | null;
+}
+
+export type ArticleValidationError =
+  | "title_required"
+  | "description_required"
+  | "content_required"
+  | "category_required"
+  | "tags_required"
+  | "cover_image_required"
+  | "slug_required"
+  | "slug_invalid";
+
+export interface ArticleValidationResult {
+  ok: boolean;
+  error?: ArticleValidationError;
+  message?: string;
+}
+
+export function validateArticleInput(input: ArticleValidationInput): ArticleValidationResult {
+  const isPublished = input.status === "published";
+  const title = String(input.primaryTitle ?? "").trim();
+
+  // Both draft and published require at least a title
+  if (!title) {
+    return {
+      ok: false,
+      error: "title_required",
+      message: isPublished
+        ? "El título es obligatorio para publicar el artículo."
+        : "El título es obligatorio para guardar el borrador.",
+    };
+  }
+
+  // If saving as draft, only the title is required
+  if (!isPublished) {
+    return { ok: true };
+  }
+
+  // Publishing requires ALL fields to be filled
+  const description = String(input.primaryDescription ?? "").trim();
+  if (!description) {
+    return {
+      ok: false,
+      error: "description_required",
+      message: "La bajada o resumen es obligatoria para publicar el artículo.",
+    };
+  }
+
+  const cleanContent = String(input.primaryContent ?? "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .trim();
+  if (!cleanContent) {
+    return {
+      ok: false,
+      error: "content_required",
+      message: "El cuerpo del artículo es obligatorio para publicar el artículo.",
+    };
+  }
+
+  const categoryIds = Array.isArray(input.categoryIds) ? input.categoryIds : [];
+  if (categoryIds.length === 0) {
+    return {
+      ok: false,
+      error: "category_required",
+      message: "Debes seleccionar al menos una categoría para publicar el artículo.",
+    };
+  }
+
+  const tags = Array.isArray(input.tags) ? input.tags : [];
+  if (tags.length === 0) {
+    return {
+      ok: false,
+      error: "tags_required",
+      message: "Debes incluir al menos una etiqueta para publicar el artículo.",
+    };
+  }
+
+  const coverImageUrl = String(input.coverImageUrl ?? "").trim();
+  if (!coverImageUrl) {
+    return {
+      ok: false,
+      error: "cover_image_required",
+      message: "La imagen de portada es obligatoria para publicar el artículo.",
+    };
+  }
+
+  const slug = String(input.slug ?? "").trim().toLowerCase();
+  if (!slug) {
+    return {
+      ok: false,
+      error: "slug_required",
+      message: "El slug URL es obligatorio para publicar el artículo.",
+    };
+  }
+
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
+    return {
+      ok: false,
+      error: "slug_invalid",
+      message: "El slug URL contiene caracteres no válidos.",
+    };
+  }
+
+  return { ok: true };
+}
+

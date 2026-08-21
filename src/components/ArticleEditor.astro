@@ -3,6 +3,7 @@ import PageLocaleSwitch from "./PageLocaleSwitch.astro";
 import R2Uploader from "./R2Uploader.astro";
 import OgMetadataFields from "./OgMetadataFields.astro";
 import EditorialAiPrompt from "./EditorialAiPrompt.astro";
+import EditorialTranslateModal from "./EditorialTranslateModal.astro";
 import { emptyOgMetadata, type OpenGraphMetadata } from "../lib/og-metadata";
 import { pickEditorJsCopy } from "../lib/editorjs-i18n";
 import { defaultLocale, localizedPath } from "../lib/i18n";
@@ -73,6 +74,7 @@ const publicPath = article?.slug && primaryCategorySlug
   data-article-form
   data-success={copy.adminEditorialSaved}
   data-error={copy.adminEditorialSaveError}
+  novalidate
   class="space-y-6"
 >
   {isEdit ? <input type="hidden" name="id" value={article?.id} /> : null}
@@ -89,9 +91,9 @@ const publicPath = article?.slug && primaryCategorySlug
         {isEdit ? (titles[defaultLocale] || article?.slug) : copy.adminNewArticle}
       </span>
       {isEdit && article?.status === "published" ? (
-        <span class="badge badge-success badge-xs py-1 px-2 font-bold uppercase tracking-wider hidden md:inline-flex">Publicado</span>
+        <span class="badge badge-success badge-xs py-1 px-2 font-bold uppercase tracking-wider hidden md:inline-flex" data-top-status-badge>Publicado</span>
       ) : isEdit ? (
-        <span class="badge badge-ghost badge-xs py-1 px-2 font-bold uppercase tracking-wider hidden md:inline-flex">Borrador</span>
+        <span class="badge badge-ghost badge-xs py-1 px-2 font-bold uppercase tracking-wider hidden md:inline-flex" data-top-status-badge>Borrador</span>
       ) : null}
     </div>
 
@@ -119,9 +121,11 @@ const publicPath = article?.slug && primaryCategorySlug
         </button>
       ) : null}
 
-      <button class="btn btn-primary btn-sm px-6 font-bold shadow-sm hover:scale-[1.02] transition-transform" type="submit">
+      <button class="btn btn-primary btn-sm px-6 font-bold shadow-sm hover:scale-[1.02] transition-transform" type="submit" data-article-submit-btn>
         <svg class="size-4"><use href="#ic-check"></use></svg>
-        <span>{copy.adminSave || "Guardar Artículo"}</span>
+        <span data-article-submit-label>
+          {article?.status === "published" ? (isEdit ? "Guardar Cambios" : "Publicar Artículo") : "Guardar Borrador"}
+        </span>
       </button>
     </div>
   </div>
@@ -138,27 +142,24 @@ const publicPath = article?.slug && primaryCategorySlug
             <PageLocaleSwitch languages={languages} label={copy.adminLanguages} current={defaultLocale} />
           </div>
 
-          {languages.map((language) => {
-            const isPrimary = language.code === defaultLocale;
-            return !isPrimary && translation.canUseAi ? (
-              <button
-                class="btn btn-ai btn-xs gap-1.5 font-bold"
-                type="button"
-                data-translate-all-btn={language.code}
-              >
-                <svg class="size-3.5"><use href="#ic-sparkles"></use></svg>
-                <span>Traducir al {language.native_name} con IA</span>
-              </button>
-            ) : null;
-          })}
+          <div class="flex flex-wrap items-center gap-2">
+            <EditorialTranslateModal
+              kind="article"
+              moduleSlug="articulos"
+              languages={languages}
+              canUseAi={translation.canUseAi}
+              copy={copy}
+              primaryLocale={defaultLocale}
+            />
+            <EditorialAiPrompt
+              kind="article"
+              moduleSlug="articulos"
+              canUseAi={translation.canUseAi}
+              copy={copy}
+              primaryLocale={defaultLocale}
+            />
+          </div>
         </div>
-        <EditorialAiPrompt
-          kind="article"
-          moduleSlug="articulos"
-          canUseAi={translation.canUseAi}
-          copy={copy}
-          primaryLocale={defaultLocale}
-        />
       </div>
 
       <!-- Multilingual Editorial Panels -->
@@ -292,10 +293,23 @@ const publicPath = article?.slug && primaryCategorySlug
         <!-- Status Selector -->
         <fieldset class="fieldset">
           <legend class="fieldset-legend font-semibold text-xs text-base-content/70">{copy.adminArticleStatus || "Estado"}</legend>
-          <select class="select select-bordered select-sm w-full font-bold" name="status">
+          <select class="select select-bordered select-sm w-full font-bold" name="status" data-status-select>
             <option value="draft" selected={article?.status !== "published"}>📝 {copy.adminArticleDraft || "Borrador"}</option>
             <option value="published" selected={article?.status === "published"}>🌐 {copy.adminArticlePublished || "Publicado en vivo"}</option>
           </select>
+          <div class="mt-2 rounded-xl p-2.5 text-[11px] leading-snug border transition-colors" data-status-hint-box>
+            {article?.status === "published" ? (
+              <span class="text-success font-medium flex items-center gap-1.5" data-status-hint-text>
+                <span class="size-1.5 rounded-full bg-success"></span>
+                <span>Modo Publicación: Todos los campos son obligatorios para publicar.</span>
+              </span>
+            ) : (
+              <span class="text-base-content/70 font-medium flex items-center gap-1.5" data-status-hint-text>
+                <span class="size-1.5 rounded-full bg-primary"></span>
+                <span>Modo Borrador: Solo necesitas el título para guardar tu progreso.</span>
+              </span>
+            )}
+          </div>
         </fieldset>
 
         <!-- Slug Input -->
@@ -864,7 +878,51 @@ const publicPath = article?.slug && primaryCategorySlug
       });
     });
 
-    // Form submit
+    // Live Status Selector reaction (Update buttons, badges, and hint)
+    const statusSelect = form.querySelector<HTMLSelectElement>("[data-status-select]");
+    const submitLabel = form.querySelector<HTMLElement>("[data-article-submit-label]");
+    const topStatusBadge = form.querySelector<HTMLElement>("[data-top-status-badge]");
+    const statusHintBox = form.querySelector<HTMLElement>("[data-status-hint-box]");
+    const isEditForm = Boolean(form.querySelector("input[name='id']"));
+
+    const updateStatusUi = (statusVal: string) => {
+      if (statusVal === "published") {
+        if (submitLabel) submitLabel.textContent = isEditForm ? "Guardar Cambios" : "Publicar Artículo";
+        if (topStatusBadge) {
+          topStatusBadge.textContent = "Publicado";
+          topStatusBadge.className = "badge badge-success badge-xs py-1 px-2 font-bold uppercase tracking-wider hidden md:inline-flex";
+        }
+        if (statusHintBox) {
+          statusHintBox.innerHTML = `
+            <span class="text-success font-medium flex items-center gap-1.5" data-status-hint-text>
+              <span class="size-1.5 rounded-full bg-success"></span>
+              <span>Modo Publicación: Todos los campos son obligatorios para publicar.</span>
+            </span>`;
+        }
+      } else {
+        if (submitLabel) submitLabel.textContent = "Guardar Borrador";
+        if (topStatusBadge) {
+          topStatusBadge.textContent = "Borrador";
+          topStatusBadge.className = "badge badge-ghost badge-xs py-1 px-2 font-bold uppercase tracking-wider hidden md:inline-flex";
+        }
+        if (statusHintBox) {
+          statusHintBox.innerHTML = `
+            <span class="text-base-content/70 font-medium flex items-center gap-1.5" data-status-hint-text>
+              <span class="size-1.5 rounded-full bg-primary"></span>
+              <span>Modo Borrador: Solo necesitas el título para guardar tu progreso.</span>
+            </span>`;
+        }
+      }
+    };
+
+    if (statusSelect && statusSelect.dataset.bound !== "true") {
+      statusSelect.dataset.bound = "true";
+      statusSelect.addEventListener("change", () => {
+        updateStatusUi(statusSelect.value);
+      });
+    }
+
+    // Form submit with draft vs published validation
     if (form.dataset.bound !== "true") {
       form.dataset.bound = "true";
       form.addEventListener("submit", async (event) => {
@@ -884,12 +942,113 @@ const publicPath = article?.slug && primaryCategorySlug
           }
         }
 
+        const currentStatus = statusSelect?.value || "draft";
+
+        const switchToLocale = (loc: string) => {
+          document.querySelectorAll("[data-i18n-panel]").forEach((panel) => {
+            panel.classList.toggle("hidden", panel.getAttribute("data-i18n-panel") !== loc);
+          });
+          const sel = document.querySelector<HTMLSelectElement>("select[data-page-locale-switch]");
+          if (sel) sel.value = loc;
+        };
+
+        const primaryTitleInput = form.querySelector<HTMLInputElement>("[data-title-input='es']") || form.querySelector<HTMLInputElement>("[data-title-input]");
+        const primaryTitle = (primaryTitleInput?.value || "").trim();
+
+        // 1. Validation for Draft: ONLY Title is required
+        if (!primaryTitle) {
+          if ((window as any).AfroUpFeedback) {
+            (window as any).AfroUpFeedback.toast(
+              currentStatus === "published" ? "El título es obligatorio para publicar el artículo." : "Escribe al menos el título para guardar el borrador.",
+              "error"
+            );
+          }
+          switchToLocale("es");
+          primaryTitleInput?.focus();
+          if (submitBtn) submitBtn.disabled = false;
+          return;
+        }
+
+        // 2. Validation for Published: ALL fields are required
+        if (currentStatus === "published") {
+          const primaryDescInput = form.querySelector<HTMLTextAreaElement>("[data-desc-input='es']") || form.querySelector<HTMLTextAreaElement>("[data-desc-input]");
+          const primaryDesc = (primaryDescInput?.value || "").trim();
+          if (!primaryDesc) {
+            if ((window as any).AfroUpFeedback) {
+              (window as any).AfroUpFeedback.toast("La bajada o resumen es obligatoria para publicar el artículo.", "error");
+            }
+            switchToLocale("es");
+            primaryDescInput?.focus();
+            if (submitBtn) submitBtn.disabled = false;
+            return;
+          }
+
+          const primaryContentInput = form.querySelector<HTMLTextAreaElement>("[data-content-input='es']") || form.querySelector<HTMLTextAreaElement>("[data-content-input]");
+          const cleanBody = (primaryContentInput?.value || "").replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").trim();
+          if (!cleanBody) {
+            if ((window as any).AfroUpFeedback) {
+              (window as any).AfroUpFeedback.toast("El cuerpo del artículo es obligatorio para publicar el artículo.", "error");
+            }
+            switchToLocale("es");
+            const holder = document.getElementById("editorjs-es");
+            if (holder) holder.scrollIntoView({ behavior: "smooth", block: "center" });
+            if (submitBtn) submitBtn.disabled = false;
+            return;
+          }
+
+          const checkedCats = form.querySelectorAll<HTMLInputElement>("input[name='categoryIds']:checked");
+          if (checkedCats.length === 0) {
+            if ((window as any).AfroUpFeedback) {
+              (window as any).AfroUpFeedback.toast("Debes seleccionar al menos una categoría para publicar el artículo.", "error");
+            }
+            const catContainer = form.querySelector("input[name='categoryIds']");
+            if (catContainer) catContainer.scrollIntoView({ behavior: "smooth", block: "center" });
+            if (submitBtn) submitBtn.disabled = false;
+            return;
+          }
+
+          const tagsInput = form.querySelector<HTMLTextAreaElement>("textarea[name='tags']");
+          const tagsVal = (tagsInput?.value || "").trim();
+          if (!tagsVal) {
+            if ((window as any).AfroUpFeedback) {
+              (window as any).AfroUpFeedback.toast("Debes incluir al menos una etiqueta para publicar el artículo.", "error");
+            }
+            tagsInput?.focus();
+            if (submitBtn) submitBtn.disabled = false;
+            return;
+          }
+
+          const coverInput = form.querySelector<HTMLInputElement>("[data-cover-input]");
+          const coverVal = (coverInput?.value || "").trim();
+          if (!coverVal) {
+            if ((window as any).AfroUpFeedback) {
+              (window as any).AfroUpFeedback.toast("La imagen de portada es obligatoria para publicar el artículo.", "error");
+            }
+            const openCoverBtn = form.querySelector<HTMLButtonElement>("[data-open-cover-modal]");
+            if (openCoverBtn) openCoverBtn.scrollIntoView({ behavior: "smooth", block: "center" });
+            if (submitBtn) submitBtn.disabled = false;
+            return;
+          }
+
+          const slugInput = form.querySelector<HTMLInputElement>("input[name='slug']");
+          const slugVal = (slugInput?.value || "").trim().toLowerCase();
+          if (slugVal && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slugVal)) {
+            if ((window as any).AfroUpFeedback) {
+              (window as any).AfroUpFeedback.toast("El slug URL contiene caracteres no válidos.", "error");
+            }
+            slugInput?.focus();
+            if (submitBtn) submitBtn.disabled = false;
+            return;
+          }
+        }
+
         const data = new FormData(form);
         fetch(form.action, { method: "POST", body: data })
           .then((res) => res.json().then((body: any) => ({ ok: res.ok, body })))
           .then((result: any) => {
             if (result.ok) {
-              if ((window as any).AfroUpFeedback) (window as any).AfroUpFeedback.toast(form.getAttribute("data-success") || "Guardado.", "success");
+              const successMsg = currentStatus === "published" ? "Artículo publicado con éxito." : "Borrador guardado con éxito.";
+              if ((window as any).AfroUpFeedback) (window as any).AfroUpFeedback.toast(successMsg, "success");
               setTimeout(() => {
                 if (result.body && result.body.id && !form.querySelector("input[name='id']")) {
                   window.location.href = window.location.pathname.replace(/\/articulos\/?$/, "/articulos/" + result.body.id);
@@ -899,11 +1058,12 @@ const publicPath = article?.slug && primaryCategorySlug
               }, 600);
               return;
             }
-            if ((window as any).AfroUpFeedback) (window as any).AfroUpFeedback.toast(result.body?.error || form.getAttribute("data-error") || "Error al guardar.", "error");
+            const err = result.body?.message || result.body?.error || form.getAttribute("data-error") || "Error al guardar.";
+            if ((window as any).AfroUpFeedback) (window as any).AfroUpFeedback.toast(err, "error");
             if (submitBtn) submitBtn.disabled = false;
           })
           .catch(() => {
-            if ((window as any).AfroUpFeedback) (window as any).AfroUpFeedback.toast("Error de red.", "error");
+            if ((window as any).AfroUpFeedback) (window as any).AfroUpFeedback.toast("Error de red al guardar.", "error");
             if (submitBtn) submitBtn.disabled = false;
           });
       });
