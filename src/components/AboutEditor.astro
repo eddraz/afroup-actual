@@ -510,20 +510,18 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
                         data-open-team-avatar-uploader
                         data-member-idx={idx}
                         data-loc={loc}
-                        title="Subir o cambiar foto con Cloudflare R2"
+                        title="Subir foto con Cloudflare R2"
                       >
                         <svg class="size-3"><use href="#ic-cloud"></use></svg>
                         <span>Subir Foto R2</span>
                       </button>
-                      {member.avatar_url ? (
-                        <button
-                          type="button"
-                          class="btn btn-link btn-xs text-error p-0 text-[10px] block"
-                          data-clear-member-avatar
-                        >
-                          Quitar foto
-                        </button>
-                      ) : null}
+                      <button
+                        type="button"
+                        class:list={["btn btn-link btn-xs text-error p-0 text-[10px] block", { hidden: !member.avatar_url }]}
+                        data-clear-member-avatar
+                      >
+                        Quitar foto
+                      </button>
                     </div>
                   </div>
 
@@ -549,16 +547,12 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
                     />
                   </div>
 
-                  <div class="space-y-1">
-                    <label class="label-text font-bold text-[10px] text-base-content/60">URL de Imagen (R2 o externa)</label>
-                    <input
-                      type="text"
-                      class="input input-bordered input-xs w-full text-[10px] font-mono"
-                      value={member.avatar_url || ""}
-                      data-member-avatar
-                      placeholder="https://..."
-                    />
-                  </div>
+                  <!-- Hidden avatar url input managed strictly by R2Uploader -->
+                  <input
+                    type="hidden"
+                    value={member.avatar_url || ""}
+                    data-member-avatar
+                  />
                 </div>
               ))}
             </div>
@@ -655,33 +649,44 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
 
               <div class="space-y-2 md:col-span-2 rounded-2xl bg-base-200/50 p-4 border border-base-300">
                 <div class="flex items-center justify-between">
-                  <label class="label-text font-bold text-xs">Imagen Social (og:image)</label>
-                  <button
-                    type="button"
-                    class="btn btn-xs btn-outline btn-accent gap-1 font-semibold"
-                    data-open-og-image-uploader
-                    data-loc={loc}
-                  >
-                    <svg class="size-3"><use href="#ic-cloud"></use></svg>
-                    <span>Subir imagen con R2</span>
-                  </button>
+                  <div>
+                    <label class="label-text font-bold text-xs">Imagen Social (og:image)</label>
+                    <p class="text-[11px] text-base-content/50">Gestionada mediante Cloudflare R2</p>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <button
+                      type="button"
+                      class="btn btn-xs btn-outline btn-accent gap-1 font-semibold"
+                      data-open-og-image-uploader
+                      data-loc={loc}
+                    >
+                      <svg class="size-3"><use href="#ic-cloud"></use></svg>
+                      <span>Subir imagen con R2</span>
+                    </button>
+                    <button
+                      type="button"
+                      class:list={["btn btn-ghost btn-xs text-error text-[11px]", { hidden: !data.og?.["og:image"] }]}
+                      data-clear-og-image={loc}
+                    >
+                      Quitar
+                    </button>
+                  </div>
                 </div>
 
-                <div class="flex items-center gap-3">
-                  <div class="size-14 rounded-xl bg-base-300 border border-base-300 overflow-hidden shrink-0 flex items-center justify-center relative shadow-2xs" data-og-preview-box={loc}>
+                <div class="flex items-center gap-3 mt-1">
+                  <div class="size-16 rounded-xl bg-base-300 border border-base-300 overflow-hidden shrink-0 flex items-center justify-center relative shadow-2xs" data-og-preview-box={loc}>
                     {data.og?.["og:image"] ? (
                       <img src={data.og?.["og:image"]} alt="OG Preview" class="w-full h-full object-cover" data-og-preview-img={loc} />
                     ) : (
-                      <svg class="size-6 text-base-content/40"><use href="#ic-folder"></use></svg>
+                      <svg class="size-7 text-base-content/40"><use href="#ic-folder"></use></svg>
                     )}
                   </div>
+                  <!-- Hidden og:image input managed strictly by R2Uploader -->
                   <input
-                    type="text"
+                    type="hidden"
                     name={`og:image_${loc}`}
                     id={`og-image-input-${loc}`}
                     value={data.og?.["og:image"] || ""}
-                    class="input input-bordered input-xs flex-1 font-mono text-xs"
-                    placeholder="/assets/brand-hero.png o URL de Cloudflare R2"
                     data-og-image-input={loc}
                   />
                 </div>
@@ -734,13 +739,40 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
         const { card } = activeTeamContext;
         const avatarInput = card.querySelector<HTMLInputElement>("[data-member-avatar]");
         const previewBox = card.querySelector<HTMLElement>("[data-avatar-preview-box]");
+        const clearBtn = card.querySelector<HTMLElement>("[data-clear-member-avatar]");
 
         if (avatarInput) {
           avatarInput.value = uploadedUrl;
-          avatarInput.dispatchEvent(new Event("input", { bubbles: true }));
         }
         if (previewBox) {
           previewBox.innerHTML = `<img src="${uploadedUrl}" alt="Avatar" class="w-full h-full object-cover" data-avatar-preview-img />`;
+        }
+        if (clearBtn) {
+          clearBtn.classList.remove("hidden");
+        }
+
+        // Trigger sync
+        const teamSection = card.closest("[data-team-manager-section]");
+        if (teamSection) {
+          const loc = teamSection.getAttribute("data-team-manager-section");
+          const hiddenJsonInput = teamSection.querySelector<HTMLInputElement>(`[data-team-hidden-input='${loc}']`);
+          const container = teamSection.querySelector<HTMLElement>(`[data-team-cards-container='${loc}']`);
+          if (hiddenJsonInput && container) {
+            const cards = container.querySelectorAll("[data-team-card-idx]");
+            const teamData: Array<{ name: string; role: string; avatar_url: string; figure?: string }> = [];
+            cards.forEach((c) => {
+              const nameInput = c.querySelector<HTMLInputElement>("[data-member-name]");
+              const roleInput = c.querySelector<HTMLInputElement>("[data-member-role]");
+              const avInput = c.querySelector<HTMLInputElement>("[data-member-avatar]");
+              teamData.push({
+                name: (nameInput?.value || "").trim() || "Integrante",
+                role: (roleInput?.value || "").trim() || "Colaborador/a",
+                avatar_url: (avInput?.value || "").trim(),
+                figure: "bg-secondary/30",
+              });
+            });
+            hiddenJsonInput.value = JSON.stringify(teamData);
+          }
         }
 
         teamAvatarModal.close();
@@ -752,13 +784,16 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
       if (activeOgLoc && ogImageModal && ogImageModal.open) {
         const ogInput = form.querySelector<HTMLInputElement>(`[data-og-image-input='${activeOgLoc}']`);
         const ogPreviewBox = form.querySelector<HTMLElement>(`[data-og-preview-box='${activeOgLoc}']`);
+        const clearBtn = form.querySelector<HTMLElement>(`[data-clear-og-image='${activeOgLoc}']`);
 
         if (ogInput) {
           ogInput.value = uploadedUrl;
-          ogInput.dispatchEvent(new Event("input", { bubbles: true }));
         }
         if (ogPreviewBox) {
           ogPreviewBox.innerHTML = `<img src="${uploadedUrl}" alt="OG Preview" class="w-full h-full object-cover" data-og-preview-img="${activeOgLoc}" />`;
+        }
+        if (clearBtn) {
+          clearBtn.classList.remove("hidden");
         }
 
         ogImageModal.close();
@@ -800,22 +835,7 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
 
       if (container && container.dataset.bound !== "true") {
         container.dataset.bound = "true";
-        container.addEventListener("input", (e) => {
-          const target = e.target as HTMLElement;
-          if (target.matches("[data-member-avatar]")) {
-            const card = target.closest("[data-team-card-idx]");
-            const val = (target as HTMLInputElement).value.trim();
-            const previewBox = card?.querySelector("[data-avatar-preview-box]");
-            if (previewBox) {
-              if (val) {
-                previewBox.innerHTML = `<img src="${val}" alt="Avatar" class="w-full h-full object-cover" data-avatar-preview-img />`;
-              } else {
-                previewBox.innerHTML = `<svg class="size-6 text-base-content/40"><use href="#ic-user"></use></svg>`;
-              }
-            }
-          }
-          syncTeamJson();
-        });
+        container.addEventListener("input", syncTeamJson);
 
         container.addEventListener("click", (e) => {
           const target = e.target as HTMLElement;
@@ -840,7 +860,7 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
               const previewBox = card.querySelector<HTMLElement>("[data-avatar-preview-box]");
               if (avatarInput) avatarInput.value = "";
               if (previewBox) previewBox.innerHTML = `<svg class="size-6 text-base-content/40"><use href="#ic-user"></use></svg>`;
-              clearBtn.remove();
+              clearBtn.classList.add("hidden");
               syncTeamJson();
             }
             return;
@@ -877,6 +897,9 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
                   <svg class="size-3"><use href="#ic-cloud"></use></svg>
                   <span>Subir Foto R2</span>
                 </button>
+                <button type="button" class="btn btn-link btn-xs text-error p-0 text-[10px] block hidden" data-clear-member-avatar>
+                  Quitar foto
+                </button>
               </div>
             </div>
             <div class="space-y-1">
@@ -887,10 +910,7 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
               <label class="label-text font-bold text-[11px]">Rol / Función</label>
               <input type="text" class="input input-bordered input-xs w-full text-xs" value="" data-member-role placeholder="Ej: Redactor/a" />
             </div>
-            <div class="space-y-1">
-              <label class="label-text font-bold text-[10px] text-base-content/60">URL de Imagen (R2 o externa)</label>
-              <input type="text" class="input input-bordered input-xs w-full text-[10px] font-mono" value="" data-member-avatar placeholder="https://..." />
-            </div>
+            <input type="hidden" value="" data-member-avatar />
           `;
           container.appendChild(card);
           syncTeamJson();
@@ -911,21 +931,20 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
       });
     });
 
-    // Live preview update for OG Image text inputs
-    document.querySelectorAll("[data-og-image-input]").forEach((input) => {
-      if (input.dataset.bound === "true") return;
-      input.dataset.bound = "true";
-      input.addEventListener("input", () => {
-        const loc = input.getAttribute("data-og-image-input") || "es";
-        const val = (input as HTMLInputElement).value.trim();
-        const previewBox = form.querySelector(`[data-og-preview-box='${loc}']`);
-        if (previewBox) {
-          if (val) {
-            previewBox.innerHTML = `<img src="${val}" alt="OG Preview" class="w-full h-full object-cover" data-og-preview-img="${loc}" />`;
-          } else {
-            previewBox.innerHTML = `<svg class="size-6 text-base-content/40"><use href="#ic-folder"></use></svg>`;
-          }
+    // Clear OG image binding
+    document.querySelectorAll("[data-clear-og-image]").forEach((btn) => {
+      if (btn.dataset.bound === "true") return;
+      btn.dataset.bound = "true";
+      btn.addEventListener("click", () => {
+        const loc = btn.getAttribute("data-clear-og-image") || "es";
+        const ogInput = form.querySelector<HTMLInputElement>(`[data-og-image-input='${loc}']`);
+        const ogPreviewBox = form.querySelector<HTMLElement>(`[data-og-preview-box='${loc}']`);
+
+        if (ogInput) ogInput.value = "";
+        if (ogPreviewBox) {
+          ogPreviewBox.innerHTML = `<svg class="size-7 text-base-content/40"><use href="#ic-folder"></use></svg>`;
         }
+        btn.classList.add("hidden");
       });
     });
 
