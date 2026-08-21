@@ -36,7 +36,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       mission_title, mission_body,
       vision_title, vision_body,
       stats_json, team_json,
-      cta_title, cta_body, collaborate_label, donate_label,
+      cta_title, cta_body,
+      collaborate_label, collaborate_url,
+      donate_label, donate_url,
       og_json, updated_at
     ) VALUES (
       ?, ?, ?, ?,
@@ -44,7 +46,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       ?, ?,
       ?, ?,
       ?, ?,
-      ?, ?, ?, ?,
+      ?, ?,
+      ?, ?,
+      ?, ?,
       ?, datetime('now')
     )
     ON CONFLICT(locale) DO UPDATE SET
@@ -63,7 +67,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       cta_title = excluded.cta_title,
       cta_body = excluded.cta_body,
       collaborate_label = excluded.collaborate_label,
+      collaborate_url = excluded.collaborate_url,
       donate_label = excluded.donate_label,
+      donate_url = excluded.donate_url,
       og_json = excluded.og_json,
       updated_at = excluded.updated_at
   `);
@@ -113,7 +119,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const cta_title = String(form.get(`cta_title_${locale}`) ?? form.get("cta_title") ?? "").trim() || "¿Quieres apoyar este proyecto?";
     const cta_body = String(form.get(`cta_body_${locale}`) ?? form.get("cta_body") ?? "").trim();
     const collaborate_label = String(form.get(`collaborate_label_${locale}`) ?? form.get("collaborate_label") ?? "").trim() || "Colabora con nosotros";
+    const collaborate_url = String(form.get(`collaborate_url_${locale}`) ?? form.get("collaborate_url") ?? "").trim() || (locale === "es" ? "/colabora" : `/${locale}/colabora`);
     const donate_label = String(form.get(`donate_label_${locale}`) ?? form.get("donate_label") ?? "").trim() || "Haz una donación";
+    const donate_url = String(form.get(`donate_url_${locale}`) ?? form.get("donate_url") ?? "").trim() || (locale === "es" ? "/donacion" : `/${locale}/donacion`);
     const og_json = serializeOgMetadata(parseOgFromForm(form, locale));
 
     return upsertStmt.bind(
@@ -133,7 +141,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       cta_title,
       cta_body,
       collaborate_label,
+      collaborate_url,
       donate_label,
+      donate_url,
       og_json
     );
   });

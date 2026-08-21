@@ -13,6 +13,8 @@ describe("about page data parsing", () => {
     expect(Array.isArray(data.team)).toBe(true);
     expect(data.team.length).toBe(4);
     expect(data.team[0].name).toBe("Jenniffer M.");
+    expect(data.collaborate_url).toBe("/colabora");
+    expect(data.donate_url).toBe("/donacion");
   });
 
   test("correctly parses custom JSON arrays for values, stats, and team", () => {
@@ -33,11 +35,15 @@ describe("about page data parsing", () => {
       cta_title: "Support Us",
       cta_body: "Donate now",
       collaborate_label: "Collaborate",
+      collaborate_url: "/en/colabora",
       donate_label: "Donate",
+      donate_url: "https://donorbox.org/afroup",
       og_json: JSON.stringify({ title: "Custom OG Title" }),
     });
 
     expect(data.eyebrow).toBe("ABOUT US");
+    expect(data.collaborate_url).toBe("/en/colabora");
+    expect(data.donate_url).toBe("https://donorbox.org/afroup");
     expect(data.values).toEqual(["Value 1", "Value 2"]);
     expect(data.stats).toEqual([{ value: "+500", label: "Members" }]);
     expect(data.team).toEqual([{ name: "Alice", role: "Developer", avatar_url: "/avatar.jpg" }]);

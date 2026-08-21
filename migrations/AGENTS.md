@@ -63,6 +63,7 @@
 - `0031_seed_category_open_graph_metadata.sql` populates complete structured Open Graph and Twitter Card JSON metadata (`og_json`) for all seeded categories in Spanish and English.
 - `0032_global_tags.sql` creates the global `tags` table for global tag indexing, autocomplete in admin editors, and public cross-article discovery.
 - `0033_about_page.sql` registers the `nosotros` admin module, assigns permissions with AI enabled, and creates `about_page_locales` with seeded Spanish and English content for editing `/nosotros`.
+- `0034_about_cta_urls.sql` adds `collaborate_url` and `donate_url` to `about_page_locales` so both CTA buttons have custom destination URLs per locale.
 
 ## Manual D1 apply notes
 

@@ -30,7 +30,9 @@ export interface AboutPageLocaleRow {
   cta_title: string;
   cta_body: string;
   collaborate_label: string;
+  collaborate_url: string;
   donate_label: string;
+  donate_url: string;
   og_json: string | null;
   updated_at: string;
 }
@@ -51,7 +53,9 @@ export interface AboutPageData {
   cta_title: string;
   cta_body: string;
   collaborate_label: string;
+  collaborate_url: string;
   donate_label: string;
+  donate_url: string;
   og: OpenGraphMetadata;
 }
 
@@ -102,7 +106,9 @@ export function parseAboutPageRow(row?: Partial<AboutPageLocaleRow> | null): Abo
     cta_title: row?.cta_title || "¿Quieres apoyar este proyecto?",
     cta_body: row?.cta_body || "Únete como colaborador o haz una donación para que sigamos creando contenido libre y accesible.",
     collaborate_label: row?.collaborate_label || "Colabora con nosotros",
+    collaborate_url: row?.collaborate_url || "/colabora",
     donate_label: row?.donate_label || "Haz una donación",
+    donate_url: row?.donate_url || "/donacion",
     og: parseOgMetadata(row?.og_json),
   };
 }

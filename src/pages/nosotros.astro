@@ -107,13 +107,13 @@ const aboutData = await loadAboutPageLocale(env.DB, locale);
     <div class="flex flex-wrap sm:flex-nowrap items-center gap-3 shrink-0">
       <a
         class="btn btn-accent rounded-full font-bold px-6 py-2.5 text-sm text-[#063b42] border-0 hover:scale-[1.02] transition-transform shadow-xs"
-        href={collaborateHref}
+        href={aboutData.collaborate_url || collaborateHref}
       >
         {aboutData.collaborate_label || copy.aboutCollaborate}
       </a>
       <a
         class="btn btn-secondary rounded-full font-bold px-6 py-2.5 text-sm text-[#5a4406] border-0 gap-2 hover:scale-[1.02] transition-transform shadow-xs"
-        href={donateHref}
+        href={aboutData.donate_url || donateHref}
       >
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
           <use href="#ic-heart"></use>

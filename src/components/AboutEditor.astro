@@ -569,7 +569,7 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div class="space-y-1.5">
+              <div class="space-y-1.5 md:col-span-2">
                 <label class="label-text font-bold text-xs">Título del Llamado</label>
                 <input
                   type="text"
@@ -580,7 +580,7 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
                 />
               </div>
 
-              <div class="space-y-1.5">
+              <div class="space-y-1.5 md:col-span-2">
                 <label class="label-text font-bold text-xs">Descripción / Bajada del Llamado</label>
                 <input
                   type="text"
@@ -591,26 +591,54 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
                 />
               </div>
 
-              <div class="space-y-1.5">
-                <label class="label-text font-bold text-xs">Texto Botón Colaborar</label>
-                <input
-                  type="text"
-                  name={`collaborate_label_${loc}`}
-                  value={data.collaborate_label}
-                  class="input input-bordered input-sm w-full font-medium"
-                  placeholder="Colabora con nosotros"
-                />
+              <!-- CTA 1: Colaborar -->
+              <div class="rounded-2xl border border-base-300 bg-base-200/40 p-4 space-y-3">
+                <span class="text-xs font-bold text-accent flex items-center gap-1.5">Botón Primario (Colaborar)</span>
+                <div class="space-y-1">
+                  <label class="label-text font-bold text-[11px]">Texto del Botón</label>
+                  <input
+                    type="text"
+                    name={`collaborate_label_${loc}`}
+                    value={data.collaborate_label}
+                    class="input input-bordered input-sm w-full font-medium text-xs"
+                    placeholder="Colabora con nosotros"
+                  />
+                </div>
+                <div class="space-y-1">
+                  <label class="label-text font-bold text-[11px]">URL / Enlace de Destino</label>
+                  <input
+                    type="text"
+                    name={`collaborate_url_${loc}`}
+                    value={data.collaborate_url || (loc === "es" ? "/colabora" : `/${loc}/colabora`)}
+                    class="input input-bordered input-sm w-full font-mono text-xs"
+                    placeholder="/colabora o https://..."
+                  />
+                </div>
               </div>
 
-              <div class="space-y-1.5">
-                <label class="label-text font-bold text-xs">Texto Botón Donar</label>
-                <input
-                  type="text"
-                  name={`donate_label_${loc}`}
-                  value={data.donate_label}
-                  class="input input-bordered input-sm w-full font-medium"
-                  placeholder="Haz una donación"
-                />
+              <!-- CTA 2: Donación -->
+              <div class="rounded-2xl border border-base-300 bg-base-200/40 p-4 space-y-3">
+                <span class="text-xs font-bold text-secondary flex items-center gap-1.5">Botón Secundario (Donar)</span>
+                <div class="space-y-1">
+                  <label class="label-text font-bold text-[11px]">Texto del Botón</label>
+                  <input
+                    type="text"
+                    name={`donate_label_${loc}`}
+                    value={data.donate_label}
+                    class="input input-bordered input-sm w-full font-medium text-xs"
+                    placeholder="Haz una donación"
+                  />
+                </div>
+                <div class="space-y-1">
+                  <label class="label-text font-bold text-[11px]">URL / Enlace de Destino</label>
+                  <input
+                    type="text"
+                    name={`donate_url_${loc}`}
+                    value={data.donate_url || (loc === "es" ? "/donacion" : `/${loc}/donacion`)}
+                    class="input input-bordered input-sm w-full font-mono text-xs"
+                    placeholder="/donacion o https://..."
+                  />
+                </div>
               </div>
             </div>
           </div>
