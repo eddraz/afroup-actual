@@ -11,6 +11,15 @@ interface Props {
   componentId?: string;
   locale?: string;
   flat?: boolean;
+  allowAiGenerate?: boolean;
+  canUseAi?: boolean;
+  promptModel?: string;
+  imageModel?: string;
+  videoModel?: string;
+  musicModel?: string;
+  textModel?: string;
+  prompt?: string;
+  allowFormContext?: boolean;
 }
 
 const {
@@ -23,8 +32,18 @@ const {
   componentId = "r2-uploader-" + Math.random().toString(36).slice(2, 8),
   locale = "es",
   flat = false,
+  allowAiGenerate = true,
+  canUseAi = true,
+  promptModel = "@cf/deepseek-ai/deepseek-v4-flash-0731",
+  imageModel = "xai/grok-imagine-image-2.0",
+  videoModel = "bytedance/seedance-2.5",
+  musicModel = "minimax/music-2.6",
+  textModel = "@cf/deepseek-ai/deepseek-v4-flash-0731",
+  prompt = "",
+  allowFormContext = false,
 } = Astro.props;
 
+const showAi = Boolean(allowAiGenerate && canUseAi);
 const isEn = locale.startsWith("en");
 
 const text = {
@@ -48,6 +67,27 @@ const text = {
   cropApply: isEn ? "Apply Crop" : "Aplicar Recorte",
   cropReset: isEn ? "Reset to Original" : "Restaurar Original",
   cropCancel: isEn ? "Cancel" : "Cancelar",
+  aiOpen: isEn ? "Generate with AI" : "Generar con IA",
+  aiTitle: isEn ? "Generate a file with AI" : "Generar un archivo con IA",
+  aiKind: isEn ? "File type" : "Tipo de archivo",
+  aiKindImage: isEn ? "Image" : "Imagen",
+  aiKindVideo: isEn ? "Video" : "Video",
+  aiKindMusic: isEn ? "Music" : "Música",
+  aiKindText: isEn ? "Text / PDF / code" : "Texto / PDF / código",
+  aiFormat: isEn ? "Format" : "Formato",
+  aiCustom: isEn ? "Write a prompt" : "Escribir un prompt",
+  aiForm: isEn ? "Add article fields to the prompt" : "Incluir campos del artículo en el prompt",
+  aiCustomPlaceholder: isEn ? "Describe what to generate..." : "Describe lo que desea generar...",
+  aiFieldTitle: isEn ? "Title" : "Título",
+  aiFieldDescription: isEn ? "Description" : "Descripción",
+  aiFieldTags: isEn ? "Tags" : "Etiquetas",
+  aiFieldCategories: isEn ? "Category" : "Categoría",
+  aiFieldContent: isEn ? "Content" : "Contenido",
+  aiGenerate: isEn ? "Generate and upload" : "Generar y subir",
+  aiNeedCustom: isEn ? "Write some context for the image." : "Escribe un contexto para la imagen.",
+  aiNeedFields: isEn ? "Select at least one filled article field." : "Elige al menos un campo del artículo que ya esté completo.",
+  aiFailed: isEn ? "Could not generate the image." : "No pudimos generar la imagen.",
+  aiDone: isEn ? "Cover generated and uploaded." : "Portada generada y subida.",
 };
 ---
 
@@ -59,6 +99,11 @@ const text = {
   data-default-prefix={prefix}
   data-allow-opt={allowOptimization ? "true" : "false"}
   data-target-input={targetInputId}
+  data-prompt-model={promptModel}
+  data-image-model={imageModel}
+  data-video-model={videoModel}
+  data-music-model={musicModel}
+  data-text-model={textModel}
 >
   <!-- Stage 1: File Ingestion (Dropzone + Inline Paste + URL Input) -->
   <div class="stage-ingestion space-y-4" id={`${componentId}-stage-ingest`}>
@@ -108,7 +153,72 @@ const text = {
           </button>
         </div>
       </div>
+      {showAi ? (
+        <div class="w-full max-w-md pt-1" onclick="event.stopPropagation()">
+          <div class="divider text-[10px] font-bold tracking-wider text-base-content/40 uppercase my-1">
+            {text.aiOpen}
+          </div>
+          <button type="button" class="btn btn-ai btn-sm w-full" id={`${componentId}-ai-open`}>
+            {text.aiOpen}
+          </button>
+        </div>
+      ) : null}
     </div>
+
+    {showAi ? (
+      <dialog class="modal" id={`${componentId}-ai-dialog`}>
+        <div class="modal-box max-w-xl space-y-4">
+          <div class="flex items-center justify-between gap-3">
+            <h3 class="font-display text-lg font-bold">{text.aiTitle}</h3>
+            <button type="button" class="btn btn-circle btn-ghost btn-xs" id={`${componentId}-ai-close`}>✕</button>
+          </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <fieldset class="fieldset p-0">
+            <legend class="fieldset-legend text-xs">{text.aiKind}</legend>
+            <select class="select select-bordered select-sm w-full" id={`${componentId}-ai-kind`}>
+              <option value="image">{text.aiKindImage}</option>
+              <option value="video">{text.aiKindVideo}</option>
+              <option value="music">{text.aiKindMusic}</option>
+              <option value="text">{text.aiKindText}</option>
+            </select>
+          </fieldset>
+          <fieldset class="fieldset p-0 hidden" id={`${componentId}-ai-format-wrap`}>
+            <legend class="fieldset-legend text-xs">{text.aiFormat}</legend>
+            <select class="select select-bordered select-sm w-full" id={`${componentId}-ai-format`}>
+              <option value="txt">TXT</option>
+              <option value="csv">CSV</option>
+              <option value="pdf">PDF</option>
+              <option value="code">Código</option>
+            </select>
+          </fieldset>
+        </div>
+        <textarea class="textarea textarea-bordered w-full text-sm" rows="3" placeholder={text.aiCustomPlaceholder} id={`${componentId}-ai-custom`}>{prompt}</textarea>
+        {allowFormContext ? (
+          <p class="text-xs font-bold text-base-content/70">{text.aiForm}</p>
+        ) : null}
+        <div class:list={["flex-wrap gap-2", allowFormContext ? "flex" : "hidden"]} id={`${componentId}-ai-fields`}>
+          {[
+            ["title", text.aiFieldTitle],
+            ["description", text.aiFieldDescription],
+            ["tags", text.aiFieldTags],
+            ["categories", text.aiFieldCategories],
+            ["content", text.aiFieldContent],
+          ].map(([value, label]) => (
+            <label class="label cursor-pointer justify-start gap-1.5 py-0">
+              <input type="checkbox" class="checkbox checkbox-xs checkbox-primary" value={value} data-ai-field />
+              <span class="label-text text-xs font-semibold">{label}</span>
+            </label>
+          ))}
+        </div>
+        <div class="modal-action">
+          <button type="button" class="btn btn-ai btn-sm" id={`${componentId}-ai-generate`} data-ai-need-custom={text.aiNeedCustom} data-ai-need-fields={text.aiNeedFields} data-ai-failed={text.aiFailed} data-ai-done={text.aiDone}>
+            {text.aiGenerate}
+          </button>
+        </div>
+        </div>
+        <form method="dialog" class="modal-backdrop"><button type="submit">close</button></form>
+      </dialog>
+    ) : null}
   </div>
 
   <!-- Stage 2: Staged Files Queue & Optimization Controls -->
@@ -268,6 +378,15 @@ const text = {
       var fileInput = document.getElementById(componentId + "-file-input");
       var urlInput = document.getElementById(componentId + "-url-input");
       var btnFetchUrl = document.getElementById(componentId + "-btn-fetch-url");
+      var aiCustom = document.getElementById(componentId + "-ai-custom");
+      var aiFields = document.getElementById(componentId + "-ai-fields");
+      var aiGenerate = document.getElementById(componentId + "-ai-generate");
+      var aiOpen = document.getElementById(componentId + "-ai-open");
+      var aiDialog = document.getElementById(componentId + "-ai-dialog");
+      var aiClose = document.getElementById(componentId + "-ai-close");
+      var aiKind = document.getElementById(componentId + "-ai-kind");
+      var aiFormat = document.getElementById(componentId + "-ai-format");
+      var aiFormatWrap = document.getElementById(componentId + "-ai-format-wrap");
 
       var stageIngest = document.getElementById(componentId + "-stage-ingest");
       var stageQueue = document.getElementById(componentId + "-stage-queue");
@@ -1159,6 +1278,108 @@ const text = {
           renderQueue();
           if (fileInput) fileInput.value = "";
           if (urlInput) urlInput.value = "";
+        });
+      }
+
+      root.querySelectorAll('input[name="' + componentId + '-ai-source"]').forEach(function (radio) {
+        radio.addEventListener("change", function () {
+          var isForm = radio.value === "form" && radio.checked;
+          if (aiCustom) aiCustom.classList.toggle("hidden", isForm);
+          if (aiFields) {
+            aiFields.classList.toggle("hidden", !isForm);
+            aiFields.classList.toggle("flex", isForm);
+          }
+        });
+      });
+
+      if (aiOpen && aiDialog) {
+        aiOpen.addEventListener("click", function (event) {
+          event.preventDefault();
+          event.stopPropagation();
+          if (typeof aiDialog.showModal === "function") aiDialog.showModal();
+        });
+      }
+      if (aiClose && aiDialog) {
+        aiClose.addEventListener("click", function () {
+          if (typeof aiDialog.close === "function") aiDialog.close();
+        });
+      }
+
+      if (aiKind) {
+        aiKind.addEventListener("change", function () {
+          if (aiFormatWrap) aiFormatWrap.classList.toggle("hidden", aiKind.value !== "text");
+        });
+      }
+
+      if (aiGenerate) {
+        aiGenerate.addEventListener("click", function () {
+          var form = root.closest("form");
+          var locale = "es";
+          if (form) {
+            var panel = form.querySelector("[data-i18n-panel]:not(.hidden)");
+            if (panel) locale = panel.getAttribute("data-i18n-panel") || locale;
+          }
+          var title = form && form.querySelector('[name="title[' + locale + ']"]');
+          var description = form && form.querySelector('[name="description[' + locale + ']"]');
+          var content = form && form.querySelector('[name="content_html[' + locale + ']"]');
+          var tags = form && form.querySelector('[name="tags"]');
+          var categoryBoxes = form ? form.querySelectorAll('input[name="categoryIds"]:checked') : [];
+          var categories = [];
+          categoryBoxes.forEach(function (box) {
+            var label = box.closest("label");
+            categories.push(label ? String(label.textContent || "").replace(/\s+/g, " ").trim() : box.value);
+          });
+          var data = new FormData();
+          data.set("kind", aiKind ? aiKind.value : "image");
+          data.set("format", aiFormat ? aiFormat.value : "txt");
+          data.set("customText", aiCustom ? aiCustom.value : "");
+          data.set("title", title ? title.value : "");
+          data.set("description", description ? description.value : "");
+          data.set("content", content ? content.value : "");
+          data.set("tags", tags ? tags.value : "");
+          data.set("categories", categories.join(", "));
+          data.set("bucket", destBucket ? destBucket.value : (root.getAttribute("data-bucket") || "media"));
+          data.set("prefix", destPrefix ? destPrefix.value.trim() : (root.getAttribute("data-default-prefix") || "covers"));
+          data.set("promptModel", root.getAttribute("data-prompt-model") || "");
+          data.set("imageModel", root.getAttribute("data-image-model") || "");
+          data.set("videoModel", root.getAttribute("data-video-model") || "");
+          data.set("musicModel", root.getAttribute("data-music-model") || "");
+          data.set("textModel", root.getAttribute("data-text-model") || "");
+          root.querySelectorAll("[data-ai-field]:checked").forEach(function (box) {
+            data.append("fields", box.value);
+          });
+          var hasCustom = aiCustom && aiCustom.value.trim();
+          var hasFields = data.getAll("fields").length > 0;
+          data.set("source", hasFields ? "form" : "custom");
+          if (!hasCustom && !hasFields) {
+            if (window.AfroUpFeedback) window.AfroUpFeedback.toast(aiGenerate.getAttribute("data-ai-need-custom") || "", "error");
+            return;
+          }
+          aiGenerate.disabled = true;
+          fetch("/api/admin/ai-image", { method: "POST", body: data })
+            .then(function (res) { return res.json(); })
+            .then(function (res) {
+              aiGenerate.disabled = false;
+              if (!res || !res.ok) {
+                if (window.AfroUpFeedback) window.AfroUpFeedback.toast(aiGenerate.getAttribute("data-ai-failed") || "", "error");
+                return;
+              }
+              var targetInputAttr = root.getAttribute("data-target-input");
+              if (targetInputAttr && res.streamUrl) {
+                var targetInput = document.getElementById(targetInputAttr);
+                if (targetInput) {
+                  targetInput.value = res.streamUrl;
+                  targetInput.dispatchEvent(new Event("input", { bubbles: true }));
+                  targetInput.dispatchEvent(new Event("change", { bubbles: true }));
+                }
+              }
+              if (aiDialog && typeof aiDialog.close === "function") aiDialog.close();
+              if (window.AfroUpFeedback) window.AfroUpFeedback.toast(aiGenerate.getAttribute("data-ai-done") || "", "success");
+            })
+            .catch(function () {
+              aiGenerate.disabled = false;
+              if (window.AfroUpFeedback) window.AfroUpFeedback.toast(aiGenerate.getAttribute("data-ai-failed") || "", "error");
+            });
         });
       }
     };

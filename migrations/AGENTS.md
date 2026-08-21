@@ -57,6 +57,8 @@
 - `0025_own_seed_categories.sql` assigns those seeded categories to `tantaroth@gmail.com`.
 - `0026_article_content_and_metadata.sql` adds `articles.cover_image_url`, `articles.reading_time_minutes`, and `article_locales.content_html`.
 - `0027_storage_module.sql` registers the `almacenamiento` admin module and grants its permissions to the `Administrador` role.
+- `0028_open_graph_metadata.sql` adds per-locale `og_json` on `article_locales` and `article_category_locales` for Open Graph / Twitter Card fields.
+- `0029_storage_ai_permission.sql` turns on `translate_ai` for Administrador on the `almacenamiento` module so cover/image generation can run.
 
 ## Manual D1 apply notes
 

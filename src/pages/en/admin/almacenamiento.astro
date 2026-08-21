@@ -6,6 +6,7 @@ import { resolveRequestCopy } from "../../../lib/request-locale";
 import { routeIds } from "../../../lib/paths";
 import { KNOWN_BUCKETS, resolveR2Bucket, mapR2Object, formatBytes, type R2ItemSummary } from "../../../lib/r2-storage";
 import R2Uploader from "../../../components/R2Uploader.astro";
+import { translationAccess } from "../../../lib/editorial";
 import { env } from "cloudflare:workers";
 
 export const prerender = false;
@@ -14,6 +15,7 @@ const { locale, copy } = await resolveRequestCopy(env.DB, Astro.url);
 const access = await requireModuleAccess(env.DB, Astro.cookies, Astro.url, locale, "almacenamiento");
 if (access instanceof Response) return access;
 const actor = access;
+const storageAi = await translationAccess(env.DB, actor.id, "almacenamiento", "create");
 
 const requestedBucketId = Astro.url.searchParams.get("bucket") || "media";
 const currentPrefix = Astro.url.searchParams.get("prefix") || "";
@@ -366,6 +368,8 @@ if (resolved) {
             allowOptimization={true}
             locale={locale}
             flat={true}
+            allowAiGenerate={true}
+            canUseAi={storageAi.canUseAi}
           />
         </div>
       </aside>
