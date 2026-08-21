@@ -3,6 +3,7 @@ import type { AboutPageData } from "../lib/about";
 import type { BioTranslationAccess } from "../lib/editorial";
 import type { LanguageItem } from "../lib/site-languages";
 import PageLocaleSwitch from "./PageLocaleSwitch.astro";
+import R2Uploader from "./R2Uploader.astro";
 
 interface Props {
   aboutByLocale: Record<string, AboutPageData>;
@@ -138,6 +139,76 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
       <form method="dialog" class="modal-backdrop"><button type="submit">close</button></form>
     </dialog>
   ) : null}
+
+  <!-- R2 Modal for Team Member Avatars -->
+  <dialog class="modal z-50" id="team-avatar-r2-modal">
+    <div class="modal-box max-w-2xl p-6 bg-base-100 rounded-3xl border border-base-300 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-base-300 pb-3">
+        <div class="flex items-center gap-2">
+          <span class="size-2.5 rounded-full bg-warning animate-pulse"></span>
+          <h3 class="font-display font-bold text-base text-base-content">
+            Subir Foto de Integrante (R2 Storage)
+          </h3>
+        </div>
+        <button type="button" class="btn btn-circle btn-ghost btn-xs" data-close-team-avatar-modal>✕</button>
+      </div>
+
+      <R2Uploader
+        bucket="avatars"
+        prefix="team"
+        allowedTypes="image/*"
+        targetInputId="active-team-avatar-target-input"
+        locale={locale}
+        flat={true}
+        showBucketSelector={false}
+        allowAiGenerate={true}
+        canUseAi={translation.canUseAi}
+        promptModel="@cf/deepseek-ai/deepseek-v4-flash-0731"
+        imageModel="xai/grok-imagine-image-2.0"
+        videoModel="bytedance/seedance-2.5"
+        musicModel="minimax/music-2.6"
+        textModel="@cf/deepseek-ai/deepseek-v4-flash-0731"
+      />
+    </div>
+    <form method="dialog" class="modal-backdrop"><button type="submit">close</button></form>
+  </dialog>
+
+  <!-- R2 Modal for Open Graph / Social Images -->
+  <dialog class="modal z-50" id="og-image-r2-modal">
+    <div class="modal-box max-w-2xl p-6 bg-base-100 rounded-3xl border border-base-300 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-base-300 pb-3">
+        <div class="flex items-center gap-2">
+          <span class="size-2.5 rounded-full bg-accent animate-pulse"></span>
+          <h3 class="font-display font-bold text-base text-base-content">
+            Subir Imagen Social / Open Graph (R2 Storage)
+          </h3>
+        </div>
+        <button type="button" class="btn btn-circle btn-ghost btn-xs" data-close-og-image-modal>✕</button>
+      </div>
+
+      <R2Uploader
+        bucket="media"
+        prefix="og/nosotros"
+        allowedTypes="image/*"
+        targetInputId="active-og-image-target-input"
+        locale={locale}
+        flat={true}
+        showBucketSelector={false}
+        allowAiGenerate={true}
+        canUseAi={translation.canUseAi}
+        promptModel="@cf/deepseek-ai/deepseek-v4-flash-0731"
+        imageModel="xai/grok-imagine-image-2.0"
+        videoModel="bytedance/seedance-2.5"
+        musicModel="minimax/music-2.6"
+        textModel="@cf/deepseek-ai/deepseek-v4-flash-0731"
+      />
+    </div>
+    <form method="dialog" class="modal-backdrop"><button type="submit">close</button></form>
+  </dialog>
+
+  <!-- Dummy hidden target inputs for R2Uploader triggers -->
+  <input type="hidden" id="active-team-avatar-target-input" value="" />
+  <input type="hidden" id="active-og-image-target-input" value="" />
 
   <!-- Main Edit Form -->
   <form
@@ -385,13 +456,13 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
             </div>
           </div>
 
-          <!-- Section 5: Equipo y Colaboradores -->
+          <!-- Section 5: Equipo y Colaboradores con R2Uploader -->
           <div class="rounded-3xl border border-base-300 bg-base-100 p-6 shadow-xs space-y-4" data-team-manager-section={loc}>
             <div class="border-b border-base-300/80 pb-3 flex items-center justify-between">
-              <h3 class="font-display font-bold text-base text-base-content flex items-center gap-2">
+              <div class="flex items-center gap-2">
                 <svg class="size-4 text-warning"><use href="#ic-users"></use></svg>
-                <span>4. Equipo & Colaboradores</span>
-              </h3>
+                <h3 class="font-display font-bold text-base text-base-content">4. Equipo & Colaboradores</h3>
+              </div>
               <button
                 type="button"
                 class="btn btn-xs btn-outline btn-primary gap-1"
@@ -423,6 +494,39 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
                     ✕
                   </button>
 
+                  <!-- Avatar Thumbnail & R2 Trigger -->
+                  <div class="flex items-center gap-3">
+                    <div class="size-12 rounded-xl bg-base-300 border border-base-300 overflow-hidden shrink-0 flex items-center justify-center relative shadow-2xs" data-avatar-preview-box>
+                      {member.avatar_url ? (
+                        <img src={member.avatar_url} alt={member.name} class="w-full h-full object-cover" data-avatar-preview-img />
+                      ) : (
+                        <svg class="size-6 text-base-content/40" data-avatar-fallback-icon><use href="#ic-user"></use></svg>
+                      )}
+                    </div>
+                    <div class="space-y-1">
+                      <button
+                        type="button"
+                        class="btn btn-xs btn-outline btn-warning gap-1 font-semibold"
+                        data-open-team-avatar-uploader
+                        data-member-idx={idx}
+                        data-loc={loc}
+                        title="Subir o cambiar foto con Cloudflare R2"
+                      >
+                        <svg class="size-3"><use href="#ic-cloud"></use></svg>
+                        <span>Subir Foto R2</span>
+                      </button>
+                      {member.avatar_url ? (
+                        <button
+                          type="button"
+                          class="btn btn-link btn-xs text-error p-0 text-[10px] block"
+                          data-clear-member-avatar
+                        >
+                          Quitar foto
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+
                   <div class="space-y-1">
                     <label class="label-text font-bold text-[11px]">Nombre</label>
                     <input
@@ -446,13 +550,13 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
                   </div>
 
                   <div class="space-y-1">
-                    <label class="label-text font-bold text-[11px]">Avatar URL (opcional)</label>
+                    <label class="label-text font-bold text-[10px] text-base-content/60">URL de Imagen (R2 o externa)</label>
                     <input
                       type="text"
-                      class="input input-bordered input-xs w-full text-[11px] font-mono"
+                      class="input input-bordered input-xs w-full text-[10px] font-mono"
                       value={member.avatar_url || ""}
                       data-member-avatar
-                      placeholder="https://... o vacío para gradiente"
+                      placeholder="https://..."
                     />
                   </div>
                 </div>
@@ -517,18 +621,18 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
             </div>
           </div>
 
-          <!-- Section 7: Metadatos SEO / Open Graph -->
+          <!-- Section 7: Metadatos SEO / Open Graph con R2Uploader -->
           <div class="rounded-3xl border border-base-300 bg-base-100 p-6 shadow-xs space-y-4">
             <div class="border-b border-base-300/80 pb-3 flex items-center justify-between">
               <h3 class="font-display font-bold text-base text-base-content flex items-center gap-2">
                 <svg class="size-4 text-base-content/60"><use href="#ic-share"></use></svg>
-                <span>6. Metadatos Open Graph / SEO</span>
+                <span>6. Metadatos Open Graph / SEO (R2 Media)</span>
               </h3>
-              <span class="text-xs text-base-content/50">Vista previa en redes sociales</span>
+              <span class="text-xs text-base-content/50">Vista previa y compartir en redes sociales</span>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div class="space-y-1.5">
+              <div class="space-y-1.5 md:col-span-2">
                 <label class="label-text font-bold text-xs">Título Social (og:title)</label>
                 <input
                   type="text"
@@ -536,17 +640,6 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
                   value={data.og?.title || ""}
                   class="input input-bordered input-sm w-full"
                   placeholder="Nosotros · AfroUp"
-                />
-              </div>
-
-              <div class="space-y-1.5">
-                <label class="label-text font-bold text-xs">Imagen Social (og:image)</label>
-                <input
-                  type="text"
-                  name={`og:image_${loc}`}
-                  value={data.og?.["og:image"] || ""}
-                  class="input input-bordered input-sm w-full font-mono text-xs"
-                  placeholder="/assets/brand-hero.png o URL"
                 />
               </div>
 
@@ -558,6 +651,40 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
                   class="textarea textarea-bordered textarea-sm w-full leading-relaxed"
                   placeholder="Conoce la historia, misión, visión y equipo detrás de AfroUp."
                 >{data.og?.description || ""}</textarea>
+              </div>
+
+              <div class="space-y-2 md:col-span-2 rounded-2xl bg-base-200/50 p-4 border border-base-300">
+                <div class="flex items-center justify-between">
+                  <label class="label-text font-bold text-xs">Imagen Social (og:image)</label>
+                  <button
+                    type="button"
+                    class="btn btn-xs btn-outline btn-accent gap-1 font-semibold"
+                    data-open-og-image-uploader
+                    data-loc={loc}
+                  >
+                    <svg class="size-3"><use href="#ic-cloud"></use></svg>
+                    <span>Subir imagen con R2</span>
+                  </button>
+                </div>
+
+                <div class="flex items-center gap-3">
+                  <div class="size-14 rounded-xl bg-base-300 border border-base-300 overflow-hidden shrink-0 flex items-center justify-center relative shadow-2xs" data-og-preview-box={loc}>
+                    {data.og?.["og:image"] ? (
+                      <img src={data.og?.["og:image"]} alt="OG Preview" class="w-full h-full object-cover" data-og-preview-img={loc} />
+                    ) : (
+                      <svg class="size-6 text-base-content/40"><use href="#ic-folder"></use></svg>
+                    )}
+                  </div>
+                  <input
+                    type="text"
+                    name={`og:image_${loc}`}
+                    id={`og-image-input-${loc}`}
+                    value={data.og?.["og:image"] || ""}
+                    class="input input-bordered input-xs flex-1 font-mono text-xs"
+                    placeholder="/assets/brand-hero.png o URL de Cloudflare R2"
+                    data-og-image-input={loc}
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -571,6 +698,75 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
   function setupAboutEditor() {
     const form = document.querySelector<HTMLFormElement>("[data-about-form]");
     if (!form) return;
+
+    let activeTeamContext: { loc: string; card: HTMLElement } | null = null;
+    let activeOgLoc: string | null = null;
+
+    // Team Avatar Modal setup
+    const teamAvatarModal = document.getElementById("team-avatar-r2-modal") as HTMLDialogElement | null;
+    const closeTeamModalBtns = document.querySelectorAll("[data-close-team-avatar-modal]");
+    closeTeamModalBtns.forEach((btn) => {
+      if (btn.dataset.bound === "true") return;
+      btn.dataset.bound = "true";
+      btn.addEventListener("click", () => {
+        if (teamAvatarModal) teamAvatarModal.close();
+      });
+    });
+
+    // Open Graph Modal setup
+    const ogImageModal = document.getElementById("og-image-r2-modal") as HTMLDialogElement | null;
+    const closeOgModalBtns = document.querySelectorAll("[data-close-og-image-modal]");
+    closeOgModalBtns.forEach((btn) => {
+      if (btn.dataset.bound === "true") return;
+      btn.dataset.bound = "true";
+      btn.addEventListener("click", () => {
+        if (ogImageModal) ogImageModal.close();
+      });
+    });
+
+    // Listen for R2 Upload Success event
+    document.addEventListener("r2-upload-success", (e: any) => {
+      const files = e.detail?.files;
+      if (!files || !files.length) return;
+      const uploadedUrl = files[0].url || files[0].key;
+
+      if (activeTeamContext && teamAvatarModal && teamAvatarModal.open) {
+        const { card } = activeTeamContext;
+        const avatarInput = card.querySelector<HTMLInputElement>("[data-member-avatar]");
+        const previewBox = card.querySelector<HTMLElement>("[data-avatar-preview-box]");
+
+        if (avatarInput) {
+          avatarInput.value = uploadedUrl;
+          avatarInput.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+        if (previewBox) {
+          previewBox.innerHTML = `<img src="${uploadedUrl}" alt="Avatar" class="w-full h-full object-cover" data-avatar-preview-img />`;
+        }
+
+        teamAvatarModal.close();
+        if ((window as any).AfroUpFeedback) {
+          (window as any).AfroUpFeedback.toast("Foto de integrante subida a R2 con éxito.", "success");
+        }
+      }
+
+      if (activeOgLoc && ogImageModal && ogImageModal.open) {
+        const ogInput = form.querySelector<HTMLInputElement>(`[data-og-image-input='${activeOgLoc}']`);
+        const ogPreviewBox = form.querySelector<HTMLElement>(`[data-og-preview-box='${activeOgLoc}']`);
+
+        if (ogInput) {
+          ogInput.value = uploadedUrl;
+          ogInput.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+        if (ogPreviewBox) {
+          ogPreviewBox.innerHTML = `<img src="${uploadedUrl}" alt="OG Preview" class="w-full h-full object-cover" data-og-preview-img="${activeOgLoc}" />`;
+        }
+
+        ogImageModal.close();
+        if ((window as any).AfroUpFeedback) {
+          (window as any).AfroUpFeedback.toast("Imagen social subida a R2 con éxito.", "success");
+        }
+      }
+    });
 
     // Team Manager Logic per Locale
     document.querySelectorAll("[data-team-manager-section]").forEach((section) => {
@@ -604,9 +800,53 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
 
       if (container && container.dataset.bound !== "true") {
         container.dataset.bound = "true";
-        container.addEventListener("input", syncTeamJson);
+        container.addEventListener("input", (e) => {
+          const target = e.target as HTMLElement;
+          if (target.matches("[data-member-avatar]")) {
+            const card = target.closest("[data-team-card-idx]");
+            const val = (target as HTMLInputElement).value.trim();
+            const previewBox = card?.querySelector("[data-avatar-preview-box]");
+            if (previewBox) {
+              if (val) {
+                previewBox.innerHTML = `<img src="${val}" alt="Avatar" class="w-full h-full object-cover" data-avatar-preview-img />`;
+              } else {
+                previewBox.innerHTML = `<svg class="size-6 text-base-content/40"><use href="#ic-user"></use></svg>`;
+              }
+            }
+          }
+          syncTeamJson();
+        });
+
         container.addEventListener("click", (e) => {
           const target = e.target as HTMLElement;
+
+          // Open R2 Avatar Uploader
+          const r2Btn = target.closest<HTMLButtonElement>("[data-open-team-avatar-uploader]");
+          if (r2Btn) {
+            const card = r2Btn.closest<HTMLElement>("[data-team-card-idx]");
+            if (card && teamAvatarModal) {
+              activeTeamContext = { loc, card };
+              teamAvatarModal.showModal();
+            }
+            return;
+          }
+
+          // Clear avatar
+          const clearBtn = target.closest<HTMLButtonElement>("[data-clear-member-avatar]");
+          if (clearBtn) {
+            const card = clearBtn.closest<HTMLElement>("[data-team-card-idx]");
+            if (card) {
+              const avatarInput = card.querySelector<HTMLInputElement>("[data-member-avatar]");
+              const previewBox = card.querySelector<HTMLElement>("[data-avatar-preview-box]");
+              if (avatarInput) avatarInput.value = "";
+              if (previewBox) previewBox.innerHTML = `<svg class="size-6 text-base-content/40"><use href="#ic-user"></use></svg>`;
+              clearBtn.remove();
+              syncTeamJson();
+            }
+            return;
+          }
+
+          // Remove member
           const removeBtn = target.closest<HTMLButtonElement>("[data-remove-team-member]");
           if (removeBtn) {
             const card = removeBtn.closest("[data-team-card-idx]");
@@ -628,6 +868,17 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
           card.setAttribute("data-team-card-idx", String(idx));
           card.innerHTML = `
             <button type="button" class="btn btn-circle btn-ghost btn-xs absolute top-2 right-2 text-error opacity-70 hover:opacity-100" data-remove-team-member="${idx}" title="Eliminar miembro">✕</button>
+            <div class="flex items-center gap-3">
+              <div class="size-12 rounded-xl bg-base-300 border border-base-300 overflow-hidden shrink-0 flex items-center justify-center relative shadow-2xs" data-avatar-preview-box>
+                <svg class="size-6 text-base-content/40"><use href="#ic-user"></use></svg>
+              </div>
+              <div class="space-y-1">
+                <button type="button" class="btn btn-xs btn-outline btn-warning gap-1 font-semibold" data-open-team-avatar-uploader data-member-idx="${idx}" data-loc="${loc}">
+                  <svg class="size-3"><use href="#ic-cloud"></use></svg>
+                  <span>Subir Foto R2</span>
+                </button>
+              </div>
+            </div>
             <div class="space-y-1">
               <label class="label-text font-bold text-[11px]">Nombre</label>
               <input type="text" class="input input-bordered input-xs w-full font-bold" value="" data-member-name placeholder="Nombre del integrante" />
@@ -637,14 +888,45 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
               <input type="text" class="input input-bordered input-xs w-full text-xs" value="" data-member-role placeholder="Ej: Redactor/a" />
             </div>
             <div class="space-y-1">
-              <label class="label-text font-bold text-[11px]">Avatar URL (opcional)</label>
-              <input type="text" class="input input-bordered input-xs w-full text-[11px] font-mono" value="" data-member-avatar placeholder="https://..." />
+              <label class="label-text font-bold text-[10px] text-base-content/60">URL de Imagen (R2 o externa)</label>
+              <input type="text" class="input input-bordered input-xs w-full text-[10px] font-mono" value="" data-member-avatar placeholder="https://..." />
             </div>
           `;
           container.appendChild(card);
           syncTeamJson();
         });
       }
+    });
+
+    // Open Graph R2 Uploader trigger binding
+    document.querySelectorAll("[data-open-og-image-uploader]").forEach((btn) => {
+      if (btn.dataset.bound === "true") return;
+      btn.dataset.bound = "true";
+      btn.addEventListener("click", () => {
+        const loc = btn.getAttribute("data-loc") || "es";
+        if (ogImageModal) {
+          activeOgLoc = loc;
+          ogImageModal.showModal();
+        }
+      });
+    });
+
+    // Live preview update for OG Image text inputs
+    document.querySelectorAll("[data-og-image-input]").forEach((input) => {
+      if (input.dataset.bound === "true") return;
+      input.dataset.bound = "true";
+      input.addEventListener("input", () => {
+        const loc = input.getAttribute("data-og-image-input") || "es";
+        const val = (input as HTMLInputElement).value.trim();
+        const previewBox = form.querySelector(`[data-og-preview-box='${loc}']`);
+        if (previewBox) {
+          if (val) {
+            previewBox.innerHTML = `<img src="${val}" alt="OG Preview" class="w-full h-full object-cover" data-og-preview-img="${loc}" />`;
+          } else {
+            previewBox.innerHTML = `<svg class="size-6 text-base-content/40"><use href="#ic-folder"></use></svg>`;
+          }
+        }
+      });
     });
 
     // Translation Modal Logic
@@ -657,7 +939,6 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
     if (openModalBtn && modalDialog && openModalBtn.dataset.bound !== "true") {
       openModalBtn.dataset.bound = "true";
       openModalBtn.addEventListener("click", () => {
-        // Preselect current active language tab if not 'es'
         const localeSelect = document.querySelector<HTMLSelectElement>("[data-page-locale]");
         if (targetSelect && localeSelect && localeSelect.value !== "es") {
           targetSelect.value = localeSelect.value;
