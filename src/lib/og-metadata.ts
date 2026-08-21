@@ -156,6 +156,31 @@ export function missingOgGenerateSources(
   return missing;
 }
 
+export function withOgSourceFallback(
+  current: {
+    title?: string;
+    description?: string;
+    content?: string;
+    tags?: string;
+    categories?: string[] | string;
+  },
+  fallback: {
+    title?: string;
+    description?: string;
+    content?: string;
+    tags?: string;
+    categories?: string[] | string;
+  },
+) {
+  return {
+    title: asText(current.title) || asText(fallback.title),
+    description: asText(current.description) || asText(fallback.description),
+    content: asText(current.content) || asText(fallback.content),
+    tags: asText(current.tags) || asText(fallback.tags),
+    categories: current.categories ?? fallback.categories,
+  };
+}
+
 export function mergeOgMetadata(base: OpenGraphMetadata, patch: Partial<OpenGraphMetadata>): OpenGraphMetadata {
   const next = { ...base };
   for (const key of OG_FIELD_KEYS) {
@@ -183,7 +208,7 @@ export function buildOgGenerateMessages(input: {
     {
       role: "system",
       content:
-        "You write Open Graph and Twitter Card metadata for AfroUp, an Afro-descendant editorial site. Return ONLY a JSON object with keys: url, type, title, description, image, imageAlt, twitterCard, twitterTitle, twitterDescription, twitterImage. No markdown. Keep AfroUp untranslated. Titles <= 60 chars. Descriptions <= 160 chars. twitterCard must be summary or summary_large_image.",
+        "You write Open Graph and Twitter Card metadata for AfroUp, an Afro-descendant editorial site. Return ONLY a JSON object with keys: url, type, title, description, image, imageAlt, twitterCard, twitterTitle, twitterDescription, twitterImage. No markdown. Keep AfroUp untranslated. Write title, description, imageAlt, twitterTitle, and twitterDescription in the requested locale. Titles <= 60 chars. Descriptions <= 160 chars. twitterCard must be summary or summary_large_image.",
     },
     {
       role: "user",

@@ -5,6 +5,7 @@ import {
   mergeOgMetadata,
   parseOgAiJson,
   missingOgGenerateSources,
+  withOgSourceFallback,
   parseOgFromForm,
   parseOgMetadata,
   seedOgMetadata,
@@ -80,6 +81,12 @@ describe("og-metadata", () => {
     expect(missingOgGenerateSources("category", { title: "África", description: "" })).toEqual([
       "description",
     ]);
+    const resolved = withOgSourceFallback(
+      { title: "", description: "" },
+      { title: "África", description: "Continente" },
+    );
+    expect(missingOgGenerateSources("category", resolved)).toEqual([]);
+    expect(resolved.title).toBe("África");
   });
 
   test("buildOgGenerateMessages asks for JSON keys and uses title/description/content", () => {
@@ -91,6 +98,8 @@ describe("og-metadata", () => {
       kind: "article",
     });
     expect(messages[0]?.content).toContain("twitterCard");
+    expect(messages[0]?.content).toContain("requested locale");
+    expect(messages[1]?.content).toContain("Locale: es");
     expect(messages[1]?.content).toContain("Quilombos");
     expect(messages[1]?.content).toContain("Cimarronaje");
     expect(emptyOgMetadata().twitterDescription).toBe("");

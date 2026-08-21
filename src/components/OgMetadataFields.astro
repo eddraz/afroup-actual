@@ -1,4 +1,5 @@
 ---
+import R2Uploader from "./R2Uploader.astro";
 import {
   OG_FORM_NAMES,
   emptyOgMetadata,
@@ -11,6 +12,8 @@ interface Props {
   canUseAi?: boolean;
   kind: "article" | "category";
   moduleSlug: "articulos" | "categorias";
+  primaryLocale?: string;
+  locale?: string;
   copy: Record<string, string>;
   disabled?: boolean;
 }
@@ -21,21 +24,24 @@ const {
   canUseAi = false,
   kind,
   moduleSlug,
+  primaryLocale = "es",
+  locale = "es",
   copy,
   disabled = false,
 } = Astro.props;
+
+const ogImageId = `og-image-${kind}-${localeCode}`;
+const twitterImageId = `og-twitter-image-${kind}-${localeCode}`;
 
 const fields: Array<{ key: keyof typeof OG_FORM_NAMES; label: string; multiline?: boolean }> = [
   { key: "url", label: copy.adminOgUrl || "og:url" },
   { key: "type", label: copy.adminOgType || "og:type" },
   { key: "title", label: copy.adminOgTitle || "og:title" },
   { key: "description", label: copy.adminOgDescription || "og:description", multiline: true },
-  { key: "image", label: copy.adminOgImage || "og:image" },
   { key: "imageAlt", label: copy.adminOgImageAlt || "og:image:alt" },
   { key: "twitterCard", label: copy.adminOgTwitterCard || "twitter:card" },
   { key: "twitterTitle", label: copy.adminOgTwitterTitle || "twitter:title" },
   { key: "twitterDescription", label: copy.adminOgTwitterDescription || "twitter:description", multiline: true },
-  { key: "twitterImage", label: copy.adminOgTwitterImage || "twitter:image" },
 ];
 ---
 
@@ -54,6 +60,7 @@ const fields: Array<{ key: keyof typeof OG_FORM_NAMES; label: string; multiline?
         data-og-locale={localeCode}
         data-og-kind={kind}
         data-og-module={moduleSlug}
+        data-og-primary={primaryLocale}
         data-og-need-fields={kind === "article" ? (copy.adminOgGenerateNeedFields || "") : (copy.adminOgGenerateNeedCategoryFields || "")}
       >
         {copy.adminOgGenerate || "Generar con IA"}
@@ -83,38 +90,115 @@ const fields: Array<{ key: keyof typeof OG_FORM_NAMES; label: string; multiline?
         </fieldset>
       ))}
     </div>
+    <fieldset class="fieldset">
+      <legend class="fieldset-legend text-[11px] font-mono uppercase tracking-wide text-base-content/60">
+        {copy.adminOgImage || "og:image"}
+      </legend>
+      <input
+        type="hidden"
+        id={ogImageId}
+        name={`og_image[${localeCode}]`}
+        value={values.image}
+        disabled={disabled}
+        data-og-image-input
+        data-og-twitter-name={`og_twitter_image[${localeCode}]`}
+      />
+      <R2Uploader
+        bucket="media"
+        prefix={`og/${kind}`}
+        allowedTypes="image/*"
+        targetInputId={ogImageId}
+        locale={locale}
+        flat={true}
+        showBucketSelector={false}
+        allowAiGenerate={true}
+        allowFormContext={kind === "article"}
+        canUseAi={canUseAi}
+        promptModel="@cf/deepseek-ai/deepseek-v4-flash-0731"
+        imageModel="xai/grok-imagine-image-2.0"
+        videoModel="bytedance/seedance-2.5"
+        musicModel="minimax/music-2.6"
+        textModel="@cf/deepseek-ai/deepseek-v4-flash-0731"
+        prompt=""
+      />
+    </fieldset>
+    <fieldset class="fieldset">
+      <legend class="fieldset-legend text-[11px] font-mono uppercase tracking-wide text-base-content/60">
+        {copy.adminOgTwitterImage || "twitter:image"}
+      </legend>
+      <input
+        type="hidden"
+        id={twitterImageId}
+        name={`og_twitter_image[${localeCode}]`}
+        value={values.twitterImage}
+        disabled={disabled}
+      />
+      <R2Uploader
+        bucket="media"
+        prefix={`og/${kind}/twitter`}
+        allowedTypes="image/*"
+        targetInputId={twitterImageId}
+        locale={locale}
+        flat={true}
+        showBucketSelector={false}
+        allowAiGenerate={true}
+        allowFormContext={kind === "article"}
+        canUseAi={canUseAi}
+        promptModel="@cf/deepseek-ai/deepseek-v4-flash-0731"
+        imageModel="xai/grok-imagine-image-2.0"
+        videoModel="bytedance/seedance-2.5"
+        musicModel="minimax/music-2.6"
+        textModel="@cf/deepseek-ai/deepseek-v4-flash-0731"
+        prompt=""
+      />
+    </fieldset>
   </div>
 </div>
 
 <script is:inline>
   (function () {
+    var readValue = function (form, name) {
+      var el = form.querySelector('[name="' + name + '"]');
+      return el ? String(el.value || "") : "";
+    };
+    var strip = function (value) {
+      return String(value || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+    };
     var bind = function () {
+      document.querySelectorAll("[data-og-image-input]").forEach(function (input) {
+        if (input.dataset.mirrorBound === "true") return;
+        input.dataset.mirrorBound = "true";
+        input.addEventListener("change", function () {
+          var twitterName = input.getAttribute("data-og-twitter-name");
+          if (!twitterName) return;
+          var form = input.closest("form");
+          if (!form) return;
+          var twitter = form.querySelector('[name="' + twitterName + '"]');
+          if (twitter && !String(twitter.value || "").trim()) twitter.value = input.value;
+        });
+      });
       document.querySelectorAll("[data-og-generate]").forEach(function (button) {
         if (button.dataset.bound === "true") return;
         button.dataset.bound = "true";
         button.addEventListener("click", function () {
           var locale = button.getAttribute("data-og-locale") || "es";
-          var panel = button.closest("[data-i18n-panel]");
+          var primary = button.getAttribute("data-og-primary") || "es";
           var form = button.closest("form");
           if (!form) return;
           var kind = button.getAttribute("data-og-kind") || "article";
-          var titleInput = form.querySelector('[name="title[' + locale + ']"]');
-          var descInput = form.querySelector('[name="description[' + locale + ']"]');
-          var contentInput = form.querySelector('[name="content_html[' + locale + ']"]');
-          var tagsInput = form.querySelector('[name="tags"]');
+          var title = readValue(form, "title[" + locale + "]").trim() || readValue(form, "title[" + primary + "]").trim();
+          var description = readValue(form, "description[" + locale + "]") || readValue(form, "description[" + primary + "]");
+          var content = readValue(form, "content_html[" + locale + "]") || readValue(form, "content_html[" + primary + "]");
+          var tags = readValue(form, "tags").trim();
           var categoryBoxes = form.querySelectorAll('input[name="categoryIds"]:checked');
           var coverInput = form.querySelector("[data-cover-input], #article-cover-image-input");
-          var title = titleInput ? String(titleInput.value || "").trim() : "";
-          var description = descInput ? String(descInput.value || "") : "";
-          var content = contentInput ? String(contentInput.value || "") : "";
-          var tags = tagsInput ? String(tagsInput.value || "").trim() : "";
+          var ogImage = readValue(form, "og_image[" + locale + "]") || (coverInput ? String(coverInput.value || "") : "");
           var categories = [];
           categoryBoxes.forEach(function (box) {
             var label = box.closest("label");
             var name = label ? String(label.textContent || "").replace(/\s+/g, " ").trim() : "";
             categories.push(name || String(box.value || ""));
           });
-          var strip = function (value) { return String(value || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim(); };
           var missing = [];
           if (!title) missing.push("title");
           if (!strip(description)) missing.push("description");
@@ -137,9 +221,8 @@ const fields: Array<{ key: keyof typeof OG_FORM_NAMES; label: string; multiline?
           data.set("content", content);
           data.set("tags", tags);
           data.set("categories", categories.join(","));
-          data.set("image", coverInput ? String(coverInput.value || "") : "");
-          var urlField = form.querySelector('[name="og_url[' + locale + ']"]');
-          data.set("url", urlField ? String(urlField.value || "") : "");
+          data.set("image", ogImage);
+          data.set("url", readValue(form, "og_url[" + locale + "]"));
           button.disabled = true;
           fetch("/api/admin/og", { method: "POST", body: data })
             .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })

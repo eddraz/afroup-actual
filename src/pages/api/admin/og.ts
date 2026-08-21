@@ -37,13 +37,12 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   const image = String(form.get("image") ?? "").trim();
   const tags = String(form.get("tags") ?? "");
   const categories = String(form.get("categories") ?? "");
-  const action = "update" as PermissionAction;
-
   if (moduleSlug !== "articulos" && moduleSlug !== "categorias") {
     return json({ ok: false, error: "module_invalid" }, 400);
   }
-  const access = await translationAccess(env.DB, actor.id, moduleSlug, action);
-  if (!access.canUseAi) return forbiddenJson();
+  const updateAccess = await translationAccess(env.DB, actor.id, moduleSlug, "update" as PermissionAction);
+  const createAccess = await translationAccess(env.DB, actor.id, moduleSlug, "create" as PermissionAction);
+  if (!updateAccess.canUseAi && !createAccess.canUseAi) return forbiddenJson();
   const missing = missingOgGenerateSources(kind, {
     title,
     description,
