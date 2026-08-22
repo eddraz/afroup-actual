@@ -3,7 +3,10 @@ import type { ReferenteItem, ReferentesPageData, ReferentesStats } from "../lib/
 import type { BioTranslationAccess } from "../lib/editorial";
 import type { LanguageItem } from "../lib/site-languages";
 import PageLocaleSwitch from "./PageLocaleSwitch.astro";
+import FormLocaleSwitch from "./FormLocaleSwitch.astro";
 import R2Uploader from "./R2Uploader.astro";
+import AdminPageHeader from "./admin/AdminPageHeader.astro";
+import AdminStatCard from "./admin/AdminStatCard.astro";
 
 interface Props {
   referentes: ReferenteItem[];
@@ -48,23 +51,14 @@ const categoriesList = [
 
   <div class="drawer-content flex flex-col space-y-6">
     <!-- Header Metrics & Toolbar -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-base-300 pb-5">
-      <div>
-        <div class="flex items-center gap-2">
-          <h1 class="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-base-content">
-            {copy.adminReferentes || "Referentes"}
-          </h1>
-          <span class="badge badge-accent badge-sm font-bold uppercase tracking-wider">
-            Comunidad
-          </span>
-        </div>
-        <p class="text-xs sm:text-sm text-base-content/70 mt-1 max-w-2xl">
-          {copy.adminReferentesDesc || "Catálogo de figuras históricas y líderes contemporáneos de la diáspora afro."}
-        </p>
-      </div>
-
-      <div class="flex flex-wrap items-center gap-2">
-        <PageLocaleSwitch currentLocale={locale} />
+    <AdminPageHeader
+      title={copy.adminReferentes || "Referentes"}
+      count={stats.total}
+      countLabel="referentes"
+      lead={copy.adminReferentesDesc || "Catálogo de figuras históricas y líderes contemporáneos de la diáspora afro."}
+    >
+      <Fragment slot="actions">
+        <PageLocaleSwitch languages={languages} label={copy.adminLanguages || "Language"} current={locale} />
 
         <a
           href={publicHref}
@@ -95,54 +89,15 @@ const categoriesList = [
           <svg class="size-4"><use href="#ic-check"></use></svg>
           <span>Guardar Configuración</span>
         </button>
-      </div>
-    </div>
+      </Fragment>
+    </AdminPageHeader>
 
     <!-- Metrics Cards -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-      <div class="stat bg-base-100 rounded-2xl border border-base-300 p-4 shadow-xs">
-        <div class="stat-figure text-primary">
-          <div class="size-10 rounded-xl bg-primary/10 flex items-center justify-center">
-            <svg class="size-5"><use href="#ic-users"></use></svg>
-          </div>
-        </div>
-        <div class="stat-title text-xs font-bold uppercase tracking-wider text-base-content/60">Total Referentes</div>
-        <div class="stat-value text-2xl sm:text-3xl font-extrabold text-primary">{stats.total}</div>
-        <div class="stat-desc text-xs text-base-content/50">En la base de datos</div>
-      </div>
-
-      <div class="stat bg-base-100 rounded-2xl border border-base-300 p-4 shadow-xs">
-        <div class="stat-figure text-success">
-          <div class="size-10 rounded-xl bg-success/10 flex items-center justify-center">
-            <svg class="size-5"><use href="#ic-book2"></use></svg>
-          </div>
-        </div>
-        <div class="stat-title text-xs font-bold uppercase tracking-wider text-base-content/60">Publicados</div>
-        <div class="stat-value text-2xl sm:text-3xl font-extrabold text-success">{stats.published}</div>
-        <div class="stat-desc text-xs text-base-content/50">Visibles en la web</div>
-      </div>
-
-      <div class="stat bg-base-100 rounded-2xl border border-base-300 p-4 shadow-xs">
-        <div class="stat-figure text-secondary">
-          <div class="size-10 rounded-xl bg-secondary/10 flex items-center justify-center">
-            <svg class="size-5"><use href="#ic-stack"></use></svg>
-          </div>
-        </div>
-        <div class="stat-title text-xs font-bold uppercase tracking-wider text-base-content/60">Categorías</div>
-        <div class="stat-value text-2xl sm:text-3xl font-extrabold text-secondary">{stats.categoriesCount}</div>
-        <div class="stat-desc text-xs text-base-content/50">Disciplinas activas</div>
-      </div>
-
-      <div class="stat bg-base-100 rounded-2xl border border-base-300 p-4 shadow-xs">
-        <div class="stat-figure text-warning">
-          <div class="size-10 rounded-xl bg-warning/10 flex items-center justify-center">
-            <svg class="size-5"><use href="#ic-sun"></use></svg>
-          </div>
-        </div>
-        <div class="stat-title text-xs font-bold uppercase tracking-wider text-base-content/60">Destacados</div>
-        <div class="stat-value text-2xl sm:text-3xl font-extrabold text-warning">{stats.featuredCount}</div>
-        <div class="stat-desc text-xs text-base-content/50">En carruseles / cabecera</div>
-      </div>
+      <AdminStatCard label="Total Referentes" value={stats.total} icon="#ic-users" tone="primary" footNote="En la base de datos" />
+      <AdminStatCard label="Publicados" value={stats.published} icon="#ic-book2" tone="success" footNote="Visibles en la web" />
+      <AdminStatCard label="Categorías" value={stats.categoriesCount} icon="#ic-stack" tone="secondary" footNote="Disciplinas activas" />
+      <AdminStatCard label="Destacados" value={stats.featuredCount} icon="#ic-sun" tone="warning" footNote="En carruseles / cabecera" />
     </div>
 
     <!-- Navigation Tabs -->
@@ -159,7 +114,7 @@ const categoriesList = [
 
     <!-- Panel 1: Referentes Table & Filter Toolbar -->
     <div class="space-y-4" data-view-panel="referentes">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-base-100 p-3.5 rounded-2xl border border-base-300 shadow-xs">
+      <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300 bg-base-100 p-3 shadow-xs">
         <div class="flex flex-wrap items-center gap-1.5" data-filter-toolbar>
           <button class="btn btn-xs btn-active font-semibold" data-filter-category="all">
             Todos
@@ -178,14 +133,25 @@ const categoriesList = [
           </button>
         </div>
 
-        <div class="relative w-full sm:w-64">
+        <div class="relative flex-1 min-w-[240px] max-w-md">
+          <svg
+            class="size-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0"></path>
+            <path d="M21 21l-6 -6"></path>
+          </svg>
           <input
             type="search"
             placeholder="Buscar por nombre o hito..."
-            class="input input-bordered input-sm w-full pl-8 text-xs"
+            class="input input-sm input-bordered w-full pl-9 bg-base-200/40 text-xs sm:text-sm font-medium"
             data-search-input
           />
-          <svg class="size-4 absolute left-2.5 top-2 opacity-50"><use href="#ic-search"></use></svg>
         </div>
       </div>
 
@@ -442,7 +408,7 @@ const categoriesList = [
   <div class="drawer-side z-50">
     <label for="referente-detail-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
 
-    <div class="bg-base-100 min-h-full w-full max-w-2xl p-6 shadow-2xl flex flex-col justify-between overflow-y-auto space-y-6">
+    <div class="bg-base-100 min-h-full w-full sm:w-[70%] sm:min-w-[70vw] p-6 shadow-2xl flex flex-col justify-between overflow-y-auto space-y-6">
       <div class="space-y-6">
         <!-- Drawer Header -->
         <div class="flex items-center justify-between border-b border-base-300 pb-4">
@@ -468,15 +434,7 @@ const categoriesList = [
           <!-- Language Switcher + AI Translate Button -->
           <div class="flex items-center justify-between bg-base-200/50 p-3 rounded-2xl border border-base-300">
             <div class="flex items-center gap-1.5">
-              {languages.map((lang) => (
-                <button
-                  type="button"
-                  class:list={["btn btn-xs font-bold", lang.code === defaultLocale ? "btn-active btn-neutral" : "btn-ghost"]}
-                  data-drawer-lang-btn={lang.code}
-                >
-                  {lang.native_name} ({lang.code.toUpperCase()})
-                </button>
-              ))}
+              <FormLocaleSwitch languages={languages} current={defaultLocale} />
             </div>
 
             {translation.canUseAi && targetLanguages.length > 0 ? (
@@ -1033,26 +991,33 @@ const categoriesList = [
       });
     }
 
-    // Drawer Language Tabs
+    // Drawer Language Switcher (buttons for 2 languages, select for 3+)
     const langBtns = root.querySelectorAll<HTMLButtonElement>("[data-drawer-lang-btn]");
+    const langSelect = root.querySelector<HTMLSelectElement>("[data-drawer-lang-select]");
     const langPanels = root.querySelectorAll<HTMLElement>("[data-drawer-locale-panel]");
+
+    function setDrawerLang(targetLang: string) {
+      langBtns.forEach((b) => {
+        const isActive = b.getAttribute("data-drawer-lang-btn") === targetLang;
+        b.classList.toggle("btn-active", isActive);
+        b.classList.toggle("btn-neutral", isActive);
+        b.classList.toggle("btn-ghost", !isActive);
+      });
+      if (langSelect && langSelect.value !== targetLang) langSelect.value = targetLang;
+      langPanels.forEach((panel) => {
+        panel.classList.toggle("hidden", panel.getAttribute("data-drawer-locale-panel") !== targetLang);
+      });
+    }
 
     langBtns.forEach((btn) => {
       if (btn.dataset.bound === "true") return;
       btn.dataset.bound = "true";
-      btn.addEventListener("click", () => {
-        const targetLang = btn.getAttribute("data-drawer-lang-btn");
-        langBtns.forEach((b) => {
-          const isActive = b.getAttribute("data-drawer-lang-btn") === targetLang;
-          b.classList.toggle("btn-active", isActive);
-          b.classList.toggle("btn-neutral", isActive);
-          b.classList.toggle("btn-ghost", !isActive);
-        });
-        langPanels.forEach((panel) => {
-          panel.classList.toggle("hidden", panel.getAttribute("data-drawer-locale-panel") !== targetLang);
-        });
-      });
+      btn.addEventListener("click", () => setDrawerLang(btn.getAttribute("data-drawer-lang-btn") || "es"));
     });
+    if (langSelect && langSelect.dataset.bound !== "true") {
+      langSelect.dataset.bound = "true";
+      langSelect.addEventListener("change", () => setDrawerLang(langSelect.value));
+    }
 
     // Auto-generate slug from Spanish name when creating
     const nameEsInput = root.querySelector<HTMLInputElement>("#ref-field-name-es");
@@ -1088,8 +1053,8 @@ const categoriesList = [
         if (deleteBtn) deleteBtn.classList.add("hidden");
 
         // Clear localized inputs and initialize clean Editor.js & Milestones
-        langBtns.forEach((btn) => {
-          const loc = btn.getAttribute("data-drawer-lang-btn");
+        langPanels.forEach((panel) => {
+          const loc = panel.getAttribute("data-drawer-locale-panel");
           if (!loc) return;
           const nInput = root.querySelector<HTMLInputElement>(`#ref-field-name-${loc}`);
           if (nInput) nInput.value = "";
@@ -1113,8 +1078,7 @@ const categoriesList = [
         });
 
         // Reset to Spanish panel
-        const esBtn = root.querySelector<HTMLButtonElement>("[data-drawer-lang-btn='es']");
-        if (esBtn) esBtn.click();
+        setDrawerLang("es");
 
         if (drawerToggle) {
           drawerToggle.checked = true;
@@ -1169,8 +1133,8 @@ const categoriesList = [
         const itemData = referentesLocalesMap.get(id);
         const locales = itemData?.locales || {};
 
-        langBtns.forEach((b) => {
-          const loc = b.getAttribute("data-drawer-lang-btn");
+        langPanels.forEach((panel) => {
+          const loc = panel.getAttribute("data-drawer-locale-panel");
           if (!loc) return;
           const locData = locales[loc];
 
@@ -1213,8 +1177,7 @@ const categoriesList = [
         });
 
         // Reset to Spanish panel
-        const esBtn = root.querySelector<HTMLButtonElement>("[data-drawer-lang-btn='es']");
-        if (esBtn) esBtn.click();
+        setDrawerLang("es");
 
         if (drawerToggle) {
           drawerToggle.checked = true;
@@ -1532,8 +1495,7 @@ const categoriesList = [
         aiTransBtn.innerHTML = originalBtnHtml;
 
         // Switch to EN panel to show results
-        const enBtn = root.querySelector<HTMLButtonElement>("[data-drawer-lang-btn='en']");
-        if (enBtn) enBtn.click();
+        setDrawerLang("en");
 
         if ((window as any).AfroUpFeedback) {
           (window as any).AfroUpFeedback.toast("Referente traducido al inglés con IA.", "success");

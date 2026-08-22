@@ -3,6 +3,8 @@ import type { ContactPageData, ContactSubmission, ContactSubmissionStats } from 
 import type { BioTranslationAccess } from "../lib/editorial";
 import type { LanguageItem } from "../lib/site-languages";
 import PageLocaleSwitch from "./PageLocaleSwitch.astro";
+import AdminPageHeader from "./admin/AdminPageHeader.astro";
+import AdminStatCard from "./admin/AdminStatCard.astro";
 import R2Uploader from "./R2Uploader.astro";
 
 interface Props {
@@ -37,18 +39,13 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
 
   <div class="drawer-content space-y-6">
     <!-- Page Header & Action Bar -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-base-300 pb-5">
-      <div>
-        <div class="flex items-center gap-2.5">
-          <h2 class="font-display text-2xl font-bold text-base-content">{copy.adminContact || "Módulo de Contacto"}</h2>
-          <span class="badge badge-primary badge-sm font-semibold">Institucional</span>
-        </div>
-        <p class="text-xs sm:text-sm text-base-content/60 mt-1">
-          Gestiona la información pública de contacto y administra los mensajes recibidos desde la web.
-        </p>
-      </div>
-
-      <div class="flex flex-wrap items-center gap-2.5">
+    <AdminPageHeader
+      title={copy.adminContact || "Módulo de Contacto"}
+      count={stats.total}
+      countLabel="mensajes"
+      lead="Gestiona la información pública de contacto y administra los mensajes recibidos desde la web."
+    >
+      <Fragment slot="actions">
         <!-- Public Preview Link -->
         <a
           href={publicHref}
@@ -70,27 +67,15 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
           <svg class="size-4"><use href="#ic-plus"></use></svg>
           <span>{copy.accountProfileSave || "Guardar Configuración"}</span>
         </button>
-      </div>
-    </div>
+      </Fragment>
+    </AdminPageHeader>
 
-    <!-- Metric Badges Overview -->
+    <!-- Metrics Cards -->
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-      <div class="card bg-base-100 border border-base-300 p-4 shadow-2xs">
-        <div class="text-xs font-semibold text-base-content/60">Total Mensajes</div>
-        <div class="text-2xl font-display font-bold text-base-content mt-1" data-stat-total>{stats.total}</div>
-      </div>
-      <div class="card bg-base-100 border border-base-300 p-4 shadow-2xs">
-        <div class="text-xs font-semibold text-warning">No Leídos</div>
-        <div class="text-2xl font-display font-bold text-warning mt-1" data-stat-unread>{stats.unread}</div>
-      </div>
-      <div class="card bg-base-100 border border-base-300 p-4 shadow-2xs">
-        <div class="text-xs font-semibold text-success">Respondidos</div>
-        <div class="text-2xl font-display font-bold text-success mt-1" data-stat-replied>{stats.replied}</div>
-      </div>
-      <div class="card bg-base-100 border border-base-300 p-4 shadow-2xs">
-        <div class="text-xs font-semibold text-base-content/50">Archivados</div>
-        <div class="text-2xl font-display font-bold text-base-content/70 mt-1" data-stat-archived>{stats.archived}</div>
-      </div>
+      <AdminStatCard label="Total Mensajes" value={stats.total} icon="#ic-message-report" tone="primary" />
+      <AdminStatCard label="No Leídos" value={stats.unread} icon="#ic-search" tone="warning" />
+      <AdminStatCard label="Respondidos" value={stats.replied} icon="#ic-mail" tone="success" />
+      <AdminStatCard label="Archivados" value={stats.archived} icon="#ic-folder" tone="accent" />
     </div>
 
     <!-- Main View Tabs (Bandeja de Mensajes vs Configuración de la Página) -->
@@ -138,15 +123,24 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
         </div>
 
         <div class="relative min-w-[220px]">
+          <svg
+            class="size-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0"></path>
+            <path d="M21 21l-6 -6"></path>
+          </svg>
           <input
             type="search"
             placeholder="Buscar mensaje por nombre, correo..."
-            class="input input-bordered input-xs w-full pl-8"
+            class="input input-sm input-bordered w-full pl-9 bg-base-200/40 text-xs sm:text-sm font-medium"
             data-search-input
           />
-          <svg class="size-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none">
-            <use href="#ic-search"></use>
-          </svg>
         </div>
       </div>
 
@@ -579,7 +573,7 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
   <!-- Slide-in daisyUI Drawer for Contact Message Inspector -->
   <div class="drawer-side z-50">
     <label for="contact-detail-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
-    <aside class="menu bg-base-100 text-base-content min-h-full w-full max-w-lg p-6 space-y-5 border-l border-base-300 shadow-2xl flex flex-col justify-between">
+    <aside class="menu bg-base-100 text-base-content min-h-full w-full sm:w-[70%] sm:min-w-[70vw] p-6 space-y-5 border-l border-base-300 shadow-2xl flex flex-col justify-between overflow-y-auto">
       <div class="space-y-5">
         <!-- Drawer Header -->
         <div class="flex items-center justify-between border-b border-base-300 pb-4">

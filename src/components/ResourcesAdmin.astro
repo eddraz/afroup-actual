@@ -3,7 +3,10 @@ import type { ResourceItem, ResourcesPageData, ResourceStats } from "../lib/reso
 import type { BioTranslationAccess } from "../lib/editorial";
 import type { LanguageItem } from "../lib/site-languages";
 import PageLocaleSwitch from "./PageLocaleSwitch.astro";
+import FormLocaleSwitch from "./FormLocaleSwitch.astro";
 import R2Uploader from "./R2Uploader.astro";
+import AdminPageHeader from "./admin/AdminPageHeader.astro";
+import AdminStatCard from "./admin/AdminStatCard.astro";
 
 interface Props {
   resources: ResourceItem[];
@@ -39,18 +42,14 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
 
   <div class="drawer-content space-y-6">
     <!-- Page Header & Action Bar -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-base-300 pb-5">
-      <div>
-        <div class="flex items-center gap-2.5">
-          <h2 class="font-display text-2xl font-bold text-base-content">{copy.adminResources || "Biblioteca de Recursos"}</h2>
-          <span class="badge badge-accent badge-sm font-semibold">Biblioteca Libre</span>
-        </div>
-        <p class="text-xs sm:text-sm text-base-content/60 mt-1">
-          Gestiona guías PDF, lecturas, glosarios y herramientas educativas descargables.
-        </p>
-      </div>
-
-      <div class="flex flex-wrap items-center gap-2.5">
+    <AdminPageHeader
+      title={copy.adminResources || "Biblioteca de Recursos"}
+      count={stats.total}
+      countLabel="recursos"
+      badgeVariant="accent"
+      lead="Gestiona guías PDF, lecturas, glosarios y herramientas educativas descargables."
+    >
+      <Fragment slot="actions">
         <!-- Public Preview Link -->
         <a
           href={publicHref}
@@ -82,27 +81,15 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
           <svg class="size-4"><use href="#ic-plus"></use></svg>
           <span>Guardar Configuración</span>
         </button>
-      </div>
-    </div>
+      </Fragment>
+    </AdminPageHeader>
 
     <!-- Metric Badges Overview -->
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-      <div class="card bg-base-100 border border-base-300 p-4 shadow-2xs">
-        <div class="text-xs font-semibold text-base-content/60">Total Recursos</div>
-        <div class="text-2xl font-display font-bold text-base-content mt-1">{stats.total}</div>
-      </div>
-      <div class="card bg-base-100 border border-base-300 p-4 shadow-2xs">
-        <div class="text-xs font-semibold text-success">Publicados</div>
-        <div class="text-2xl font-display font-bold text-success mt-1">{stats.published}</div>
-      </div>
-      <div class="card bg-base-100 border border-base-300 p-4 shadow-2xs">
-        <div class="text-xs font-semibold text-warning">Borradores</div>
-        <div class="text-2xl font-display font-bold text-warning mt-1">{stats.drafts}</div>
-      </div>
-      <div class="card bg-base-100 border border-base-300 p-4 shadow-2xs">
-        <div class="text-xs font-semibold text-accent">Destacados</div>
-        <div class="text-2xl font-display font-bold text-accent mt-1">{stats.featured}</div>
-      </div>
+      <AdminStatCard label="Total Recursos" value={stats.total} icon="#ic-books" tone="primary" footNote="En la base de datos" />
+      <AdminStatCard label="Publicados" value={stats.published} icon="#ic-world" tone="success" footNote="Visibles en la web" />
+      <AdminStatCard label="Borradores" value={stats.drafts} icon="#ic-edit" tone="warning" footNote="Pendientes de publicar" />
+      <AdminStatCard label="Destacados" value={stats.featured} icon="#ic-sun" tone="accent" footNote="Marcados con ⭐" />
     </div>
 
     <!-- Main View Tabs (Recursos vs Configuración de la Página) -->
@@ -147,15 +134,24 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
         </div>
 
         <div class="relative min-w-[220px]">
+          <svg
+            class="size-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0"></path>
+            <path d="M21 21l-6 -6"></path>
+          </svg>
           <input
             type="search"
             placeholder="Buscar recurso por título, slug..."
-            class="input input-bordered input-xs w-full pl-8"
+            class="input input-sm input-bordered w-full pl-9 bg-base-200/40 text-xs sm:text-sm font-medium"
             data-search-input
           />
-          <svg class="size-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none">
-            <use href="#ic-search"></use>
-          </svg>
         </div>
       </div>
 
@@ -373,7 +369,7 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
   <!-- Slide-in daisyUI Drawer for Creating / Editing Resources -->
   <div class="drawer-side z-50">
     <label for="resource-detail-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
-    <aside class="menu bg-base-100 text-base-content min-h-full w-full max-w-2xl p-6 space-y-5 border-l border-base-300 shadow-2xl flex flex-col justify-between overflow-y-auto">
+    <aside class="menu bg-base-100 text-base-content min-h-full w-full sm:w-[70%] sm:min-w-[70vw] p-6 space-y-5 border-l border-base-300 shadow-2xl flex flex-col justify-between overflow-y-auto">
       <div class="space-y-6">
         <!-- Drawer Header -->
         <div class="flex items-center justify-between border-b border-base-300 pb-4">
@@ -406,15 +402,7 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
           <!-- Drawer Language Switcher + AI Translate Button -->
           <div class="flex items-center justify-between bg-base-200/50 p-3 rounded-2xl border border-base-300">
             <div class="flex items-center gap-1.5">
-              {languages.map((lang) => (
-                <button
-                  type="button"
-                  class:list={["btn btn-xs font-bold", lang.code === defaultLocale ? "btn-active btn-neutral" : "btn-ghost"]}
-                  data-drawer-lang-btn={lang.code}
-                >
-                  {lang.native_name} ({lang.code.toUpperCase()})
-                </button>
-              ))}
+              <FormLocaleSwitch languages={languages} current={defaultLocale} />
             </div>
 
             {translation.canUseAi && targetLanguages.length > 0 ? (
@@ -835,26 +823,33 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
       });
     }
 
-    // Drawer Language Tabs
+    // Drawer Language Switcher (buttons for 2 languages, select for 3+)
     const langBtns = root.querySelectorAll<HTMLButtonElement>("[data-drawer-lang-btn]");
+    const langSelect = root.querySelector<HTMLSelectElement>("[data-drawer-lang-select]");
     const langPanels = root.querySelectorAll<HTMLElement>("[data-drawer-locale-panel]");
+
+    function setDrawerLang(targetLang: string) {
+      langBtns.forEach((b) => {
+        const isActive = b.getAttribute("data-drawer-lang-btn") === targetLang;
+        b.classList.toggle("btn-active", isActive);
+        b.classList.toggle("btn-neutral", isActive);
+        b.classList.toggle("btn-ghost", !isActive);
+      });
+      if (langSelect && langSelect.value !== targetLang) langSelect.value = targetLang;
+      langPanels.forEach((panel) => {
+        panel.classList.toggle("hidden", panel.getAttribute("data-drawer-locale-panel") !== targetLang);
+      });
+    }
 
     langBtns.forEach((btn) => {
       if (btn.dataset.bound === "true") return;
       btn.dataset.bound = "true";
-      btn.addEventListener("click", () => {
-        const targetLang = btn.getAttribute("data-drawer-lang-btn");
-        langBtns.forEach((b) => {
-          const isActive = b.getAttribute("data-drawer-lang-btn") === targetLang;
-          b.classList.toggle("btn-active", isActive);
-          b.classList.toggle("btn-neutral", isActive);
-          b.classList.toggle("btn-ghost", !isActive);
-        });
-        langPanels.forEach((panel) => {
-          panel.classList.toggle("hidden", panel.getAttribute("data-drawer-locale-panel") !== targetLang);
-        });
-      });
+      btn.addEventListener("click", () => setDrawerLang(btn.getAttribute("data-drawer-lang-btn") || "es"));
     });
+    if (langSelect && langSelect.dataset.bound !== "true") {
+      langSelect.dataset.bound = "true";
+      langSelect.addEventListener("change", () => setDrawerLang(langSelect.value));
+    }
 
     // Auto-generate slug from Spanish title when creating
     const titleEsInput = root.querySelector<HTMLInputElement>("#res-field-title-es");
@@ -890,8 +885,8 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
         if (deleteBtn) deleteBtn.classList.add("hidden");
 
         // Clear localized inputs and initialize clean Editor.js instances
-        langBtns.forEach((btn) => {
-          const loc = btn.getAttribute("data-drawer-lang-btn");
+        langPanels.forEach((panel) => {
+          const loc = panel.getAttribute("data-drawer-locale-panel");
           if (!loc) return;
           const tInput = root.querySelector<HTMLInputElement>(`#res-field-title-${loc}`);
           if (tInput) tInput.value = "";
@@ -908,8 +903,7 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
         });
 
         // Reset to Spanish panel
-        const esBtn = root.querySelector<HTMLButtonElement>("[data-drawer-lang-btn='es']");
-        if (esBtn) esBtn.click();
+        setDrawerLang("es");
 
         if (drawerToggle) {
           drawerToggle.checked = true;
@@ -970,8 +964,8 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
         const itemData = resourcesLocalesMap.get(id);
         const locales = itemData?.locales || {};
 
-        langBtns.forEach((b) => {
-          const loc = b.getAttribute("data-drawer-lang-btn");
+        langPanels.forEach((panel) => {
+          const loc = panel.getAttribute("data-drawer-locale-panel");
           if (!loc) return;
           const locData = locales[loc];
 
@@ -998,8 +992,7 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
         });
 
         // Reset to Spanish panel
-        const esBtn = root.querySelector<HTMLButtonElement>("[data-drawer-lang-btn='es']");
-        if (esBtn) esBtn.click();
+        setDrawerLang("es");
 
         if (drawerToggle) {
           drawerToggle.checked = true;
@@ -1254,8 +1247,7 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
         aiTransBtn.innerHTML = originalBtnHtml;
 
         // Switch to EN panel to show results
-        const enBtn = root.querySelector<HTMLButtonElement>("[data-drawer-lang-btn='en']");
-        if (enBtn) enBtn.click();
+        setDrawerLang("en");
 
         if ((window as any).AfroUpFeedback) {
           (window as any).AfroUpFeedback.toast("Recurso traducido al inglés con IA.", "success");
