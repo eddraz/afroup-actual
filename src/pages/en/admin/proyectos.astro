@@ -3,9 +3,25 @@ import { env } from "cloudflare:workers";
 import AdminLayout from "../../../layouts/AdminLayout.astro";
 import { requireModuleAccess } from "../../../lib/admin-scope";
 import { resolveRequestCopy } from "../../../lib/request-locale";
+import { translationAccess } from "../../../lib/editorial";
+import { listSiteLanguages } from "../../../lib/site-languages";
+import {
+  PROJECT_STAGES,
+  formatBudget,
+  getProjectsStats,
+  loadAllProjectsPageConfigs,
+  loadProjectById,
+  loadProjects,
+} from "../../../lib/projects";
+import { parseOgMetadata, type OpenGraphMetadata } from "../../../lib/og-metadata";
 import AdminPageHeader from "../../../components/admin/AdminPageHeader.astro";
+import AdminStatCard from "../../../components/admin/AdminStatCard.astro";
 import AdminToolbar from "../../../components/admin/AdminToolbar.astro";
 import AdminTable from "../../../components/admin/AdminTable.astro";
+import AdminDrawerPanel from "../../../components/admin/AdminDrawerPanel.astro";
+import FormLocaleSwitch from "../../../components/FormLocaleSwitch.astro";
+import { localizedPath } from "../../../lib/i18n";
+import { routeIds } from "../../../lib/paths";
 
 export const prerender = false;
 
@@ -14,76 +30,478 @@ const access = await requireModuleAccess(env.DB, Astro.cookies, Astro.url, local
 if (access instanceof Response) return access;
 const actor = access;
 
-const projects = [
-  { id: 1, name: "Afro-Colombian Oral Archive", org: "Casa de la Memoria", stage: "Under Review", budget: "USD 8,500", date: "Jun 10" },
-  { id: 2, name: "Afro-Latin American Atlas", org: "Red AfroLatam", stage: "Approved", budget: "USD 12,000", date: "Jun 02" },
-  { id: 3, name: "Podcast: Pacific Knowledge", org: "Colectivo Tambó", stage: "Draft", budget: "USD 3,200", date: "May 28" },
+const translation = await translationAccess(env.DB, actor.id, "proyectos", "update");
+const projects = await loadProjects(env.DB, locale);
+const stats = await getProjectsStats(env.DB);
+const languages = await listSiteLanguages(env.DB);
+const pageConfigByLocale = await loadAllProjectsPageConfigs(env.DB);
+const publicHref = localizedPath(locale, routeIds.projects);
+
+// Editor payload: canonical row per project plus every stored locale.
+const projectDetails = await Promise.all(projects.map((project) => loadProjectById(env.DB, project.id)));
+
+interface EditorLocaleFields {
+  name: string;
+  dek: string;
+  description_html: string;
+  og: OpenGraphMetadata;
+}
+
+const projectLocalesById: Record<string, Record<string, EditorLocaleFields>> = {};
+for (const detail of projectDetails) {
+  if (!detail) continue;
+  const fieldsByLocale: Record<string, EditorLocaleFields> = {};
+  for (const [loc, row] of Object.entries(detail.locales)) {
+    fieldsByLocale[loc] = {
+      name: row.name || "",
+      dek: row.dek || "",
+      description_html: row.description_html || "",
+      og: parseOgMetadata(row.og_json),
+    };
+  }
+  projectLocalesById[String(detail.row.id)] = fieldsByLocale;
+}
+
+const editorRows = projects.map((project) => ({
+  id: project.id,
+  slug: project.slug,
+  organization: project.organization || "",
+  stage: project.stage,
+  budget_currency: project.budget_currency || "USD",
+  budget_amount: project.budget_amount === null ? "" : String(project.budget_amount),
+  start_date: project.start_date || "",
+  status: project.status,
+  featured: project.featured ? 1 : 0,
+  sort_order: project.sort_order,
+}));
+
+const jsonForScript = (value: unknown) => JSON.stringify(value).replace(/</g, "\\u003c");
+
+const stageLabels: Record<string, string> = Object.fromEntries(
+  PROJECT_STAGES.map((stage) => [stage.value, stage.en])
+);
+const stageBadgeClass: Record<string, string> = {
+  borrador: "badge-ghost",
+  en_revision: "badge-warning",
+  aprobado: "badge-success",
+};
+const inReviewCount = projects.filter((project) => project.stage === "en_revision").length;
+
+function shortDate(value: string | null): string {
+  const datePart = (value || "").slice(0, 10);
+  const [y, m, d] = datePart.split("-").map(Number);
+  if (!y || !m || !d) return "—";
+  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-US", { day: "numeric", month: "short" });
+}
+
+// Open Graph form names exactly as /api/admin/projects reads them: og_title[<locale>]
+const ogFields = [
+  { base: "og_url", key: "url", label: "OG URL" },
+  { base: "og_type", key: "type", label: "OG Type" },
+  { base: "og_title", key: "title", label: "OG Title" },
+  { base: "og_description", key: "description", label: "OG Description" },
+  { base: "og_image", key: "image", label: "OG Image" },
+  { base: "og_image_alt", key: "imageAlt", label: "OG Alt text" },
+  { base: "og_twitter_card", key: "twitterCard", label: "Twitter Card" },
+  { base: "og_twitter_title", key: "twitterTitle", label: "Twitter Title" },
+  { base: "og_twitter_description", key: "twitterDescription", label: "Twitter Description" },
+  { base: "og_twitter_image", key: "twitterImage", label: "Twitter Image" },
 ];
 ---
 
 <AdminLayout title={copy.adminProjects} active="projects">
-  <!-- Page Header -->
-  <AdminPageHeader
-    title={copy.adminProjects}
-    count={projects.length}
-    countLabel="initiatives"
-    lead="Tracking grants, community initiatives, and funded cultural projects."
-  />
-
-  <!-- Filter & Search Toolbar -->
-  <AdminToolbar
-    searchId="projects-search"
-    searchPlaceholder="Search initiatives by title or organization..."
-    filterName="project"
-    filters={[
-      { value: "all", label: "All", count: projects.length },
-      { value: "Approved", label: "Approved", count: projects.filter((p) => p.stage === "Approved").length },
-      { value: "Under Review", label: "Under Review", count: projects.filter((p) => p.stage === "Under Review").length },
-      { value: "Draft", label: "Drafts", count: projects.filter((p) => p.stage === "Draft").length },
-    ]}
-  />
-
-  <!-- Projects Table -->
-  <AdminTable
-    id="projects-table"
-    columns={[
-      { label: "Project", class: "py-4 pl-6" },
-      { label: "Organization" },
-      { label: "Stage" },
-      { label: "Budget" },
-      { label: "Date", class: "text-right pr-6" },
-    ]}
+  <AdminDrawerPanel
+    toggleId="project-drawer"
+    width="form"
+    title="Project editor"
+    subtitle="Canonical fields and per-language content"
   >
-    <Fragment slot="rows">
-      {projects.map((project) => (
-        <tr class="hover:bg-base-200/50 transition-colors project-row" data-name={project.name.toLowerCase()} data-org={project.org.toLowerCase()} data-stage={project.stage}>
-          <td class="py-3.5 pl-6 font-bold text-base-content">{project.name}</td>
-          <td class="text-xs text-base-content/70">{project.org}</td>
-          <td>
-            <span class:list={[
-              "badge badge-xs font-bold py-1 px-2.5 uppercase tracking-wider",
-              project.stage === "Approved" && "badge-success",
-              project.stage === "Under Review" && "badge-warning",
-              project.stage === "Draft" && "badge-ghost"
-            ]}>
-              {project.stage}
-            </span>
-          </td>
-          <td>
-            <span class="font-mono text-xs font-bold text-base-content/90">{project.budget}</span>
-          </td>
-          <td class="text-right pr-6 text-xs text-base-content/60">{project.date}</td>
-        </tr>
-      ))}
+    <button slot="actions" id="delete-project-btn" type="button" class="btn btn-error btn-xs font-bold hidden">
+      Delete
+    </button>
+
+    <Fragment slot="content">
+      <!-- Page Header -->
+      <AdminPageHeader
+        title={copy.adminProjects}
+        count={stats.total}
+        countLabel="initiatives"
+        lead="Tracking grants, community initiatives, and funded cultural projects."
+      >
+        <button slot="actions" id="create-project-btn" type="button" class="btn btn-primary btn-sm font-bold">
+          + New project
+        </button>
+      </AdminPageHeader>
+
+      <!-- KPI Metrics Cards -->
+      <div class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <AdminStatCard label="Total projects" value={stats.total} icon="#ic-folder" tone="primary" />
+        <AdminStatCard label="Published" value={stats.published} icon="#ic-world" tone="accent" />
+        <AdminStatCard label="Approved" value={stats.approvedCount} icon="#ic-shield" tone="success" />
+        <AdminStatCard label="Drafts" value={stats.draftCount} icon="#ic-edit" tone="warning" />
+      </div>
+
+      <!-- Filter & Search Toolbar -->
+      <AdminToolbar
+        searchId="projects-search"
+        searchPlaceholder="Search initiatives by title or organization..."
+        filterName="project"
+        filters={[
+          { value: "all", label: "All", count: stats.total },
+          { value: "borrador", label: "Drafts", count: stats.draftCount },
+          { value: "en_revision", label: "In review", count: inReviewCount },
+          { value: "aprobado", label: "Approved", count: stats.approvedCount },
+        ]}
+      />
+
+      <!-- Projects Table -->
+      <AdminTable
+        id="projects-table"
+        columns={[
+          { label: "Project", class: "py-4 pl-6" },
+          { label: "Organization" },
+          { label: "Stage" },
+          { label: "Budget" },
+          { label: "Date" },
+          { label: "", class: "pr-6" },
+        ]}
+      >
+        {projects.length > 0 ? (
+          <Fragment slot="rows">
+            {projects.map((project) => (
+              <tr
+                class="hover:bg-base-200/50 transition-colors project-row"
+                data-name={project.name.toLowerCase()}
+                data-org={project.organization.toLowerCase()}
+                data-stage={project.stage}
+              >
+                <td class="py-3.5 pl-6 font-bold text-base-content">{project.name}</td>
+                <td class="text-xs text-base-content/70">{project.organization}</td>
+                <td>
+                  <span class:list={[
+                    "badge badge-xs font-bold py-1 px-2.5 uppercase tracking-wider",
+                    stageBadgeClass[project.stage] ?? "badge-ghost",
+                  ]}>
+                    {stageLabels[project.stage] ?? project.stage}
+                  </span>
+                </td>
+                <td>
+                  <span class="font-mono text-xs font-bold text-base-content/90">
+                    {formatBudget(project.budget_currency, project.budget_amount)}
+                  </span>
+                </td>
+                <td class="text-xs text-base-content/60">{shortDate(project.start_date ?? project.created_at)}</td>
+                <td class="pr-6 text-right">
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-xs"
+                    data-edit-project={project.id}
+                    aria-label={`Edit ${project.name}`}
+                  >
+                    <svg class="size-4"><use href="#ic-edit"></use></svg>
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </Fragment>
+        ) : (
+          <Fragment slot="empty">
+            <tr>
+              <td colspan={6} class="py-12 text-center text-sm text-base-content/60">
+                No projects yet. Create the first one with “+ New project”.
+              </td>
+            </tr>
+          </Fragment>
+        )}
+      </AdminTable>
+
+      {
+        translation.update && (
+          <section class="mt-8 rounded-3xl border border-base-300 bg-base-100 p-6 shadow-xs">
+            <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 class="font-display font-bold text-base-content">Public page content</h3>
+                <p class="text-xs text-base-content/60">
+                  Header copy on /en/proyectos ·{" "}
+                  <a href={publicHref} class="link link-primary font-bold">
+                    View page →
+                  </a>
+                </p>
+              </div>
+              <FormLocaleSwitch languages={languages} />
+            </div>
+            <form id="projects-page-config-form" action="/api/admin/projects-page" method="post" class="space-y-3">
+              {languages.map((lang) => {
+                const loc = lang.code;
+                const cfg = pageConfigByLocale[loc];
+                return (
+                  <div
+                    data-drawer-locale-panel={loc}
+                    class:list={["space-y-3 rounded-2xl border border-base-300 bg-base-200/30 p-4", loc !== "es" && "hidden"]}
+                  >
+                    <p class="text-[11px] font-extrabold uppercase tracking-wider text-base-content/50">
+                      {lang.native_name} ({loc.toUpperCase()})
+                    </p>
+                    <div class="grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for={`page-field-eyebrow-${loc}`}>
+                          Eyebrow
+                        </label>
+                        <input
+                          type="text"
+                          id={`page-field-eyebrow-${loc}`}
+                          name={`eyebrow_${loc}`}
+                          value={cfg?.eyebrow ?? ""}
+                          class="input input-sm input-bordered w-full bg-base-200/40"
+                        />
+                      </div>
+                      <div>
+                        <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for={`page-field-title-${loc}`}>
+                          Title
+                        </label>
+                        <input
+                          type="text"
+                          id={`page-field-title-${loc}`}
+                          name={`title_${loc}`}
+                          value={cfg?.title ?? ""}
+                          class="input input-sm input-bordered w-full bg-base-200/40"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for={`page-field-lead-${loc}`}>
+                        Lead
+                      </label>
+                      <textarea
+                        id={`page-field-lead-${loc}`}
+                        name={`lead_${loc}`}
+                        rows="2"
+                        class="textarea textarea-sm textarea-bordered w-full bg-base-200/40"
+                      >{cfg?.lead ?? ""}</textarea>
+                    </div>
+                    <!-- Preserve band copy and OG metadata the API rewrites on every save -->
+                    <input type="hidden" name={`band_title_${loc}`} value={cfg?.band_title ?? ""} />
+                    <input type="hidden" name={`band_dek_${loc}`} value={cfg?.band_dek ?? ""} />
+                    <input type="hidden" name={`band_cta_label_${loc}`} value={cfg?.band_cta_label ?? ""} />
+                    <input type="hidden" name={`band_cta_url_${loc}`} value={cfg?.band_cta_url ?? ""} />
+                    {ogFields.map((field) => (
+                      <input
+                        type="hidden"
+                        name={`${field.base}[${loc}]`}
+                        value={(cfg?.og ?? {} as Record<string, string>)[field.key] ?? ""}
+                      />
+                    ))}
+                  </div>
+                );
+              })}
+              <div class="flex justify-end pt-1">
+                <button type="submit" class="btn btn-primary btn-sm font-bold">Save public content</button>
+              </div>
+            </form>
+          </section>
+        )
+      }
     </Fragment>
-  </AdminTable>
+
+    <!-- Project Editor Drawer -->
+    <form id="project-editor-form" action="/api/admin/projects" method="post" class="space-y-5">
+      <input type="hidden" name="id" id="project-field-id" />
+
+      <div class="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for="project-field-slug">
+            Slug
+          </label>
+          <input type="text" id="project-field-slug" name="slug" class="input input-sm input-bordered w-full bg-base-200/40" placeholder="oral-archive" />
+        </div>
+        <div>
+          <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for="project-field-organization">
+            Organization
+          </label>
+          <input type="text" id="project-field-organization" name="organization" class="input input-sm input-bordered w-full bg-base-200/40" />
+        </div>
+      </div>
+
+      <div class="grid gap-3 sm:grid-cols-3">
+        <div>
+          <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for="project-field-stage">
+            Stage
+          </label>
+          <select id="project-field-stage" name="stage" class="select select-sm select-bordered w-full bg-base-200/40">
+            {PROJECT_STAGES.map((stage) => (
+              <option value={stage.value}>{stage.en}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for="project-field-status">
+            Status
+          </label>
+          <select id="project-field-status" name="status" class="select select-sm select-bordered w-full bg-base-200/40">
+            <option value="published">Published</option>
+            <option value="draft">Draft</option>
+          </select>
+        </div>
+        <div>
+          <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for="project-field-sort-order">
+            Order
+          </label>
+          <input type="number" id="project-field-sort-order" name="sort_order" value="0" class="input input-sm input-bordered w-full bg-base-200/40" />
+        </div>
+      </div>
+
+      <div class="grid gap-3 sm:grid-cols-3">
+        <div>
+          <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for="project-field-budget-currency">
+            Currency
+          </label>
+          <input type="text" id="project-field-budget-currency" name="budget_currency" value="USD" maxlength="3" class="input input-sm input-bordered w-full bg-base-200/40 uppercase" />
+        </div>
+        <div>
+          <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for="project-field-budget-amount">
+            Budget
+          </label>
+          <input type="number" step="0.01" min="0" id="project-field-budget-amount" name="budget_amount" class="input input-sm input-bordered w-full bg-base-200/40" />
+        </div>
+        <div>
+          <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for="project-field-start-date">
+            Start date
+          </label>
+          <input type="date" id="project-field-start-date" name="start_date" class="input input-sm input-bordered w-full bg-base-200/40" />
+        </div>
+      </div>
+
+      <label class="flex cursor-pointer items-center gap-2 text-sm font-semibold text-base-content">
+        <input type="checkbox" name="featured" id="project-field-featured" value="1" class="checkbox checkbox-sm checkbox-primary" />
+        Featured project
+      </label>
+
+      <div class="space-y-3 border-t border-base-300 pt-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h4 class="text-xs font-extrabold uppercase tracking-wider text-base-content/60">Content by language</h4>
+          <FormLocaleSwitch languages={languages} />
+        </div>
+
+        {languages.map((lang) => (
+          <div data-drawer-locale-panel={lang.code} class:list={["space-y-3", lang.code !== "es" && "hidden"]}>
+            <div>
+              <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for={`project-field-name-${lang.code}`}>
+                Name {lang.code !== "es" ? `(${lang.native_name})` : "(Spanish)"} {lang.code === "es" ? "*" : ""}
+              </label>
+              <input
+                type="text"
+                id={`project-field-name-${lang.code}`}
+                name={`name_${lang.code}`}
+                required={lang.code === "es"}
+                class="input input-sm input-bordered w-full bg-base-200/40"
+              />
+            </div>
+            <div>
+              <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for={`project-field-dek-${lang.code}`}>
+                Short summary
+              </label>
+              <textarea
+                id={`project-field-dek-${lang.code}`}
+                name={`dek_${lang.code}`}
+                rows="2"
+                class="textarea textarea-sm textarea-bordered w-full bg-base-200/40"
+              ></textarea>
+            </div>
+            <div>
+              <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for={`project-field-description-html-${lang.code}`}>
+                Description (HTML)
+              </label>
+              <textarea
+                id={`project-field-description-html-${lang.code}`}
+                name={`description_html_${lang.code}`}
+                rows="6"
+                class="textarea textarea-sm textarea-bordered w-full bg-base-200/40 font-mono text-xs"
+              ></textarea>
+            </div>
+            <details class="rounded-xl border border-base-300 bg-base-200/30 p-3">
+              <summary class="cursor-pointer text-[11px] font-extrabold uppercase tracking-wider text-base-content/60">
+                Open Graph metadata
+              </summary>
+              <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                {ogFields.map((field) => (
+                  <div>
+                    <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for={`project-field-og-${field.base}-${lang.code}`}>
+                      {field.label}
+                    </label>
+                    <input
+                      type="text"
+                      id={`project-field-og-${field.base}-${lang.code}`}
+                      name={`${field.base}[${lang.code}]`}
+                      class="input input-xs input-bordered w-full bg-base-200/40"
+                    />
+                  </div>
+                ))}
+              </div>
+            </details>
+          </div>
+        ))}
+      </div>
+
+      <div class="flex items-center justify-end gap-2 border-t border-base-300 pt-4">
+        <label for="project-drawer" class="btn btn-ghost btn-sm">Cancel</label>
+        <button type="submit" class="btn btn-primary btn-sm font-bold">Save project</button>
+      </div>
+    </form>
+  </AdminDrawerPanel>
+
+  <!-- Data bridge for client-side edit population -->
+  <script is:inline type="application/json" id="projects-data-script" set:html={jsonForScript(editorRows)} />
+  <script is:inline type="application/json" id="projects-locales-script" set:html={jsonForScript(projectLocalesById)} />
 
   <script is:inline>
     (function () {
-      var bind = function () {
+      var OG_FIELDS = [
+        ["og_url", "url"],
+        ["og_type", "type"],
+        ["og_title", "title"],
+        ["og_description", "description"],
+        ["og_image", "image"],
+        ["og_image_alt", "imageAlt"],
+        ["og_twitter_card", "twitterCard"],
+        ["og_twitter_title", "twitterTitle"],
+        ["og_twitter_description", "twitterDescription"],
+        ["og_twitter_image", "twitterImage"]
+      ];
+
+      function toast(message, type) {
+        if (window.AfroUpFeedback) window.AfroUpFeedback.toast(message, type);
+      }
+
+      function setValue(id, value) {
+        var el = document.getElementById(id);
+        if (el) el.value = value === null || value === undefined ? "" : String(value);
+      }
+
+      function setup() {
         var searchInput = document.getElementById("projects-search");
         var filterButtons = document.querySelectorAll(".project-filter-btn");
         var rows = document.querySelectorAll(".project-row");
+        var drawerToggle = document.getElementById("project-drawer");
+        var form = document.getElementById("project-editor-form");
+        var createBtn = document.getElementById("create-project-btn");
+        var deleteBtn = document.getElementById("delete-project-btn");
+        var langBtns = document.querySelectorAll("[data-drawer-lang-btn]");
+        var langSelect = document.querySelector("[data-drawer-lang-select]");
+        var langPanels = document.querySelectorAll("[data-drawer-locale-panel]");
+        var pageConfigForm = document.getElementById("projects-page-config-form");
+
+        var editorRows = {};
+        var editorLocales = {};
+        try {
+          var rowsEl = document.getElementById("projects-data-script");
+          JSON.parse(rowsEl ? rowsEl.textContent : "[]").forEach(function (row) {
+            editorRows[String(row.id)] = row;
+          });
+        } catch (e) {}
+        try {
+          var locEl = document.getElementById("projects-locales-script");
+          editorLocales = JSON.parse(locEl ? locEl.textContent : "{}") || {};
+        } catch (e) {}
 
         var currentFilter = "all";
         var searchQuery = "";
@@ -93,15 +511,9 @@ const projects = [
             var name = row.getAttribute("data-name") || "";
             var org = row.getAttribute("data-org") || "";
             var stage = row.getAttribute("data-stage") || "";
-
             var matchesSearch = !searchQuery || name.indexOf(searchQuery) !== -1 || org.indexOf(searchQuery) !== -1;
             var matchesFilter = currentFilter === "all" || stage === currentFilter;
-
-            if (matchesSearch && matchesFilter) {
-              row.style.display = "";
-            } else {
-              row.style.display = "none";
-            }
+            row.style.display = matchesSearch && matchesFilter ? "" : "none";
           });
         };
 
@@ -123,15 +535,169 @@ const projects = [
             });
             btn.classList.remove("btn-ghost");
             btn.classList.add("btn-primary", "text-primary-content");
-
             currentFilter = btn.getAttribute("data-filter") || "all";
             applyFilters();
           });
         });
-      };
 
-      bind();
-      document.addEventListener("astro:page-load", bind);
+        function setDrawerLang(targetLang) {
+          langBtns.forEach(function (b) {
+            var isActive = b.getAttribute("data-drawer-lang-btn") === targetLang;
+            b.classList.toggle("btn-active", isActive);
+            b.classList.toggle("btn-neutral", isActive);
+            b.classList.toggle("btn-ghost", !isActive);
+          });
+          if (langSelect && langSelect.value !== targetLang) langSelect.value = targetLang;
+          langPanels.forEach(function (panel) {
+            panel.classList.toggle("hidden", panel.getAttribute("data-drawer-locale-panel") !== targetLang);
+          });
+        }
+
+        langBtns.forEach(function (btn) {
+          if (btn.dataset.bound === "true") return;
+          btn.dataset.bound = "true";
+          btn.addEventListener("click", function () {
+            setDrawerLang(btn.getAttribute("data-drawer-lang-btn") || "es");
+          });
+        });
+        if (langSelect && langSelect.dataset.bound !== "true") {
+          langSelect.dataset.bound = "true";
+          langSelect.addEventListener("change", function () {
+            setDrawerLang(langSelect.value);
+          });
+        }
+
+        function openDrawer() {
+          if (drawerToggle) {
+            drawerToggle.checked = true;
+            document.body.style.overflow = "hidden";
+          }
+        }
+
+        function clearLocalizedFields() {
+          langPanels.forEach(function (panel) {
+            var loc = panel.getAttribute("data-drawer-locale-panel");
+            if (!loc) return;
+            setValue("project-field-name-" + loc, "");
+            setValue("project-field-dek-" + loc, "");
+            setValue("project-field-description-html-" + loc, "");
+            OG_FIELDS.forEach(function (pair) {
+              setValue("project-field-og-" + pair[0] + "-" + loc, "");
+            });
+          });
+        }
+
+        // Create: reset editor to a blank project
+        if (createBtn && createBtn.dataset.bound !== "true") {
+          createBtn.dataset.bound = "true";
+          createBtn.addEventListener("click", function () {
+            if (form) form.reset();
+            setValue("project-field-id", "");
+            setValue("project-field-budget-currency", "USD");
+            setValue("project-field-sort-order", "0");
+            clearLocalizedFields();
+            setDrawerLang("es");
+            if (deleteBtn) deleteBtn.classList.add("hidden");
+            openDrawer();
+          });
+        }
+
+        // Edit: populate from embedded D1 rows and open the drawer
+        document.querySelectorAll("[data-edit-project]").forEach(function (btn) {
+          if (btn.dataset.bound === "true") return;
+          btn.dataset.bound = "true";
+          btn.addEventListener("click", function () {
+            var row = editorRows[btn.getAttribute("data-edit-project")];
+            if (!row) return;
+
+            setValue("project-field-id", row.id);
+            setValue("project-field-slug", row.slug);
+            setValue("project-field-organization", row.organization);
+            setValue("project-field-stage", row.stage);
+            setValue("project-field-budget-currency", row.budget_currency || "USD");
+            setValue("project-field-budget-amount", row.budget_amount);
+            setValue("project-field-start-date", row.start_date);
+            setValue("project-field-status", row.status);
+            setValue("project-field-sort-order", row.sort_order);
+            var featuredInput = document.getElementById("project-field-featured");
+            if (featuredInput) featuredInput.checked = Number(row.featured) === 1;
+
+            langPanels.forEach(function (panel) {
+              var loc = panel.getAttribute("data-drawer-locale-panel");
+              if (!loc) return;
+              var fields = (editorLocales[String(row.id)] || {})[loc] || {};
+              setValue("project-field-name-" + loc, fields.name);
+              setValue("project-field-dek-" + loc, fields.dek);
+              setValue("project-field-description-html-" + loc, fields.description_html);
+              OG_FIELDS.forEach(function (pair) {
+                setValue("project-field-og-" + pair[0] + "-" + loc, (fields.og || {})[pair[1]] || "");
+              });
+            });
+
+            setDrawerLang("es");
+            if (deleteBtn) deleteBtn.classList.remove("hidden");
+            openDrawer();
+          });
+        });
+
+        // Delete current project
+        if (deleteBtn && deleteBtn.dataset.bound !== "true") {
+          deleteBtn.dataset.bound = "true";
+          deleteBtn.addEventListener("click", function () {
+            var idField = document.getElementById("project-field-id");
+            var id = idField ? idField.value : "";
+            if (!id || !window.confirm("Permanently delete this project?")) return;
+            fetch("/api/admin/projects?id=" + encodeURIComponent(id), { method: "DELETE" })
+              .then(function (res) {
+                return res.json();
+              })
+              .then(function (result) {
+                toast(result.message || (result.ok ? "Project deleted." : "Could not delete."), result.ok ? "success" : "error");
+                if (result.ok) {
+                  document.body.style.overflow = "";
+                  setTimeout(function () {
+                    window.location.reload();
+                  }, 400);
+                }
+              })
+              .catch(function () {
+                toast("Network error while deleting.", "error");
+              });
+          });
+        }
+
+        // Submit editor or public-page config forms
+        [form, pageConfigForm].forEach(function (target) {
+          if (!target || target.dataset.submitBound === "true") return;
+          target.dataset.submitBound = "true";
+          target.addEventListener("submit", function (event) {
+            event.preventDefault();
+            var formData = new FormData(target);
+            fetch(target.action, { method: "POST", body: formData })
+              .then(function (res) {
+                return res.json();
+              })
+              .then(function (result) {
+                toast(
+                  result.message || (result.ok ? "Saved." : "Could not save."),
+                  result.ok ? "success" : "error"
+                );
+                if (result.ok) {
+                  document.body.style.overflow = "";
+                  setTimeout(function () {
+                    window.location.reload();
+                  }, 400);
+                }
+              })
+              .catch(function () {
+                toast("Network error while saving.", "error");
+              });
+          });
+        });
+      }
+
+      setup();
+      document.addEventListener("astro:page-load", setup);
     })();
   </script>
 </AdminLayout>

@@ -44,7 +44,7 @@
 - Keep the Contact mockup at `/contacto` and `/en/contacto`, wired through `paths.contact`.
 - Keep the Resources mockup at `/recursos` and `/en/recursos`, wired through `paths.resources`.
 - Keep the resource detail mockup at `/recurso` and `/en/recurso`, wired through `paths.resource`.
-- Keep the Projects mockup at `/proyectos` and `/en/proyectos`, wired through `paths.projects`.
+- Keep the Projects mockup at `/proyectos` and `/en/proyectos`, wired through `paths.projects`. Admin `/admin/proyectos` and `/en/admin/proyectos` load D1-backed projects via `lib/projects.ts` and `/api/admin/projects` (page copy via `/api/admin/projects-page`), using the Studio kit plus a drawer editor.
 - Keep the project detail mockup at `/proyecto` and `/en/proyecto`, wired through `paths.project`.
 - Keep the People mockup at `/referentes` and `/en/referentes`, wired through `paths.people`.
 - Keep the Community hub at `/comunidad` and `/en/comunidad`, wired through `paths.community`, with links to Referentes, Proyectos, Emprendedores, and Colabora.
