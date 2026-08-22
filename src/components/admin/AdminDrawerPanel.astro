@@ -1,0 +1,57 @@
+---
+/**
+ * Shared admin right-to-left drawer wrapper (daisyUI drawer-end).
+ * Canonical pattern extracted from src/pages/admin/articulos.astro (canvas)
+ * and src/pages/admin/categorias.astro (form). Slots:
+ *  - `content`: page markup rendered inside `.drawer-content`
+ *  - default:   drawer panel body rendered inside the aside, below the header
+ *  - `actions`: optional header-right area next to the close button
+ * The hidden checkbox keeps the page's own id (e.g. `category-drawer`) so all
+ * existing JS-coupled selectors keep working.
+ */
+interface Props {
+  toggleId: string;
+  width?: "form" | "canvas";
+  title: string;
+  subtitle?: string;
+}
+
+const { toggleId, width = "form", title, subtitle } = Astro.props;
+
+// Static literal classes only, so Tailwind's scanner generates both widths.
+// Form drawers span at least half the viewport on desktop; near full-width on mobile.
+const widthClass = width === "canvas" ? "w-[90vw] max-w-[1600px]" : "w-[92vw] sm:w-[70%] sm:min-w-[70vw]";
+
+const hasActions = Astro.slots.has("actions");
+---
+
+<div class="drawer drawer-end">
+  <input id={toggleId} type="checkbox" class="drawer-toggle" />
+
+  <div class="drawer-content">
+    <slot name="content" />
+  </div>
+
+  <!-- Drawer Side (Right to Left) -->
+  <div class="drawer-side z-50">
+    <label for={toggleId} aria-label="close" class="drawer-overlay"></label>
+    <aside class:list={["bg-base-100 h-dvh flex flex-col p-6 sm:p-8 shadow-2xl border-l border-base-300 overflow-y-auto overscroll-contain", widthClass]}>
+      <!-- Drawer Header -->
+      <div class="flex items-center justify-between border-b border-base-300 pb-4 mb-6 shrink-0">
+        <div class="flex items-center gap-2.5">
+          <span class="size-3 rounded-full bg-primary animate-pulse"></span>
+          <div>
+            <h3 class="font-display font-bold text-lg text-base-content">{title}</h3>
+            {subtitle ? <p class="text-xs text-base-content/60">{subtitle}</p> : null}
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          {hasActions ? <slot name="actions" /> : null}
+          <label for={toggleId} class="btn btn-circle btn-ghost btn-xs">✕</label>
+        </div>
+      </div>
+
+      <slot />
+    </aside>
+  </div>
+</div>

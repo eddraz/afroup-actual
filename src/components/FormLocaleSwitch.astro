@@ -1,0 +1,37 @@
+---
+interface LanguageItem {
+  code: string;
+  native_name: string;
+}
+
+interface Props {
+  languages: LanguageItem[];
+  current?: string;
+}
+
+const { languages, current = "es" } = Astro.props;
+---
+
+{
+  languages.length === 2 ? (
+    <div class="flex items-center gap-1.5" data-form-locale-switch>
+      {languages.map((lang) => (
+        <button
+          type="button"
+          class:list={["btn btn-xs font-bold", lang.code === current ? "btn-active btn-neutral" : "btn-ghost"]}
+          data-drawer-lang-btn={lang.code}
+        >
+          {lang.native_name} ({lang.code.toUpperCase()})
+        </button>
+      ))}
+    </div>
+  ) : languages.length > 2 ? (
+    <select class="select select-xs w-44 font-bold" data-drawer-lang-select aria-label="Language">
+      {languages.map((lang) => (
+        <option value={lang.code} selected={lang.code === current}>
+          {lang.native_name} ({lang.code.toUpperCase()})
+        </option>
+      ))}
+    </select>
+  ) : null
+}

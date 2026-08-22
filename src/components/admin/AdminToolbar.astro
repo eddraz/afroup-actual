@@ -1,0 +1,95 @@
+---
+/**
+ * Shared admin filter & search toolbar (live search input + filter button join).
+ * Canonical pattern extracted from src/pages/admin/articulos.astro and
+ * src/pages/admin/categorias.astro ("Filter & Search Toolbar" block).
+ * Filter buttons follow the project convention used by comentarios/proyectos/
+ * usuarios: class `{filterName}-filter-btn` + `data-filter="{value}"`. Pages
+ * needing different JS hooks (e.g. articulos' `filter-status-btn` +
+ * `data-filter-status`) override them via `filterClass`/`filterAttr`. The
+ * active button gets btn-primary server-rendered; page JS toggles
+ * btn-primary/btn-ghost afterwards (the legacy `active-filter` class is dead CSS).
+ */
+interface ToolbarFilter {
+  value: string;
+  label: string;
+  count?: number;
+}
+
+interface Props {
+  searchId: string;
+  searchPlaceholder?: string;
+  filters?: ToolbarFilter[];
+  filterName?: string;
+  activeValue?: string;
+  /** Data attribute carrying the filter value (default "data-filter"). */
+  filterAttr?: string;
+  /** Row-hook class (defaults to `{filterName}-filter-btn`). */
+  filterClass?: string;
+}
+
+const {
+  searchId,
+  searchPlaceholder,
+  filters,
+  filterName,
+  activeValue = "all",
+  filterAttr = "data-filter",
+  filterClass,
+} = Astro.props;
+
+const resolvedFilterClass = filterClass ?? (filterName ? `${filterName}-filter-btn` : undefined);
+const hasFilters = Array.isArray(filters) && filters.length > 0 && Boolean(filterName || resolvedFilterClass);
+const showRightCluster = hasFilters || Astro.slots.has("right");
+---
+
+<div class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300 bg-base-100 p-3 shadow-xs">
+  <!-- Live Search Input -->
+  <div class="relative flex-1 min-w-[240px] max-w-md">
+    <svg
+      class="size-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0"></path>
+      <path d="M21 21l-6 -6"></path>
+    </svg>
+    <input
+      type="search"
+      id={searchId}
+      placeholder={searchPlaceholder}
+      class="input input-sm input-bordered w-full pl-9 bg-base-200/40 text-xs sm:text-sm font-medium"
+    />
+  </div>
+
+  <slot name="left-extra" />
+
+  {
+    showRightCluster ? (
+      <div class="flex items-center gap-2">
+        {hasFilters ? (
+          <div class="join border border-base-300 bg-base-200/50 p-0.5 rounded-xl">
+            {filters!.map((filter) => (
+              <button
+                class:list={[
+                  "btn btn-xs join-item font-bold text-[11px]",
+                  resolvedFilterClass,
+                  filter.value === activeValue ? "btn-primary" : "btn-ghost",
+                ]}
+                {...{ [filterAttr]: filter.value }}
+              >
+                {filter.label}
+                {typeof filter.count === "number" ? ` (${filter.count})` : ""}
+              </button>
+            ))}
+          </div>
+        ) : null}
+        <slot name="right" />
+      </div>
+    ) : null
+  }
+</div>

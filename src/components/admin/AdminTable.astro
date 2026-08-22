@@ -1,0 +1,56 @@
+---
+/**
+ * Shared admin data table shell (rounded card + zebra table).
+ * Canonical pattern extracted from src/pages/admin/articulos.astro and
+ * src/pages/admin/categorias.astro ("Table Container" block). Row markup
+ * stays in the page (via the `rows` slot) so data-* attributes and row
+ * classes remain page-owned. If neither `rows` nor `empty` is provided,
+ * a minimal icon-box empty state is rendered.
+ */
+interface AdminColumn {
+  label: string;
+  class?: string;
+}
+
+interface Props {
+  id: string;
+  columns: AdminColumn[];
+  emptyIcon?: string;
+}
+
+const { id, columns, emptyIcon } = Astro.props;
+
+const hasRows = Astro.slots.has("rows");
+const hasEmpty = Astro.slots.has("empty");
+---
+
+<div class="rounded-3xl border border-base-300 bg-base-100 shadow-xs overflow-hidden">
+  <div class="overflow-x-auto">
+    <table id={id} class="table table-zebra w-full">
+      <thead>
+        <tr class="border-b border-base-300 bg-base-200/60 text-xs font-extrabold uppercase tracking-wider text-base-content/60">
+          {columns.map((column) => <th class={column.class}>{column.label}</th>)}
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-base-300/60 font-medium text-sm">
+        {
+          hasRows ? (
+            <slot name="rows" />
+          ) : hasEmpty ? (
+            <slot name="empty" />
+          ) : (
+            <tr>
+              <td colspan={columns.length} class="text-center py-12 text-base-content/60">
+                <div class="flex flex-col items-center gap-2">
+                  <div class="size-12 rounded-2xl bg-base-200 mx-auto flex items-center justify-center text-base-content/40">
+                    {emptyIcon ? <svg class="size-6"><use href={emptyIcon}></use></svg> : null}
+                  </div>
+                </div>
+              </td>
+            </tr>
+          )
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

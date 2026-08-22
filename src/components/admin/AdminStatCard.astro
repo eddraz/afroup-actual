@@ -1,0 +1,70 @@
+---
+/**
+ * Shared admin KPI stat card (rounded-2xl bordered card family).
+ * Canonical pattern extracted from the "KPI Metrics Cards Grid" section of
+ * src/pages/admin/index.astro. Tone classes use a static lookup table so
+ * Tailwind's scanner always sees literal utility strings, keeping the card
+ * theme-safe in light (afroup) and dark (afroup-dark).
+ */
+interface Props {
+  label: string;
+  value: string | number;
+  icon?: string;
+  tone?: "primary" | "accent" | "secondary" | "warning" | "success";
+  href?: string;
+  hrefLabel?: string;
+  footNote?: string;
+}
+
+const { label, value, icon, tone = "primary", href, hrefLabel, footNote } = Astro.props;
+
+const tones: Record<string, { box: string; hoverBorder: string; link: string }> = {
+  primary: { box: "bg-primary/10 text-primary", hoverBorder: "hover:border-primary/40", link: "text-primary" },
+  secondary: { box: "bg-secondary/10 text-secondary", hoverBorder: "hover:border-secondary/40", link: "text-secondary" },
+  accent: { box: "bg-accent/10 text-accent", hoverBorder: "hover:border-accent/40", link: "text-accent" },
+  warning: { box: "bg-warning/10 text-warning", hoverBorder: "hover:border-warning/40", link: "text-warning" },
+  success: { box: "bg-success/10 text-success", hoverBorder: "hover:border-success/40", link: "text-success" },
+};
+const t = tones[tone] ?? tones.primary;
+
+const hasLink = Boolean(href && hrefLabel);
+---
+
+<div class:list={["group rounded-2xl border border-base-300 bg-base-100 p-5 shadow-xs transition-all hover:shadow-sm", t.hoverBorder]}>
+  <div class="flex items-center justify-between">
+    <span class="text-xs font-bold uppercase tracking-wider text-base-content/60">{label}</span>
+    <div class:list={["size-10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform", t.box]}>
+      {
+        icon ? (
+          icon.startsWith("#") ? (
+            <svg class="size-5"><use href={icon}></use></svg>
+          ) : (
+            <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d={icon} />
+            </svg>
+          )
+        ) : (
+          <slot name="icon" />
+        )
+      }
+    </div>
+  </div>
+  <div class="mt-3 flex items-baseline gap-2">
+    <span class="font-display text-3xl font-extrabold text-base-content">{value}</span>
+    <slot name="value-extra" />
+  </div>
+  {
+    hasLink || footNote ? (
+      <div class:list={["mt-2 text-xs text-base-content/60 flex items-center", footNote ? "justify-between" : "justify-end"]}>
+        {footNote ? <span>{footNote}</span> : null}
+        {
+          hasLink ? (
+            <a class:list={["font-bold hover:underline", t.link]} href={href}>
+              {hrefLabel} →
+            </a>
+          ) : null
+        }
+      </div>
+    ) : null
+  }
+</div>

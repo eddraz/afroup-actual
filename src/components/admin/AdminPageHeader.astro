@@ -1,0 +1,51 @@
+---
+/**
+ * Shared admin page header (title + count badge + lead + action buttons).
+ * Canonical pattern extracted from src/pages/admin/articulos.astro and
+ * src/pages/admin/categorias.astro ("Page Header & Stats Summary" block).
+ * Does NOT render an <h1>: AdminLayout already renders the navbar title.
+ */
+interface Props {
+  title: string;
+  count?: number;
+  countLabel?: string;
+  lead?: string;
+  badgeVariant?: "neutral" | "accent" | "warning";
+}
+
+const { title, count, countLabel, lead, badgeVariant = "neutral" } = Astro.props;
+
+// Static lookup table so Tailwind's scanner sees every literal class.
+const badgeVariants: Record<string, string> = {
+  neutral: "badge-neutral",
+  accent: "badge-accent",
+  warning: "badge-warning",
+};
+const badgeClass = badgeVariants[badgeVariant] ?? badgeVariants.neutral;
+
+const hasActions = Astro.slots.has("actions");
+---
+
+<div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+  <div>
+    <div class="flex items-center gap-2.5">
+      <h2 class="font-display text-2xl font-bold text-base-content">{title}</h2>
+      {
+        typeof count === "number" && countLabel ? (
+          <span class:list={["badge badge-sm font-semibold", badgeClass]}>
+            {count} {countLabel}
+          </span>
+        ) : null
+      }
+    </div>
+    {lead ? <p class="text-xs sm:text-sm text-base-content/60 mt-1">{lead}</p> : null}
+  </div>
+
+  {
+    hasActions ? (
+      <div class="flex items-center gap-2">
+        <slot name="actions" />
+      </div>
+    ) : null
+  }
+</div>
