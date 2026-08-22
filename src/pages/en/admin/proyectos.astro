@@ -116,9 +116,12 @@ const ogFields = [
     title="Project editor"
     subtitle="Canonical fields and per-language content"
   >
-    <button slot="actions" id="delete-project-btn" type="button" class="btn btn-error btn-xs font-bold hidden">
-      Delete
-    </button>
+    <div slot="actions" class="flex items-center gap-2">
+      <FormLocaleSwitch languages={languages} />
+      <button id="delete-project-btn" type="button" class="btn btn-error btn-xs font-bold hidden">
+        Delete
+      </button>
+    </div>
 
     <Fragment slot="content">
       <!-- Page Header -->
@@ -379,7 +382,15 @@ const ogFields = [
       <div class="space-y-3 border-t border-base-300 pt-4">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <h4 class="text-xs font-extrabold uppercase tracking-wider text-base-content/60">Content by language</h4>
+          <div class="flex flex-wrap items-center gap-2">
           <FormLocaleSwitch languages={languages} />
+            {translation.canUseAi ? (
+              <button type="button" id="project-ai-translate-btn" class="btn btn-xs btn-ai gap-1.5 font-semibold">
+                <svg class="size-3.5"><use href="#ic-sparkles"></use></svg>
+                <span>Translate with AI</span>
+              </button>
+            ) : null}
+          </div>
         </div>
 
         {languages.map((lang) => (
@@ -471,6 +482,68 @@ const ogFields = [
       function toast(message, type) {
         if (window.AfroUpFeedback) window.AfroUpFeedback.toast(message, type);
       }
+      function siteLocales() {
+        var codes = [];
+        document.querySelectorAll("[data-drawer-locale-panel]").forEach(function (panel) {
+          var loc = panel.getAttribute("data-drawer-locale-panel");
+          if (loc && codes.indexOf(loc) === -1) codes.push(loc);
+        });
+        return codes;
+      }
+
+      function translateField(moduleSlug, sourceText, targetLoc, targetId, isHtml) {
+        if (!sourceText || !String(sourceText).trim()) return Promise.resolve();
+        var el = document.getElementById(targetId);
+        var fd = new FormData();
+        fd.append("module", moduleSlug);
+        fd.append("source", sourceText);
+        fd.append("current", el ? el.value : "");
+        fd.append("target", targetLoc);
+        if (isHtml) fd.append("is_html", "1");
+        return fetch("/api/admin/translate", { method: "POST", body: fd })
+          .then(function (res) { return res.json(); })
+          .then(function (result) {
+            if (result.ok && result.text && el) el.value = result.text;
+          });
+      }
+
+      function bindAiTranslate(btnId, moduleSlug, fieldBases) {
+        var btn = document.getElementById(btnId);
+        if (!btn || btn.dataset.bound === "true") return;
+        btn.dataset.bound = "true";
+        btn.addEventListener("click", function () {
+          var targets = siteLocales().filter(function (loc) { return loc !== "es"; });
+          if (!targets.length) {
+            toast("No hay otro idioma configurado.", "warning");
+            return;
+          }
+          var first = document.getElementById(fieldBases[0] + "-es");
+          if (first && !String(first.value || "").trim()) {
+            toast("Completa primero el contenido en español.", "warning");
+            return;
+          }
+          btn.disabled = true;
+          var tasks = [];
+          targets.forEach(function (loc) {
+            fieldBases.forEach(function (base) {
+              var src = document.getElementById(base + "-es");
+              if (!src) return;
+              var html = base.indexOf("description") !== -1 || base.indexOf("story") !== -1 || base.indexOf("html") !== -1;
+              tasks.push(translateField(moduleSlug, src.value, loc, base + "-" + loc, html));
+            });
+          });
+          Promise.all(tasks)
+            .then(function () {
+              btn.disabled = false;
+              toast("Traducción lista. Revisá cada idioma.", "success");
+            })
+            .catch(function () {
+              btn.disabled = false;
+              toast("Error al traducir.", "error");
+            });
+        });
+      }
+
 
       function setValue(id, value) {
         var el = document.getElementById(id);
@@ -478,6 +551,7 @@ const ogFields = [
       }
 
       function setup() {
+        bindAiTranslate("project-ai-translate-btn", "proyectos", ["project-field-name", "project-field-dek", "project-field-description-html"]);
         var searchInput = document.getElementById("projects-search");
         var filterButtons = document.querySelectorAll(".project-filter-btn");
         var rows = document.querySelectorAll(".project-row");
