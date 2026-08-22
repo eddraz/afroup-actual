@@ -34,7 +34,7 @@ const primaryContact = contactByLocale[defaultLocale] || contactByLocale[locale]
 const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
 ---
 
-<div class="drawer drawer-end" data-contact-admin-root>
+<div class="drawer drawer-end" data-contact-admin-root data-admin-drawer data-admin-drawer-toggle="contact-detail-drawer">
   <input id="contact-detail-drawer" type="checkbox" class="drawer-toggle" />
 
   <div class="drawer-content space-y-6">
@@ -653,8 +653,9 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
         </button>
 
         <div class="flex items-center gap-2">
+          <label for="contact-detail-drawer" class="btn btn-ghost btn-sm">Cancelar</label>
           <button type="button" class="btn btn-primary btn-sm font-bold gap-1.5 shadow-sm" data-drawer-save-btn>
-            <span>Actualizar</span>
+            <span>Guardar</span>
           </button>
         </div>
       </div>

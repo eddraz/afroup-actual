@@ -37,7 +37,7 @@ const primaryPageConfig = pageConfigByLocale[defaultLocale] || pageConfigByLocal
 const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
 ---
 
-<div class="drawer drawer-end" data-resources-admin-root>
+<div class="drawer drawer-end" data-resources-admin-root data-admin-drawer data-admin-drawer-toggle="resource-detail-drawer">
   <input id="resource-detail-drawer" type="checkbox" class="drawer-toggle" />
 
   <div class="drawer-content space-y-6">

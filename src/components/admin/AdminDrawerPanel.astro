@@ -25,7 +25,7 @@ const widthClass = width === "canvas" ? "w-[90vw] max-w-[1600px]" : "w-[92vw] sm
 const hasActions = Astro.slots.has("actions");
 ---
 
-<div class="drawer drawer-end">
+<div class="drawer drawer-end" data-admin-drawer data-admin-drawer-toggle={toggleId}>
   <input id={toggleId} type="checkbox" class="drawer-toggle" />
 
   <div class="drawer-content">

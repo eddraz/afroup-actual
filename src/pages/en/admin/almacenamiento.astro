@@ -68,11 +68,11 @@ if (resolved) {
 
 <AdminLayout title={copy.adminStorage || "R2 Storage"} active="storage">
   <!-- Right-to-Left Drawers for Storage: Upload & Item Details (Isolated Containers) -->
-  <div class="drawer drawer-end" id="detail-drawer-container">
+  <div class="drawer drawer-end" id="detail-drawer-container" data-admin-drawer data-admin-drawer-toggle="detail-drawer">
     <input id="detail-drawer" type="checkbox" class="drawer-toggle" />
 
     <div class="drawer-content">
-      <div class="drawer drawer-end" id="storage-drawer-container">
+      <div class="drawer drawer-end" id="storage-drawer-container" data-admin-drawer data-admin-drawer-toggle="storage-drawer">
         <input id="storage-drawer" type="checkbox" class="drawer-toggle" />
 
         <div class="drawer-content">

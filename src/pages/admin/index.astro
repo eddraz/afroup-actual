@@ -17,6 +17,8 @@ const categoriesHref = joinPath(adminBase, "categorias");
 const commentsHref = joinPath(adminBase, "comentarios");
 const projectsHref = joinPath(adminBase, "proyectos");
 const referentesHref = joinPath(adminBase, "referentes");
+const entrepreneursHref = joinPath(adminBase, "emprendedores");
+const storeHref = joinPath(adminBase, "tienda");
 const usersHref = joinPath(adminBase, "usuarios");
 const languagesHref = joinPath(adminBase, "idiomas");
 
@@ -294,7 +296,29 @@ function formatDate(dateStr?: string | null) {
             <svg class="size-4 ml-auto text-base-content/40 group-hover:translate-x-0.5 transition-transform"><use href="#ic-arrow"></use></svg>
           </a>
 
-          <a class="flex items-center gap-3 p-3 rounded-2xl border border-base-300 bg-base-200/30 hover:bg-secondary/10 hover:border-secondary/40 transition-all group" href={usersHref}>
+                        <a class="flex items-center gap-3 p-3 rounded-2xl border border-base-300 bg-base-200/30 hover:bg-success/10 hover:border-success/40 transition-all group" href={entrepreneursHref}>
+                <div class="size-9 rounded-xl bg-success/10 text-success flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <svg class="size-4.5"><use href="#ic-folder"></use></svg>
+                </div>
+                <div class="leading-tight">
+                  <span class="font-bold text-sm block text-base-content group-hover:text-success transition-colors">{copy.adminEntrepreneurs || "Emprendedores"}</span>
+                  <span class="text-xs text-base-content/60">Productos y servicios de la comunidad</span>
+                </div>
+                <svg class="size-4 ml-auto text-base-content/40 group-hover:translate-x-0.5 transition-transform"><use href="#ic-arrow"></use></svg>
+              </a>
+
+              <a class="flex items-center gap-3 p-3 rounded-2xl border border-base-300 bg-base-200/30 hover:bg-primary/10 hover:border-primary/40 transition-all group" href={storeHref}>
+                <div class="size-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <svg class="size-4.5"><use href="#ic-stack"></use></svg>
+                </div>
+                <div class="leading-tight">
+                  <span class="font-bold text-sm block text-base-content group-hover:text-primary transition-colors">{copy.adminStore || "Tienda"}</span>
+                  <span class="text-xs text-base-content/60">eBooks, láminas, merch y descargables</span>
+                </div>
+                <svg class="size-4 ml-auto text-base-content/40 group-hover:translate-x-0.5 transition-transform"><use href="#ic-arrow"></use></svg>
+              </a>
+
+<a class="flex items-center gap-3 p-3 rounded-2xl border border-base-300 bg-base-200/30 hover:bg-secondary/10 hover:border-secondary/40 transition-all group" href={usersHref}>
             <div class="size-9 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center group-hover:scale-105 transition-transform">
               <svg class="size-4.5"><use href="#ic-users"></use></svg>
             </div>

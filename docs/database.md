@@ -215,6 +215,15 @@ Cero o un idioma visible oculta el selector público. Dos muestran un interrupto
 | `projects` | `id` | Catálogo de iniciativas con `slug` único, `organization`, `stage` (`borrador|en_revision|aprobado`), `budget_currency`, `budget_amount`, `start_date`, `status`, `featured` y `sort_order` |
 | `project_locales` | `(project_id, locale)` | Nombre, resumen (`dek`), descripción HTML y metadatos `og_json` por idioma |
 | `projects_page_locales` | `locale` | Configuración de cabecera (hero) y banda de propuesta de `/proyectos` por idioma |
+| `entrepreneurs` | `id` | Catálogo de emprendimientos con `slug` único, `category` (`moda|alimentos|belleza|editorial|arte`), ciudad/país, `website_url`, contacto y flags `status`/`featured` |
+| `entrepreneur_locales` | `(entrepreneur_id, locale)` | Nombre, resumen, historia, cita y etiquetas de ficha (`rubro_label`, `team_label`, `shipping_label`) por idioma |
+| `entrepreneur_offerings` | `id` | Productos o servicios de una empresa (`kind` `producto|servicio`, precio opcional, `UNIQUE(entrepreneur_id, slug)`) |
+| `entrepreneur_offering_locales` | `(offering_id, locale)` | Nombre, resumen, descripción y `specs_json` (ficha técnica `{label,value}`) por idioma |
+| `entrepreneurs_page_locales` | `locale` | Configuración de cabecera y banda de `/emprendedores` por idioma |
+| `store_products` | `id` | Catálogo de tienda AfroUp con `slug` único, `category` (`ebook|lamina|merch|descargable`), precio/`compare_at_price` (null = gratis) e `is_downloadable` |
+| `store_product_locales` | `(product_id, locale)` | Nombre, resumen, descripción y `specs_json` por idioma |
+| `store_page_locales` | `locale` | Configuración de cabecera y banda de `/tienda` por idioma |
+| `user_comments` | `id` | Cola de moderación de comentarios con `article_id` anulable y snapshot `article_title`, autor resuelto por `user_id` anulable o `author_name`, estado (`pending\|approved\|reported\|rejected`) y respuesta editorial (`admin_reply`) |
 | `search_documents` | `id` | Índice unificado para `/buscar` con `(module_slug, record_id, locale)` único |
 
 ## Ayuda de emergencia heredada

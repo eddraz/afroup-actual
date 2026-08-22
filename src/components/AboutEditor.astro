@@ -4,6 +4,7 @@ import type { BioTranslationAccess } from "../lib/editorial";
 import type { LanguageItem } from "../lib/site-languages";
 import PageLocaleSwitch from "./PageLocaleSwitch.astro";
 import R2Uploader from "./R2Uploader.astro";
+import AdminPageHeader from "./admin/AdminPageHeader.astro";
 
 interface Props {
   aboutByLocale: Record<string, AboutPageData>;
@@ -29,22 +30,14 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
 ---
 
 <div class="space-y-6" data-about-editor-container>
-  <!-- Page Header & Action Bar -->
-  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-base-300 pb-5">
-    <div>
-      <div class="flex items-center gap-2.5">
-        <h2 class="font-display text-2xl font-bold text-base-content">{copy.adminAbout || "Página Nosotros"}</h2>
-        <span class="badge badge-accent badge-sm font-semibold">Institucional</span>
-      </div>
-      <p class="text-xs sm:text-sm text-base-content/60 mt-1">
-        {copy.adminAboutDesc || "Gestiona la historia, misión, visión, métricas de impacto y equipo que se muestran en /nosotros."}
-      </p>
-    </div>
-
-    <div class="flex flex-wrap items-center gap-2.5">
-      <!-- Language Switcher -->
-      <PageLocaleSwitch languages={languages} currentLocale={locale} />
-
+  <AdminPageHeader
+    title={copy.adminAbout || "Página Nosotros"}
+    count={1}
+    countLabel="Institucional"
+    badgeVariant="accent"
+    lead={copy.adminAboutDesc || "Gestiona la historia, misión, visión, métricas de impacto y equipo que se muestran en /nosotros."}
+  >
+    <div slot="actions" class="flex items-center justify-end gap-2 shrink-0">
       <!-- Translate with AI button -->
       {translation.canUseAi && targetLanguages.length > 0 ? (
         <button
@@ -79,7 +72,7 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
         <span>{copy.accountProfileSave || "Guardar Cambios"}</span>
       </button>
     </div>
-  </div>
+  </AdminPageHeader>
 
   <!-- Translation Modal Dialog -->
   {translation.canUseAi && targetLanguages.length > 0 ? (
@@ -211,6 +204,9 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
   <input type="hidden" id="active-og-image-target-input" value="" />
 
   <!-- Main Edit Form -->
+  <div class="flex justify-end">
+    <PageLocaleSwitch label="Idioma" languages={languages} current={locale} />
+  </div>
   <form
     id="about-page-form"
     method="post"
@@ -227,8 +223,8 @@ const targetLanguages = languages.filter((l) => l.code !== defaultLocale);
       return (
         <div data-i18n-panel={loc} class:list={["space-y-6", { hidden: isHidden }]}>
           <!-- Locale Notice -->
-          <div class="flex items-center justify-between p-3.5 rounded-2xl bg-base-200/60 border border-base-300 text-xs">
-            <span class="font-bold flex items-center gap-2">
+          <div class="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-base-200/60 border border-base-300 text-xs">
+            <span class="font-bold flex items-center gap-2 min-w-0">
               <span class="badge badge-primary badge-sm font-mono uppercase">{loc}</span>
               <span>Editando contenido en <strong>{lang.name} ({lang.native_name})</strong></span>
             </span>

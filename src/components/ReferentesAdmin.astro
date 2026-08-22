@@ -46,7 +46,7 @@ const categoriesList = [
 ];
 ---
 
-<div class="drawer drawer-end" data-referentes-admin-root>
+<div class="drawer drawer-end" data-referentes-admin-root data-admin-drawer data-admin-drawer-toggle="referente-detail-drawer">
   <input id="referente-detail-drawer" type="checkbox" class="drawer-toggle" />
 
   <div class="drawer-content flex flex-col space-y-6">
@@ -156,9 +156,10 @@ const categoriesList = [
       </div>
 
       <!-- Data Table -->
-      <div class="overflow-x-auto rounded-2xl border border-base-300 bg-base-100 shadow-xs">
-        <table class="table table-zebra table-sm w-full">
-          <thead class="bg-base-200/50 text-xs text-base-content/70 uppercase">
+      <div class="rounded-3xl border border-base-300 bg-base-100 shadow-xs overflow-hidden">
+        <div class="overflow-x-auto">
+        <table class="table table-zebra w-full">
+          <thead class="border-b border-base-300 bg-base-200/60 text-xs font-extrabold uppercase tracking-wider text-base-content/60">
             <tr>
               <th class="w-12 text-center">#</th>
               <th>Referente</th>
@@ -276,6 +277,7 @@ const categoriesList = [
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
 
