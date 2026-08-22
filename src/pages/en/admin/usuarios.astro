@@ -8,6 +8,10 @@ import { routeIds } from "../../../lib/paths";
 import { hasPermission } from "../../../lib/rbac";
 import { parsePermissionGrants, type PermissionGrant } from "../../../lib/permission-grants";
 import { env } from "cloudflare:workers";
+import AdminPageHeader from "../../../components/admin/AdminPageHeader.astro";
+import AdminToolbar from "../../../components/admin/AdminToolbar.astro";
+import AdminTable from "../../../components/admin/AdminTable.astro";
+import AdminDrawerPanel from "../../../components/admin/AdminDrawerPanel.astro";
 
 export const prerender = false;
 
@@ -25,6 +29,7 @@ interface UserRow {
   role_name: string | null;
   created_by: number | null;
   invite_pending: number;
+  created_at: string;
 }
 
 interface RoleOption {
@@ -64,7 +69,7 @@ const canInvite = await hasPermission(env.DB, actor.id, "usuarios", "create");
 
 const users = (await env.DB.prepare(
   `SELECT u.id, u.email, u.name, u.is_active, u.role_id, u.created_by,
-          u.invite_pending, r.name AS role_name
+          u.invite_pending, u.created_at, r.name AS role_name
      FROM users u
 LEFT JOIN admin_roles r ON r.id = u.role_id
     WHERE u.id = ?
@@ -141,109 +146,208 @@ const actionLabels: Record<PermissionRow["action"], string> = {
 
 <AdminLayout title={copy.adminUsers} active="users">
   <!-- Right-to-Left Drawer for Users -->
-  <div class="drawer drawer-end">
-    <input id="user-drawer" type="checkbox" class="drawer-toggle" />
-
-    <div class="drawer-content">
+  <AdminDrawerPanel
+    toggleId="user-drawer"
+    width="form"
+    title={copy.adminNewUserInvite || "Invite new member"}
+    subtitle="Send an access link with preconfigured role and permissions."
+  >
+    <Fragment slot="content">
       <!-- Page Header -->
-      <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div class="flex items-center gap-2.5">
-            <h2 class="font-display text-2xl font-bold text-base-content">{copy.adminUsers}</h2>
-            <span class="badge badge-neutral badge-sm font-semibold">{users.length} members</span>
-          </div>
-          <p class="text-xs sm:text-sm text-base-content/60 mt-1">
-            Manage team members, collaborators, roles, and granular access permissions.
-          </p>
-        </div>
-
+      <AdminPageHeader
+        title={copy.adminUsers}
+        count={users.length}
+        countLabel="members"
+        lead="Manage team members, collaborators, roles, and granular access permissions."
+      >
         {canInvite ? (
-          <label
-            for="user-drawer"
-            class="drawer-button btn btn-primary btn-sm gap-2 shadow-sm hover:scale-[1.02] transition-transform cursor-pointer"
-          >
-            <svg class="size-4"><use href="#ic-plus"></use></svg>
-            <span>{copy.adminNewUserInvite || "Invite User"}</span>
-          </label>
+          <Fragment slot="actions">
+            <label
+              for="user-drawer"
+              class="drawer-button btn btn-primary btn-sm gap-2 shadow-sm hover:scale-[1.02] transition-transform cursor-pointer"
+            >
+              <svg class="size-4"><use href="#ic-plus"></use></svg>
+              <span>{copy.adminNewUserInvite || "Invite User"}</span>
+            </label>
+          </Fragment>
         ) : null}
-      </div>
+      </AdminPageHeader>
 
       <!-- Filter & Search Toolbar -->
-      <div class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300 bg-base-100 p-3 shadow-xs">
-        <div class="relative flex-1 min-w-[240px] max-w-md">
-          <svg class="size-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none">
-            <use href="#ic-users"></use>
-          </svg>
-          <input
-            type="search"
-            id="users-search"
-            placeholder="Search users by name, email, or role..."
-            class="input input-sm input-bordered w-full pl-9 bg-base-200/40 text-xs sm:text-sm font-medium"
-          />
-        </div>
+      <AdminToolbar
+        searchId="users-search"
+        searchPlaceholder="Search users by name, email, or role..."
+        filterName="user"
+        filters={[
+          { value: "all", label: `All (${users.length})` },
+          { value: "active", label: `Active (${users.filter((u) => u.is_active).length})` },
+          { value: "pending", label: `Invitations (${users.filter((u) => u.invite_pending).length})` },
+        ]}
+      />
 
-        <div class="join border border-base-300 bg-base-200/50 p-0.5 rounded-xl">
-          <button class="btn btn-xs join-item btn-ghost font-bold text-[11px] user-filter-btn active-filter" data-filter="all">
-            All ({users.length})
-          </button>
-          <button class="btn btn-xs join-item btn-ghost font-bold text-[11px] user-filter-btn" data-filter="active">
-            Active ({users.filter(u => u.is_active).length})
-          </button>
-          <button class="btn btn-xs join-item btn-ghost font-bold text-[11px] user-filter-btn" data-filter="pending">
-            Invitations ({users.filter(u => u.invite_pending).length})
-          </button>
-        </div>
-      </div>
-
-      <!-- Users Grid / List -->
-      <div class="grid grid-cols-1 gap-4" id="users-container">
+      <!-- Users Table -->
+      <AdminTable
+        id="users-table"
+        columns={[
+          { label: "User", class: "py-4 pl-6" },
+          { label: "Role" },
+          { label: "Status" },
+          { label: "Created" },
+          { label: "Actions", class: "text-right pr-6" },
+        ]}
+      >
         {users.length === 0 ? (
-          <div class="rounded-3xl border border-base-300 bg-base-100 p-12 shadow-xs text-center">
-            <div class="flex flex-col items-center gap-2">
-              <div class="size-12 rounded-2xl bg-base-200 flex items-center justify-center text-base-content/40">
-                <svg class="size-6"><use href="#ic-users"></use></svg>
-              </div>
-              <span class="font-bold text-base">No users registered</span>
-              <span class="text-xs text-base-content/50">Invite a team member to start collaborating</span>
-            </div>
-          </div>
-        ) : null}
-
-        {users.map((user) => {
-          const granted = grantedByUser.get(user.id) ?? new Map();
-          const isSelf = user.id === actor.id;
-          const isChild = user.created_by === actor.id;
-          const isShared = sharedWithMe.has(user.id);
-          const initials = (user.name || "U")
-            .split(" ")
-            .map((p) => p[0])
-            .slice(0, 2)
-            .join("")
-            .toUpperCase();
-
-          return (
-            <article
-              class="rounded-3xl border border-base-300 bg-base-100 p-5 sm:p-6 shadow-xs space-y-4 hover:border-base-300/80 transition-all user-card"
-              data-name={(user.name || "").toLowerCase()}
-              data-email={(user.email || "").toLowerCase()}
-              data-role={(user.role_name || "").toLowerCase()}
-              data-active={user.is_active ? "active" : "paused"}
-              data-pending={user.invite_pending ? "pending" : "verified"}
-            >
-              <div class="flex flex-wrap items-start justify-between gap-4">
-                <div class="flex items-center gap-3.5">
-                  <div class="avatar placeholder">
-                    <div class="size-12 rounded-2xl bg-primary/10 text-primary font-bold font-display text-base border border-primary/20 flex items-center justify-center">
-                      <span>{initials}</span>
-                    </div>
+          <Fragment slot="empty">
+            <tr>
+              <td colspan="5" class="text-center py-12 text-base-content/60">
+                <div class="flex flex-col items-center gap-2">
+                  <div class="size-12 rounded-2xl bg-base-200 flex items-center justify-center text-base-content/40">
+                    <svg class="size-6"><use href="#ic-users"></use></svg>
                   </div>
-                  <div>
-                    <div class="flex items-center gap-2">
-                      <h3 class="font-display text-lg font-bold text-base-content">{user.name}</h3>
-                      {isSelf ? <span class="badge badge-xs badge-primary font-bold">{copy.adminYou || "You"}</span> : null}
+                  <span class="font-bold text-base">No users registered</span>
+                  <span class="text-xs text-base-content/50">Invite a team member to start collaborating</span>
+                </div>
+              </td>
+            </tr>
+          </Fragment>
+        ) : (
+          <Fragment slot="rows">
+            {users.map((user) => {
+              const granted = grantedByUser.get(user.id) ?? new Map();
+              const isSelf = user.id === actor.id;
+              const isChild = user.created_by === actor.id;
+              const isShared = sharedWithMe.has(user.id);
+              const initials = (user.name || "U")
+                .split(" ")
+                .map((p) => p[0])
+                .slice(0, 2)
+                .join("")
+                .toUpperCase();
+              const createdLabel = user.created_at ? user.created_at.slice(0, 10) : "—";
+
+              return (
+                <tr
+                  class="hover:bg-base-200/50 transition-colors user-card"
+                  data-name={(user.name || "").toLowerCase()}
+                  data-email={(user.email || "").toLowerCase()}
+                  data-role={(user.role_name || "").toLowerCase()}
+                  data-active={user.is_active ? "active" : "paused"}
+                  data-pending={user.invite_pending ? "pending" : "verified"}
+                >
+                  <td class="py-3.5 pl-6">
+                    <div class="flex items-start gap-3.5">
+                      <div class="avatar placeholder">
+                        <div class="size-12 rounded-2xl bg-primary/10 text-primary font-bold font-display text-base border border-primary/20 flex items-center justify-center">
+                          <span>{initials}</span>
+                        </div>
+                      </div>
+                      <div class="min-w-0 space-y-2">
+                        <div>
+                          <div class="flex items-center gap-2">
+                            <h3 class="font-display text-base font-bold text-base-content">{user.name}</h3>
+                            {isSelf ? <span class="badge badge-xs badge-primary font-bold">{copy.adminYou || "You"}</span> : null}
+                          </div>
+                          <p class="text-xs text-base-content/60 font-mono break-all">{user.email}</p>
+                          <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
+                            {isChild ? <span class="badge badge-xs badge-ghost font-semibold py-1 px-2">{copy.adminCreatedByYou || "Created by you"}</span> : null}
+                            {isShared ? <span class="badge badge-xs badge-info font-semibold py-1 px-2">{copy.adminSharedWithYou || "Shared"}</span> : null}
+                          </div>
+                        </div>
+
+                        {isChild ? (
+                          <div class="border-t border-base-300/60 pt-2">
+                            <form method="post" action="/api/admin/shares" class="flex flex-wrap items-center gap-2 text-xs" data-share-form>
+                              <input type="hidden" name="module" value="users" />
+                              <input type="hidden" name="recordId" value={user.id} />
+                              <span class="font-semibold text-base-content/60">{copy.adminShareWith || "Share access with:"}</span>
+                              <select class="select select-bordered select-xs text-xs font-semibold" name="sharedWithId" required>
+                                <option value="">{copy.adminShareNone || "Select..."}</option>
+                                {shareable.filter((candidate) => candidate.id !== user.id).map((candidate) => (
+                                  <option value={candidate.id}>{candidate.name}</option>
+                                ))}
+                              </select>
+                              <button class="btn btn-ghost btn-xs border border-base-300" type="submit">{copy.adminShare || "Share"}</button>
+                            </form>
+                          </div>
+                        ) : null}
+
+                        {!isSelf && isChild ? (
+                          <details class="border-t border-base-300/60 pt-2 group">
+                            <summary class="cursor-pointer text-xs font-bold text-base-content/70 hover:text-primary flex items-center justify-between list-none py-1">
+                              <span class="flex items-center gap-1.5">
+                                <svg class="size-4"><use href="#ic-key"></use></svg>
+                                <span>{copy.adminEditPermissions || "Adjust Permissions"}</span>
+                              </span>
+                              <span class="text-base-content/40 group-open:rotate-180 transition-transform">▼</span>
+                            </summary>
+
+                            <form method="post" action="/api/admin/roles" class="mt-3 space-y-4" data-admin-form data-intent="update_user_permissions">
+                              <input type="hidden" name="_intent" value="update_user_permissions" />
+                              <input type="hidden" name="userId" value={user.id} />
+
+                              <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <fieldset class="fieldset">
+                                  <legend class="fieldset-legend font-semibold text-xs text-base-content/70">{copy.adminUserRole}</legend>
+                                  <select class="select select-bordered select-sm w-full font-semibold" name="roleId">
+                                    <option value="">{copy.adminUserNoRole || "No role assigned"}</option>
+                                    {roles.map((role) => (
+                                      <option value={role.id} selected={user.role_id === role.id}>{role.name}</option>
+                                    ))}
+                                  </select>
+                                </fieldset>
+                                <fieldset class="fieldset">
+                                  <legend class="fieldset-legend font-semibold text-xs text-base-content/70">{copy.adminStatus || "Status"}</legend>
+                                  <select class="select select-bordered select-sm w-full font-semibold" name="isActive">
+                                    <option value="1" selected={user.is_active === 1}>{copy.adminUserActive || "Active"}</option>
+                                    <option value="0" selected={user.is_active === 0}>{copy.adminUserPaused || "Paused"}</option>
+                                  </select>
+                                </fieldset>
+                              </div>
+
+                              <div class="mt-2">
+                                <PermissionMatrix
+                                  modules={modules}
+                                  permissions={permissions}
+                                  assignments={granted}
+                                  actionLabels={actionLabels}
+                                  allowLabel={copy.adminPermissionAllow}
+                                  limitLabel={copy.adminPermissionLimit}
+                                  translateLabel={copy.adminPermissionTranslate}
+                                  translateNoneLabel={copy.adminPermissionTranslateNone}
+                                  translateManualLabel={copy.adminPermissionTranslateManual}
+                                  translateAiLabel={copy.adminPermissionTranslateAi}
+                                  unlimitedLabel={copy.adminPermissionUnlimited}
+                                  noneLabel={copy.adminPermissionNone}
+                                  helpToggleLabel={copy.adminPermissionHelpToggle}
+                                  doneLabel={copy.adminPermissionDone}
+                                  helpCreate={copy.adminPermissionHelpCreate}
+                                  helpRead={copy.adminPermissionHelpRead}
+                                  helpUpdate={copy.adminPermissionHelpUpdate}
+                                  helpDelete={copy.adminPermissionHelpDelete}
+                                  helpAllow={copy.adminPermissionHelpAllow}
+                                  helpLimit={copy.adminPermissionHelpLimit}
+                                  helpTranslate={copy.adminPermissionHelpTranslate}
+                                />
+                              </div>
+
+                              <div class="flex justify-end gap-2 pt-2 border-t border-base-300/60">
+                                <button class="btn btn-primary btn-sm px-5 font-bold" type="submit">{copy.adminSave}</button>
+                              </div>
+                            </form>
+                          </details>
+                        ) : null}
+                      </div>
                     </div>
-                    <p class="text-xs text-base-content/60 font-mono">{user.email}</p>
-                    <div class="mt-2 flex flex-wrap items-center gap-1.5">
+                  </td>
+                  <td>
+                    {user.role_name ? (
+                      <span class="badge badge-xs badge-accent font-bold py-1 px-2 uppercase">{user.role_name}</span>
+                    ) : (
+                      <span class="text-base-content/40">—</span>
+                    )}
+                  </td>
+                  <td>
+                    <div class="flex flex-wrap items-center gap-1.5">
                       <span class:list={[
                         "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider",
                         user.is_active ? "bg-success/15 text-success border border-success/30" : "bg-base-300 text-base-content/60"
@@ -252,190 +356,94 @@ const actionLabels: Record<PermissionRow["action"], string> = {
                         {user.is_active ? copy.adminUserActive || "Active" : copy.adminUserPaused || "Paused"}
                       </span>
                       {user.invite_pending ? <span class="badge badge-xs badge-warning font-bold py-1 px-2 uppercase">{copy.inviteEyebrow || "Invitation Pending"}</span> : null}
-                      {user.role_name ? <span class="badge badge-xs badge-accent font-bold py-1 px-2 uppercase">{user.role_name}</span> : null}
-                      {isChild ? <span class="badge badge-xs badge-ghost font-semibold py-1 px-2">{copy.adminCreatedByYou || "Created by you"}</span> : null}
-                      {isShared ? <span class="badge badge-xs badge-info font-semibold py-1 px-2">{copy.adminSharedWithYou || "Shared"}</span> : null}
                     </div>
-                  </div>
-                </div>
-
-                {!isSelf ? (
-                  <form method="post" action="/api/admin/roles" data-admin-confirm>
-                    <input type="hidden" name="_intent" value="delete_user" />
-                    <input type="hidden" name="id" value={user.id} />
-                    <button class="btn btn-square btn-ghost btn-xs border border-base-300 hover:bg-error/10 hover:text-error" type="submit" title={copy.adminRemove}>
-                      <svg class="size-3.5"><use href="#ic-trash"></use></svg>
-                    </button>
-                  </form>
-                ) : null}
-              </div>
-
-              {isChild ? (
-                <div class="border-t border-base-300/60 pt-3">
-                  <form method="post" action="/api/admin/shares" class="flex flex-wrap items-center gap-2 text-xs" data-share-form>
-                    <input type="hidden" name="module" value="users" />
-                    <input type="hidden" name="recordId" value={user.id} />
-                    <span class="font-semibold text-base-content/60">{copy.adminShareWith || "Share access with:"}</span>
-                    <select class="select select-bordered select-xs text-xs font-semibold" name="sharedWithId" required>
-                      <option value="">{copy.adminShareNone || "Select..."}</option>
-                      {shareable.filter((candidate) => candidate.id !== user.id).map((candidate) => (
-                        <option value={candidate.id}>{candidate.name}</option>
-                      ))}
-                    </select>
-                    <button class="btn btn-ghost btn-xs border border-base-300" type="submit">{copy.adminShare || "Share"}</button>
-                  </form>
-                </div>
-              ) : null}
-
-              {!isSelf && isChild ? (
-                <details class="border-t border-base-300/60 pt-3 group">
-                  <summary class="cursor-pointer text-xs font-bold text-base-content/70 hover:text-primary flex items-center justify-between list-none py-1">
-                    <span class="flex items-center gap-1.5">
-                      <svg class="size-4"><use href="#ic-key"></use></svg>
-                      <span>{copy.adminEditPermissions || "Adjust Permissions"}</span>
-                    </span>
-                    <span class="text-base-content/40 group-open:rotate-180 transition-transform">▼</span>
-                  </summary>
-
-                  <form method="post" action="/api/admin/roles" class="mt-3 space-y-4" data-admin-form data-intent="update_user_permissions">
-                    <input type="hidden" name="_intent" value="update_user_permissions" />
-                    <input type="hidden" name="userId" value={user.id} />
-
-                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <fieldset class="fieldset">
-                        <legend class="fieldset-legend font-semibold text-xs text-base-content/70">{copy.adminUserRole}</legend>
-                        <select class="select select-bordered select-sm w-full font-semibold" name="roleId">
-                          <option value="">{copy.adminUserNoRole || "No role assigned"}</option>
-                          {roles.map((role) => (
-                            <option value={role.id} selected={user.role_id === role.id}>{role.name}</option>
-                          ))}
-                        </select>
-                      </fieldset>
-                      <fieldset class="fieldset">
-                        <legend class="fieldset-legend font-semibold text-xs text-base-content/70">{copy.adminStatus || "Status"}</legend>
-                        <select class="select select-bordered select-sm w-full font-semibold" name="isActive">
-                          <option value="1" selected={user.is_active === 1}>{copy.adminUserActive || "Active"}</option>
-                          <option value="0" selected={user.is_active === 0}>{copy.adminUserPaused || "Paused"}</option>
-                        </select>
-                      </fieldset>
-                    </div>
-
-                    <div class="mt-2">
-                      <PermissionMatrix
-                        modules={modules}
-                        permissions={permissions}
-                        assignments={granted}
-                        actionLabels={actionLabels}
-                        allowLabel={copy.adminPermissionAllow}
-                        limitLabel={copy.adminPermissionLimit}
-                        translateLabel={copy.adminPermissionTranslate}
-                        translateNoneLabel={copy.adminPermissionTranslateNone}
-                        translateManualLabel={copy.adminPermissionTranslateManual}
-                        translateAiLabel={copy.adminPermissionTranslateAi}
-                        unlimitedLabel={copy.adminPermissionUnlimited}
-                        noneLabel={copy.adminPermissionNone}
-                        helpToggleLabel={copy.adminPermissionHelpToggle}
-                        doneLabel={copy.adminPermissionDone}
-                        helpCreate={copy.adminPermissionHelpCreate}
-                        helpRead={copy.adminPermissionHelpRead}
-                        helpUpdate={copy.adminPermissionHelpUpdate}
-                        helpDelete={copy.adminPermissionHelpDelete}
-                        helpAllow={copy.adminPermissionHelpAllow}
-                        helpLimit={copy.adminPermissionHelpLimit}
-                        helpTranslate={copy.adminPermissionHelpTranslate}
-                      />
-                    </div>
-
-                    <div class="flex justify-end gap-2 pt-2 border-t border-base-300/60">
-                      <button class="btn btn-primary btn-sm px-5 font-bold" type="submit">{copy.adminSave}</button>
-                    </div>
-                  </form>
-                </details>
-              ) : null}
-            </article>
-          );
-        })}
-      </div>
-    </div>
+                  </td>
+                  <td>
+                    <span class="font-mono text-xs text-base-content/70">{createdLabel}</span>
+                  </td>
+                  <td class="text-right pr-6">
+                    {!isSelf ? (
+                      <form method="post" action="/api/admin/roles" data-admin-confirm class="inline-flex">
+                        <input type="hidden" name="_intent" value="delete_user" />
+                        <input type="hidden" name="id" value={user.id} />
+                        <button class="btn btn-square btn-ghost btn-xs border border-base-300 hover:bg-error/10 hover:text-error" type="submit" title={copy.adminRemove}>
+                          <svg class="size-3.5"><use href="#ic-trash"></use></svg>
+                        </button>
+                      </form>
+                    ) : (
+                      <span class="text-base-content/30 text-xs">—</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </Fragment>
+        )}
+      </AdminTable>
+    </Fragment>
 
     <!-- Drawer Side (Right to Left Invite Form) -->
     {canInvite ? (
-      <div class="drawer-side z-50">
-        <label for="user-drawer" aria-label="close drawer" class="drawer-overlay"></label>
-        <aside class="w-full max-w-2xl bg-base-100 min-h-dvh h-dvh max-h-dvh flex flex-col p-6 sm:p-8 shadow-2xl border-l border-base-300 overflow-y-auto overscroll-contain">
-          <div class="flex items-center justify-between border-b border-base-300 pb-4 mb-6 shrink-0">
-            <div class="flex items-center gap-2.5">
-              <span class="size-3 rounded-full bg-primary animate-pulse"></span>
-              <div>
-                <h3 class="font-display font-bold text-lg text-base-content">{copy.adminNewUserInvite || "Invite new member"}</h3>
-                <p class="text-xs text-base-content/60">Send an access link with preconfigured role and permissions.</p>
-              </div>
-            </div>
-            <label for="user-drawer" class="btn btn-circle btn-ghost btn-xs">✕</label>
+      <form method="post" action="/api/admin/users/invite" class="space-y-6 flex-1 flex flex-col justify-between" data-invite-form>
+        <div class="space-y-5">
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminModuleName || "Full Name"}</legend>
+              <input class="input input-bordered w-full font-semibold" name="name" required maxlength="80" autocomplete="off" placeholder="Jenniffer M." />
+            </fieldset>
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminUserEmail || "Email Address"}</legend>
+              <input class="input input-bordered w-full font-semibold" name="email" type="email" required maxlength="120" autocomplete="off" placeholder="user@afroup.com" />
+            </fieldset>
+            <fieldset class="fieldset sm:col-span-2">
+              <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminUserRole || "Default Role"}</legend>
+              <select class="select select-bordered w-full font-semibold" name="roleId" data-role-select>
+                <option value="">{copy.adminUserNoRole || "No role assigned"}</option>
+                {roles.map((role) => <option value={role.id}>{role.name}</option>)}
+              </select>
+              <p class="text-xs text-base-content/50 mt-1">{copy.adminInviteRoleHint}</p>
+            </fieldset>
           </div>
 
-          <form method="post" action="/api/admin/users/invite" class="space-y-6 flex-1 flex flex-col justify-between" data-invite-form>
-            <div class="space-y-5">
-              <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <fieldset class="fieldset">
-                  <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminModuleName || "Full Name"}</legend>
-                  <input class="input input-bordered w-full font-semibold" name="name" required maxlength="80" autocomplete="off" placeholder="Jenniffer M." />
-                </fieldset>
-                <fieldset class="fieldset">
-                  <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminUserEmail || "Email Address"}</legend>
-                  <input class="input input-bordered w-full font-semibold" name="email" type="email" required maxlength="120" autocomplete="off" placeholder="user@afroup.com" />
-                </fieldset>
-                <fieldset class="fieldset sm:col-span-2">
-                  <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminUserRole || "Default Role"}</legend>
-                  <select class="select select-bordered w-full font-semibold" name="roleId" data-role-select>
-                    <option value="">{copy.adminUserNoRole || "No role assigned"}</option>
-                    {roles.map((role) => <option value={role.id}>{role.name}</option>)}
-                  </select>
-                  <p class="text-xs text-base-content/50 mt-1">{copy.adminInviteRoleHint}</p>
-                </fieldset>
-              </div>
-
-              <div class="border-t border-base-300 pt-4">
-                <p class="text-xs font-extrabold tracking-wider text-base-content/60 uppercase">{copy.adminUserPermissions || "Specific Permission Matrix"}</p>
-                <p class="mt-1 text-xs text-base-content/60">{copy.adminPermissionMatrixHelp}</p>
-                <div class="mt-3">
-                  <PermissionMatrix
-                    modules={modules}
-                    permissions={permissions}
-                    actionLabels={actionLabels}
-                    allowLabel={copy.adminPermissionAllow}
-                    limitLabel={copy.adminPermissionLimit}
-                    translateLabel={copy.adminPermissionTranslate}
-                    translateNoneLabel={copy.adminPermissionTranslateNone}
-                    translateManualLabel={copy.adminPermissionTranslateManual}
-                    translateAiLabel={copy.adminPermissionTranslateAi}
-                    unlimitedLabel={copy.adminPermissionUnlimited}
-                    noneLabel={copy.adminPermissionNone}
-                    helpToggleLabel={copy.adminPermissionHelpToggle}
-                    doneLabel={copy.adminPermissionDone}
-                    helpCreate={copy.adminPermissionHelpCreate}
-                    helpRead={copy.adminPermissionHelpRead}
-                    helpUpdate={copy.adminPermissionHelpUpdate}
-                    helpDelete={copy.adminPermissionHelpDelete}
-                    helpAllow={copy.adminPermissionHelpAllow}
-                    helpLimit={copy.adminPermissionHelpLimit}
-                    helpTranslate={copy.adminPermissionHelpTranslate}
-                  />
-                </div>
-              </div>
+          <div class="border-t border-base-300 pt-4">
+            <p class="text-xs font-extrabold tracking-wider text-base-content/60 uppercase">{copy.adminUserPermissions || "Specific Permission Matrix"}</p>
+            <p class="mt-1 text-xs text-base-content/60">{copy.adminPermissionMatrixHelp}</p>
+            <div class="mt-3">
+              <PermissionMatrix
+                modules={modules}
+                permissions={permissions}
+                actionLabels={actionLabels}
+                allowLabel={copy.adminPermissionAllow}
+                limitLabel={copy.adminPermissionLimit}
+                translateLabel={copy.adminPermissionTranslate}
+                translateNoneLabel={copy.adminPermissionTranslateNone}
+                translateManualLabel={copy.adminPermissionTranslateManual}
+                translateAiLabel={copy.adminPermissionTranslateAi}
+                unlimitedLabel={copy.adminPermissionUnlimited}
+                noneLabel={copy.adminPermissionNone}
+                helpToggleLabel={copy.adminPermissionHelpToggle}
+                doneLabel={copy.adminPermissionDone}
+                helpCreate={copy.adminPermissionHelpCreate}
+                helpRead={copy.adminPermissionHelpRead}
+                helpUpdate={copy.adminPermissionHelpUpdate}
+                helpDelete={copy.adminPermissionHelpDelete}
+                helpAllow={copy.adminPermissionHelpAllow}
+                helpLimit={copy.adminPermissionHelpLimit}
+                helpTranslate={copy.adminPermissionHelpTranslate}
+              />
             </div>
+          </div>
+        </div>
 
-            <div class="flex justify-end gap-2 pt-4 border-t border-base-300 mt-6 shrink-0">
-              <label for="user-drawer" class="btn btn-ghost btn-sm cursor-pointer">{copy.adminCancel}</label>
-              <button class="btn btn-primary btn-sm px-6 font-bold" type="submit">
-                {copy.adminInviteSelectRole?.includes("role") ? "Send Invitation" : copy.adminAdd || "Save"}
-              </button>
-            </div>
-          </form>
-        </aside>
-      </div>
+        <div class="flex justify-end gap-2 pt-4 border-t border-base-300 mt-6 shrink-0">
+          <label for="user-drawer" class="btn btn-ghost btn-sm cursor-pointer">{copy.adminCancel}</label>
+          <button class="btn btn-primary btn-sm px-6 font-bold" type="submit">
+            {copy.adminInviteSelectRole?.includes("role") ? "Send Invitation" : copy.adminAdd || "Save"}
+          </button>
+        </div>
+      </form>
     ) : null}
-  </div>
+  </AdminDrawerPanel>
 
   <script is:inline define:vars={{ roleMap: rolePresets }}>
     (function () {
@@ -571,3 +579,5 @@ const actionLabels: Record<PermissionRow["action"], string> = {
     })();
   </script>
 </AdminLayout>
+
+

@@ -10,6 +10,10 @@ import { hasPermission } from "../../../lib/rbac";
 import { listSiteLanguages } from "../../../lib/site-languages";
 import { getCategoryTheme } from "../../../lib/category-routes";
 import CategoryEditor from "../../../components/CategoryEditor.astro";
+import AdminPageHeader from "../../../components/admin/AdminPageHeader.astro";
+import AdminToolbar from "../../../components/admin/AdminToolbar.astro";
+import AdminTable from "../../../components/admin/AdminTable.astro";
+import AdminDrawerPanel from "../../../components/admin/AdminDrawerPanel.astro";
 
 export const prerender = false;
 
@@ -47,24 +51,22 @@ const categories = (await env.DB.prepare(
 
 <AdminLayout title={copy.adminCategories} active="categories">
   <!-- Right-to-Left Drawer for Categories -->
-  <div class="drawer drawer-end">
-    <input id="category-drawer" type="checkbox" class="drawer-toggle" />
-
-    <div class="drawer-content">
+  <AdminDrawerPanel
+    toggleId="category-drawer"
+    width="form"
+    title={copy.adminNewCategory}
+    subtitle="Configure new category and translated versions."
+  >
+    <Fragment slot="content">
       <!-- Page Header & Stats Summary -->
-      <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div class="flex items-center gap-2.5">
-            <h2 class="font-display text-2xl font-bold text-base-content">{copy.adminCategories}</h2>
-            <span class="badge badge-neutral badge-sm font-semibold">{categories.length} taxonomies</span>
-          </div>
-          <p class="text-xs sm:text-sm text-base-content/60 mt-1">
-            Organize thematic structures, brand color themes, and editorial hierarchies.
-          </p>
-        </div>
-
+      <AdminPageHeader
+        title={copy.adminCategories}
+        count={categories.length}
+        countLabel="taxonomies"
+        lead="Organize thematic structures, brand color themes, and editorial hierarchies."
+      >
         {canCreate ? (
-          <div class="flex items-center gap-2">
+          <Fragment slot="actions">
             <label
               for="category-drawer"
               class="drawer-button btn btn-primary btn-sm gap-2 shadow-sm hover:scale-[1.02] transition-transform cursor-pointer"
@@ -72,132 +74,96 @@ const categories = (await env.DB.prepare(
               <svg class="size-4"><use href="#ic-plus"></use></svg>
               <span>{copy.adminNewCategory}</span>
             </label>
-          </div>
+          </Fragment>
         ) : null}
-      </div>
+      </AdminPageHeader>
 
       <!-- Filter & Search Toolbar -->
-      <div class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300 bg-base-100 p-3 shadow-xs">
-        <div class="relative flex-1 min-w-[240px] max-w-md">
-          <svg class="size-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none">
-            <use href="#ic-world"></use>
-          </svg>
-          <input
-            type="search"
-            id="categories-search"
-            placeholder="Search categories by name or slug..."
-            class="input input-sm input-bordered w-full pl-9 bg-base-200/40 text-xs sm:text-sm font-medium"
-          />
-        </div>
-      </div>
+      <AdminToolbar searchId="categories-search" searchPlaceholder="Search categories by name or slug..." />
 
       <!-- Categories Table -->
-      <div class="rounded-3xl border border-base-300 bg-base-100 shadow-xs overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="table table-zebra w-full" id="categories-table">
-            <thead>
-              <tr class="border-b border-base-300 bg-base-200/60 text-xs font-extrabold uppercase tracking-wider text-base-content/60">
-                <th class="py-4 pl-6">{copy.adminCategoryTitle || "Category"}</th>
-                <th>{copy.adminCategorySlug || "Slug URL"}</th>
-                <th>Articles</th>
-                <th class="text-right pr-6">Actions</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-base-300/60 font-medium text-sm">
-              {categories.length === 0 ? (
-                <tr>
-                  <td colspan="4" class="text-center py-12 text-base-content/60">
-                    <div class="flex flex-col items-center gap-2">
-                      <div class="size-12 rounded-2xl bg-base-200 flex items-center justify-center text-base-content/40">
-                        <svg class="size-6"><use href="#ic-stack"></use></svg>
-                      </div>
-                      <span class="font-bold text-base">No categories registered</span>
-                      <span class="text-xs text-base-content/50">Create your first category to organize your articles</span>
+      <AdminTable
+        id="categories-table"
+        columns={[{ label: copy.adminCategoryTitle || "Category", class: "py-4 pl-6" }, { label: copy.adminCategorySlug || "Slug URL" }, { label: "Articles" }, { label: "Actions", class: "text-right pr-6" }]}
+      >
+        {categories.length === 0 ? (
+          <Fragment slot="empty">
+            <tr>
+              <td colspan="4" class="text-center py-12 text-base-content/60">
+                <div class="flex flex-col items-center gap-2">
+                  <div class="size-12 rounded-2xl bg-base-200 flex items-center justify-center text-base-content/40">
+                    <svg class="size-6"><use href="#ic-stack"></use></svg>
+                  </div>
+                  <span class="font-bold text-base">No categories registered</span>
+                  <span class="text-xs text-base-content/50">Create your first category to organize your articles</span>
+                </div>
+              </td>
+            </tr>
+          </Fragment>
+        ) : (
+          <Fragment slot="rows">
+            {categories.map((category) => {
+              const theme = getCategoryTheme(category.slug);
+              const editUrl = `${Astro.url.pathname.replace(/\/$/, "")}/${category.id}`;
+
+              return (
+                <tr class="hover:bg-base-200/50 transition-colors category-row" data-name={(category.title ?? "").toLowerCase()} data-slug={(category.slug ?? "").toLowerCase()}>
+                  <td class="py-3.5 pl-6">
+                    <div class="flex items-center gap-2.5">
+                      <span class:list={["size-2.5 rounded-full", theme.dotClass]}></span>
+                      <span class="font-bold text-base-content text-base">{category.title ?? "—"}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="font-mono text-xs px-2.5 py-1 rounded-md bg-base-200 border border-base-300 text-base-content/70">
+                      /{category.slug}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="badge badge-sm badge-neutral font-mono">{category.article_count ?? 0}</span>
+                  </td>
+                  <td class="text-right pr-6">
+                    <div class="inline-flex items-center gap-1.5">
+                      {canUpdate ? (
+                        <a class="btn btn-primary btn-sm btn-outline text-xs font-bold h-7 min-h-0 px-3" href={editUrl} title={copy.adminEdit}>
+                          <svg class="size-3.5"><use href="#ic-edit"></use></svg>
+                          <span>{copy.adminEdit || "Edit"}</span>
+                        </a>
+                      ) : null}
+                      {canDelete ? (
+                        <button
+                          class="btn btn-square btn-ghost btn-xs border border-base-300 hover:bg-error/10 hover:text-error"
+                          type="button"
+                          data-delete-id={category.id}
+                          data-name={category.title ?? category.slug}
+                          data-confirm={copy.adminDeleteConfirm}
+                          data-success={copy.adminEditorialDeleted}
+                          data-title={copy.adminDeleteTitle}
+                          data-accept={copy.adminDeleteAccept}
+                          data-cancel={copy.adminDeleteCancel}
+                          title={copy.adminRemove}
+                        >
+                          <svg class="size-3.5"><use href="#ic-trash"></use></svg>
+                        </button>
+                      ) : null}
                     </div>
                   </td>
                 </tr>
-              ) : null}
+              );
+            })}
+          </Fragment>
+        )}
+      </AdminTable>
+    </Fragment>
 
-              {categories.map((category) => {
-                const theme = getCategoryTheme(category.slug);
-                const editUrl = `${Astro.url.pathname.replace(/\/$/, "")}/${category.id}`;
-
-                return (
-                  <tr class="hover:bg-base-200/50 transition-colors category-row" data-name={(category.title ?? "").toLowerCase()} data-slug={(category.slug ?? "").toLowerCase()}>
-                    <td class="py-3.5 pl-6">
-                      <div class="flex items-center gap-2.5">
-                        <span class:list={["size-2.5 rounded-full", theme.dotClass]}></span>
-                        <span class="font-bold text-base-content text-base">{category.title ?? "—"}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <span class="font-mono text-xs px-2.5 py-1 rounded-md bg-base-200 border border-base-300 text-base-content/70">
-                        /{category.slug}
-                      </span>
-                    </td>
-                    <td>
-                      <span class="badge badge-sm badge-neutral font-mono">{category.article_count ?? 0}</span>
-                    </td>
-                    <td class="text-right pr-6">
-                      <div class="inline-flex items-center gap-1.5">
-                        {canUpdate ? (
-                          <a class="btn btn-primary btn-sm btn-outline text-xs font-bold h-7 min-h-0 px-3" href={editUrl} title={copy.adminEdit}>
-                            <svg class="size-3.5"><use href="#ic-edit"></use></svg>
-                            <span>{copy.adminEdit || "Edit"}</span>
-                          </a>
-                        ) : null}
-                        {canDelete ? (
-                          <button
-                            class="btn btn-square btn-ghost btn-xs border border-base-300 hover:bg-error/10 hover:text-error"
-                            type="button"
-                            data-delete-id={category.id}
-                            data-name={category.title ?? category.slug}
-                            data-confirm={copy.adminDeleteConfirm}
-                            data-success={copy.adminEditorialDeleted}
-                            data-title={copy.adminDeleteTitle}
-                            data-accept={copy.adminDeleteAccept}
-                            data-cancel={copy.adminDeleteCancel}
-                            title={copy.adminRemove}
-                          >
-                            <svg class="size-3.5"><use href="#ic-trash"></use></svg>
-                          </button>
-                        ) : null}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- Drawer Side (Right to Left Form) -->
-    <div class="drawer-side z-50">
-      <label for="category-drawer" aria-label="close drawer" class="drawer-overlay"></label>
-      <aside class="w-full max-w-xl sm:max-w-2xl bg-base-100 min-h-dvh h-dvh max-h-dvh flex flex-col p-6 sm:p-8 shadow-2xl border-l border-base-300 overflow-y-auto overscroll-contain">
-        <div class="flex items-center justify-between border-b border-base-300 pb-4 mb-6 shrink-0">
-          <div class="flex items-center gap-2.5">
-            <span class="size-3 rounded-full bg-primary animate-pulse"></span>
-            <div>
-              <h3 class="font-display font-bold text-lg text-base-content">{copy.adminNewCategory}</h3>
-              <p class="text-xs text-base-content/60">Configure new category and translated versions.</p>
-            </div>
-          </div>
-          <label for="category-drawer" class="btn btn-circle btn-ghost btn-xs">✕</label>
-        </div>
-
-        <CategoryEditor
-          languages={languages}
-          translation={translation}
-          locale={locale}
-          copy={copy}
-          layoutMode="drawer"
-        />
-      </aside>
-    </div>
-  </div>
+    <CategoryEditor
+      languages={languages}
+      translation={translation}
+      locale={locale}
+      copy={copy}
+      layoutMode="drawer"
+    />
+  </AdminDrawerPanel>
 
   <dialog id="admin-delete-dialog" class="modal">
     <div class="modal-box max-w-[480px] rounded-3xl p-6">

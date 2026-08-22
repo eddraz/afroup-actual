@@ -1,6 +1,7 @@
 ---
 import { env } from "cloudflare:workers";
 import AdminLayout from "../../../layouts/AdminLayout.astro";
+import AdminStatCard from "../../../components/admin/AdminStatCard.astro";
 import { defaultLocale, joinPath, localizedPath } from "../../../lib/i18n";
 import { resolveRequestCopy } from "../../../lib/request-locale";
 import { routeIds } from "../../../lib/paths";
@@ -126,76 +127,56 @@ function formatDate(dateStr?: string | null) {
   <!-- KPI Metrics Cards Grid -->
   <section class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
     <!-- Articles Stat -->
-    <div class="group rounded-2xl border border-base-300 bg-base-100 p-5 shadow-xs transition-all hover:border-primary/40 hover:shadow-sm">
-      <div class="flex items-center justify-between">
-        <span class="text-xs font-bold uppercase tracking-wider text-base-content/60">{copy.adminStatsArticles || "Articles"}</span>
-        <div class="size-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
-          <svg class="size-5"><use href="#ic-book2"></use></svg>
-        </div>
-      </div>
-      <div class="mt-3 flex items-baseline gap-2">
-        <span class="font-display text-3xl font-extrabold text-base-content">{articlesTotal}</span>
-        <span class="badge badge-success badge-sm font-semibold">{articlesPublished} live</span>
-      </div>
-      <div class="mt-2 text-xs text-base-content/60 flex items-center justify-between">
-        <span>{articlesDrafts} drafts</span>
-        <a class="font-bold text-primary hover:underline" href={articlesHref}>View all →</a>
-      </div>
-    </div>
+    <AdminStatCard
+      label={copy.adminStatsArticles || "Articles"}
+      value={articlesTotal}
+      icon="#ic-book2"
+      tone="primary"
+      href={articlesHref}
+      hrefLabel={copy.adminViewAll || "View all"}
+      footNote={`${articlesDrafts} drafts`}
+    >
+      <span slot="value-extra" class="badge badge-success badge-sm font-semibold">{articlesPublished} live</span>
+    </AdminStatCard>
 
     <!-- Categories Stat -->
-    <div class="group rounded-2xl border border-base-300 bg-base-100 p-5 shadow-xs transition-all hover:border-accent/40 hover:shadow-sm">
-      <div class="flex items-center justify-between">
-        <span class="text-xs font-bold uppercase tracking-wider text-base-content/60">{copy.adminCategories || "Categories"}</span>
-        <div class="size-10 rounded-xl bg-accent/10 text-accent flex items-center justify-center group-hover:scale-110 transition-transform">
-          <svg class="size-5"><use href="#ic-stack"></use></svg>
-        </div>
-      </div>
-      <div class="mt-3 flex items-baseline gap-2">
-        <span class="font-display text-3xl font-extrabold text-base-content">{categoriesTotal}</span>
-        <span class="text-xs text-base-content/70 font-semibold">taxonomies</span>
-      </div>
-      <div class="mt-2 text-xs text-base-content/60 flex items-center justify-between">
-        <span>Africa, Diaspora, History</span>
-        <a class="font-bold text-accent hover:underline" href={categoriesHref}>View all →</a>
-      </div>
-    </div>
+    <AdminStatCard
+      label={copy.adminCategories || "Categories"}
+      value={categoriesTotal}
+      icon="#ic-stack"
+      tone="accent"
+      href={categoriesHref}
+      hrefLabel="View all"
+      footNote="Africa, Diaspora, History"
+    >
+      <span slot="value-extra" class="text-xs text-base-content/70 font-semibold">taxonomies</span>
+    </AdminStatCard>
 
     <!-- Users Stat -->
-    <div class="group rounded-2xl border border-base-300 bg-base-100 p-5 shadow-xs transition-all hover:border-secondary/40 hover:shadow-sm">
-      <div class="flex items-center justify-between">
-        <span class="text-xs font-bold uppercase tracking-wider text-base-content/60">{copy.adminStatsUsers || "Team & Users"}</span>
-        <div class="size-10 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center group-hover:scale-110 transition-transform">
-          <svg class="size-5"><use href="#ic-users"></use></svg>
-        </div>
-      </div>
-      <div class="mt-3 flex items-baseline gap-2">
-        <span class="font-display text-3xl font-extrabold text-base-content">{usersTotal}</span>
-        <span class="badge badge-neutral badge-sm font-semibold">Active</span>
-      </div>
-      <div class="mt-2 text-xs text-base-content/60 flex items-center justify-between">
-        <span>Staff & contributors</span>
-        <a class="font-bold text-secondary hover:underline" href={usersHref}>Manage →</a>
-      </div>
-    </div>
+    <AdminStatCard
+      label={copy.adminStatsUsers || "Team & Users"}
+      value={usersTotal}
+      icon="#ic-users"
+      tone="secondary"
+      href={usersHref}
+      hrefLabel="Manage"
+      footNote="Staff & contributors"
+    >
+      <span slot="value-extra" class="badge badge-neutral badge-sm font-semibold">Active</span>
+    </AdminStatCard>
 
     <!-- Comments / Interaction Stat -->
-    <div class="group rounded-2xl border border-base-300 bg-base-100 p-5 shadow-xs transition-all hover:border-warning/40 hover:shadow-sm">
-      <div class="flex items-center justify-between">
-        <span class="text-xs font-bold uppercase tracking-wider text-base-content/60">{copy.adminStatsComments || "Comments"}</span>
-        <div class="size-10 rounded-xl bg-warning/10 text-warning flex items-center justify-center group-hover:scale-110 transition-transform">
-          <svg class="size-5"><use href="#ic-pin"></use></svg>
-        </div>
-      </div>
-      <div class="mt-3 flex items-baseline gap-2">
-        <span class="font-display text-3xl font-extrabold text-base-content">{commentsTotal}</span>
-        <span class="badge badge-warning badge-sm font-semibold">Moderation</span>
-      </div>
-      <div class="mt-2 text-xs text-base-content/60 flex items-center justify-between">
-        <span>Community interaction</span>
-        <a class="font-bold text-warning hover:underline" href={commentsHref}>Moderate →</a>
-      </div>
-    </div>
+    <AdminStatCard
+      label={copy.adminStatsComments || "Comments"}
+      value={commentsTotal}
+      icon="#ic-pin"
+      tone="warning"
+      href={commentsHref}
+      hrefLabel="Moderate"
+      footNote="Community interaction"
+    >
+      <span slot="value-extra" class="badge badge-warning badge-sm font-semibold">Moderation</span>
+    </AdminStatCard>
   </section>
 
   <!-- Two Columns: Recent Articles & Quick Actions -->

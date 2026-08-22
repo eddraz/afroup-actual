@@ -3,6 +3,9 @@ import { env } from "cloudflare:workers";
 import AdminLayout from "../../../layouts/AdminLayout.astro";
 import { requireModuleAccess } from "../../../lib/admin-scope";
 import { resolveRequestCopy } from "../../../lib/request-locale";
+import AdminPageHeader from "../../../components/admin/AdminPageHeader.astro";
+import AdminToolbar from "../../../components/admin/AdminToolbar.astro";
+import AdminTable from "../../../components/admin/AdminTable.astro";
 
 export const prerender = false;
 
@@ -21,108 +24,104 @@ const queueItems = [
 
 <AdminLayout title={copy.adminComments} active="comments">
   <!-- Page Header -->
-  <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-    <div>
-      <div class="flex items-center gap-2.5">
-        <h2 class="font-display text-2xl font-bold text-base-content">{copy.adminComments}</h2>
-        <span class="badge badge-warning badge-sm font-semibold">{queueItems.length} in queue</span>
-      </div>
-      <p class="text-xs sm:text-sm text-base-content/60 mt-1">
-        Moderate user replies, comments, and community discussions on AfroUp articles.
-      </p>
-    </div>
-  </div>
+  <AdminPageHeader
+    title={copy.adminComments}
+    count={queueItems.length}
+    countLabel="in queue"
+    badgeVariant="warning"
+    lead="Moderate user replies, comments, and community discussions on AfroUp articles."
+  />
 
   <!-- Filter & Search Toolbar -->
-  <div class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300 bg-base-100 p-3 shadow-xs">
-    <div class="relative flex-1 min-w-[240px] max-w-md">
-      <svg class="size-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none">
-        <use href="#ic-world"></use>
-      </svg>
-      <input
-        type="search"
-        id="comments-search"
-        placeholder="Search by user, article, or comment text..."
-        class="input input-sm input-bordered w-full pl-9 bg-base-200/40 text-xs sm:text-sm font-medium"
-      />
-    </div>
+  <AdminToolbar
+    searchId="comments-search"
+    searchPlaceholder="Search by user, article, or comment text..."
+    filterName="comment"
+    filters={[
+      { value: "all", label: "All", count: queueItems.length },
+      { value: "Reported", label: "Reported", count: queueItems.filter((q) => q.reason === "Reported").length },
+      { value: "Pending", label: "Pending", count: queueItems.filter((q) => q.reason === "Pending").length },
+      { value: "Approved", label: "Approved", count: queueItems.filter((q) => q.reason === "Approved").length },
+    ]}
+  />
 
-    <div class="join border border-base-300 bg-base-200/50 p-0.5 rounded-xl">
-      <button class="btn btn-xs join-item btn-ghost font-bold text-[11px] comment-filter-btn active-filter" data-filter="all">
-        All ({queueItems.length})
-      </button>
-      <button class="btn btn-xs join-item btn-ghost font-bold text-[11px] comment-filter-btn" data-filter="Reported">
-        Reported ({queueItems.filter(q => q.reason === "Reported").length})
-      </button>
-      <button class="btn btn-xs join-item btn-ghost font-bold text-[11px] comment-filter-btn" data-filter="Pending">
-        Pending ({queueItems.filter(q => q.reason === "Pending").length})
-      </button>
-      <button class="btn btn-xs join-item btn-ghost font-bold text-[11px] comment-filter-btn" data-filter="Approved">
-        Approved ({queueItems.filter(q => q.reason === "Approved").length})
-      </button>
-    </div>
-  </div>
+  <!-- Comments Table -->
+  <AdminTable
+    id="comments-table"
+    columns={[
+      { label: "Author", class: "py-4 pl-6" },
+      { label: "Comment" },
+      { label: "Reference" },
+      { label: "Status" },
+      { label: "Actions", class: "text-right pr-6" },
+    ]}
+  >
+    <Fragment slot="rows">
+      {queueItems.map((item) => {
+        const isReported = item.reason === "Reported";
+        const isPending = item.reason === "Pending";
+        const isApproved = item.reason === "Approved";
 
-  <!-- Comments Stream -->
-  <div class="grid grid-cols-1 gap-4" id="comments-container">
-    {queueItems.map((item) => {
-      const isReported = item.reason === "Reported";
-      const isPending = item.reason === "Pending";
-      const isApproved = item.reason === "Approved";
-
-      return (
-        <article
-          class="rounded-3xl border border-base-300 bg-base-100 p-5 sm:p-6 shadow-xs space-y-3.5 hover:border-base-300/80 transition-all comment-card"
-          data-user={item.user.toLowerCase()}
-          data-article={item.article.toLowerCase()}
-          data-comment={item.comment.toLowerCase()}
-          data-reason={item.reason}
-        >
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <div class="flex items-center gap-3">
-              <div class="avatar placeholder">
-                <div class="size-9 rounded-xl bg-base-200 border border-base-300 font-bold font-display text-xs text-base-content/70 flex items-center justify-center">
-                  <span>{item.user[0]}</span>
+        return (
+          <tr
+            class="hover:bg-base-200/50 transition-colors comment-card"
+            data-user={item.user.toLowerCase()}
+            data-article={item.article.toLowerCase()}
+            data-comment={item.comment.toLowerCase()}
+            data-reason={item.reason}
+          >
+            <td class="py-3.5 pl-6">
+              <div class="flex items-center gap-3">
+                <div class="avatar placeholder">
+                  <div class="size-9 rounded-xl bg-base-200 border border-base-300 font-bold font-display text-xs text-base-content/70 flex items-center justify-center">
+                    <span>{item.user[0]}</span>
+                  </div>
                 </div>
+                <span class="font-bold text-sm text-base-content">{item.user}</span>
               </div>
-              <div>
-                <span class="font-bold text-sm text-base-content block">{item.user}</span>
-                <span class="text-xs text-base-content/50">on <strong class="text-base-content/70 font-semibold">{item.article}</strong> · {item.time}</span>
+            </td>
+            <td class="max-w-[320px]">
+              <p class="text-sm text-base-content/90 leading-relaxed line-clamp-2">“{item.comment}”</p>
+            </td>
+            <td>
+              <span class="font-mono text-xs px-2.5 py-1 rounded-md bg-base-200 border border-base-300 text-base-content/70">
+                {item.article}
+              </span>
+            </td>
+            <td>
+              <div class="flex flex-col items-start gap-1">
+                <span class:list={[
+                  "badge badge-xs font-bold py-1 px-2.5 uppercase tracking-wider",
+                  isReported && "badge-error",
+                  isPending && "badge-warning",
+                  isApproved && "badge-success",
+                  !isReported && !isPending && !isApproved && "badge-info"
+                ]}>
+                  {item.reason}
+                </span>
+                <span class="text-xs text-base-content/50">{item.time}</span>
               </div>
-            </div>
-
-            <span class:list={[
-              "badge badge-xs font-bold py-1 px-2.5 uppercase tracking-wider",
-              isReported && "badge-error",
-              isPending && "badge-warning",
-              isApproved && "badge-success",
-              !isReported && !isPending && !isApproved && "badge-info"
-            ]}>
-              {item.reason}
-            </span>
-          </div>
-
-          <p class="text-sm text-base-content/90 leading-relaxed pl-12">
-            «{item.comment}»
-          </p>
-
-          <div class="flex items-center gap-2 pt-2 border-t border-base-300/60 pl-12">
-            <button class="btn btn-success btn-xs gap-1 font-bold" type="button">
-              <svg class="size-3.5"><use href="#ic-check"></use></svg>
-              <span>Approve</span>
-            </button>
-            <button class="btn btn-ghost btn-xs border border-base-300 text-xs font-semibold hover:bg-base-200" type="button">
-              Reply
-            </button>
-            <button class="btn btn-ghost btn-xs border border-base-300 text-error hover:bg-error/10 text-xs font-semibold ml-auto" type="button">
-              <svg class="size-3.5"><use href="#ic-trash"></use></svg>
-              <span>Dismiss</span>
-            </button>
-          </div>
-        </article>
-      );
-    })}
-  </div>
+            </td>
+            <td class="text-right pr-6">
+              <div class="inline-flex items-center gap-1.5">
+                <button class="btn btn-success btn-xs gap-1 font-bold" type="button">
+                  <svg class="size-3.5"><use href="#ic-check"></use></svg>
+                  <span>Approve</span>
+                </button>
+                <button class="btn btn-ghost btn-xs border border-base-300 text-xs font-semibold hover:bg-base-200" type="button">
+                  Reply
+                </button>
+                <button class="btn btn-ghost btn-xs border border-base-300 text-error hover:bg-error/10 text-xs font-semibold" type="button">
+                  <svg class="size-3.5"><use href="#ic-trash"></use></svg>
+                  <span>Dismiss</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+        );
+      })}
+    </Fragment>
+  </AdminTable>
 </AdminLayout>
 
 <script is:inline>
