@@ -68,6 +68,7 @@
 - `0036_resources_module.sql` registers the `recursos` admin module, creates `resources` with unique slugs, `resource_locales` for localized content/OG, and `resources_page_locales` for `/recursos` hero and banner.
 - `0037_collaborate_module.sql` registers the `colabora` admin module, creates `collaborate_skills` and `collaborate_skill_locales` for dynamic skill roles, `collaborate_page_locales` for `/colabora` hero/form copy, and `collaborate_submissions` for volunteer applications with status and admin notes.
 - `0038_referentes_module.sql` registers the `referentes` admin module, creates `referentes` with unique slugs and categories, `referente_locales` for localized biographies, quotes, and chronological milestones, and `referentes_page_locales` for `/referentes` hero and banner.
+- `0039_projects_module.sql` re-registers the pre-existing `proyectos` admin module idempotently (first registered by `0010`), creates `projects` with unique slugs, organization, workflow stage (`borrador`/`en_revision`/`aprobado`) and budget columns, `project_locales` for localized names/deks/descriptions/OG, and `projects_page_locales` for `/proyectos` hero and banner. Seeds three example projects with Spanish/English locales; no `search_documents` seeding because public project detail pages are out of scope.
 
 ## Manual D1 apply notes
 

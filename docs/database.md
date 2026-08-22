@@ -212,6 +212,9 @@ Cero o un idioma visible oculta el selector público. Dos muestran un interrupto
 | `referentes` | `id` | Catálogo de figuras y referentes históricos y contemporáneos con `slug` único, `category_tag`, `badge_theme`, `photo_url`, `years_active`, `status`, `featured` y `sort_order` |
 | `referente_locales` | `(referente_id, locale)` | Nombre, rol, fechas, biografía completa (`bio_html`), cita (`quote`), hitos cronológicos (`milestones_json`) y metadatos `og_json` por idioma |
 | `referentes_page_locales` | `locale` | Configuración de cabecera (hero) y banner de propuesta («¿Falta alguien?») de `/referentes` por idioma |
+| `projects` | `id` | Catálogo de iniciativas con `slug` único, `organization`, `stage` (`borrador|en_revision|aprobado`), `budget_currency`, `budget_amount`, `start_date`, `status`, `featured` y `sort_order` |
+| `project_locales` | `(project_id, locale)` | Nombre, resumen (`dek`), descripción HTML y metadatos `og_json` por idioma |
+| `projects_page_locales` | `locale` | Configuración de cabecera (hero) y banda de propuesta de `/proyectos` por idioma |
 | `search_documents` | `id` | Índice unificado para `/buscar` con `(module_slug, record_id, locale)` único |
 
 ## Ayuda de emergencia heredada
