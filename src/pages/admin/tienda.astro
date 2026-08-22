@@ -1,0 +1,672 @@
+---
+import { env } from "cloudflare:workers";
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { requireModuleAccess } from "../../lib/admin-scope";
+import { resolveRequestCopy } from "../../lib/request-locale";
+import { translationAccess } from "../../lib/editorial";
+import { listSiteLanguages } from "../../lib/site-languages";
+import {
+  STORE_CATEGORIES,
+  formatStorePrice,
+  getStoreStats,
+  loadAllStorePageConfigs,
+  loadStoreProductById,
+  loadStoreProducts,
+} from "../../lib/store";
+import { parseOgMetadata, type OpenGraphMetadata } from "../../lib/og-metadata";
+import AdminPageHeader from "../../components/admin/AdminPageHeader.astro";
+import AdminStatCard from "../../components/admin/AdminStatCard.astro";
+import AdminToolbar from "../../components/admin/AdminToolbar.astro";
+import AdminTable from "../../components/admin/AdminTable.astro";
+import AdminDrawerPanel from "../../components/admin/AdminDrawerPanel.astro";
+import FormLocaleSwitch from "../../components/FormLocaleSwitch.astro";
+import { localizedPath } from "../../lib/i18n";
+import { routeIds } from "../../lib/paths";
+
+export const prerender = false;
+
+const { locale, copy } = await resolveRequestCopy(env.DB, Astro.url);
+const access = await requireModuleAccess(env.DB, Astro.cookies, Astro.url, locale, "tienda");
+if (access instanceof Response) return access;
+const actor = access;
+
+const translation = await translationAccess(env.DB, actor.id, "tienda", "update");
+const products = await loadStoreProducts(env.DB, locale);
+const stats = await getStoreStats(env.DB);
+const languages = await listSiteLanguages(env.DB);
+const pageConfigByLocale = await loadAllStorePageConfigs(env.DB);
+const publicHref = localizedPath(locale, routeIds.store);
+
+const details = await Promise.all(products.map((product) => loadStoreProductById(env.DB, product.id)));
+
+interface EditorLocaleFields {
+  name: string;
+  dek: string;
+  description_html: string;
+  specs_json: string;
+  og: OpenGraphMetadata;
+}
+
+const localesById: Record<string, Record<string, EditorLocaleFields>> = {};
+for (const detail of details) {
+  if (!detail) continue;
+  const fieldsByLocale: Record<string, EditorLocaleFields> = {};
+  for (const [loc, row] of Object.entries(detail.locales)) {
+    fieldsByLocale[loc] = {
+      name: row.name || "",
+      dek: row.dek || "",
+      description_html: row.description_html || "",
+      specs_json: row.specs_json || "[]",
+      og: parseOgMetadata(row.og_json),
+    };
+  }
+  localesById[String(detail.row.id)] = fieldsByLocale;
+}
+
+const editorRows = products.map((product) => ({
+  id: product.id,
+  slug: product.slug,
+  category: product.category,
+  image_url: product.image_url || "",
+  image_label: product.image_label || "",
+  price_currency: product.price_currency || "USD",
+  price_amount: product.price_amount === null ? "" : String(product.price_amount),
+  compare_at_price: product.compare_at_price === null ? "" : String(product.compare_at_price),
+  is_downloadable: product.is_downloadable ? 1 : 0,
+  status: product.status,
+  featured: product.featured ? 1 : 0,
+  sort_order: product.sort_order,
+}));
+
+const jsonForScript = (value: unknown) => JSON.stringify(value).replace(/</g, "\\u003c");
+const categoryLabels: Record<string, string> = Object.fromEntries(
+  STORE_CATEGORIES.map((category) => [category.value, category.es])
+);
+const categoryCounts = Object.fromEntries(
+  STORE_CATEGORIES.map((category) => [
+    category.value,
+    products.filter((product) => product.category === category.value).length,
+  ])
+);
+
+const ogFields = [
+  { base: "og_url", key: "url", label: "OG URL" },
+  { base: "og_type", key: "type", label: "OG Tipo" },
+  { base: "og_title", key: "title", label: "OG Título" },
+  { base: "og_description", key: "description", label: "OG Descripción" },
+  { base: "og_image", key: "image", label: "OG Imagen" },
+  { base: "og_image_alt", key: "imageAlt", label: "OG Texto alt" },
+  { base: "og_twitter_card", key: "twitterCard", label: "Twitter Card" },
+  { base: "og_twitter_title", key: "twitterTitle", label: "Twitter Título" },
+  { base: "og_twitter_description", key: "twitterDescription", label: "Twitter Descripción" },
+  { base: "og_twitter_image", key: "twitterImage", label: "Twitter Imagen" },
+];
+---
+
+<AdminLayout title={copy.adminStore || "Tienda"} active="store">
+  <AdminDrawerPanel toggleId="store-drawer" width="form" title="Editor de producto" subtitle="Catálogo AfroUp por idioma">
+    <div slot="actions" class="flex items-center gap-2">
+      <FormLocaleSwitch languages={languages} />
+      <button id="delete-store-btn" type="button" class="btn btn-error btn-xs font-bold hidden">Eliminar</button>
+    </div>
+
+    <Fragment slot="content">
+      <AdminPageHeader
+        title={copy.adminStore || "Tienda"}
+        count={stats.total}
+        countLabel="productos"
+        lead={copy.adminStoreDesc || "Catálogo de eBooks, láminas, merch y descargables."}
+      >
+        <button slot="actions" id="create-store-btn" type="button" class="btn btn-primary btn-sm font-bold">+ Nuevo producto</button>
+      </AdminPageHeader>
+
+      <div class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <AdminStatCard label="Productos" value={stats.total} icon="#ic-folder" tone="primary" />
+        <AdminStatCard label="Publicados" value={stats.published} icon="#ic-world" tone="accent" />
+        <AdminStatCard label="Destacados" value={stats.featuredCount} icon="#ic-sparkles" tone="success" />
+        <AdminStatCard label="Gratis" value={stats.freeCount} icon="#ic-heart" tone="warning" />
+      </div>
+
+      <AdminToolbar
+        searchId="store-search"
+        searchPlaceholder="Buscar por título o categoría..."
+        filterName="store"
+        filters={[
+          { value: "all", label: "Todos", count: stats.total },
+          ...STORE_CATEGORIES.map((category) => ({
+            value: category.value,
+            label: category.es,
+            count: Number(categoryCounts[category.value] || 0),
+          })),
+        ]}
+      />
+
+      <AdminTable
+        id="store-table"
+        columns={[
+          { label: "Producto", class: "py-4 pl-6" },
+          { label: "Categoría" },
+          { label: "Precio" },
+          { label: "Tipo" },
+          { label: "", class: "pr-6" },
+        ]}
+      >
+        {products.length > 0 ? (
+          <Fragment slot="rows">
+            {products.map((product) => (
+              <tr
+                class="hover:bg-base-200/50 transition-colors store-row"
+                data-name={product.name.toLowerCase()}
+                data-category={product.category}
+              >
+                <td class="py-3.5 pl-6 font-bold text-base-content">{product.name}</td>
+                <td>
+                  <span class="badge badge-xs badge-ghost font-bold py-1 px-2.5 uppercase tracking-wider">
+                    {categoryLabels[product.category] ?? product.category}
+                  </span>
+                </td>
+                <td class="font-mono text-xs font-bold">
+                  {formatStorePrice(product.price_currency, product.price_amount) || "Gratis"}
+                  {product.compare_at_price ? (
+                    <span class="ml-2 text-base-content/40 line-through">
+                      {formatStorePrice(product.price_currency, product.compare_at_price)}
+                    </span>
+                  ) : null}
+                </td>
+                <td class="text-xs text-base-content/70">{product.is_downloadable ? "Descarga" : "Envío"}</td>
+                <td class="pr-6 text-right">
+                  <button type="button" class="btn btn-ghost btn-xs" data-edit-store={product.id} aria-label={`Editar ${product.name}`}>
+                    <svg class="size-4"><use href="#ic-edit"></use></svg>
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </Fragment>
+        ) : (
+          <Fragment slot="empty">
+            <tr>
+              <td colspan={5} class="py-12 text-center text-sm text-base-content/60">
+                No hay productos todavía. Crea el primero con “+ Nuevo producto”.
+              </td>
+            </tr>
+          </Fragment>
+        )}
+      </AdminTable>
+
+      {
+        translation.update && (
+          <section class="mt-8 rounded-3xl border border-base-300 bg-base-100 p-6 shadow-xs">
+            <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 class="font-display font-bold text-base-content">Contenido público de la página</h3>
+                <p class="text-xs text-base-content/60">
+                  Copiar del encabezado en /tienda · <a href={publicHref} class="link link-primary font-bold">Ver página →</a>
+                </p>
+              </div>
+              <FormLocaleSwitch languages={languages} />
+            </div>
+            <form id="store-page-config-form" action="/api/admin/store-page" method="post" class="space-y-3">
+              {languages.map((lang) => {
+                const loc = lang.code;
+                const cfg = pageConfigByLocale[loc];
+                return (
+                  <div data-drawer-locale-panel={loc} class:list={["space-y-3 rounded-2xl border border-base-300 bg-base-200/30 p-4", loc !== "es" && "hidden"]}>
+                    <p class="text-[11px] font-extrabold uppercase tracking-wider text-base-content/50">{lang.native_name} ({loc.toUpperCase()})</p>
+                    <div class="grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for={`page-field-eyebrow-${loc}`}>Antetítulo</label>
+                        <input type="text" id={`page-field-eyebrow-${loc}`} name={`eyebrow_${loc}`} value={cfg?.eyebrow ?? ""} class="input input-sm input-bordered w-full bg-base-200/40" />
+                      </div>
+                      <div>
+                        <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for={`page-field-title-${loc}`}>Título</label>
+                        <input type="text" id={`page-field-title-${loc}`} name={`title_${loc}`} value={cfg?.title ?? ""} class="input input-sm input-bordered w-full bg-base-200/40" />
+                      </div>
+                    </div>
+                    <div>
+                      <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for={`page-field-lead-${loc}`}>Bajada</label>
+                      <textarea id={`page-field-lead-${loc}`} name={`lead_${loc}`} rows="2" class="textarea textarea-sm textarea-bordered w-full bg-base-200/40">{cfg?.lead ?? ""}</textarea>
+                    </div>
+                    <input type="hidden" name={`band_title_${loc}`} value={cfg?.band_title ?? ""} />
+                    <input type="hidden" name={`band_dek_${loc}`} value={cfg?.band_dek ?? ""} />
+                    <input type="hidden" name={`band_cta_label_${loc}`} value={cfg?.band_cta_label ?? ""} />
+                    <input type="hidden" name={`band_cta_url_${loc}`} value={cfg?.band_cta_url ?? ""} />
+                    {ogFields.map((field) => (
+                      <input type="hidden" name={`${field.base}[${loc}]`} value={(cfg?.og ?? {} as Record<string, string>)[field.key] ?? ""} />
+                    ))}
+                  </div>
+                );
+              })}
+              <div class="flex justify-end pt-1">
+                <button type="submit" class="btn btn-primary btn-sm font-bold">Guardar contenido público</button>
+              </div>
+            </form>
+          </section>
+        )
+      }
+    </Fragment>
+
+    <form id="store-editor-form" action="/api/admin/store" method="post" class="space-y-5">
+      <input type="hidden" name="id" id="store-field-id" />
+      <div class="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for="store-field-slug">Slug</label>
+          <input type="text" id="store-field-slug" name="slug" class="input input-sm input-bordered w-full bg-base-200/40" placeholder="guia-antirracista" />
+        </div>
+        <div>
+          <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for="store-field-category">Categoría</label>
+          <select id="store-field-category" name="category" class="select select-sm select-bordered w-full bg-base-200/40">
+            {STORE_CATEGORIES.map((category) => (
+              <option value={category.value}>{category.es}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+      <div class="grid gap-3 sm:grid-cols-3">
+        <div>
+          <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for="store-field-price-currency">Moneda</label>
+          <input type="text" id="store-field-price-currency" name="price_currency" value="USD" maxlength="3" class="input input-sm input-bordered w-full bg-base-200/40 uppercase" />
+        </div>
+        <div>
+          <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for="store-field-price-amount">Precio</label>
+          <input type="number" id="store-field-price-amount" name="price_amount" min="0" class="input input-sm input-bordered w-full bg-base-200/40" placeholder="Vacío = gratis" />
+        </div>
+        <div>
+          <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for="store-field-compare-at">Precio anterior</label>
+          <input type="number" id="store-field-compare-at" name="compare_at_price" min="0" class="input input-sm input-bordered w-full bg-base-200/40" />
+        </div>
+      </div>
+      <div class="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for="store-field-image-url">Imagen URL</label>
+          <input type="url" id="store-field-image-url" name="image_url" class="input input-sm input-bordered w-full bg-base-200/40" />
+        </div>
+        <div>
+          <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for="store-field-image-label">Etiqueta de imagen</label>
+          <input type="text" id="store-field-image-label" name="image_label" class="input input-sm input-bordered w-full bg-base-200/40" placeholder="portada" />
+        </div>
+      </div>
+      <div class="grid gap-3 sm:grid-cols-3">
+        <div>
+          <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for="store-field-status">Estado</label>
+          <select id="store-field-status" name="status" class="select select-sm select-bordered w-full bg-base-200/40">
+            <option value="published">Publicado</option>
+            <option value="draft">Borrador</option>
+          </select>
+        </div>
+        <div>
+          <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for="store-field-sort-order">Orden</label>
+          <input type="number" id="store-field-sort-order" name="sort_order" value="0" class="input input-sm input-bordered w-full bg-base-200/40" />
+        </div>
+        <div class="mt-6 flex flex-col gap-2 text-sm font-semibold">
+          <label class="flex cursor-pointer items-center gap-2">
+            <input type="checkbox" name="featured" id="store-field-featured" value="1" class="checkbox checkbox-sm checkbox-primary" />
+            Destacado
+          </label>
+          <label class="flex cursor-pointer items-center gap-2">
+            <input type="checkbox" name="is_downloadable" id="store-field-downloadable" value="1" class="checkbox checkbox-sm checkbox-primary" />
+            Descargable
+          </label>
+        </div>
+      </div>
+
+      <div class="space-y-3 border-t border-base-300 pt-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h4 class="text-xs font-extrabold uppercase tracking-wider text-base-content/60">Contenido por idioma</h4>
+          <div class="flex flex-wrap items-center gap-2">
+          <FormLocaleSwitch languages={languages} />
+            {translation.canUseAi ? (
+              <button type="button" id="store-ai-translate-btn" class="btn btn-xs btn-ai gap-1.5 font-semibold">
+                <svg class="size-3.5"><use href="#ic-sparkles"></use></svg>
+                <span>Traducir con IA</span>
+              </button>
+            ) : null}
+          </div>
+        </div>
+        {languages.map((lang) => (
+          <div data-drawer-locale-panel={lang.code} class:list={["space-y-3", lang.code !== "es" && "hidden"]}>
+            <div>
+              <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for={`store-field-name-${lang.code}`}>
+                Nombre {lang.code === "es" ? "(español) *" : `(${lang.native_name})`}
+              </label>
+              <input type="text" id={`store-field-name-${lang.code}`} name={`name_${lang.code}`} required={lang.code === "es"} class="input input-sm input-bordered w-full bg-base-200/40" />
+            </div>
+            <div>
+              <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for={`store-field-dek-${lang.code}`}>Resumen</label>
+              <textarea id={`store-field-dek-${lang.code}`} name={`dek_${lang.code}`} rows="2" class="textarea textarea-sm textarea-bordered w-full bg-base-200/40"></textarea>
+            </div>
+            <div>
+              <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for={`store-field-description-${lang.code}`}>Descripción (HTML)</label>
+              <textarea id={`store-field-description-${lang.code}`} name={`description_html_${lang.code}`} rows="5" class="textarea textarea-sm textarea-bordered w-full bg-base-200/40 font-mono text-xs"></textarea>
+            </div>
+            <input type="hidden" id={`store-field-specs-${lang.code}`} name={`specs_json_${lang.code}`} value="[]" />
+            <div class="grid gap-2">
+              <p class="text-[11px] font-extrabold uppercase tracking-wider text-base-content/60">Ficha / detalles</p>
+              {[0, 1, 2].map((index) => (
+                <div class="grid grid-cols-2 gap-2">
+                  <input type="text" data-spec-label={lang.code} data-spec-index={index} placeholder="Etiqueta" class="input input-xs input-bordered bg-base-200/40" />
+                  <input type="text" data-spec-value={lang.code} data-spec-index={index} placeholder="Valor" class="input input-xs input-bordered bg-base-200/40" />
+                </div>
+              ))}
+            </div>
+            <details class="rounded-xl border border-base-300 bg-base-200/30 p-3">
+              <summary class="cursor-pointer text-[11px] font-extrabold uppercase tracking-wider text-base-content/60">Metadatos Open Graph</summary>
+              <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                {ogFields.map((field) => (
+                  <div>
+                    <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for={`store-field-og-${field.base}-${lang.code}`}>{field.label}</label>
+                    <input type="text" id={`store-field-og-${field.base}-${lang.code}`} name={`${field.base}[${lang.code}]`} class="input input-xs input-bordered w-full bg-base-200/40" />
+                  </div>
+                ))}
+              </div>
+            </details>
+          </div>
+        ))}
+      </div>
+      <div class="flex items-center justify-end gap-2 border-t border-base-300 pt-4">
+        <label for="store-drawer" class="btn btn-ghost btn-sm">Cancelar</label>
+        <button type="submit" class="btn btn-primary btn-sm font-bold">Guardar producto</button>
+      </div>
+    </form>
+  </AdminDrawerPanel>
+
+  <script is:inline type="application/json" id="store-data-script" set:html={jsonForScript(editorRows)} />
+  <script is:inline type="application/json" id="store-locales-script" set:html={jsonForScript(localesById)} />
+
+  <script is:inline>
+    (function () {
+      var OG_FIELDS = [
+        ["og_url", "url"], ["og_type", "type"], ["og_title", "title"], ["og_description", "description"],
+        ["og_image", "image"], ["og_image_alt", "imageAlt"], ["og_twitter_card", "twitterCard"],
+        ["og_twitter_title", "twitterTitle"], ["og_twitter_description", "twitterDescription"], ["og_twitter_image", "twitterImage"]
+      ];
+      function toast(message, type) {
+        if (window.AfroUpFeedback) window.AfroUpFeedback.toast(message, type);
+      }
+      function siteLocales() {
+        var codes = [];
+        document.querySelectorAll("[data-drawer-locale-panel]").forEach(function (panel) {
+          var loc = panel.getAttribute("data-drawer-locale-panel");
+          if (loc && codes.indexOf(loc) === -1) codes.push(loc);
+        });
+        return codes;
+      }
+
+      function translateField(moduleSlug, sourceText, targetLoc, targetId, isHtml) {
+        if (!sourceText || !String(sourceText).trim()) return Promise.resolve();
+        var el = document.getElementById(targetId);
+        var fd = new FormData();
+        fd.append("module", moduleSlug);
+        fd.append("source", sourceText);
+        fd.append("current", el ? el.value : "");
+        fd.append("target", targetLoc);
+        if (isHtml) fd.append("is_html", "1");
+        return fetch("/api/admin/translate", { method: "POST", body: fd })
+          .then(function (res) { return res.json(); })
+          .then(function (result) {
+            if (result.ok && result.text && el) el.value = result.text;
+          });
+      }
+
+      function bindAiTranslate(btnId, moduleSlug, fieldBases) {
+        var btn = document.getElementById(btnId);
+        if (!btn || btn.dataset.bound === "true") return;
+        btn.dataset.bound = "true";
+        btn.addEventListener("click", function () {
+          var targets = siteLocales().filter(function (loc) { return loc !== "es"; });
+          if (!targets.length) {
+            toast("No hay otro idioma configurado.", "warning");
+            return;
+          }
+          var first = document.getElementById(fieldBases[0] + "-es");
+          if (first && !String(first.value || "").trim()) {
+            toast("Completa primero el contenido en español.", "warning");
+            return;
+          }
+          btn.disabled = true;
+          var tasks = [];
+          targets.forEach(function (loc) {
+            fieldBases.forEach(function (base) {
+              var src = document.getElementById(base + "-es");
+              if (!src) return;
+              var html = base.indexOf("description") !== -1 || base.indexOf("story") !== -1 || base.indexOf("html") !== -1;
+              tasks.push(translateField(moduleSlug, src.value, loc, base + "-" + loc, html));
+            });
+          });
+          Promise.all(tasks)
+            .then(function () {
+              btn.disabled = false;
+              toast("Traducción lista. Revisá cada idioma.", "success");
+            })
+            .catch(function () {
+              btn.disabled = false;
+              toast("Error al traducir.", "error");
+            });
+        });
+      }
+
+      function setValue(id, value) {
+        var el = document.getElementById(id);
+        if (el) el.value = value === null || value === undefined ? "" : String(value);
+      }
+      function parseJson(id, fallback) {
+        try {
+          var el = document.getElementById(id);
+          return JSON.parse(el ? el.textContent : "") || fallback;
+        } catch (e) { return fallback; }
+      }
+      function syncSpecs(loc) {
+        var labels = document.querySelectorAll('[data-spec-label="' + loc + '"]');
+        var values = document.querySelectorAll('[data-spec-value="' + loc + '"]');
+        var specs = [];
+        labels.forEach(function (input, index) {
+          var label = (input.value || "").trim();
+          var value = ((values[index] && values[index].value) || "").trim();
+          if (label) specs.push({ label: label, value: value });
+        });
+        setValue("store-field-specs-" + loc, JSON.stringify(specs));
+      }
+      function fillSpecs(loc, json) {
+        var specs = [];
+        try { specs = JSON.parse(json || "[]") || []; } catch (e) { specs = []; }
+        document.querySelectorAll('[data-spec-label="' + loc + '"]').forEach(function (input, index) {
+          input.value = (specs[index] && specs[index].label) || "";
+        });
+        document.querySelectorAll('[data-spec-value="' + loc + '"]').forEach(function (input, index) {
+          input.value = (specs[index] && specs[index].value) || "";
+        });
+        setValue("store-field-specs-" + loc, JSON.stringify(specs));
+      }
+
+      function setup() {
+        bindAiTranslate("store-ai-translate-btn", "tienda", ["store-field-name", "store-field-dek", "store-field-description"]);
+        var searchInput = document.getElementById("store-search");
+        var filterButtons = document.querySelectorAll(".store-filter-btn");
+        var rows = document.querySelectorAll(".store-row");
+        var drawerToggle = document.getElementById("store-drawer");
+        var form = document.getElementById("store-editor-form");
+        var createBtn = document.getElementById("create-store-btn");
+        var deleteBtn = document.getElementById("delete-store-btn");
+        var langBtns = document.querySelectorAll("[data-drawer-lang-btn]");
+        var langSelect = document.querySelector("[data-drawer-lang-select]");
+        var langPanels = document.querySelectorAll("[data-drawer-locale-panel]");
+        var pageConfigForm = document.getElementById("store-page-config-form");
+        var editorRows = {};
+        parseJson("store-data-script", []).forEach(function (row) { editorRows[String(row.id)] = row; });
+        var editorLocales = parseJson("store-locales-script", {});
+        var currentFilter = "all";
+        var searchQuery = "";
+
+        var applyFilters = function () {
+          rows.forEach(function (row) {
+            var name = row.getAttribute("data-name") || "";
+            var category = row.getAttribute("data-category") || "";
+            var matchesSearch = !searchQuery || name.indexOf(searchQuery) !== -1;
+            var matchesFilter = currentFilter === "all" || category === currentFilter;
+            row.style.display = matchesSearch && matchesFilter ? "" : "none";
+          });
+        };
+        if (searchInput && searchInput.dataset.bound !== "true") {
+          searchInput.dataset.bound = "true";
+          searchInput.addEventListener("input", function () {
+            searchQuery = searchInput.value.trim().toLowerCase();
+            applyFilters();
+          });
+        }
+        filterButtons.forEach(function (btn) {
+          if (btn.dataset.bound === "true") return;
+          btn.dataset.bound = "true";
+          btn.addEventListener("click", function () {
+            filterButtons.forEach(function (b) {
+              b.classList.remove("btn-primary", "text-primary-content");
+              b.classList.add("btn-ghost");
+            });
+            btn.classList.remove("btn-ghost");
+            btn.classList.add("btn-primary", "text-primary-content");
+            currentFilter = btn.getAttribute("data-filter") || "all";
+            applyFilters();
+          });
+        });
+
+        function setDrawerLang(targetLang) {
+          langBtns.forEach(function (b) {
+            var isActive = b.getAttribute("data-drawer-lang-btn") === targetLang;
+            b.classList.toggle("btn-active", isActive);
+            b.classList.toggle("btn-neutral", isActive);
+            b.classList.toggle("btn-ghost", !isActive);
+          });
+          if (langSelect && langSelect.value !== targetLang) langSelect.value = targetLang;
+          langPanels.forEach(function (panel) {
+            panel.classList.toggle("hidden", panel.getAttribute("data-drawer-locale-panel") !== targetLang);
+          });
+        }
+        langBtns.forEach(function (btn) {
+          if (btn.dataset.bound === "true") return;
+          btn.dataset.bound = "true";
+          btn.addEventListener("click", function () { setDrawerLang(btn.getAttribute("data-drawer-lang-btn") || "es"); });
+        });
+        if (langSelect && langSelect.dataset.bound !== "true") {
+          langSelect.dataset.bound = "true";
+          langSelect.addEventListener("change", function () { setDrawerLang(langSelect.value); });
+        }
+        function openDrawer() {
+          if (drawerToggle) {
+            drawerToggle.checked = true;
+            document.body.style.overflow = "hidden";
+          }
+        }
+
+        if (createBtn && createBtn.dataset.bound !== "true") {
+          createBtn.dataset.bound = "true";
+          createBtn.addEventListener("click", function () {
+            if (form) form.reset();
+            setValue("store-field-id", "");
+            setValue("store-field-price-currency", "USD");
+            setValue("store-field-sort-order", "0");
+            langPanels.forEach(function (panel) {
+              var loc = panel.getAttribute("data-drawer-locale-panel");
+              if (!loc) return;
+              setValue("store-field-name-" + loc, "");
+              setValue("store-field-dek-" + loc, "");
+              setValue("store-field-description-" + loc, "");
+              fillSpecs(loc, "[]");
+              OG_FIELDS.forEach(function (pair) { setValue("store-field-og-" + pair[0] + "-" + loc, ""); });
+            });
+            setDrawerLang("es");
+            if (deleteBtn) deleteBtn.classList.add("hidden");
+            openDrawer();
+          });
+        }
+
+        document.querySelectorAll("[data-edit-store]").forEach(function (btn) {
+          if (btn.dataset.bound === "true") return;
+          btn.dataset.bound = "true";
+          btn.addEventListener("click", function () {
+            var row = editorRows[btn.getAttribute("data-edit-store")];
+            if (!row) return;
+            setValue("store-field-id", row.id);
+            setValue("store-field-slug", row.slug);
+            setValue("store-field-category", row.category);
+            setValue("store-field-image-url", row.image_url);
+            setValue("store-field-image-label", row.image_label);
+            setValue("store-field-price-currency", row.price_currency || "USD");
+            setValue("store-field-price-amount", row.price_amount);
+            setValue("store-field-compare-at", row.compare_at_price);
+            setValue("store-field-status", row.status);
+            setValue("store-field-sort-order", row.sort_order);
+            var featured = document.getElementById("store-field-featured");
+            if (featured) featured.checked = Number(row.featured) === 1;
+            var downloadable = document.getElementById("store-field-downloadable");
+            if (downloadable) downloadable.checked = Number(row.is_downloadable) === 1;
+            langPanels.forEach(function (panel) {
+              var loc = panel.getAttribute("data-drawer-locale-panel");
+              if (!loc) return;
+              var fields = (editorLocales[String(row.id)] || {})[loc] || {};
+              setValue("store-field-name-" + loc, fields.name);
+              setValue("store-field-dek-" + loc, fields.dek);
+              setValue("store-field-description-" + loc, fields.description_html);
+              fillSpecs(loc, fields.specs_json || "[]");
+              OG_FIELDS.forEach(function (pair) {
+                setValue("store-field-og-" + pair[0] + "-" + loc, (fields.og || {})[pair[1]] || "");
+              });
+            });
+            setDrawerLang("es");
+            if (deleteBtn) deleteBtn.classList.remove("hidden");
+            openDrawer();
+          });
+        });
+
+        if (deleteBtn && deleteBtn.dataset.bound !== "true") {
+          deleteBtn.dataset.bound = "true";
+          deleteBtn.addEventListener("click", function () {
+            var idField = document.getElementById("store-field-id");
+            var id = idField ? idField.value : "";
+            if (!id || !window.confirm("¿Eliminar este producto?")) return;
+            fetch("/api/admin/store?id=" + encodeURIComponent(id), { method: "DELETE" })
+              .then(function (res) { return res.json(); })
+              .then(function (result) {
+                toast(result.message || (result.ok ? "Producto eliminado." : "Error al eliminar."), result.ok ? "success" : "error");
+                if (result.ok) {
+                  document.body.style.overflow = "";
+                  setTimeout(function () { window.location.reload(); }, 400);
+                }
+              })
+              .catch(function () { toast("Error de red al eliminar.", "error"); });
+          });
+        }
+
+        if (form && form.dataset.submitBound !== "true") {
+          form.dataset.submitBound = "true";
+          form.addEventListener("submit", function (event) {
+            event.preventDefault();
+            siteLocales().forEach(syncSpecs);
+            fetch(form.action, { method: "POST", body: new FormData(form) })
+              .then(function (res) { return res.json(); })
+              .then(function (result) {
+                toast(result.message || (result.ok ? "Guardado con éxito." : "Error al guardar."), result.ok ? "success" : "error");
+                if (result.ok) {
+                  document.body.style.overflow = "";
+                  setTimeout(function () { window.location.reload(); }, 400);
+                }
+              })
+              .catch(function () { toast("Error de red al guardar.", "error"); });
+          });
+        }
+        if (pageConfigForm && pageConfigForm.dataset.submitBound !== "true") {
+          pageConfigForm.dataset.submitBound = "true";
+          pageConfigForm.addEventListener("submit", function (event) {
+            event.preventDefault();
+            fetch(pageConfigForm.action, { method: "POST", body: new FormData(pageConfigForm) })
+              .then(function (res) { return res.json(); })
+              .then(function (result) {
+                toast(result.message || (result.ok ? "Guardado con éxito." : "Error al guardar."), result.ok ? "success" : "error");
+                if (result.ok) setTimeout(function () { window.location.reload(); }, 400);
+              })
+              .catch(function () { toast("Error de red al guardar.", "error"); });
+          });
+        }
+      }
+      setup();
+      document.addEventListener("astro:page-load", setup);
+    })();
+  </script>
+</AdminLayout>
