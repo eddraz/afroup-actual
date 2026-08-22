@@ -6,6 +6,8 @@ import { resolveRequestCopy } from "../../lib/request-locale";
 import { routeIds } from "../../lib/paths";
 import { KNOWN_BUCKETS, resolveR2Bucket, mapR2Object, formatBytes, type R2ItemSummary } from "../../lib/r2-storage";
 import R2Uploader from "../../components/R2Uploader.astro";
+import AdminPageHeader from "../../components/admin/AdminPageHeader.astro";
+import AdminToolbar from "../../components/admin/AdminToolbar.astro";
 import { translationAccess } from "../../lib/editorial";
 import { env } from "cloudflare:workers";
 
@@ -75,19 +77,14 @@ if (resolved) {
 
         <div class="drawer-content">
           <!-- Page Header -->
-      <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div class="flex items-center gap-2.5">
-            <h2 class="font-display text-2xl font-bold text-base-content">{copy.adminStorage || "Almacenamiento R2"}</h2>
-            <span class="badge badge-neutral badge-sm font-semibold">{totalCount} objetos</span>
-            <span class="badge badge-accent badge-sm font-semibold font-mono">{formatBytes(totalBytes)}</span>
-          </div>
-          <p class="text-xs sm:text-sm text-base-content/60 mt-1">
-            {copy.adminStorageLead || "Explora y administra los buckets de Cloudflare R2, archivos y recursos multimedia."}
-          </p>
-        </div>
-
-        <div class="flex items-center gap-2">
+      <AdminPageHeader
+        title={copy.adminStorage || "Almacenamiento R2"}
+        count={totalCount}
+        countLabel="objetos"
+        lead={copy.adminStorageLead || "Explora y administra los buckets de Cloudflare R2, archivos y recursos multimedia."}
+      >
+        <Fragment slot="actions">
+          <span class="badge badge-accent badge-sm font-semibold font-mono">{formatBytes(totalBytes)}</span>
           <label
             for="storage-drawer"
             class="drawer-button btn btn-primary btn-sm gap-2 shadow-sm hover:scale-[1.02] transition-transform cursor-pointer"
@@ -95,8 +92,8 @@ if (resolved) {
             <svg class="size-4"><use href="#ic-plus"></use></svg>
             <span>Subir Archivo</span>
           </label>
-        </div>
-      </div>
+        </Fragment>
+      </AdminPageHeader>
 
       <!-- Buckets Overview Cards -->
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -136,31 +133,21 @@ if (resolved) {
       </div>
 
       <!-- Filter & Search Toolbar -->
-      <div class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300 bg-base-100 p-3 shadow-xs">
-        <div class="relative flex-1 min-w-[240px] max-w-md">
-          <svg class="size-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none">
-            <use href="#ic-cloud"></use>
-          </svg>
-          <input
-            type="search"
-            id="storage-search"
-            value={searchQuery}
-            placeholder="Buscar por nombre, clave o extensión..."
-            class="input input-sm input-bordered w-full pl-9 bg-base-200/40 text-xs sm:text-sm font-medium"
-          />
-        </div>
-
-        <div class="flex items-center gap-2">
-          <!-- Type Filter Tabs -->
-          <div class="join border border-base-300 rounded-xl overflow-hidden bg-base-200/40 p-0.5" id="category-filter-join">
-            <button type="button" class="btn btn-xs join-item btn-primary filter-btn font-bold" data-category="all">Todos</button>
-            <button type="button" class="btn btn-xs join-item btn-ghost filter-btn font-medium" data-category="image">Imágenes</button>
-            <button type="button" class="btn btn-xs join-item btn-ghost filter-btn font-medium" data-category="pdf">PDFs</button>
-            <button type="button" class="btn btn-xs join-item btn-ghost filter-btn font-medium" data-category="audio">Audio</button>
-            <button type="button" class="btn btn-xs join-item btn-ghost filter-btn font-medium" data-category="video">Video</button>
-            <button type="button" class="btn btn-xs join-item btn-ghost filter-btn font-medium" data-category="other">Otros</button>
-          </div>
-
+      <AdminToolbar
+        searchId="storage-search"
+        searchPlaceholder="Buscar por nombre, clave o extensión..."
+        filterClass="filter-btn"
+        filterAttr="data-category"
+        filters={[
+          { value: "all", label: "Todos" },
+          { value: "image", label: "Imágenes" },
+          { value: "pdf", label: "PDFs" },
+          { value: "audio", label: "Audio" },
+          { value: "video", label: "Video" },
+          { value: "other", label: "Otros" },
+        ]}
+      >
+        <Fragment slot="right">
           <!-- View Mode Toggle -->
           <div class="join border border-base-300 rounded-xl overflow-hidden bg-base-200/40 p-0.5">
             <button type="button" id="btn-view-grid" class="btn btn-xs join-item btn-ghost font-bold" title="Vista Cuadrícula">
@@ -170,8 +157,8 @@ if (resolved) {
               <svg class="size-3.5"><use href="#ic-menu"></use></svg>
             </button>
           </div>
-        </div>
-      </div>
+        </Fragment>
+      </AdminToolbar>
 
       {fetchError ? (
         <div class="alert alert-warning mb-6 rounded-2xl shadow-xs">
@@ -380,7 +367,7 @@ if (resolved) {
     <!-- Drawer 2: Item Detail Side Panel -->
     <div class="drawer-side z-50">
       <label for="detail-drawer" aria-label="close drawer" class="drawer-overlay"></label>
-      <aside class="w-full max-w-xl sm:max-w-2xl bg-base-100 min-h-dvh h-dvh max-h-dvh flex flex-col p-6 sm:p-8 shadow-2xl border-l border-base-300 overflow-y-auto overscroll-contain" id="item-detail-panel">
+      <aside class="w-[92vw] sm:w-[70%] sm:min-w-[70vw] bg-base-100 min-h-dvh h-dvh max-h-dvh flex flex-col p-6 sm:p-8 shadow-2xl border-l border-base-300 overflow-y-auto overscroll-contain" id="item-detail-panel">
         <div class="flex items-center justify-between border-b border-base-300 pb-4 mb-6 shrink-0">
           <div class="flex items-center gap-2.5">
             <span class="size-3 rounded-full bg-accent animate-pulse"></span>

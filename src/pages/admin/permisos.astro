@@ -6,6 +6,7 @@ import { localizedPath } from "../../lib/i18n";
 import { resolveRequestCopy } from "../../lib/request-locale";
 import { routeIds } from "../../lib/paths";
 import { env } from "cloudflare:workers";
+import AdminPageHeader from "../../components/admin/AdminPageHeader.astro";
 
 export const prerender = false;
 
@@ -44,17 +45,12 @@ const actionLabels: Record<PermissionRow["action"], string> = {
 
 <AdminLayout title={copy.adminPermissions} active="permissions">
   <!-- Page Header -->
-  <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-    <div>
-      <div class="flex items-center gap-2.5">
-        <h2 class="font-display text-2xl font-bold text-base-content">{copy.adminPermissions}</h2>
-        <span class="badge badge-neutral badge-sm font-semibold">{permissions.length} reglas</span>
-      </div>
-      <p class="text-xs sm:text-sm text-base-content/60 mt-1">
-        Catálogo global de permisos disponibles por módulo y acción en el sistema.
-      </p>
-    </div>
-  </div>
+  <AdminPageHeader
+    title={copy.adminPermissions}
+    count={permissions.length}
+    countLabel="reglas"
+    lead="Catálogo global de permisos disponibles por módulo y acción en el sistema."
+  />
 
   <div class="rounded-3xl border border-base-300 bg-base-100 p-6 sm:p-8 shadow-xs">
     <PermissionMatrix

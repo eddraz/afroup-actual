@@ -3,6 +3,9 @@ import { env } from "cloudflare:workers";
 import AdminLayout from "../../layouts/AdminLayout.astro";
 import { requireModuleAccess } from "../../lib/admin-scope";
 import { resolveRequestCopy } from "../../lib/request-locale";
+import AdminPageHeader from "../../components/admin/AdminPageHeader.astro";
+import AdminToolbar from "../../components/admin/AdminToolbar.astro";
+import AdminTable from "../../components/admin/AdminTable.astro";
 
 export const prerender = false;
 
@@ -20,86 +23,60 @@ const projects = [
 
 <AdminLayout title={copy.adminProjects} active="projects">
   <!-- Page Header -->
-  <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-    <div>
-      <div class="flex items-center gap-2.5">
-        <h2 class="font-display text-2xl font-bold text-base-content">{copy.adminProjects}</h2>
-        <span class="badge badge-neutral badge-sm font-semibold">{projects.length} iniciativas</span>
-      </div>
-      <p class="text-xs sm:text-sm text-base-content/60 mt-1">
-        Seguimiento de convocatorias, iniciativas comunitarias y proyectos culturales financiados.
-      </p>
-    </div>
-  </div>
+  <AdminPageHeader
+    title={copy.adminProjects}
+    count={projects.length}
+    countLabel="iniciativas"
+    lead="Seguimiento de convocatorias, iniciativas comunitarias y proyectos culturales financiados."
+  />
 
   <!-- Filter & Search Toolbar -->
-  <div class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300 bg-base-100 p-3 shadow-xs">
-    <div class="relative flex-1 min-w-[240px] max-w-md">
-      <svg class="size-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none">
-        <use href="#ic-world"></use>
-      </svg>
-      <input
-        type="search"
-        id="projects-search"
-        placeholder="Buscar iniciativas por título u organización..."
-        class="input input-sm input-bordered w-full pl-9 bg-base-200/40 text-xs sm:text-sm font-medium"
-      />
-    </div>
-
-    <div class="join border border-base-300 bg-base-200/50 p-0.5 rounded-xl">
-      <button class="btn btn-xs join-item btn-ghost font-bold text-[11px] project-filter-btn active-filter" data-filter="all">
-        Todos ({projects.length})
-      </button>
-      <button class="btn btn-xs join-item btn-ghost font-bold text-[11px] project-filter-btn" data-filter="Aprobado">
-        Aprobados ({projects.filter(p => p.stage === "Aprobado").length})
-      </button>
-      <button class="btn btn-xs join-item btn-ghost font-bold text-[11px] project-filter-btn" data-filter="En revisión">
-        En revisión ({projects.filter(p => p.stage === "En revisión").length})
-      </button>
-      <button class="btn btn-xs join-item btn-ghost font-bold text-[11px] project-filter-btn" data-filter="Borrador">
-        Borradores ({projects.filter(p => p.stage === "Borrador").length})
-      </button>
-    </div>
-  </div>
+  <AdminToolbar
+    searchId="projects-search"
+    searchPlaceholder="Buscar iniciativas por título u organización..."
+    filterName="project"
+    filters={[
+      { value: "all", label: "Todos", count: projects.length },
+      { value: "Aprobado", label: "Aprobados", count: projects.filter((p) => p.stage === "Aprobado").length },
+      { value: "En revisión", label: "En revisión", count: projects.filter((p) => p.stage === "En revisión").length },
+      { value: "Borrador", label: "Borradores", count: projects.filter((p) => p.stage === "Borrador").length },
+    ]}
+  />
 
   <!-- Projects Table -->
-  <div class="rounded-3xl border border-base-300 bg-base-100 shadow-xs overflow-hidden">
-    <div class="overflow-x-auto">
-      <table class="table table-zebra w-full" id="projects-table">
-        <thead>
-          <tr class="border-b border-base-300 bg-base-200/60 text-xs font-extrabold uppercase tracking-wider text-base-content/60">
-            <th class="py-4 pl-6">Proyecto</th>
-            <th>Organización</th>
-            <th>Etapa</th>
-            <th>Presupuesto</th>
-            <th class="text-right pr-6">Fecha</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-base-300/60 font-medium text-sm">
-          {projects.map((project) => (
-            <tr class="hover:bg-base-200/50 transition-colors project-row" data-name={project.name.toLowerCase()} data-org={project.org.toLowerCase()} data-stage={project.stage}>
-              <td class="py-3.5 pl-6 font-bold text-base-content">{project.name}</td>
-              <td class="text-xs text-base-content/70">{project.org}</td>
-              <td>
-                <span class:list={[
-                  "badge badge-xs font-bold py-1 px-2.5 uppercase tracking-wider",
-                  project.stage === "Aprobado" && "badge-success",
-                  project.stage === "En revisión" && "badge-warning",
-                  project.stage === "Borrador" && "badge-ghost"
-                ]}>
-                  {project.stage}
-                </span>
-              </td>
-              <td>
-                <span class="font-mono text-xs font-bold text-base-content/90">{project.budget}</span>
-              </td>
-              <td class="text-right pr-6 text-xs text-base-content/60">{project.date}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  </div>
+  <AdminTable
+    id="projects-table"
+    columns={[
+      { label: "Proyecto", class: "py-4 pl-6" },
+      { label: "Organización" },
+      { label: "Etapa" },
+      { label: "Presupuesto" },
+      { label: "Fecha", class: "text-right pr-6" },
+    ]}
+  >
+    <Fragment slot="rows">
+      {projects.map((project) => (
+        <tr class="hover:bg-base-200/50 transition-colors project-row" data-name={project.name.toLowerCase()} data-org={project.org.toLowerCase()} data-stage={project.stage}>
+          <td class="py-3.5 pl-6 font-bold text-base-content">{project.name}</td>
+          <td class="text-xs text-base-content/70">{project.org}</td>
+          <td>
+            <span class:list={[
+              "badge badge-xs font-bold py-1 px-2.5 uppercase tracking-wider",
+              project.stage === "Aprobado" && "badge-success",
+              project.stage === "En revisión" && "badge-warning",
+              project.stage === "Borrador" && "badge-ghost"
+            ]}>
+              {project.stage}
+            </span>
+          </td>
+          <td>
+            <span class="font-mono text-xs font-bold text-base-content/90">{project.budget}</span>
+          </td>
+          <td class="text-right pr-6 text-xs text-base-content/60">{project.date}</td>
+        </tr>
+      ))}
+    </Fragment>
+  </AdminTable>
 
   <script is:inline>
     (function () {

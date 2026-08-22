@@ -5,6 +5,10 @@ import { localizedPath } from "../../lib/i18n";
 import { resolveRequestCopy } from "../../lib/request-locale";
 import { routeIds } from "../../lib/paths";
 import { env } from "cloudflare:workers";
+import AdminPageHeader from "../../components/admin/AdminPageHeader.astro";
+import AdminToolbar from "../../components/admin/AdminToolbar.astro";
+import AdminTable from "../../components/admin/AdminTable.astro";
+import AdminDrawerPanel from "../../components/admin/AdminDrawerPanel.astro";
 
 export const prerender = false;
 
@@ -31,73 +35,61 @@ const modules = (await env.DB.prepare(
 
 <AdminLayout title={copy.adminModules} active="modules">
   <!-- Right-to-Left Drawer for Modules -->
-  <div class="drawer drawer-end">
-    <input id="module-drawer" type="checkbox" class="drawer-toggle" />
-
-    <div class="drawer-content">
+  <AdminDrawerPanel
+    toggleId="module-drawer"
+    width="form"
+    title={copy.adminNewModule || "Crear nuevo módulo"}
+    subtitle="Registra un nuevo recurso administrable en el sistema."
+  >
+    <Fragment slot="content">
       <!-- Page Header -->
-      <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div class="flex items-center gap-2.5">
-            <h2 class="font-display text-2xl font-bold text-base-content">{copy.adminModules}</h2>
-            <span class="badge badge-neutral badge-sm font-semibold">{modules.length} módulos</span>
-          </div>
-          <p class="text-xs sm:text-sm text-base-content/60 mt-1">
-            Módulos y recursos del sistema administrables a través de políticas RBAC.
-          </p>
-        </div>
-
-        <label
-          for="module-drawer"
-          class="drawer-button btn btn-primary btn-sm gap-2 shadow-sm hover:scale-[1.02] transition-transform cursor-pointer"
-        >
-          <svg class="size-4"><use href="#ic-plus"></use></svg>
-          <span>{copy.adminNewModule || "Nuevo Módulo"}</span>
-        </label>
-      </div>
+      <AdminPageHeader
+        title={copy.adminModules}
+        count={modules.length}
+        countLabel="módulos"
+        lead="Módulos y recursos del sistema administrables a través de políticas RBAC."
+      >
+        <Fragment slot="actions">
+          <label
+            for="module-drawer"
+            class="drawer-button btn btn-primary btn-sm gap-2 shadow-sm hover:scale-[1.02] transition-transform cursor-pointer"
+          >
+            <svg class="size-4"><use href="#ic-plus"></use></svg>
+            <span>{copy.adminNewModule || "Nuevo Módulo"}</span>
+          </label>
+        </Fragment>
+      </AdminPageHeader>
 
       <!-- Filter & Search Toolbar -->
-      <div class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300 bg-base-100 p-3 shadow-xs">
-        <div class="relative flex-1 min-w-[240px] max-w-md">
-          <svg class="size-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none">
-            <use href="#ic-stack"></use>
-          </svg>
-          <input
-            type="search"
-            id="modules-search"
-            placeholder="Buscar módulos por nombre o slug..."
-            class="input input-sm input-bordered w-full pl-9 bg-base-200/40 text-xs sm:text-sm font-medium"
-          />
-        </div>
-      </div>
+      <AdminToolbar searchId="modules-search" searchPlaceholder="Buscar módulos por nombre o slug..." />
 
       <!-- Modules Table -->
-      <div class="rounded-3xl border border-base-300 bg-base-100 shadow-xs overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="table table-zebra w-full" id="modules-table">
-            <thead>
-              <tr class="border-b border-base-300 bg-base-200/60 text-xs font-extrabold uppercase tracking-wider text-base-content/60">
-                <th class="py-4 pl-6">{copy.adminModuleName || "Módulo"}</th>
-                <th>{copy.adminModuleSlug || "Slug"}</th>
-                <th>{copy.adminModuleDescription || "Descripción"}</th>
-                <th>Permisos</th>
-                <th class="text-right pr-6">Acciones</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-base-300/60 font-medium text-sm">
-              {modules.length === 0 ? (
-                <tr>
-                  <td colspan="5" class="text-center py-12 text-base-content/60">
-                    <div class="flex flex-col items-center gap-2">
-                      <div class="size-12 rounded-2xl bg-base-200 flex items-center justify-center text-base-content/40">
-                        <svg class="size-6"><use href="#ic-stack"></use></svg>
-                      </div>
-                      <span class="font-bold text-base">No hay módulos registrados</span>
+      <AdminTable
+        id="modules-table"
+        columns={[
+          { label: copy.adminModuleName || "Módulo", class: "py-4 pl-6" },
+          { label: copy.adminModuleSlug || "Slug" },
+          { label: copy.adminModuleDescription || "Descripción" },
+          { label: "Permisos" },
+          { label: "Acciones", class: "text-right pr-6" },
+        ]}
+      >
+        {
+          modules.length === 0 ? (
+            <Fragment slot="empty">
+              <tr>
+                <td colspan="5" class="text-center py-12 text-base-content/60">
+                  <div class="flex flex-col items-center gap-2">
+                    <div class="size-12 rounded-2xl bg-base-200 flex items-center justify-center text-base-content/40">
+                      <svg class="size-6"><use href="#ic-stack"></use></svg>
                     </div>
-                  </td>
-                </tr>
-              ) : null}
-
+                    <span class="font-bold text-base">No hay módulos registrados</span>
+                  </div>
+                </td>
+              </tr>
+            </Fragment>
+          ) : (
+            <Fragment slot="rows">
               {modules.map((m) => (
                 <tr class="hover:bg-base-200/50 transition-colors module-row" data-name={(m.name || "").toLowerCase()} data-slug={(m.slug || "").toLowerCase()}>
                   <td class="py-3.5 pl-6 font-bold text-base-content">{m.name}</td>
@@ -121,53 +113,36 @@ const modules = (await env.DB.prepare(
                   </td>
                 </tr>
               ))}
-            </tbody>
-          </table>
+            </Fragment>
+          )
+        }
+      </AdminTable>
+    </Fragment>
+
+    <form method="post" action="/api/admin/modules" class="space-y-6 flex-1 flex flex-col justify-between" data-admin-form>
+      <div class="space-y-4">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminModuleName || "Nombre del Módulo"}</legend>
+            <input class="input input-bordered w-full font-semibold" name="name" required maxlength="80" placeholder="Artículos" />
+          </fieldset>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminModuleSlug || "Slug Identificador"}</legend>
+            <input class="input input-bordered w-full font-mono text-xs" name="slug" required pattern="[a-z0-9-]+" maxlength="60" placeholder="articulos" />
+          </fieldset>
         </div>
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminModuleDescription || "Descripción"}</legend>
+          <textarea class="textarea textarea-bordered w-full text-sm leading-relaxed" name="description" rows="3" maxlength="240" placeholder="Gestión editorial de artículos..."></textarea>
+        </fieldset>
       </div>
-    </div>
 
-    <!-- Drawer Side (Right to Left Form) -->
-    <div class="drawer-side z-50">
-      <label for="module-drawer" aria-label="close drawer" class="drawer-overlay"></label>
-      <aside class="w-full max-w-xl sm:max-w-2xl bg-base-100 min-h-dvh h-dvh max-h-dvh flex flex-col p-6 sm:p-8 shadow-2xl border-l border-base-300 overflow-y-auto overscroll-contain">
-        <div class="flex items-center justify-between border-b border-base-300 pb-4 mb-6 shrink-0">
-          <div class="flex items-center gap-2.5">
-            <span class="size-3 rounded-full bg-primary animate-pulse"></span>
-            <div>
-              <h3 class="font-display font-bold text-lg text-base-content">{copy.adminNewModule || "Crear nuevo módulo"}</h3>
-              <p class="text-xs text-base-content/60">Registra un nuevo recurso administrable en el sistema.</p>
-            </div>
-          </div>
-          <label for="module-drawer" class="btn btn-circle btn-ghost btn-xs">✕</label>
-        </div>
-
-        <form method="post" action="/api/admin/modules" class="space-y-6 flex-1 flex flex-col justify-between" data-admin-form>
-          <div class="space-y-4">
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <fieldset class="fieldset">
-                <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminModuleName || "Nombre del Módulo"}</legend>
-                <input class="input input-bordered w-full font-semibold" name="name" required maxlength="80" placeholder="Artículos" />
-              </fieldset>
-              <fieldset class="fieldset">
-                <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminModuleSlug || "Slug Identificador"}</legend>
-                <input class="input input-bordered w-full font-mono text-xs" name="slug" required pattern="[a-z0-9-]+" maxlength="60" placeholder="articulos" />
-              </fieldset>
-            </div>
-            <fieldset class="fieldset">
-              <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminModuleDescription || "Descripción"}</legend>
-              <textarea class="textarea textarea-bordered w-full text-sm leading-relaxed" name="description" rows="3" maxlength="240" placeholder="Gestión editorial de artículos..."></textarea>
-            </fieldset>
-          </div>
-
-          <div class="flex justify-end gap-2 pt-4 border-t border-base-300 mt-6 shrink-0">
-            <label for="module-drawer" class="btn btn-ghost btn-sm cursor-pointer">{copy.adminCancel}</label>
-            <button class="btn btn-primary btn-sm px-6 font-bold" type="submit">{copy.adminAdd || "Crear Módulo"}</button>
-          </div>
-        </form>
-      </aside>
-    </div>
-  </div>
+      <div class="flex justify-end gap-2 pt-4 border-t border-base-300 mt-6 shrink-0">
+        <label for="module-drawer" class="btn btn-ghost btn-sm cursor-pointer">{copy.adminCancel}</label>
+        <button class="btn btn-primary btn-sm px-6 font-bold" type="submit">{copy.adminAdd || "Crear Módulo"}</button>
+      </div>
+    </form>
+  </AdminDrawerPanel>
 
   <script is:inline>
     (function () {

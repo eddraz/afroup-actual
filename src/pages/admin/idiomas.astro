@@ -6,6 +6,10 @@ import { resolveRequestCopy } from "../../lib/request-locale";
 import { routeIds } from "../../lib/paths";
 import { listSiteLanguages } from "../../lib/site-languages";
 import { env } from "cloudflare:workers";
+import AdminPageHeader from "../../components/admin/AdminPageHeader.astro";
+import AdminToolbar from "../../components/admin/AdminToolbar.astro";
+import AdminTable from "../../components/admin/AdminTable.astro";
+import AdminDrawerPanel from "../../components/admin/AdminDrawerPanel.astro";
 
 export const prerender = false;
 
@@ -19,139 +23,106 @@ const languages = await listSiteLanguages(env.DB);
 
 <AdminLayout title={copy.adminLanguages} active="languages">
   <!-- Right-to-Left Drawer for Languages -->
-  <div class="drawer drawer-end">
-    <input id="lang-drawer" type="checkbox" class="drawer-toggle" />
-
-    <div class="drawer-content">
+  <AdminDrawerPanel
+    toggleId="lang-drawer"
+    width="form"
+    title={copy.adminLanguageTranslate || "Configurar nuevo idioma"}
+    subtitle="Añade compatibilidad multilingüe para las publicaciones del portal."
+  >
+    <Fragment slot="content">
       <!-- Page Header -->
-      <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div class="flex items-center gap-2.5">
-            <h2 class="font-display text-2xl font-bold text-base-content">{copy.adminLanguages}</h2>
-            <span class="badge badge-neutral badge-sm font-semibold">{languages.length} idiomas</span>
-          </div>
-          <p class="text-xs sm:text-sm text-base-content/60 mt-1">
-            Gestiona la disponibilidad de idiomas públicos y las traducciones en el sistema.
-          </p>
-        </div>
-
-        <label
-          for="lang-drawer"
-          class="drawer-button btn btn-primary btn-sm gap-2 shadow-sm hover:scale-[1.02] transition-transform cursor-pointer"
-        >
-          <svg class="size-4"><use href="#ic-plus"></use></svg>
-          <span>{copy.adminLanguageTranslate || "Añadir Idioma"}</span>
-        </label>
-      </div>
+      <AdminPageHeader
+        title={copy.adminLanguages}
+        count={languages.length}
+        countLabel="idiomas"
+        lead="Gestiona la disponibilidad de idiomas públicos y las traducciones en el sistema."
+      >
+        <Fragment slot="actions">
+          <label
+            for="lang-drawer"
+            class="drawer-button btn btn-primary btn-sm gap-2 shadow-sm hover:scale-[1.02] transition-transform cursor-pointer"
+          >
+            <svg class="size-4"><use href="#ic-plus"></use></svg>
+            <span>{copy.adminLanguageTranslate || "Añadir Idioma"}</span>
+          </label>
+        </Fragment>
+      </AdminPageHeader>
 
       <!-- Filter & Search Toolbar -->
-      <div class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-300 bg-base-100 p-3 shadow-xs">
-        <div class="relative flex-1 min-w-[240px] max-w-md">
-          <svg class="size-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none">
-            <use href="#ic-world"></use>
-          </svg>
-          <input
-            type="search"
-            id="languages-search"
-            placeholder="Buscar idiomas por código, nombre o traducción..."
-            class="input input-sm input-bordered w-full pl-9 bg-base-200/40 text-xs sm:text-sm font-medium"
-          />
-        </div>
-      </div>
+      <AdminToolbar searchId="languages-search" searchPlaceholder="Buscar idiomas por código, nombre o traducción..." />
 
       <!-- Languages Table -->
-      <div class="rounded-3xl border border-base-300 bg-base-100 shadow-xs overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="table table-zebra w-full" id="languages-table">
-            <thead>
-              <tr class="border-b border-base-300 bg-base-200/60 text-xs font-extrabold uppercase tracking-wider text-base-content/60">
-                <th class="py-4 pl-6">{copy.adminLanguageShow || "Activo"}</th>
-                <th>{copy.adminLanguageCode || "Código"}</th>
-                <th>{copy.adminLanguageName || "Nombre"}</th>
-                <th>{copy.adminLanguageNative || "Nombre Nativo"}</th>
-                <th class="text-right pr-6">Tipo</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-base-300/60 font-medium text-sm">
-              {languages.map((language) => (
-                <tr class="hover:bg-base-200/50 transition-colors language-row" data-code={language.code.toLowerCase()} data-name={(language.name || "").toLowerCase()} data-native={(language.native_name || "").toLowerCase()}>
-                  <td class="py-3.5 pl-6">
-                    <form method="post" action="/api/admin/languages" data-language-toggle>
-                      <input type="hidden" name="_intent" value="toggle" />
-                      <input type="hidden" name="code" value={language.code} />
-                      <input type="hidden" name="visible" value={language.is_visible ? "0" : "1"} />
-                      <input type="checkbox" class="checkbox checkbox-sm checkbox-primary rounded-md" checked={language.is_visible === 1} data-show-toggle />
-                    </form>
-                  </td>
-                  <td>
-                    <span class="font-mono text-xs px-2.5 py-1 rounded-md bg-base-200 border border-base-300 font-bold uppercase text-base-content/80">
-                      {language.code}
-                    </span>
-                  </td>
-                  <td class="font-bold text-base-content">{language.name}</td>
-                  <td class="text-base-content/80">{language.native_name}</td>
-                  <td class="text-right pr-6">
-                    {language.is_pillar ? (
-                      <span class="badge badge-xs badge-accent font-bold py-1 px-2.5 uppercase">{copy.adminLanguagePillar || "Principal"}</span>
-                    ) : (
-                      <span class="badge badge-xs badge-ghost py-1 px-2 font-semibold">Opcional</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <AdminTable
+        id="languages-table"
+        columns={[
+          { label: copy.adminLanguageShow || "Activo", class: "py-4 pl-6" },
+          { label: copy.adminLanguageCode || "Código" },
+          { label: copy.adminLanguageName || "Nombre" },
+          { label: copy.adminLanguageNative || "Nombre Nativo" },
+          { label: "Tipo", class: "text-right pr-6" },
+        ]}
+      >
+        <Fragment slot="rows">
+          {languages.map((language) => (
+            <tr class="hover:bg-base-200/50 transition-colors language-row" data-code={language.code.toLowerCase()} data-name={(language.name || "").toLowerCase()} data-native={(language.native_name || "").toLowerCase()}>
+              <td class="py-3.5 pl-6">
+                <form method="post" action="/api/admin/languages" data-language-toggle>
+                  <input type="hidden" name="_intent" value="toggle" />
+                  <input type="hidden" name="code" value={language.code} />
+                  <input type="hidden" name="visible" value={language.is_visible ? "0" : "1"} />
+                  <input type="checkbox" class="checkbox checkbox-sm checkbox-primary rounded-md" checked={language.is_visible === 1} data-show-toggle />
+                </form>
+              </td>
+              <td>
+                <span class="font-mono text-xs px-2.5 py-1 rounded-md bg-base-200 border border-base-300 font-bold uppercase text-base-content/80">
+                  {language.code}
+                </span>
+              </td>
+              <td class="font-bold text-base-content">{language.name}</td>
+              <td class="text-base-content/80">{language.native_name}</td>
+              <td class="text-right pr-6">
+                {language.is_pillar ? (
+                  <span class="badge badge-xs badge-accent font-bold py-1 px-2.5 uppercase">{copy.adminLanguagePillar || "Principal"}</span>
+                ) : (
+                  <span class="badge badge-xs badge-ghost py-1 px-2 font-semibold">Opcional</span>
+                )}
+              </td>
+            </tr>
+          ))}
+        </Fragment>
+      </AdminTable>
+    </Fragment>
+
+    <form method="post" action="/api/admin/languages" class="space-y-6 flex-1 flex flex-col justify-between" data-language-form>
+      <input type="hidden" name="_intent" value="create" />
+      <div class="space-y-5">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminLanguageCode || "Código ISO (2 letras)"}</legend>
+            <input class="input input-bordered w-full font-mono font-bold uppercase" name="code" required maxlength="2" pattern="[a-zA-Z]{2}" placeholder="pt" />
+          </fieldset>
+          <fieldset class="fieldset sm:col-span-2">
+            <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminLanguageName || "Nombre Internacional"}</legend>
+            <input class="input input-bordered w-full font-semibold" name="name" required maxlength="80" placeholder="Portuguese" />
+          </fieldset>
         </div>
+
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminLanguageNative || "Nombre Nativo"}</legend>
+          <div class="join w-full">
+            <input class="input input-bordered join-item w-full font-semibold" name="nativeName" maxlength="80" placeholder="Português" data-native-name />
+            <button class="btn btn-ai join-item text-xs font-bold" type="button" data-suggest-native>{copy.adminLanguageSuggest || "Sugerir IA"}</button>
+          </div>
+          <p class="text-[11px] text-base-content/50 mt-1">{copy.adminLanguageNativeHelp}</p>
+        </fieldset>
       </div>
-    </div>
 
-    <!-- Drawer Side (Right to Left Form) -->
-    <div class="drawer-side z-50">
-      <label for="lang-drawer" aria-label="close drawer" class="drawer-overlay"></label>
-      <aside class="w-full max-w-xl sm:max-w-2xl bg-base-100 min-h-dvh h-dvh max-h-dvh flex flex-col p-6 sm:p-8 shadow-2xl border-l border-base-300 overflow-y-auto overscroll-contain">
-        <div class="flex items-center justify-between border-b border-base-300 pb-4 mb-6 shrink-0">
-          <div class="flex items-center gap-2.5">
-            <span class="size-3 rounded-full bg-primary animate-pulse"></span>
-            <div>
-              <h3 class="font-display font-bold text-lg text-base-content">{copy.adminLanguageTranslate || "Configurar nuevo idioma"}</h3>
-              <p class="text-xs text-base-content/60">Añade compatibilidad multilingüe para las publicaciones del portal.</p>
-            </div>
-          </div>
-          <label for="lang-drawer" class="btn btn-circle btn-ghost btn-xs">✕</label>
-        </div>
-
-        <form method="post" action="/api/admin/languages" class="space-y-6 flex-1 flex flex-col justify-between" data-language-form>
-          <input type="hidden" name="_intent" value="create" />
-          <div class="space-y-5">
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <fieldset class="fieldset">
-                <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminLanguageCode || "Código ISO (2 letras)"}</legend>
-                <input class="input input-bordered w-full font-mono font-bold uppercase" name="code" required maxlength="2" pattern="[a-zA-Z]{2}" placeholder="pt" />
-              </fieldset>
-              <fieldset class="fieldset sm:col-span-2">
-                <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminLanguageName || "Nombre Internacional"}</legend>
-                <input class="input input-bordered w-full font-semibold" name="name" required maxlength="80" placeholder="Portuguese" />
-              </fieldset>
-            </div>
-
-            <fieldset class="fieldset">
-              <legend class="fieldset-legend font-bold text-xs uppercase text-base-content/70">{copy.adminLanguageNative || "Nombre Nativo"}</legend>
-              <div class="join w-full">
-                <input class="input input-bordered join-item w-full font-semibold" name="nativeName" maxlength="80" placeholder="Português" data-native-name />
-                <button class="btn btn-ai join-item text-xs font-bold" type="button" data-suggest-native>{copy.adminLanguageSuggest || "Sugerir IA"}</button>
-              </div>
-              <p class="text-[11px] text-base-content/50 mt-1">{copy.adminLanguageNativeHelp}</p>
-            </fieldset>
-          </div>
-
-          <div class="flex justify-end gap-2 pt-4 border-t border-base-300 mt-6 shrink-0">
-            <label for="lang-drawer" class="btn btn-ghost btn-sm cursor-pointer">{copy.adminCancel}</label>
-            <button class="btn btn-primary btn-sm px-6 font-bold" type="submit">{copy.adminLanguageTranslate || "Añadir Idioma"}</button>
-          </div>
-        </form>
-      </aside>
-    </div>
-  </div>
+      <div class="flex justify-end gap-2 pt-4 border-t border-base-300 mt-6 shrink-0">
+        <label for="lang-drawer" class="btn btn-ghost btn-sm cursor-pointer">{copy.adminCancel}</label>
+        <button class="btn btn-primary btn-sm px-6 font-bold" type="submit">{copy.adminLanguageTranslate || "Añadir Idioma"}</button>
+      </div>
+    </form>
+  </AdminDrawerPanel>
 
   <script is:inline>
     (function () {
