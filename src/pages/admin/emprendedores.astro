@@ -1,0 +1,966 @@
+---
+import { env } from "cloudflare:workers";
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { requireModuleAccess } from "../../lib/admin-scope";
+import { resolveRequestCopy } from "../../lib/request-locale";
+import { translationAccess } from "../../lib/editorial";
+import { listSiteLanguages } from "../../lib/site-languages";
+import {
+  ENTREPRENEUR_CATEGORIES,
+  OFFERING_KINDS,
+  getEntrepreneursStats,
+  loadAllEntrepreneursPageConfigs,
+  loadEntrepreneurById,
+  loadEntrepreneurs,
+} from "../../lib/entrepreneurs";
+import { parseOgMetadata, type OpenGraphMetadata } from "../../lib/og-metadata";
+import AdminPageHeader from "../../components/admin/AdminPageHeader.astro";
+import AdminStatCard from "../../components/admin/AdminStatCard.astro";
+import AdminToolbar from "../../components/admin/AdminToolbar.astro";
+import AdminTable from "../../components/admin/AdminTable.astro";
+import AdminDrawerPanel from "../../components/admin/AdminDrawerPanel.astro";
+import FormLocaleSwitch from "../../components/FormLocaleSwitch.astro";
+import { localizedPath } from "../../lib/i18n";
+import { routeIds } from "../../lib/paths";
+
+export const prerender = false;
+
+const { locale, copy } = await resolveRequestCopy(env.DB, Astro.url);
+const access = await requireModuleAccess(env.DB, Astro.cookies, Astro.url, locale, "emprendedores");
+if (access instanceof Response) return access;
+const actor = access;
+
+const translation = await translationAccess(env.DB, actor.id, "emprendedores", "update");
+const entrepreneurs = await loadEntrepreneurs(env.DB, locale);
+const stats = await getEntrepreneursStats(env.DB);
+const languages = await listSiteLanguages(env.DB);
+const pageConfigByLocale = await loadAllEntrepreneursPageConfigs(env.DB);
+const publicHref = localizedPath(locale, routeIds.entrepreneurs);
+
+const details = await Promise.all(entrepreneurs.map((item) => loadEntrepreneurById(env.DB, item.id)));
+
+interface EditorLocaleFields {
+  name: string;
+  dek: string;
+  story_html: string;
+  quote: string;
+  rubro_label: string;
+  team_label: string;
+  shipping_label: string;
+  og: OpenGraphMetadata;
+}
+
+interface OfferingEditorLocale {
+  name: string;
+  dek: string;
+  description_html: string;
+  specs_json: string;
+}
+
+const localesById: Record<string, Record<string, EditorLocaleFields>> = {};
+const offeringsByEntrepreneur: Record<string, Array<{
+  id: number;
+  slug: string;
+  kind: string;
+  image_url: string;
+  price_currency: string;
+  price_amount: string;
+  sort_order: number;
+  status: string;
+  locales: Record<string, OfferingEditorLocale>;
+}>> = {};
+
+for (const detail of details) {
+  if (!detail) continue;
+  const fieldsByLocale: Record<string, EditorLocaleFields> = {};
+  for (const [loc, row] of Object.entries(detail.locales)) {
+    fieldsByLocale[loc] = {
+      name: row.name || "",
+      dek: row.dek || "",
+      story_html: row.story_html || "",
+      quote: row.quote || "",
+      rubro_label: row.rubro_label || "",
+      team_label: row.team_label || "",
+      shipping_label: row.shipping_label || "",
+      og: parseOgMetadata(row.og_json),
+    };
+  }
+  localesById[String(detail.row.id)] = fieldsByLocale;
+  offeringsByEntrepreneur[String(detail.row.id)] = detail.offerings.map((offering) => {
+    const offeringLocales: Record<string, OfferingEditorLocale> = {};
+    for (const [loc, row] of Object.entries(offering.locales)) {
+      offeringLocales[loc] = {
+        name: row.name || "",
+        dek: row.dek || "",
+        description_html: row.description_html || "",
+        specs_json: row.specs_json || "[]",
+      };
+    }
+    return {
+      id: offering.row.id,
+      slug: offering.row.slug,
+      kind: offering.row.kind,
+      image_url: offering.row.image_url || "",
+      price_currency: offering.row.price_currency || "USD",
+      price_amount: offering.row.price_amount === null ? "" : String(offering.row.price_amount),
+      sort_order: offering.row.sort_order,
+      status: offering.row.status,
+      locales: offeringLocales,
+    };
+  });
+}
+
+const editorRows = entrepreneurs.map((item) => ({
+  id: item.id,
+  slug: item.slug,
+  category: item.category,
+  city: item.city || "",
+  country: item.country || "",
+  founded_year: item.founded_year === null ? "" : String(item.founded_year),
+  logo_url: item.logo_url || "",
+  instagram_handle: item.instagram_handle || "",
+  website_url: item.website_url || "",
+  contact_email: item.contact_email || "",
+  team_size: item.team_size === null ? "" : String(item.team_size),
+  status: item.status,
+  featured: item.featured ? 1 : 0,
+  sort_order: item.sort_order,
+}));
+
+const jsonForScript = (value: unknown) => JSON.stringify(value).replace(/</g, "\\u003c");
+const categoryLabels: Record<string, string> = Object.fromEntries(
+  ENTREPRENEUR_CATEGORIES.map((category) => [category.value, category.es])
+);
+const categoryCounts = Object.fromEntries(
+  ENTREPRENEUR_CATEGORIES.map((category) => [
+    category.value,
+    entrepreneurs.filter((item) => item.category === category.value).length,
+  ])
+);
+
+const ogFields = [
+  { base: "og_url", key: "url", label: "OG URL" },
+  { base: "og_type", key: "type", label: "OG Tipo" },
+  { base: "og_title", key: "title", label: "OG Título" },
+  { base: "og_description", key: "description", label: "OG Descripción" },
+  { base: "og_image", key: "image", label: "OG Imagen" },
+  { base: "og_image_alt", key: "imageAlt", label: "OG Texto alt" },
+  { base: "og_twitter_card", key: "twitterCard", label: "Twitter Card" },
+  { base: "og_twitter_title", key: "twitterTitle", label: "Twitter Título" },
+  { base: "og_twitter_description", key: "twitterDescription", label: "Twitter Descripción" },
+  { base: "og_twitter_image", key: "twitterImage", label: "Twitter Imagen" },
+];
+---
+
+<AdminLayout title={copy.adminEntrepreneurs || "Emprendedores"} active="entrepreneurs">
+  <AdminDrawerPanel
+    toggleId="entrepreneur-drawer"
+    width="form"
+    title="Editor de emprendimiento"
+    subtitle="Empresa, ficha y catálogo de productos o servicios"
+  >
+    <div slot="actions" class="flex items-center gap-2">
+      <FormLocaleSwitch languages={languages} />
+      <button id="delete-entrepreneur-btn" type="button" class="btn btn-error btn-xs font-bold hidden">
+        Eliminar
+      </button>
+    </div>
+
+    <Fragment slot="content">
+      <AdminPageHeader
+        title={copy.adminEntrepreneurs || "Emprendedores"}
+        count={stats.total}
+        countLabel="emprendimientos"
+        lead={copy.adminEntrepreneursDesc || "Visibilidad para productos y servicios de la comunidad."}
+      >
+        <button slot="actions" id="create-entrepreneur-btn" type="button" class="btn btn-primary btn-sm font-bold">
+          + Nuevo emprendimiento
+        </button>
+      </AdminPageHeader>
+
+      <div class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <AdminStatCard label="Emprendimientos" value={stats.total} icon="#ic-folder" tone="primary" />
+        <AdminStatCard label="Publicados" value={stats.published} icon="#ic-world" tone="accent" />
+        <AdminStatCard label="Productos" value={stats.productsCount} icon="#ic-stack" tone="success" />
+        <AdminStatCard label="Servicios" value={stats.servicesCount} icon="#ic-heart" tone="warning" />
+      </div>
+
+      <AdminToolbar
+        searchId="entrepreneurs-search"
+        searchPlaceholder="Buscar por nombre, ciudad u organización..."
+        filterName="entrepreneur"
+        filters={[
+          { value: "all", label: "Todos", count: stats.total },
+          ...ENTREPRENEUR_CATEGORIES.map((category) => ({
+            value: category.value,
+            label: category.es,
+            count: Number(categoryCounts[category.value] || 0),
+          })),
+        ]}
+      />
+
+      <AdminTable
+        id="entrepreneurs-table"
+        columns={[
+          { label: "Empresa", class: "py-4 pl-6" },
+          { label: "Rubro" },
+          { label: "Ciudad" },
+          { label: "Sitio web" },
+          { label: "Ofertas" },
+          { label: "", class: "pr-6" },
+        ]}
+      >
+        {entrepreneurs.length > 0 ? (
+          <Fragment slot="rows">
+            {entrepreneurs.map((item) => (
+              <tr
+                class="hover:bg-base-200/50 transition-colors entrepreneur-row"
+                data-name={item.name.toLowerCase()}
+                data-city={`${item.city} ${item.country}`.toLowerCase()}
+                data-category={item.category}
+              >
+                <td class="py-3.5 pl-6 font-bold text-base-content">{item.name}</td>
+                <td>
+                  <span class="badge badge-xs badge-ghost font-bold py-1 px-2.5 uppercase tracking-wider">
+                    {categoryLabels[item.category] ?? item.category}
+                  </span>
+                </td>
+                <td class="text-xs text-base-content/70">{[item.city, item.country].filter(Boolean).join(", ") || "—"}</td>
+                <td class="text-xs">
+                  {item.website_url ? (
+                    <a class="link link-primary font-bold" href={item.website_url} target="_blank" rel="noopener noreferrer">
+                      Visitar sitio
+                    </a>
+                  ) : (
+                    <span class="text-base-content/50">—</span>
+                  )}
+                </td>
+                <td class="font-mono text-xs font-bold">{(offeringsByEntrepreneur[String(item.id)] || []).length}</td>
+                <td class="pr-6 text-right">
+                  <button type="button" class="btn btn-ghost btn-xs" data-edit-entrepreneur={item.id} aria-label={`Editar ${item.name}`}>
+                    <svg class="size-4"><use href="#ic-edit"></use></svg>
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </Fragment>
+        ) : (
+          <Fragment slot="empty">
+            <tr>
+              <td colspan={6} class="py-12 text-center text-sm text-base-content/60">
+                No hay emprendimientos todavía. Crea el primero con “+ Nuevo emprendimiento”.
+              </td>
+            </tr>
+          </Fragment>
+        )}
+      </AdminTable>
+
+      {
+        translation.update && (
+          <section class="mt-8 rounded-3xl border border-base-300 bg-base-100 p-6 shadow-xs">
+            <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 class="font-display font-bold text-base-content">Contenido público de la página</h3>
+                <p class="text-xs text-base-content/60">
+                  Copiar del encabezado en /emprendedores ·{" "}
+                  <a href={publicHref} class="link link-primary font-bold">Ver página →</a>
+                </p>
+              </div>
+              <FormLocaleSwitch languages={languages} />
+            </div>
+            <form id="entrepreneurs-page-config-form" action="/api/admin/entrepreneurs-page" method="post" class="space-y-3">
+              {languages.map((lang) => {
+                const loc = lang.code;
+                const cfg = pageConfigByLocale[loc];
+                return (
+                  <div data-drawer-locale-panel={loc} class:list={["space-y-3 rounded-2xl border border-base-300 bg-base-200/30 p-4", loc !== "es" && "hidden"]}>
+                    <p class="text-[11px] font-extrabold uppercase tracking-wider text-base-content/50">{lang.native_name} ({loc.toUpperCase()})</p>
+                    <div class="grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for={`page-field-eyebrow-${loc}`}>Antetítulo</label>
+                        <input type="text" id={`page-field-eyebrow-${loc}`} name={`eyebrow_${loc}`} value={cfg?.eyebrow ?? ""} class="input input-sm input-bordered w-full bg-base-200/40" />
+                      </div>
+                      <div>
+                        <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for={`page-field-title-${loc}`}>Título</label>
+                        <input type="text" id={`page-field-title-${loc}`} name={`title_${loc}`} value={cfg?.title ?? ""} class="input input-sm input-bordered w-full bg-base-200/40" />
+                      </div>
+                    </div>
+                    <div>
+                      <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for={`page-field-lead-${loc}`}>Bajada</label>
+                      <textarea id={`page-field-lead-${loc}`} name={`lead_${loc}`} rows="2" class="textarea textarea-sm textarea-bordered w-full bg-base-200/40">{cfg?.lead ?? ""}</textarea>
+                    </div>
+                    <input type="hidden" name={`band_title_${loc}`} value={cfg?.band_title ?? ""} />
+                    <input type="hidden" name={`band_dek_${loc}`} value={cfg?.band_dek ?? ""} />
+                    <input type="hidden" name={`band_cta_label_${loc}`} value={cfg?.band_cta_label ?? ""} />
+                    <input type="hidden" name={`band_cta_url_${loc}`} value={cfg?.band_cta_url ?? ""} />
+                    {ogFields.map((field) => (
+                      <input type="hidden" name={`${field.base}[${loc}]`} value={(cfg?.og ?? {} as Record<string, string>)[field.key] ?? ""} />
+                    ))}
+                  </div>
+                );
+              })}
+              <div class="flex justify-end pt-1">
+                <button type="submit" class="btn btn-primary btn-sm font-bold">Guardar contenido público</button>
+              </div>
+            </form>
+          </section>
+        )
+      }
+    </Fragment>
+
+    <form id="entrepreneur-editor-form" action="/api/admin/entrepreneurs" method="post" class="space-y-5">
+      <input type="hidden" name="id" id="entrepreneur-field-id" />
+
+      <div class="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for="entrepreneur-field-slug">Slug</label>
+          <input type="text" id="entrepreneur-field-slug" name="slug" class="input input-sm input-bordered w-full bg-base-200/40" placeholder="tejidos-ubuntu" />
+        </div>
+        <div>
+          <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for="entrepreneur-field-category">Rubro</label>
+          <select id="entrepreneur-field-category" name="category" class="select select-sm select-bordered w-full bg-base-200/40">
+            {ENTREPRENEUR_CATEGORIES.map((category) => (
+              <option value={category.value}>{category.es}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div class="grid gap-3 sm:grid-cols-3">
+        <div>
+          <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for="entrepreneur-field-city">Ciudad</label>
+          <input type="text" id="entrepreneur-field-city" name="city" class="input input-sm input-bordered w-full bg-base-200/40" />
+        </div>
+        <div>
+          <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for="entrepreneur-field-country">País</label>
+          <input type="text" id="entrepreneur-field-country" name="country" class="input input-sm input-bordered w-full bg-base-200/40" />
+        </div>
+        <div>
+          <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for="entrepreneur-field-founded-year">Año de inicio</label>
+          <input type="number" id="entrepreneur-field-founded-year" name="founded_year" min="1900" max="2100" class="input input-sm input-bordered w-full bg-base-200/40" />
+        </div>
+      </div>
+
+      <div class="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for="entrepreneur-field-website-url">Sitio web</label>
+          <input type="url" id="entrepreneur-field-website-url" name="website_url" class="input input-sm input-bordered w-full bg-base-200/40" placeholder="https://" />
+        </div>
+        <div>
+          <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for="entrepreneur-field-contact-email">Contacto</label>
+          <input type="email" id="entrepreneur-field-contact-email" name="contact_email" class="input input-sm input-bordered w-full bg-base-200/40" />
+        </div>
+      </div>
+
+      <div class="grid gap-3 sm:grid-cols-3">
+        <div>
+          <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for="entrepreneur-field-instagram">Instagram</label>
+          <input type="text" id="entrepreneur-field-instagram" name="instagram_handle" class="input input-sm input-bordered w-full bg-base-200/40" placeholder="tejidosubuntu" />
+        </div>
+        <div>
+          <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for="entrepreneur-field-team-size">Equipo</label>
+          <input type="number" id="entrepreneur-field-team-size" name="team_size" min="0" class="input input-sm input-bordered w-full bg-base-200/40" />
+        </div>
+        <div>
+          <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for="entrepreneur-field-logo-url">Logo URL</label>
+          <input type="url" id="entrepreneur-field-logo-url" name="logo_url" class="input input-sm input-bordered w-full bg-base-200/40" />
+        </div>
+      </div>
+
+      <div class="grid gap-3 sm:grid-cols-3">
+        <div>
+          <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for="entrepreneur-field-status">Estado</label>
+          <select id="entrepreneur-field-status" name="status" class="select select-sm select-bordered w-full bg-base-200/40">
+            <option value="published">Publicado</option>
+            <option value="draft">Borrador</option>
+          </select>
+        </div>
+        <div>
+          <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for="entrepreneur-field-sort-order">Orden</label>
+          <input type="number" id="entrepreneur-field-sort-order" name="sort_order" value="0" class="input input-sm input-bordered w-full bg-base-200/40" />
+        </div>
+        <label class="mt-6 flex cursor-pointer items-center gap-2 text-sm font-semibold text-base-content">
+          <input type="checkbox" name="featured" id="entrepreneur-field-featured" value="1" class="checkbox checkbox-sm checkbox-primary" />
+          Destacado
+        </label>
+      </div>
+
+      <div class="space-y-3 border-t border-base-300 pt-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h4 class="text-xs font-extrabold uppercase tracking-wider text-base-content/60">Contenido por idioma</h4>
+          <div class="flex flex-wrap items-center gap-2">
+          <FormLocaleSwitch languages={languages} />
+            {translation.canUseAi ? (
+              <button type="button" id="entrepreneur-ai-translate-btn" class="btn btn-xs btn-ai gap-1.5 font-semibold">
+                <svg class="size-3.5"><use href="#ic-sparkles"></use></svg>
+                <span>Traducir con IA</span>
+              </button>
+            ) : null}
+          </div>
+        </div>
+        {languages.map((lang) => (
+          <div data-drawer-locale-panel={lang.code} class:list={["space-y-3", lang.code !== "es" && "hidden"]}>
+            <div>
+              <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for={`entrepreneur-field-name-${lang.code}`}>
+                Nombre {lang.code === "es" ? "(español) *" : `(${lang.native_name})`}
+              </label>
+              <input type="text" id={`entrepreneur-field-name-${lang.code}`} name={`name_${lang.code}`} required={lang.code === "es"} class="input input-sm input-bordered w-full bg-base-200/40" />
+            </div>
+            <div>
+              <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for={`entrepreneur-field-dek-${lang.code}`}>Resumen corto</label>
+              <textarea id={`entrepreneur-field-dek-${lang.code}`} name={`dek_${lang.code}`} rows="2" class="textarea textarea-sm textarea-bordered w-full bg-base-200/40"></textarea>
+            </div>
+            <div>
+              <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for={`entrepreneur-field-story-${lang.code}`}>Historia (HTML)</label>
+              <textarea id={`entrepreneur-field-story-${lang.code}`} name={`story_html_${lang.code}`} rows="5" class="textarea textarea-sm textarea-bordered w-full bg-base-200/40 font-mono text-xs"></textarea>
+            </div>
+            <div>
+              <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for={`entrepreneur-field-quote-${lang.code}`}>Cita</label>
+              <input type="text" id={`entrepreneur-field-quote-${lang.code}`} name={`quote_${lang.code}`} class="input input-sm input-bordered w-full bg-base-200/40" />
+            </div>
+            <div class="grid gap-3 sm:grid-cols-3">
+              <div>
+                <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for={`entrepreneur-field-rubro-${lang.code}`}>Ficha · Rubro</label>
+                <input type="text" id={`entrepreneur-field-rubro-${lang.code}`} name={`rubro_label_${lang.code}`} class="input input-sm input-bordered w-full bg-base-200/40" />
+              </div>
+              <div>
+                <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for={`entrepreneur-field-team-${lang.code}`}>Ficha · Equipo</label>
+                <input type="text" id={`entrepreneur-field-team-${lang.code}`} name={`team_label_${lang.code}`} class="input input-sm input-bordered w-full bg-base-200/40" />
+              </div>
+              <div>
+                <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for={`entrepreneur-field-shipping-${lang.code}`}>Ficha · Envíos</label>
+                <input type="text" id={`entrepreneur-field-shipping-${lang.code}`} name={`shipping_label_${lang.code}`} class="input input-sm input-bordered w-full bg-base-200/40" />
+              </div>
+            </div>
+            <details class="rounded-xl border border-base-300 bg-base-200/30 p-3">
+              <summary class="cursor-pointer text-[11px] font-extrabold uppercase tracking-wider text-base-content/60">Metadatos Open Graph</summary>
+              <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                {ogFields.map((field) => (
+                  <div>
+                    <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for={`entrepreneur-field-og-${field.base}-${lang.code}`}>{field.label}</label>
+                    <input type="text" id={`entrepreneur-field-og-${field.base}-${lang.code}`} name={`${field.base}[${lang.code}]`} class="input input-xs input-bordered w-full bg-base-200/40" />
+                  </div>
+                ))}
+              </div>
+            </details>
+          </div>
+        ))}
+      </div>
+
+      <div class="flex items-center justify-end gap-2 border-t border-base-300 pt-4">
+        <label for="entrepreneur-drawer" class="btn btn-ghost btn-sm">Cancelar</label>
+        <button type="submit" class="btn btn-primary btn-sm font-bold">Guardar empresa</button>
+      </div>
+    </form>
+
+    <section id="offerings-block" class="mt-8 hidden space-y-4 border-t border-base-300 pt-6">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h4 class="text-sm font-extrabold uppercase tracking-wider text-base-content">Productos y servicios</h4>
+          <p class="text-xs text-base-content/60">Ficha técnica de cada oferta. El sitio web de la empresa se usa como redirección.</p>
+        </div>
+        <button type="button" id="create-offering-btn" class="btn btn-ghost btn-xs font-bold">+ Nueva oferta</button>
+      </div>
+      <ul id="offerings-list" class="space-y-2"></ul>
+
+      <form id="offering-editor-form" action="/api/admin/entrepreneur-offerings" method="post" class="hidden space-y-4 rounded-2xl border border-base-300 bg-base-200/30 p-4">
+            <div class="flex justify-end">
+              {translation.canUseAi ? (
+                <button type="button" id="offering-ai-translate-btn" class="btn btn-xs btn-ai gap-1.5 font-semibold">
+                  <svg class="size-3.5"><use href="#ic-sparkles"></use></svg>
+                  <span>Traducir con IA</span>
+                </button>
+              ) : null}
+            </div>
+        <input type="hidden" name="id" id="offering-field-id" />
+        <input type="hidden" name="entrepreneur_id" id="offering-field-entrepreneur-id" />
+        <div class="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for="offering-field-slug">Slug</label>
+            <input type="text" id="offering-field-slug" name="slug" class="input input-sm input-bordered w-full bg-base-100" />
+          </div>
+          <div>
+            <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for="offering-field-kind">Tipo</label>
+            <select id="offering-field-kind" name="kind" class="select select-sm select-bordered w-full bg-base-100">
+              {OFFERING_KINDS.map((kind) => (
+                <option value={kind.value}>{kind.es}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div class="grid gap-3 sm:grid-cols-3">
+          <div>
+            <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for="offering-field-price-currency">Moneda</label>
+            <input type="text" id="offering-field-price-currency" name="price_currency" value="USD" maxlength="3" class="input input-sm input-bordered w-full bg-base-100 uppercase" />
+          </div>
+          <div>
+            <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for="offering-field-price-amount">Precio</label>
+            <input type="number" id="offering-field-price-amount" name="price_amount" min="0" class="input input-sm input-bordered w-full bg-base-100" />
+          </div>
+          <div>
+            <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for="offering-field-image-url">Imagen URL</label>
+            <input type="url" id="offering-field-image-url" name="image_url" class="input input-sm input-bordered w-full bg-base-100" />
+          </div>
+        </div>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for="offering-field-status">Estado</label>
+            <select id="offering-field-status" name="status" class="select select-sm select-bordered w-full bg-base-100">
+              <option value="published">Publicado</option>
+              <option value="draft">Borrador</option>
+            </select>
+          </div>
+          <div>
+            <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for="offering-field-sort-order">Orden</label>
+            <input type="number" id="offering-field-sort-order" name="sort_order" value="0" class="input input-sm input-bordered w-full bg-base-100" />
+          </div>
+        </div>
+        {languages.map((lang) => (
+          <div data-drawer-locale-panel={lang.code} class:list={["space-y-3 rounded-xl border border-base-300 bg-base-100 p-3", lang.code !== "es" && "hidden"]}>
+            <p class="text-[11px] font-extrabold uppercase tracking-wider text-base-content/50">{lang.native_name}</p>
+            <input type="text" id={`offering-field-name-${lang.code}`} name={`name_${lang.code}`} required={lang.code === "es"} placeholder={lang.code === "es" ? "Nombre *" : "Name"} class="input input-sm input-bordered w-full" />
+            <textarea id={`offering-field-dek-${lang.code}`} name={`dek_${lang.code}`} rows="2" placeholder="Resumen" class="textarea textarea-sm textarea-bordered w-full"></textarea>
+            <textarea id={`offering-field-description-${lang.code}`} name={`description_html_${lang.code}`} rows="3" placeholder="Descripción / ficha técnica" class="textarea textarea-sm textarea-bordered w-full font-mono text-xs"></textarea>
+            <input type="hidden" id={`offering-field-specs-${lang.code}`} name={`specs_json_${lang.code}`} value="[]" />
+            <div class="grid gap-2" data-specs-grid={lang.code}>
+              {[0, 1, 2].map((index) => (
+                <div class="grid grid-cols-2 gap-2">
+                  <input type="text" data-spec-label={lang.code} data-spec-index={index} placeholder="Etiqueta" class="input input-xs input-bordered" />
+                  <input type="text" data-spec-value={lang.code} data-spec-index={index} placeholder="Valor" class="input input-xs input-bordered" />
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+        <div class="flex justify-end gap-2">
+          <button type="button" id="cancel-offering-btn" class="btn btn-ghost btn-xs">Cancelar</button>
+          <button type="submit" class="btn btn-primary btn-xs font-bold">Guardar oferta</button>
+        </div>
+      </form>
+    </section>
+  </AdminDrawerPanel>
+
+  <script is:inline type="application/json" id="entrepreneurs-data-script" set:html={jsonForScript(editorRows)} />
+  <script is:inline type="application/json" id="entrepreneurs-locales-script" set:html={jsonForScript(localesById)} />
+  <script is:inline type="application/json" id="entrepreneur-offerings-script" set:html={jsonForScript(offeringsByEntrepreneur)} />
+
+  <script is:inline>
+    (function () {
+      var OG_FIELDS = [
+        ["og_url", "url"], ["og_type", "type"], ["og_title", "title"], ["og_description", "description"],
+        ["og_image", "image"], ["og_image_alt", "imageAlt"], ["og_twitter_card", "twitterCard"],
+        ["og_twitter_title", "twitterTitle"], ["og_twitter_description", "twitterDescription"], ["og_twitter_image", "twitterImage"]
+      ];
+      var KIND_LABELS = { producto: "Producto", servicio: "Servicio" };
+
+      function toast(message, type) {
+        if (window.AfroUpFeedback) window.AfroUpFeedback.toast(message, type);
+      }
+      function siteLocales() {
+        var codes = [];
+        document.querySelectorAll("[data-drawer-locale-panel]").forEach(function (panel) {
+          var loc = panel.getAttribute("data-drawer-locale-panel");
+          if (loc && codes.indexOf(loc) === -1) codes.push(loc);
+        });
+        return codes;
+      }
+
+      function translateField(moduleSlug, sourceText, targetLoc, targetId, isHtml) {
+        if (!sourceText || !String(sourceText).trim()) return Promise.resolve();
+        var el = document.getElementById(targetId);
+        var fd = new FormData();
+        fd.append("module", moduleSlug);
+        fd.append("source", sourceText);
+        fd.append("current", el ? el.value : "");
+        fd.append("target", targetLoc);
+        if (isHtml) fd.append("is_html", "1");
+        return fetch("/api/admin/translate", { method: "POST", body: fd })
+          .then(function (res) { return res.json(); })
+          .then(function (result) {
+            if (result.ok && result.text && el) el.value = result.text;
+          });
+      }
+
+      function bindAiTranslate(btnId, moduleSlug, fieldBases) {
+        var btn = document.getElementById(btnId);
+        if (!btn || btn.dataset.bound === "true") return;
+        btn.dataset.bound = "true";
+        btn.addEventListener("click", function () {
+          var targets = siteLocales().filter(function (loc) { return loc !== "es"; });
+          if (!targets.length) {
+            toast("No hay otro idioma configurado.", "warning");
+            return;
+          }
+          var first = document.getElementById(fieldBases[0] + "-es");
+          if (first && !String(first.value || "").trim()) {
+            toast("Completa primero el contenido en español.", "warning");
+            return;
+          }
+          btn.disabled = true;
+          var tasks = [];
+          targets.forEach(function (loc) {
+            fieldBases.forEach(function (base) {
+              var src = document.getElementById(base + "-es");
+              if (!src) return;
+              var html = base.indexOf("description") !== -1 || base.indexOf("story") !== -1 || base.indexOf("html") !== -1;
+              tasks.push(translateField(moduleSlug, src.value, loc, base + "-" + loc, html));
+            });
+          });
+          Promise.all(tasks)
+            .then(function () {
+              btn.disabled = false;
+              toast("Traducción lista. Revisá cada idioma.", "success");
+            })
+            .catch(function () {
+              btn.disabled = false;
+              toast("Error al traducir.", "error");
+            });
+        });
+      }
+
+      function setValue(id, value) {
+        var el = document.getElementById(id);
+        if (el) el.value = value === null || value === undefined ? "" : String(value);
+      }
+      function parseJson(id, fallback) {
+        try {
+          var el = document.getElementById(id);
+          return JSON.parse(el ? el.textContent : "") || fallback;
+        } catch (e) {
+          return fallback;
+        }
+      }
+
+      function setup() {
+        bindAiTranslate("entrepreneur-ai-translate-btn", "emprendedores", ["entrepreneur-field-name", "entrepreneur-field-dek", "entrepreneur-field-story", "entrepreneur-field-quote", "entrepreneur-field-rubro", "entrepreneur-field-team", "entrepreneur-field-shipping"]);
+        bindAiTranslate("offering-ai-translate-btn", "emprendedores", ["offering-field-name", "offering-field-dek", "offering-field-description"]);
+        var searchInput = document.getElementById("entrepreneurs-search");
+        var filterButtons = document.querySelectorAll(".entrepreneur-filter-btn");
+        var rows = document.querySelectorAll(".entrepreneur-row");
+        var drawerToggle = document.getElementById("entrepreneur-drawer");
+        var form = document.getElementById("entrepreneur-editor-form");
+        var createBtn = document.getElementById("create-entrepreneur-btn");
+        var deleteBtn = document.getElementById("delete-entrepreneur-btn");
+        var langBtns = document.querySelectorAll("[data-drawer-lang-btn]");
+        var langSelect = document.querySelector("[data-drawer-lang-select]");
+        var langPanels = document.querySelectorAll("[data-drawer-locale-panel]");
+        var pageConfigForm = document.getElementById("entrepreneurs-page-config-form");
+        var offeringsBlock = document.getElementById("offerings-block");
+        var offeringsList = document.getElementById("offerings-list");
+        var offeringForm = document.getElementById("offering-editor-form");
+        var createOfferingBtn = document.getElementById("create-offering-btn");
+        var cancelOfferingBtn = document.getElementById("cancel-offering-btn");
+
+        var editorRows = {};
+        parseJson("entrepreneurs-data-script", []).forEach(function (row) { editorRows[String(row.id)] = row; });
+        var editorLocales = parseJson("entrepreneurs-locales-script", {});
+        var offeringsById = parseJson("entrepreneur-offerings-script", {});
+        var currentFilter = "all";
+        var searchQuery = "";
+
+        var applyFilters = function () {
+          rows.forEach(function (row) {
+            var name = row.getAttribute("data-name") || "";
+            var city = row.getAttribute("data-city") || "";
+            var category = row.getAttribute("data-category") || "";
+            var matchesSearch = !searchQuery || name.indexOf(searchQuery) !== -1 || city.indexOf(searchQuery) !== -1;
+            var matchesFilter = currentFilter === "all" || category === currentFilter;
+            row.style.display = matchesSearch && matchesFilter ? "" : "none";
+          });
+        };
+
+        if (searchInput && searchInput.dataset.bound !== "true") {
+          searchInput.dataset.bound = "true";
+          searchInput.addEventListener("input", function () {
+            searchQuery = searchInput.value.trim().toLowerCase();
+            applyFilters();
+          });
+        }
+        filterButtons.forEach(function (btn) {
+          if (btn.dataset.bound === "true") return;
+          btn.dataset.bound = "true";
+          btn.addEventListener("click", function () {
+            filterButtons.forEach(function (b) {
+              b.classList.remove("btn-primary", "text-primary-content");
+              b.classList.add("btn-ghost");
+            });
+            btn.classList.remove("btn-ghost");
+            btn.classList.add("btn-primary", "text-primary-content");
+            currentFilter = btn.getAttribute("data-filter") || "all";
+            applyFilters();
+          });
+        });
+
+        function setDrawerLang(targetLang) {
+          langBtns.forEach(function (b) {
+            var isActive = b.getAttribute("data-drawer-lang-btn") === targetLang;
+            b.classList.toggle("btn-active", isActive);
+            b.classList.toggle("btn-neutral", isActive);
+            b.classList.toggle("btn-ghost", !isActive);
+          });
+          if (langSelect && langSelect.value !== targetLang) langSelect.value = targetLang;
+          langPanels.forEach(function (panel) {
+            panel.classList.toggle("hidden", panel.getAttribute("data-drawer-locale-panel") !== targetLang);
+          });
+        }
+        langBtns.forEach(function (btn) {
+          if (btn.dataset.bound === "true") return;
+          btn.dataset.bound = "true";
+          btn.addEventListener("click", function () { setDrawerLang(btn.getAttribute("data-drawer-lang-btn") || "es"); });
+        });
+        if (langSelect && langSelect.dataset.bound !== "true") {
+          langSelect.dataset.bound = "true";
+          langSelect.addEventListener("change", function () { setDrawerLang(langSelect.value); });
+        }
+
+        function openDrawer() {
+          if (drawerToggle) {
+            drawerToggle.checked = true;
+            document.body.style.overflow = "hidden";
+          }
+        }
+
+        function syncSpecs(loc) {
+          var labels = document.querySelectorAll('[data-spec-label="' + loc + '"]');
+          var values = document.querySelectorAll('[data-spec-value="' + loc + '"]');
+          var specs = [];
+          labels.forEach(function (input, index) {
+            var label = (input.value || "").trim();
+            var value = ((values[index] && values[index].value) || "").trim();
+            if (label) specs.push({ label: label, value: value });
+          });
+          setValue("offering-field-specs-" + loc, JSON.stringify(specs));
+        }
+
+        function fillSpecs(loc, json) {
+          var specs = [];
+          try { specs = JSON.parse(json || "[]") || []; } catch (e) { specs = []; }
+          document.querySelectorAll('[data-spec-label="' + loc + '"]').forEach(function (input, index) {
+            input.value = (specs[index] && specs[index].label) || "";
+          });
+          document.querySelectorAll('[data-spec-value="' + loc + '"]').forEach(function (input, index) {
+            input.value = (specs[index] && specs[index].value) || "";
+          });
+          setValue("offering-field-specs-" + loc, JSON.stringify(specs));
+        }
+
+        function renderOfferings(entrepreneurId) {
+          if (!offeringsList) return;
+          var items = offeringsById[String(entrepreneurId)] || [];
+          offeringsList.innerHTML = items.length
+            ? items.map(function (item) {
+                var name = ((item.locales.es || item.locales.en || {}).name) || item.slug;
+                var price = item.price_amount ? (item.price_currency + " " + item.price_amount) : "Sin precio";
+                return '<li class="flex items-center justify-between gap-2 rounded-xl border border-base-300 bg-base-200/40 px-3 py-2">' +
+                  '<div><p class="text-sm font-bold">' + name + '</p><p class="text-[11px] uppercase tracking-wider text-base-content/50">' +
+                  (KIND_LABELS[item.kind] || item.kind) + " · " + price + "</p></div>" +
+                  '<div class="flex gap-1">' +
+                  '<button type="button" class="btn btn-ghost btn-xs" data-edit-offering="' + item.id + '">Editar</button>' +
+                  '<button type="button" class="btn btn-ghost btn-xs text-error" data-delete-offering="' + item.id + '">Quitar</button>' +
+                  "</div></li>";
+              }).join("")
+            : '<li class="text-xs text-base-content/60">Todavía no hay productos ni servicios.</li>';
+        }
+
+        function resetOfferingForm(entrepreneurId) {
+          if (!offeringForm) return;
+          offeringForm.reset();
+          setValue("offering-field-id", "");
+          setValue("offering-field-entrepreneur-id", entrepreneurId || "");
+          setValue("offering-field-price-currency", "USD");
+          setValue("offering-field-sort-order", "0");
+          siteLocales().forEach(function (loc) {
+            setValue("offering-field-name-" + loc, "");
+            setValue("offering-field-dek-" + loc, "");
+            setValue("offering-field-description-" + loc, "");
+            fillSpecs(loc, "[]");
+          });
+        }
+
+        function showOfferings(entrepreneurId) {
+          if (!offeringsBlock) return;
+          offeringsBlock.classList.remove("hidden");
+          if (offeringForm) offeringForm.classList.add("hidden");
+          setValue("offering-field-entrepreneur-id", entrepreneurId);
+          renderOfferings(entrepreneurId);
+        }
+
+        if (createBtn && createBtn.dataset.bound !== "true") {
+          createBtn.dataset.bound = "true";
+          createBtn.addEventListener("click", function () {
+            if (form) form.reset();
+            setValue("entrepreneur-field-id", "");
+            setValue("entrepreneur-field-sort-order", "0");
+            langPanels.forEach(function (panel) {
+              var loc = panel.getAttribute("data-drawer-locale-panel");
+              if (!loc) return;
+              ["name", "dek", "story", "quote", "rubro", "team", "shipping"].forEach(function (field) {
+                setValue("entrepreneur-field-" + field + "-" + loc, "");
+              });
+              OG_FIELDS.forEach(function (pair) { setValue("entrepreneur-field-og-" + pair[0] + "-" + loc, ""); });
+            });
+            setDrawerLang("es");
+            if (deleteBtn) deleteBtn.classList.add("hidden");
+            if (offeringsBlock) offeringsBlock.classList.add("hidden");
+            openDrawer();
+          });
+        }
+
+        document.querySelectorAll("[data-edit-entrepreneur]").forEach(function (btn) {
+          if (btn.dataset.bound === "true") return;
+          btn.dataset.bound = "true";
+          btn.addEventListener("click", function () {
+            var row = editorRows[btn.getAttribute("data-edit-entrepreneur")];
+            if (!row) return;
+            setValue("entrepreneur-field-id", row.id);
+            setValue("entrepreneur-field-slug", row.slug);
+            setValue("entrepreneur-field-category", row.category);
+            setValue("entrepreneur-field-city", row.city);
+            setValue("entrepreneur-field-country", row.country);
+            setValue("entrepreneur-field-founded-year", row.founded_year);
+            setValue("entrepreneur-field-logo-url", row.logo_url);
+            setValue("entrepreneur-field-instagram", row.instagram_handle);
+            setValue("entrepreneur-field-website-url", row.website_url);
+            setValue("entrepreneur-field-contact-email", row.contact_email);
+            setValue("entrepreneur-field-team-size", row.team_size);
+            setValue("entrepreneur-field-status", row.status);
+            setValue("entrepreneur-field-sort-order", row.sort_order);
+            var featuredInput = document.getElementById("entrepreneur-field-featured");
+            if (featuredInput) featuredInput.checked = Number(row.featured) === 1;
+            langPanels.forEach(function (panel) {
+              var loc = panel.getAttribute("data-drawer-locale-panel");
+              if (!loc) return;
+              var fields = (editorLocales[String(row.id)] || {})[loc] || {};
+              setValue("entrepreneur-field-name-" + loc, fields.name);
+              setValue("entrepreneur-field-dek-" + loc, fields.dek);
+              setValue("entrepreneur-field-story-" + loc, fields.story_html);
+              setValue("entrepreneur-field-quote-" + loc, fields.quote);
+              setValue("entrepreneur-field-rubro-" + loc, fields.rubro_label);
+              setValue("entrepreneur-field-team-" + loc, fields.team_label);
+              setValue("entrepreneur-field-shipping-" + loc, fields.shipping_label);
+              OG_FIELDS.forEach(function (pair) {
+                setValue("entrepreneur-field-og-" + pair[0] + "-" + loc, (fields.og || {})[pair[1]] || "");
+              });
+            });
+            setDrawerLang("es");
+            if (deleteBtn) deleteBtn.classList.remove("hidden");
+            showOfferings(row.id);
+            openDrawer();
+          });
+        });
+
+        if (createOfferingBtn && createOfferingBtn.dataset.bound !== "true") {
+          createOfferingBtn.dataset.bound = "true";
+          createOfferingBtn.addEventListener("click", function () {
+            var companyId = document.getElementById("entrepreneur-field-id");
+            resetOfferingForm(companyId ? companyId.value : "");
+            if (offeringForm) offeringForm.classList.remove("hidden");
+          });
+        }
+        if (cancelOfferingBtn && cancelOfferingBtn.dataset.bound !== "true") {
+          cancelOfferingBtn.dataset.bound = "true";
+          cancelOfferingBtn.addEventListener("click", function () {
+            if (offeringForm) offeringForm.classList.add("hidden");
+          });
+        }
+
+        if (offeringsList && offeringsList.dataset.bound !== "true") {
+          offeringsList.dataset.bound = "true";
+          offeringsList.addEventListener("click", function (event) {
+            var editBtn = event.target.closest("[data-edit-offering]");
+            var deleteBtnOffering = event.target.closest("[data-delete-offering]");
+            var companyId = document.getElementById("entrepreneur-field-id");
+            var list = offeringsById[companyId ? companyId.value : ""] || [];
+            if (editBtn) {
+              var offering = list.find(function (item) { return String(item.id) === editBtn.getAttribute("data-edit-offering"); });
+              if (!offering) return;
+              resetOfferingForm(offering.entrepreneur_id || (companyId && companyId.value));
+              setValue("offering-field-id", offering.id);
+              setValue("offering-field-slug", offering.slug);
+              setValue("offering-field-kind", offering.kind);
+              setValue("offering-field-image-url", offering.image_url);
+              setValue("offering-field-price-currency", offering.price_currency || "USD");
+              setValue("offering-field-price-amount", offering.price_amount);
+              setValue("offering-field-status", offering.status);
+              setValue("offering-field-sort-order", offering.sort_order);
+              siteLocales().forEach(function (loc) {
+                var fields = offering.locales[loc] || {};
+                setValue("offering-field-name-" + loc, fields.name);
+                setValue("offering-field-dek-" + loc, fields.dek);
+                setValue("offering-field-description-" + loc, fields.description_html);
+                fillSpecs(loc, fields.specs_json || "[]");
+              });
+              if (offeringForm) offeringForm.classList.remove("hidden");
+            }
+            if (deleteBtnOffering) {
+              var offeringId = deleteBtnOffering.getAttribute("data-delete-offering");
+              if (!offeringId || !window.confirm("¿Quitar este producto o servicio?")) return;
+              fetch("/api/admin/entrepreneur-offerings?id=" + encodeURIComponent(offeringId), { method: "DELETE" })
+                .then(function (res) { return res.json(); })
+                .then(function (result) {
+                  toast(result.message || (result.ok ? "Oferta eliminada." : "Error al eliminar."), result.ok ? "success" : "error");
+                  if (result.ok) setTimeout(function () { window.location.reload(); }, 400);
+                })
+                .catch(function () { toast("Error de red al eliminar.", "error"); });
+            }
+          });
+        }
+
+        if (deleteBtn && deleteBtn.dataset.bound !== "true") {
+          deleteBtn.dataset.bound = "true";
+          deleteBtn.addEventListener("click", function () {
+            var idField = document.getElementById("entrepreneur-field-id");
+            var id = idField ? idField.value : "";
+            if (!id || !window.confirm("¿Eliminar este emprendimiento y su catálogo?")) return;
+            fetch("/api/admin/entrepreneurs?id=" + encodeURIComponent(id), { method: "DELETE" })
+              .then(function (res) { return res.json(); })
+              .then(function (result) {
+                toast(result.message || (result.ok ? "Emprendimiento eliminado." : "Error al eliminar."), result.ok ? "success" : "error");
+                if (result.ok) {
+                  document.body.style.overflow = "";
+                  setTimeout(function () { window.location.reload(); }, 400);
+                }
+              })
+              .catch(function () { toast("Error de red al eliminar.", "error"); });
+          });
+        }
+
+        if (offeringForm && offeringForm.dataset.submitBound !== "true") {
+          offeringForm.dataset.submitBound = "true";
+          offeringForm.addEventListener("submit", function (event) {
+            event.preventDefault();
+            siteLocales().forEach(syncSpecs);
+            fetch(offeringForm.action, { method: "POST", body: new FormData(offeringForm) })
+              .then(function (res) { return res.json(); })
+              .then(function (result) {
+                toast(result.message || (result.ok ? "Oferta guardada." : "Error al guardar."), result.ok ? "success" : "error");
+                if (result.ok) setTimeout(function () { window.location.reload(); }, 400);
+              })
+              .catch(function () { toast("Error de red al guardar.", "error"); });
+          });
+        }
+
+        [form, pageConfigForm].forEach(function (target) {
+          if (!target || target.dataset.submitBound === "true") return;
+          target.dataset.submitBound = "true";
+          target.addEventListener("submit", function (event) {
+            event.preventDefault();
+            fetch(target.action, { method: "POST", body: new FormData(target) })
+              .then(function (res) { return res.json(); })
+              .then(function (result) {
+                toast(result.message || (result.ok ? "Guardado con éxito." : "Error al guardar."), result.ok ? "success" : "error");
+                if (result.ok) {
+                  document.body.style.overflow = "";
+                  setTimeout(function () { window.location.reload(); }, 400);
+                }
+              })
+              .catch(function () { toast("Error de red al guardar.", "error"); });
+          });
+        });
+      }
+
+      setup();
+      document.addEventListener("astro:page-load", setup);
+    })();
+  </script>
+</AdminLayout>
