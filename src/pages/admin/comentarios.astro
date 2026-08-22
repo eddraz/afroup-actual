@@ -3,181 +3,318 @@ import { env } from "cloudflare:workers";
 import AdminLayout from "../../layouts/AdminLayout.astro";
 import { requireModuleAccess } from "../../lib/admin-scope";
 import { resolveRequestCopy } from "../../lib/request-locale";
+import {
+  COMMENT_STATUSES,
+  formatCommentAge,
+  getCommentsStats,
+  loadComments,
+} from "../../lib/comments";
 import AdminPageHeader from "../../components/admin/AdminPageHeader.astro";
+import AdminStatCard from "../../components/admin/AdminStatCard.astro";
 import AdminToolbar from "../../components/admin/AdminToolbar.astro";
 import AdminTable from "../../components/admin/AdminTable.astro";
+import AdminDrawerPanel from "../../components/admin/AdminDrawerPanel.astro";
 
 export const prerender = false;
 
 const { locale, copy } = await resolveRequestCopy(env.DB, Astro.url);
 const access = await requireModuleAccess(env.DB, Astro.cookies, Astro.url, locale, "comentarios");
 if (access instanceof Response) return access;
-const actor = access;
 
-const queueItems = [
-  { id: 1, user: "Anónimo", article: "Voces de la diáspora", comment: "Excelente entrevista, me hizo reflexionar sobre mi propia historia y raíces familiares.", reason: "Reportado", time: "hace 4 min" },
-  { id: 2, user: "Laura G.", article: "Afrofuturismo: imaginar el mañana", comment: "¿Dónde consigo el libro que mencionan en el segundo párrafo? Me interesa mucho.", reason: "Pregunta", time: "hace 22 min" },
-  { id: 3, user: "Andrés M.", article: "Trenzas como mapas de resistencia", comment: "Comparte información valiosa e histórica. Lo voy a usar como material en mi clase universitaria.", reason: "Aprobado", time: "hace 1 h" },
-  { id: 4, user: "Sofía R.", article: "Quilombos y palenques: territorios de libertad", comment: "Falta profundizar en el contexto histórico sobre la Nueva Granada y las rutas de escape.", reason: "Pendiente", time: "hace 2 h" },
-];
+const comments = await loadComments(env.DB);
+const stats = await getCommentsStats(env.DB);
+const statusLabels: Record<string, string> = Object.fromEntries(
+  COMMENT_STATUSES.map((status) => [status.value, status.es])
+);
+const statusBadge: Record<string, string> = {
+  pending: "badge-warning",
+  approved: "badge-success",
+  reported: "badge-error",
+  rejected: "badge-ghost",
+};
+const jsonForScript = (value: unknown) => JSON.stringify(value).replace(/</g, "\\u003c");
 ---
 
 <AdminLayout title={copy.adminComments} active="comments">
-  <!-- Page Header -->
-  <AdminPageHeader
-    title={copy.adminComments}
-    count={queueItems.length}
-    countLabel="en cola"
-    badgeVariant="warning"
-    lead="Modera las respuestas, comentarios y debates comunitarios en los artículos de AfroUp."
-  />
+  <AdminDrawerPanel toggleId="comment-drawer" width="form" title="Moderar comentario" subtitle="Estado, respuesta y descarte">
+    <button slot="actions" id="delete-comment-btn" type="button" class="btn btn-error btn-xs font-bold hidden">Descartar</button>
 
-  <!-- Filter & Search Toolbar -->
-  <AdminToolbar
-    searchId="comments-search"
-    searchPlaceholder="Buscar por usuario, artículo o texto del comentario..."
-    filterName="comment"
-    filters={[
-      { value: "all", label: "Todos", count: queueItems.length },
-      { value: "Reportado", label: "Reportados", count: queueItems.filter((q) => q.reason === "Reportado").length },
-      { value: "Pendiente", label: "Pendientes", count: queueItems.filter((q) => q.reason === "Pendiente").length },
-      { value: "Aprobado", label: "Aprobados", count: queueItems.filter((q) => q.reason === "Aprobado").length },
-    ]}
-  />
+    <Fragment slot="content">
+      <AdminPageHeader
+        title={copy.adminComments}
+        count={stats.total}
+        countLabel="en cola"
+        badgeVariant="warning"
+        lead="Modera las respuestas, comentarios y debates comunitarios en los artículos de AfroUp."
+      />
 
-  <!-- Comments Table -->
-  <AdminTable
-    id="comments-table"
-    columns={[
-      { label: "Autor", class: "py-4 pl-6" },
-      { label: "Comentario" },
-      { label: "Referencia" },
-      { label: "Estado" },
-      { label: "Acciones", class: "text-right pr-6" },
-    ]}
-  >
-    <Fragment slot="rows">
-      {queueItems.map((item) => {
-        const isReported = item.reason === "Reportado";
-        const isPending = item.reason === "Pendiente";
-        const isApproved = item.reason === "Aprobado";
+      <div class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <AdminStatCard label="Total" value={stats.total} icon="#ic-pin" tone="primary" />
+        <AdminStatCard label="Pendientes" value={stats.pending} icon="#ic-edit" tone="warning" />
+        <AdminStatCard label="Reportados" value={stats.reported} icon="#ic-message-report" tone="secondary" />
+        <AdminStatCard label="Aprobados" value={stats.approved} icon="#ic-shield" tone="success" />
+      </div>
 
-        return (
-          <tr
-            class="hover:bg-base-200/50 transition-colors comment-card"
-            data-user={item.user.toLowerCase()}
-            data-article={item.article.toLowerCase()}
-            data-comment={item.comment.toLowerCase()}
-            data-reason={item.reason}
-          >
-            <td class="py-3.5 pl-6">
-              <div class="flex items-center gap-3">
-                <div class="avatar placeholder">
-                  <div class="size-9 rounded-xl bg-base-200 border border-base-300 font-bold font-display text-xs text-base-content/70 flex items-center justify-center">
-                    <span>{item.user[0]}</span>
+      <AdminToolbar
+        searchId="comments-search"
+        searchPlaceholder="Buscar por usuario, artículo o texto del comentario..."
+        filterName="comment"
+        filters={[
+          { value: "all", label: "Todos", count: stats.total },
+          { value: "reported", label: "Reportados", count: stats.reported },
+          { value: "pending", label: "Pendientes", count: stats.pending },
+          { value: "approved", label: "Aprobados", count: stats.approved },
+        ]}
+      />
+
+      <AdminTable
+        id="comments-table"
+        columns={[
+          { label: "Autor", class: "py-4 pl-6" },
+          { label: "Comentario" },
+          { label: "Referencia" },
+          { label: "Estado" },
+          { label: "Acciones", class: "text-right pr-6" },
+        ]}
+      >
+        {comments.length > 0 ? (
+          <Fragment slot="rows">
+            {comments.map((item) => (
+              <tr
+                class="hover:bg-base-200/50 transition-colors comment-card"
+                data-user={item.author_name.toLowerCase()}
+                data-article={item.article_title.toLowerCase()}
+                data-comment={item.body.toLowerCase()}
+                data-reason={item.status}
+              >
+                <td class="py-3.5 pl-6">
+                  <div class="flex items-center gap-3">
+                    <div class="avatar placeholder">
+                      <div class="size-9 rounded-xl bg-base-200 border border-base-300 font-bold font-display text-xs text-base-content/70 flex items-center justify-center">
+                        <span>{(item.author_name || "A")[0]}</span>
+                      </div>
+                    </div>
+                    <span class="font-bold text-sm text-base-content">{item.author_name}</span>
                   </div>
-                </div>
-                <span class="font-bold text-sm text-base-content">{item.user}</span>
-              </div>
-            </td>
-            <td class="max-w-[320px]">
-              <p class="text-sm text-base-content/90 leading-relaxed line-clamp-2">«{item.comment}»</p>
-            </td>
-            <td>
-              <span class="font-mono text-xs px-2.5 py-1 rounded-md bg-base-200 border border-base-300 text-base-content/70">
-                {item.article}
-              </span>
-            </td>
-            <td>
-              <div class="flex flex-col items-start gap-1">
-                <span class:list={[
-                  "badge badge-xs font-bold py-1 px-2.5 uppercase tracking-wider",
-                  isReported && "badge-error",
-                  isPending && "badge-warning",
-                  isApproved && "badge-success",
-                  !isReported && !isPending && !isApproved && "badge-info"
-                ]}>
-                  {item.reason}
-                </span>
-                <span class="text-xs text-base-content/50">{item.time}</span>
-              </div>
-            </td>
-            <td class="text-right pr-6">
-              <div class="inline-flex items-center gap-1.5">
-                <button class="btn btn-success btn-xs gap-1 font-bold" type="button">
-                  <svg class="size-3.5"><use href="#ic-check"></use></svg>
-                  <span>Aprobar</span>
-                </button>
-                <button class="btn btn-ghost btn-xs border border-base-300 text-xs font-semibold hover:bg-base-200" type="button">
-                  Responder
-                </button>
-                <button class="btn btn-ghost btn-xs border border-base-300 text-error hover:bg-error/10 text-xs font-semibold" type="button">
-                  <svg class="size-3.5"><use href="#ic-trash"></use></svg>
-                  <span>Descartar</span>
-                </button>
-              </div>
-            </td>
-          </tr>
-        );
-      })}
+                </td>
+                <td class="max-w-[320px]">
+                  <p class="text-sm text-base-content/90 leading-relaxed line-clamp-2">«{item.body}»</p>
+                </td>
+                <td>
+                  <span class="font-mono text-xs px-2.5 py-1 rounded-md bg-base-200 border border-base-300 text-base-content/70">
+                    {item.article_title || "—"}
+                  </span>
+                </td>
+                <td>
+                  <div class="flex flex-col items-start gap-1">
+                    <span class:list={["badge badge-xs font-bold py-1 px-2.5 uppercase tracking-wider", statusBadge[item.status] || "badge-ghost"]}>
+                      {statusLabels[item.status] ?? item.status}
+                    </span>
+                    <span class="text-xs text-base-content/50">{formatCommentAge(item.created_at, locale)}</span>
+                  </div>
+                </td>
+                <td class="text-right pr-6">
+                  <div class="inline-flex items-center gap-1.5">
+                    <button class="btn btn-success btn-xs font-bold" type="button" data-quick-status={item.id} data-status="approved">Aprobar</button>
+                    <button class="btn btn-ghost btn-xs border border-base-300 text-xs font-semibold hover:bg-base-200" type="button" data-edit-comment={item.id}>Responder</button>
+                    <button class="btn btn-ghost btn-xs border border-base-300 text-error hover:bg-error/10 text-xs font-semibold" type="button" data-quick-status={item.id} data-status="rejected">Descartar</button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </Fragment>
+        ) : (
+          <Fragment slot="empty">
+            <tr>
+              <td colspan={5} class="py-12 text-center text-sm text-base-content/60">No hay comentarios en la cola.</td>
+            </tr>
+          </Fragment>
+        )}
+      </AdminTable>
     </Fragment>
-  </AdminTable>
-</AdminLayout>
 
-<script is:inline>
-  (function () {
-    var bind = function () {
-      var searchInput = document.getElementById("comments-search");
-      var filterButtons = document.querySelectorAll(".comment-filter-btn");
-      var cards = document.querySelectorAll(".comment-card");
+    <form id="comment-editor-form" action="/api/admin/comments" method="post" class="space-y-5">
+      <input type="hidden" name="id" id="comment-field-id" />
+      <div>
+        <p class="text-[11px] font-extrabold uppercase tracking-wider text-base-content/60">Autor</p>
+        <p id="comment-preview-author" class="mt-1 font-bold text-base-content"></p>
+      </div>
+      <div>
+        <p class="text-[11px] font-extrabold uppercase tracking-wider text-base-content/60">Artículo</p>
+        <p id="comment-preview-article" class="mt-1 font-mono text-xs text-base-content/70"></p>
+      </div>
+      <div>
+        <p class="text-[11px] font-extrabold uppercase tracking-wider text-base-content/60">Comentario</p>
+        <p id="comment-preview-body" class="mt-1 text-sm leading-relaxed text-base-content/90"></p>
+      </div>
+      <div>
+        <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for="comment-field-status">Estado</label>
+        <select id="comment-field-status" name="status" class="select select-sm select-bordered w-full bg-base-200/40">
+          {COMMENT_STATUSES.map((status) => (
+            <option value={status.value}>{status.es}</option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60" for="comment-field-reply">Respuesta del equipo</label>
+        <textarea id="comment-field-reply" name="admin_reply" rows="4" class="textarea textarea-sm textarea-bordered w-full bg-base-200/40"></textarea>
+      </div>
+      <div class="flex items-center justify-end gap-2 border-t border-base-300 pt-4">
+        <label for="comment-drawer" class="btn btn-ghost btn-sm">Cancelar</label>
+        <button type="submit" class="btn btn-primary btn-sm font-bold">Guardar moderación</button>
+      </div>
+    </form>
+  </AdminDrawerPanel>
 
-      var currentFilter = "all";
-      var searchQuery = "";
+  <script is:inline type="application/json" id="comments-data-script" set:html={jsonForScript(comments)} />
 
-      var applyFilters = function () {
-        cards.forEach(function (card) {
-          var user = card.getAttribute("data-user") || "";
-          var article = card.getAttribute("data-article") || "";
-          var comment = card.getAttribute("data-comment") || "";
-          var reason = card.getAttribute("data-reason") || "";
-
-          var matchesSearch = !searchQuery || user.indexOf(searchQuery) !== -1 || article.indexOf(searchQuery) !== -1 || comment.indexOf(searchQuery) !== -1;
-          var matchesFilter = currentFilter === "all" || reason === currentFilter;
-
-          if (matchesSearch && matchesFilter) {
-            card.style.display = "";
-          } else {
-            card.style.display = "none";
-          }
-        });
-      };
-
-      if (searchInput && searchInput.dataset.bound !== "true") {
-        searchInput.dataset.bound = "true";
-        searchInput.addEventListener("input", function () {
-          searchQuery = searchInput.value.trim().toLowerCase();
-          applyFilters();
-        });
+  <script is:inline>
+    (function () {
+      function toast(message, type) {
+        if (window.AfroUpFeedback) window.AfroUpFeedback.toast(message, type);
+      }
+      function parseJson(id, fallback) {
+        try {
+          var el = document.getElementById(id);
+          return JSON.parse(el ? el.textContent : "") || fallback;
+        } catch (e) { return fallback; }
+      }
+      function postComment(id, fields) {
+        var formData = new FormData();
+        formData.set("id", String(id));
+        Object.keys(fields).forEach(function (key) { formData.set(key, fields[key]); });
+        return fetch("/api/admin/comments", { method: "POST", body: formData }).then(function (res) { return res.json(); });
       }
 
-      filterButtons.forEach(function (btn) {
-        if (btn.dataset.bound === "true") return;
-        btn.dataset.bound = "true";
-        btn.addEventListener("click", function () {
-          filterButtons.forEach(function (b) {
-            b.classList.remove("btn-primary", "text-primary-content");
-            b.classList.add("btn-ghost");
+      function setup() {
+        var searchInput = document.getElementById("comments-search");
+        var filterButtons = document.querySelectorAll(".comment-filter-btn");
+        var cards = document.querySelectorAll(".comment-card");
+        var drawerToggle = document.getElementById("comment-drawer");
+        var form = document.getElementById("comment-editor-form");
+        var deleteBtn = document.getElementById("delete-comment-btn");
+        var rows = {};
+        parseJson("comments-data-script", []).forEach(function (row) { rows[String(row.id)] = row; });
+        var currentFilter = "all";
+        var searchQuery = "";
+
+        var applyFilters = function () {
+          cards.forEach(function (card) {
+            var user = card.getAttribute("data-user") || "";
+            var article = card.getAttribute("data-article") || "";
+            var comment = card.getAttribute("data-comment") || "";
+            var reason = card.getAttribute("data-reason") || "";
+            var matchesSearch = !searchQuery || user.indexOf(searchQuery) !== -1 || article.indexOf(searchQuery) !== -1 || comment.indexOf(searchQuery) !== -1;
+            var matchesFilter = currentFilter === "all" || reason === currentFilter;
+            card.style.display = matchesSearch && matchesFilter ? "" : "none";
           });
-          btn.classList.remove("btn-ghost");
-          btn.classList.add("btn-primary", "text-primary-content");
+        };
 
-          currentFilter = btn.getAttribute("data-filter") || "all";
-          applyFilters();
+        if (searchInput && searchInput.dataset.bound !== "true") {
+          searchInput.dataset.bound = "true";
+          searchInput.addEventListener("input", function () {
+            searchQuery = searchInput.value.trim().toLowerCase();
+            applyFilters();
+          });
+        }
+        filterButtons.forEach(function (btn) {
+          if (btn.dataset.bound === "true") return;
+          btn.dataset.bound = "true";
+          btn.addEventListener("click", function () {
+            filterButtons.forEach(function (b) {
+              b.classList.remove("btn-primary", "text-primary-content");
+              b.classList.add("btn-ghost");
+            });
+            btn.classList.remove("btn-ghost");
+            btn.classList.add("btn-primary", "text-primary-content");
+            currentFilter = btn.getAttribute("data-filter") || "all";
+            applyFilters();
+          });
         });
-      });
-    };
 
-    bind();
-    document.addEventListener("astro:page-load", bind);
-  })();
-</script>
+        function openDrawer(row) {
+          var idField = document.getElementById("comment-field-id");
+          var statusField = document.getElementById("comment-field-status");
+          var replyField = document.getElementById("comment-field-reply");
+          var author = document.getElementById("comment-preview-author");
+          var article = document.getElementById("comment-preview-article");
+          var body = document.getElementById("comment-preview-body");
+          if (idField) idField.value = row.id;
+          if (statusField) statusField.value = row.status;
+          if (replyField) replyField.value = row.admin_reply || "";
+          if (author) author.textContent = row.author_name || "";
+          if (article) article.textContent = row.article_title || "—";
+          if (body) body.textContent = row.body || "";
+          if (deleteBtn) deleteBtn.classList.remove("hidden");
+          if (drawerToggle) {
+            drawerToggle.checked = true;
+            document.body.style.overflow = "hidden";
+          }
+        }
+
+        document.querySelectorAll("[data-edit-comment]").forEach(function (btn) {
+          if (btn.dataset.bound === "true") return;
+          btn.dataset.bound = "true";
+          btn.addEventListener("click", function () {
+            var row = rows[btn.getAttribute("data-edit-comment")];
+            if (row) openDrawer(row);
+          });
+        });
+
+        document.querySelectorAll("[data-quick-status]").forEach(function (btn) {
+          if (btn.dataset.bound === "true") return;
+          btn.dataset.bound = "true";
+          btn.addEventListener("click", function () {
+            var id = btn.getAttribute("data-quick-status");
+            var status = btn.getAttribute("data-status");
+            if (!id || !status) return;
+            postComment(id, { status: status })
+              .then(function (result) {
+                toast(result.message || (result.ok ? "Comentario actualizado." : "Error al moderar."), result.ok ? "success" : "error");
+                if (result.ok) setTimeout(function () { window.location.reload(); }, 400);
+              })
+              .catch(function () { toast("Error de red al moderar.", "error"); });
+          });
+        });
+
+        if (form && form.dataset.submitBound !== "true") {
+          form.dataset.submitBound = "true";
+          form.addEventListener("submit", function (event) {
+            event.preventDefault();
+            fetch(form.action, { method: "POST", body: new FormData(form) })
+              .then(function (res) { return res.json(); })
+              .then(function (result) {
+                toast(result.message || (result.ok ? "Moderación guardada." : "Error al guardar."), result.ok ? "success" : "error");
+                if (result.ok) {
+                  document.body.style.overflow = "";
+                  setTimeout(function () { window.location.reload(); }, 400);
+                }
+              })
+              .catch(function () { toast("Error de red al guardar.", "error"); });
+          });
+        }
+
+        if (deleteBtn && deleteBtn.dataset.bound !== "true") {
+          deleteBtn.dataset.bound = "true";
+          deleteBtn.addEventListener("click", function () {
+            var idField = document.getElementById("comment-field-id");
+            var id = idField ? idField.value : "";
+            if (!id || !window.confirm("¿Descartar este comentario de forma permanente?")) return;
+            fetch("/api/admin/comments?id=" + encodeURIComponent(id), { method: "DELETE" })
+              .then(function (res) { return res.json(); })
+              .then(function (result) {
+                toast(result.message || (result.ok ? "Comentario descartado." : "Error al descartar."), result.ok ? "success" : "error");
+                if (result.ok) {
+                  document.body.style.overflow = "";
+                  setTimeout(function () { window.location.reload(); }, 400);
+                }
+              })
+              .catch(function () { toast("Error de red al descartar.", "error"); });
+          });
+        }
+      }
+      setup();
+      document.addEventListener("astro:page-load", setup);
+    })();
+  </script>
+</AdminLayout>
